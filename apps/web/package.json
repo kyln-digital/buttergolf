@@ -18,7 +18,7 @@
     "@easypost/api": "^8.2.0",
     "@sentry/nextjs": "^10.34.0",
     "@stripe/connect-js": "^3.3.31",
-    "@stripe/react-connect-js": "^3.3.31",
+    "@stripe/react-connect-js": "^3.3.32",
     "@stripe/react-stripe-js": "^5.3.0",
     "@stripe/stripe-js": "^8.3.0",
     "@tamagui/card": "catalog:",
