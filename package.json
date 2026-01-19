@@ -32,7 +32,7 @@
     "@testing-library/react-native": "^13.3.3",
     "@vitejs/plugin-react": "^5.1.1",
     "@vitest/ui": "^4.0.13",
-    "check-dependency-version-consistency": "^5.0.1",
+    "check-dependency-version-consistency": "^6.0.0",
     "dotenv": "^17.2.3",
     "prettier": "^3.6.2",
     "tsx": "catalog:",
