@@ -53,7 +53,7 @@
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "solito": "catalog:",
-    "stripe": "^19.2.1",
+    "stripe": "^20.2.0",
     "svix": "^1.81.0",
     "tamagui": "catalog:",
     "uuid": "^13.0.0"
