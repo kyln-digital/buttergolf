@@ -150,7 +150,7 @@ export function ButterHeader() {
                   cursor="pointer"
                   backgroundColor="transparent"
                   hoverStyle={{
-                    backgroundColor: "rgba(244, 83, 20, 0.1)",
+                    backgroundColor: "$primarySubtle",
                   }}
                   style={{
                     transition: "all 200ms ease-out",
@@ -173,7 +173,7 @@ export function ButterHeader() {
                   cursor="pointer"
                   backgroundColor="transparent"
                   hoverStyle={{
-                    backgroundColor: "rgba(244, 83, 20, 0.1)",
+                    backgroundColor: "$primarySubtle",
                   }}
                   style={{
                     transition: "all 200ms ease-out",
@@ -196,7 +196,7 @@ export function ButterHeader() {
                   cursor="pointer"
                   backgroundColor="transparent"
                   hoverStyle={{
-                    backgroundColor: "rgba(244, 83, 20, 0.1)",
+                    backgroundColor: "$primarySubtle",
                   }}
                   style={{
                     transition: "all 200ms ease-out",

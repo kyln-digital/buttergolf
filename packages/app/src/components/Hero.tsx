@@ -13,7 +13,7 @@ import {
   useMedia,
 } from "@buttergolf/ui";
 import { images } from "@buttergolf/assets";
-import { Link } from "solito/link";
+import { useLink } from "solito/navigation";
 import { FadeUpText } from "./FadeUpText";
 
 // Image source types - accepts both React Native require() and web string paths
@@ -417,6 +417,10 @@ interface HeroCTAButtonsProps {
 }
 
 function HeroCTAButtons({ primaryCta, secondaryCta }: HeroCTAButtonsProps) {
+  // Use solito's useLink hook for proper navigation
+  const primaryLink = useLink({ href: primaryCta?.href ?? "/" });
+  const secondaryLink = useLink({ href: secondaryCta?.href ?? "/" });
+
   if (!primaryCta && !secondaryCta) return null;
 
   // Define button styling inline to avoid butterVariant prop warning
@@ -445,18 +449,24 @@ function HeroCTAButtons({ primaryCta, secondaryCta }: HeroCTAButtonsProps) {
   return (
     <Row gap="$md" flexWrap="wrap" marginTop="$4" justifyContent="center" $gtSm={{ justifyContent: "flex-start" }}>
       {primaryCta && (
-        <Link href={primaryCta.href} style={{ textDecoration: "none" }}>
-          <Button butterVariant="primary" {...primaryButtonProps}>
-            {primaryCta.label}
-          </Button>
-        </Link>
+        <Button
+          butterVariant="primary"
+          {...primaryButtonProps}
+          onPress={primaryLink.onPress}
+          accessibilityRole="link"
+        >
+          {primaryCta.label}
+        </Button>
       )}
       {secondaryCta && (
-        <Link href={secondaryCta.href} style={{ textDecoration: "none" }}>
-          <Button butterVariant="secondary" {...secondaryButtonProps}>
-            {secondaryCta.label}
-          </Button>
-        </Link>
+        <Button
+          butterVariant="secondary"
+          {...secondaryButtonProps}
+          onPress={secondaryLink.onPress}
+          accessibilityRole="link"
+        >
+          {secondaryCta.label}
+        </Button>
       )}
     </Row>
   );
