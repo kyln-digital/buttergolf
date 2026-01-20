@@ -49,35 +49,60 @@ export interface UseThemeResult {
 export function useTheme(): UseThemeResult {
   if (Platform.OS === "web") {
     // Web: use @tamagui/next-theme
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { useThemeSetting } = require("@tamagui/next-theme");
-    const themeSetting = useThemeSetting();
-    
-    return {
-      mode: (themeSetting.current || "system") as ThemeMode,
-      resolvedTheme: (themeSetting.resolvedTheme || "light") as ResolvedTheme,
-      toggle: themeSetting.toggle || (() => {}),
-      setMode: themeSetting.set || (() => {}),
-      canToggle: true,
-    };
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { useThemeSetting } = require("@tamagui/next-theme");
+      const themeSetting = useThemeSetting();
+      
+      return {
+        mode: (themeSetting.current || "system") as ThemeMode,
+        resolvedTheme: (themeSetting.resolvedTheme || "light") as ResolvedTheme,
+        toggle: themeSetting.toggle || (() => {}),
+        setMode: themeSetting.set || (() => {}),
+        canToggle: true,
+      };
+    } catch (error) {
+      // Fallback if theme provider not available
+      return {
+        mode: "light",
+        resolvedTheme: "light",
+        toggle: () => {},
+        setMode: () => {},
+        canToggle: false,
+      };
+    }
   }
   
   // Mobile: use React Native's useColorScheme
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { useColorScheme } = require("react-native");
-  const colorScheme = useColorScheme();
-  
-  return {
-    mode: "system", // Mobile always follows system
-    resolvedTheme: (colorScheme || "light") as ResolvedTheme,
-    toggle: () => {
-      // On mobile, theme is controlled by system settings
-      // Could show an alert directing user to system settings
-      console.log("Theme is controlled by system settings on mobile");
-    },
-    setMode: () => {
-      console.log("Theme is controlled by system settings on mobile");
-    },
-    canToggle: false, // Mobile follows system
-  };
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useColorScheme } = require("react-native");
+    const colorScheme = useColorScheme();
+    
+    // Validate colorScheme is a valid value
+    const validScheme = colorScheme === "dark" || colorScheme === "light" ? colorScheme : "light";
+    
+    return {
+      mode: "system", // Mobile always follows system
+      resolvedTheme: validScheme as ResolvedTheme,
+      toggle: () => {
+        // On mobile, theme is controlled by system settings
+        // Users can change theme in device Settings > Display
+      },
+      setMode: () => {
+        // On mobile, theme is controlled by system settings
+        // Users can change theme in device Settings > Display
+      },
+      canToggle: false, // Mobile follows system
+    };
+  } catch (error) {
+    // Fallback if useColorScheme not available
+    return {
+      mode: "light",
+      resolvedTheme: "light",
+      toggle: () => {},
+      setMode: () => {},
+      canToggle: false,
+    };
+  }
 }

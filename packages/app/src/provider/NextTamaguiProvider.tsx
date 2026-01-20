@@ -22,18 +22,42 @@ import { NextThemeProvider, useRootTheme } from "@tamagui/next-theme";
 import { TamaguiProvider } from "tamagui";
 import { config } from "@buttergolf/config";
 
+/**
+ * Inner provider that uses useRootTheme inside NextThemeProvider context
+ * This fixes the circular dependency issue where useRootTheme must be
+ * called within the NextThemeProvider's tree.
+ */
+function TamaguiProviderInner({ children }: { children: ReactNode }) {
+  // useRootTheme MUST be inside NextThemeProvider's children
+  const [theme] = useRootTheme();
+
+  return (
+    <TamaguiProvider
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      config={config as any}
+      defaultTheme={theme}
+      disableRootThemeClass // NextThemeProvider handles the class
+    >
+      {children}
+    </TamaguiProvider>
+  );
+}
+
 export function NextTamaguiProvider({
   children,
 }: Readonly<{ children: ReactNode }>) {
-  // Official Tamagui pattern: useRootTheme() syncs with NextThemeProvider
-  const [theme, setTheme] = useRootTheme();
-
   // Inject styles for SSR (react-native-web components)
   useServerInsertedHTML(() => {
     // @ts-ignore - RN doesn't have this type but it exists at runtime
     const rnwStyle = StyleSheet.getSheet();
     return (
       <>
+        {/* Prevent theme flash on load by hiding until JS runs */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `document.documentElement.classList.add('t_unmounted')`,
+          }}
+        />
         <style
           dangerouslySetInnerHTML={{ __html: rnwStyle.textContent }}
           id={rnwStyle.id}
@@ -52,20 +76,10 @@ export function NextTamaguiProvider({
   return (
     <NextThemeProvider
       skipNextHead // Required for App Router
-      // enableSystem // Enable system preference detection (default)
-      // defaultTheme="system" // Default to system preference
-      onChangeTheme={(next) => {
-        setTheme(next as "light" | "dark");
-      }}
+      enableSystem // Enable system preference detection
+      defaultTheme="system" // Default to system preference
     >
-      <TamaguiProvider
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        config={config as any}
-        defaultTheme={theme}
-        disableRootThemeClass // NextThemeProvider handles the class
-      >
-        {children}
-      </TamaguiProvider>
+      <TamaguiProviderInner>{children}</TamaguiProviderInner>
     </NextThemeProvider>
   );
 }

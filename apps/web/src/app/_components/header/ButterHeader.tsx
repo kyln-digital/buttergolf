@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LazySignedIn, LazySignedOut, LazyUserButton } from "@/components/auth/LazyClerkComponents";
-import { MessageSquare, Moon, Sun } from "lucide-react";
+import { MessageSquare } from "@tamagui/lucide-icons";
 import {
   Row,
   Column,
@@ -15,10 +15,10 @@ import {
   GlassmorphismCard,
   getGlassmorphismStyles,
   ThemeSwitcher,
+  ThemeToggleButton,
   type Category,
   Button,
 } from "@buttergolf/ui";
-import { useTheme } from "@buttergolf/app/src/hooks/useTheme";
 import { CATEGORIES } from "@buttergolf/db";
 import { MenuIcon } from "./icons";
 
@@ -27,41 +27,6 @@ const NAV_CATEGORIES: Category[] = [
   { name: "Shop all", href: "/listings" },
   ...CATEGORIES.map((cat) => ({ name: cat.name, href: `/category/${cat.slug}` })),
 ];
-
-/**
- * Theme toggle button for header
- * Shows Moon in light mode (click to switch to dark)
- * Shows Sun in dark mode (click to switch to light)
- */
-function ThemeToggleButton() {
-  const { resolvedTheme, toggle } = useTheme();
-  const isDark = resolvedTheme === "dark";
-  const Icon = isDark ? Sun : Moon;
-  const label = isDark ? "Switch to light mode" : "Switch to dark mode";
-
-  return (
-    <Row
-      tag="button"
-      alignItems="center"
-      justifyContent="center"
-      padding="$2"
-      minWidth={44}
-      minHeight={44}
-      borderRadius="$full"
-      cursor="pointer"
-      backgroundColor="transparent"
-      borderWidth={0}
-      hoverStyle={{
-        backgroundColor: "$backgroundHover",
-      }}
-      onPress={toggle}
-      aria-label={label}
-      title={label}
-    >
-      <Icon size={20} color="currentColor" />
-    </Row>
-  );
-}
 
 export function ButterHeader() {
   const pathname = usePathname();
@@ -248,20 +213,17 @@ export function ButterHeader() {
                   aria-label="Messages"
                   title="Messages"
                 >
-                  <Row
-                    alignItems="center"
-                    justifyContent="center"
-                    padding="$2"
-                    minWidth={44}
-                    minHeight={44}
-                    borderRadius="$full"
+                  <Button
+                    chromeless
+                    circular
+                    size="$4"
                     color={isActive("/messages") ? "$primary" : "$text"}
                     hoverStyle={{
                       backgroundColor: "$backgroundHover",
                     }}
                   >
-                    <MessageSquare size={20} color="currentColor" />
-                  </Row>
+                    <MessageSquare size={20} />
+                  </Button>
                 </Link>
 
                 <LazyUserButton size="default" />
@@ -269,25 +231,18 @@ export function ButterHeader() {
             </Row>
 
             {/* Mobile Menu Toggle */}
-            <Row
+            <Button
+              chromeless
+              circular
+              size="$4"
               display="flex"
               $gtMd={{ display: "none" }}
-              tag="button"
-              cursor="pointer"
-              hoverStyle={{ opacity: 0.8 }}
-              padding="$2"
-              minWidth={44}
-              minHeight={44}
-              alignItems="center"
-              justifyContent="center"
               onPress={() => setMobileMenuOpen(!mobileMenuOpen)}
-              backgroundColor="transparent"
-              borderWidth={0}
               aria-label="Menu"
               color="$text"
             >
               <MenuIcon />
-            </Row>
+            </Button>
           </Row>
         </Row>
 

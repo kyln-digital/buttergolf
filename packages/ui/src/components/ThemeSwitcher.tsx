@@ -2,9 +2,8 @@
 
 import { type ReactNode } from "react";
 import { Moon, Sun, Monitor } from "@tamagui/lucide-icons";
-import { Row, Text, Button } from "@buttergolf/ui";
+import { XStack, YStack, Text as TamaguiText, Button, styled, type GetProps } from "tamagui";
 import { useTheme, type ThemeMode } from "@buttergolf/app/src/hooks/useTheme";
-import { XStack, styled, type GetProps } from "tamagui";
 
 /**
  * Theme mode options configuration
@@ -14,6 +13,16 @@ const THEME_OPTIONS: { mode: ThemeMode; label: string; Icon: typeof Moon }[] = [
   { mode: "dark", label: "Dark", Icon: Moon },
   { mode: "system", label: "System", Icon: Monitor },
 ];
+
+// Styled container using XStack directly
+const Row = styled(XStack, {
+  name: "ThemeSwitcherRow",
+});
+
+// Styled text using TamaguiText
+const Text = styled(TamaguiText, {
+  name: "ThemeSwitcherText",
+});
 
 // Styled toggle button for theme selection
 const ToggleButton = styled(XStack, {
@@ -47,7 +56,7 @@ const ToggleButton = styled(XStack, {
   },
 });
 
-export type ThemeSwitcherProps = GetProps<typeof Row> & {
+export type ThemeSwitcherProps = GetProps<typeof XStack> & {
   /** Show labels next to icons */
   showLabels?: boolean;
   /** Compact mode - single toggle button */
@@ -73,7 +82,7 @@ export function ThemeSwitcher({
   onThemeChange,
   ...props
 }: ThemeSwitcherProps) {
-  const { mode, setMode, toggle, canToggle } = useTheme();
+  const { mode: currentMode, setMode, toggle, canToggle } = useTheme();
 
   // On mobile, theme is system-controlled - don't show switcher
   if (!canToggle) {
@@ -104,7 +113,7 @@ export function ThemeSwitcher({
       {...props}
     >
       {THEME_OPTIONS.map(({ mode: optionMode, label, Icon }) => {
-        const isActive = mode === optionMode;
+        const isActive = currentMode === optionMode;
         return (
           <ToggleButton
             key={optionMode}
@@ -120,7 +129,7 @@ export function ThemeSwitcher({
             />
             {showLabels && (
               <Text
-                size="$4"
+                fontSize="$4"
                 color={isActive ? "$textInverse" : "$text"}
                 fontWeight={isActive ? "600" : "400"}
               >
@@ -157,7 +166,7 @@ export function ThemeToggleButton({
   onThemeChange,
   ...props
 }: ThemeToggleButtonProps) {
-  const { resolvedTheme, toggle, mode, canToggle } = useTheme();
+  const { resolvedTheme, toggle, canToggle } = useTheme();
 
   // On mobile, theme is system-controlled - don't show toggle button
   if (!canToggle) {

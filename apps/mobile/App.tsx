@@ -1423,30 +1423,42 @@ function PushTokenRegistration() {
 /**
  * Custom navigation theme that matches ButterGolf brand colors
  * Based on React Navigation's DefaultTheme/DarkTheme
+ * 
+ * Note: React Navigation requires hex values, so we reference our brand tokens:
+ * - primary: $spicedClementine (#F45314)
+ * - background: $vanillaCream (#FFFAD2)
+ * - card: $pureWhite (#FFFFFF)
+ * - text: $ironstone (#323232)
+ * - border: $cloudMist (#EDEDED)
  */
 const LightNavigationTheme: NavigationTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    primary: '#F45314', // Spiced Clementine
-    background: '#FFFAD2', // Vanilla Cream
-    card: '#FFFFFF', // Pure White
-    text: '#323232', // Ironstone
-    border: '#EDEDED', // Cloud Mist
-    notification: '#F45314', // Spiced Clementine
+    primary: '#F45314', // $spicedClementine
+    background: '#FFFAD2', // $vanillaCream
+    card: '#FFFFFF', // $pureWhite
+    text: '#323232', // $ironstone
+    border: '#EDEDED', // $cloudMist
+    notification: '#F45314', // $spicedClementine
   },
 };
 
+/**
+ * Dark navigation theme
+ * - background: $burntOlive (#3E3B2C)
+ * - text: $pureWhite (#FFFFFF)
+ */
 const DarkNavigationTheme: NavigationTheme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
-    primary: '#F45314', // Spiced Clementine
-    background: '#3E3B2C', // Burnt Olive
-    card: '#4A473A', // Slightly lighter Burnt Olive
-    text: '#FFFFFF', // Pure White
+    primary: '#F45314', // $spicedClementine
+    background: '#3E3B2C', // $burntOlive
+    card: '#4A473A', // Slightly lighter $burntOlive
+    text: '#FFFFFF', // $pureWhite
     border: '#5A5749', // Lighter border for dark mode
-    notification: '#F45314', // Spiced Clementine
+    notification: '#F45314', // $spicedClementine
   },
 };
 
@@ -1456,7 +1468,10 @@ export default function App() {
   // Official Tamagui/Expo pattern: use React Native's useColorScheme()
   // This follows system preference automatically (app.json has userInterfaceStyle: "automatic")
   const colorScheme = useColorScheme();
-  const navigationTheme = colorScheme === 'dark' ? DarkNavigationTheme : LightNavigationTheme;
+  
+  // Validate colorScheme and default to 'light' if null/undefined
+  const validColorScheme = colorScheme === 'dark' ? 'dark' : 'light';
+  const navigationTheme = validColorScheme === 'dark' ? DarkNavigationTheme : LightNavigationTheme;
 
   // Load Urbanist font weights for React Native using expo-google-fonts
   const [fontsLoaded] = useFonts({
@@ -1606,7 +1621,7 @@ export default function App() {
           publishableKey={clerkPublishableKey}
         >
         {/* Official Tamagui Expo pattern: use useColorScheme() for theme */}
-        <Provider defaultTheme={colorScheme ?? 'light'}>
+        <Provider defaultTheme={validColorScheme}>
           <SignedIn>
             <PushTokenRegistration />
             <NavigationContainer linking={linking} theme={navigationTheme}>
