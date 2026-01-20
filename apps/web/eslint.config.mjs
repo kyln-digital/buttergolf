@@ -20,26 +20,8 @@ const eslintConfig = [
       "@typescript-eslint/no-unused-vars": "warn",
     },
   },
-  {
-    // Prevent "Missing theme" errors from useRootTheme() during hydration
-    // This pattern causes race conditions with React 19 concurrent rendering
-    // See commit d8df9ed for previous fix
-    rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          paths: [
-            {
-              name: "@tamagui/next-theme",
-              importNames: ["useRootTheme", "NextThemeProvider"],
-              message:
-                "useRootTheme() causes 'Missing theme' hydration errors. Use hardcoded defaultTheme='light' instead. See commit d8df9ed.",
-            },
-          ],
-        },
-      ],
-    },
-  },
+  // Note: @tamagui/next-theme is now allowed - using official pattern from Tamagui docs
+  // Previous ban removed: useRootTheme() + NextThemeProvider now work correctly
 ];
 
 export default eslintConfig;

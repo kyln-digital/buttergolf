@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LazySignedIn, LazySignedOut, LazyUserButton } from "@/components/auth/LazyClerkComponents";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Moon, Sun } from "lucide-react";
 import {
   Row,
   Column,
@@ -14,8 +14,11 @@ import {
   CategorySelector,
   GlassmorphismCard,
   getGlassmorphismStyles,
+  ThemeSwitcher,
   type Category,
+  Button,
 } from "@buttergolf/ui";
+import { useTheme } from "@buttergolf/app/src/hooks/useTheme";
 import { CATEGORIES } from "@buttergolf/db";
 import { MenuIcon } from "./icons";
 
@@ -24,6 +27,41 @@ const NAV_CATEGORIES: Category[] = [
   { name: "Shop all", href: "/listings" },
   ...CATEGORIES.map((cat) => ({ name: cat.name, href: `/category/${cat.slug}` })),
 ];
+
+/**
+ * Theme toggle button for header
+ * Shows Moon in light mode (click to switch to dark)
+ * Shows Sun in dark mode (click to switch to light)
+ */
+function ThemeToggleButton() {
+  const { resolvedTheme, toggle } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const Icon = isDark ? Sun : Moon;
+  const label = isDark ? "Switch to light mode" : "Switch to dark mode";
+
+  return (
+    <Row
+      tag="button"
+      alignItems="center"
+      justifyContent="center"
+      padding="$2"
+      minWidth={44}
+      minHeight={44}
+      borderRadius="$full"
+      cursor="pointer"
+      backgroundColor="transparent"
+      borderWidth={0}
+      hoverStyle={{
+        backgroundColor: "$backgroundHover",
+      }}
+      onPress={toggle}
+      aria-label={label}
+      title={label}
+    >
+      <Icon size={20} color="currentColor" />
+    </Row>
+  );
+}
 
 export function ButterHeader() {
   const pathname = usePathname();
@@ -183,6 +221,9 @@ export function ButterHeader() {
               alignItems="center"
               flexShrink={0}
             >
+              {/* Theme Toggle */}
+              <ThemeToggleButton />
+
               <LazySignedOut>
                 <AuthButton
                   variant="login"
@@ -380,6 +421,20 @@ export function ButterHeader() {
               </Link>
             ))}
           </Column>
+
+          {/* Theme Switcher - Mobile */}
+          <Row
+            height={1}
+            backgroundColor="$border"
+            marginVertical="$2"
+            width="100%"
+          />
+          <Row alignItems="center" justifyContent="space-between" paddingVertical="$2">
+            <Text size="$5" weight="semibold" color="$textSecondary">
+              Theme
+            </Text>
+            <ThemeSwitcher showLabels />
+          </Row>
 
           {/* Mobile Auth Buttons */}
           <Column gap="$3" marginTop="$6">

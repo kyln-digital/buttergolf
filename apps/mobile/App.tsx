@@ -1,4 +1,4 @@
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, DarkTheme, DefaultTheme, Theme as NavigationTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import {
   Provider,
@@ -42,6 +42,7 @@ import {
   Pressable as RNPressable,
   Alert,
   Platform,
+  useColorScheme,
 } from "react-native";
 import { ClerkProvider, SignedIn, SignedOut, useAuth, useUser } from "@clerk/clerk-expo";
 import { StripeProvider } from "@stripe/stripe-react-native";
@@ -1419,8 +1420,43 @@ function PushTokenRegistration() {
   return null; // This component doesn't render anything
 }
 
+/**
+ * Custom navigation theme that matches ButterGolf brand colors
+ * Based on React Navigation's DefaultTheme/DarkTheme
+ */
+const LightNavigationTheme: NavigationTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: '#F45314', // Spiced Clementine
+    background: '#FFFAD2', // Vanilla Cream
+    card: '#FFFFFF', // Pure White
+    text: '#323232', // Ironstone
+    border: '#EDEDED', // Cloud Mist
+    notification: '#F45314', // Spiced Clementine
+  },
+};
+
+const DarkNavigationTheme: NavigationTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: '#F45314', // Spiced Clementine
+    background: '#3E3B2C', // Burnt Olive
+    card: '#4A473A', // Slightly lighter Burnt Olive
+    text: '#FFFFFF', // Pure White
+    border: '#5A5749', // Lighter border for dark mode
+    notification: '#F45314', // Spiced Clementine
+  },
+};
+
 export default function App() {
   const FORCE_MINIMAL = false; // back to normal app rendering
+
+  // Official Tamagui/Expo pattern: use React Native's useColorScheme()
+  // This follows system preference automatically (app.json has userInterfaceStyle: "automatic")
+  const colorScheme = useColorScheme();
+  const navigationTheme = colorScheme === 'dark' ? DarkNavigationTheme : LightNavigationTheme;
 
   // Load Urbanist font weights for React Native using expo-google-fonts
   const [fontsLoaded] = useFonts({
@@ -1569,11 +1605,11 @@ export default function App() {
           tokenCache={tokenCache}
           publishableKey={clerkPublishableKey}
         >
-        {/* Wrap app content in Tamagui Provider so SignedOut onboarding can use UI components */}
-        <Provider>
+        {/* Official Tamagui Expo pattern: use useColorScheme() for theme */}
+        <Provider defaultTheme={colorScheme ?? 'light'}>
           <SignedIn>
             <PushTokenRegistration />
-            <NavigationContainer linking={linking}>
+            <NavigationContainer linking={linking} theme={navigationTheme}>
               <Stack.Navigator screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="Home">
                   {({ navigation }: { navigation: any }) => (
@@ -1734,7 +1770,7 @@ export default function App() {
           </SignedIn>
           <SignedOut>
             {/* Render the designed onboarding screen (animations currently disabled for stability) */}
-            <NavigationContainer linking={linking}>
+            <NavigationContainer linking={linking} theme={navigationTheme}>
               <OnboardingFlow />
             </NavigationContainer>
           </SignedOut>

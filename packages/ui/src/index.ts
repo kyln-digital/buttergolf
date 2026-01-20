@@ -155,3 +155,10 @@ export {
   AdaptContents,
 } from "./components/Popover";
 export type { PopoverProps, PopoverSheetProps } from "./components/Popover";
+
+// Theme Components
+export { ThemeSwitcher, ThemeToggleButton } from "./components/ThemeSwitcher";
+export type {
+  ThemeSwitcherProps,
+  ThemeToggleButtonProps,
+} from "./components/ThemeSwitcher";
