@@ -552,6 +552,8 @@ const darkTheme = {
   secondaryPress: brandColors.lemonHazePress,
   secondaryFocus: brandColors.lemonHaze,
   secondaryLight: brandColors.ironstone,
+  // Softer border for cream buttons on dark background (Burnt Olive instead of pure black)
+  secondaryBorder: brandColors.burntOlive,
 
   success: brandColors.successBase,
   successLight: brandColors.ironstone,
