@@ -268,7 +268,8 @@ export function ButterHeader() {
             maxWidth={1280}
             width="100%"
             paddingHorizontal="$3"
-            paddingVertical="$3"
+            paddingTop="$3"
+            paddingBottom="$4"
             alignItems="center"
             justifyContent="center"
             style={{

@@ -28,7 +28,7 @@ interface CategorySelectorProps {
 const AnimatedUnderline = styled(Row, {
   name: "AnimatedUnderline",
   position: "absolute",
-  bottom: 0,
+  bottom: -8, // Position below text without affecting text centering
   left: 0,
   height: 3,
   backgroundColor: "$primary",
@@ -58,7 +58,6 @@ const CategorySelectorContainer = styled(Row, {
   alignItems: "center",
   justifyContent: "space-around",
   width: "100%",
-  paddingBottom: "$3", // Space for underline
 });
 
 // Category text that can be hovered
@@ -279,7 +278,7 @@ export function CategorySelector({
       {prefersReducedMotion && (
         <Row
           position="absolute"
-          bottom={0}
+          bottom={-8}
           left={underlineStyle.left}
           height={3}
           width={underlineStyle.width}
