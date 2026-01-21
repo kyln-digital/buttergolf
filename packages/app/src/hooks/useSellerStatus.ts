@@ -89,21 +89,22 @@ export function useSellerStatus({
   });
 
   const fetchStatus = useCallback(async () => {
-    // Prevent concurrent fetches - this is the key fix for the loop
-    if (fetchingRef.current) {
-      console.log("[useSellerStatus] fetchStatus skipped - already fetching");
-      return;
-    }
-    fetchingRef.current = true;
-
     console.log("[useSellerStatus] fetchStatus called, isAuthenticated:", isAuthenticated);
     
+    // Handle unauthenticated case before setting the fetching guard
     if (!isAuthenticated) {
       console.log("[useSellerStatus] Not authenticated, returning default status");
       setStatus(DEFAULT_STATUS);
       setIsLoading(false);
       return;
     }
+
+    // Prevent concurrent fetches - this is the key fix for the loop
+    if (fetchingRef.current) {
+      console.log("[useSellerStatus] fetchStatus skipped - already fetching");
+      return;
+    }
+    fetchingRef.current = true;
 
     try {
       setIsLoading(true);
@@ -115,7 +116,7 @@ export function useSellerStatus({
       if (!token) {
         console.log("[useSellerStatus] No token, returning default status");
         setStatus(DEFAULT_STATUS);
-        setIsLoading(false);
+        // Don't return early - let finally block reset fetchingRef
         return;
       }
 

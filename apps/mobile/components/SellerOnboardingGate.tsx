@@ -87,7 +87,10 @@ export function SellerOnboardingGate({
   // Track if we're waiting for Stripe onboarding return
   const [awaitingReturn, setAwaitingReturn] = useState(false);
   
-  // Track if we've already processed the initial URL (prevents loop on re-renders)
+  // Track if we've already processed the initial URL.
+  // Note: This ref is intentionally never reset, even if this component unmounts
+  // and remounts, so that we only handle the initial deep link once per app
+  // launch/session and avoid processing the same deep link multiple times.
   const initialUrlChecked = useRef(false);
 
   /**
