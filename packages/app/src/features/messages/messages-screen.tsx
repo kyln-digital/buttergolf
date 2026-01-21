@@ -13,9 +13,8 @@ import {
   Card,
   Badge,
 } from "@buttergolf/ui";
-import { Button as TamaguiButton } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MessageCircle, ChevronRight, RefreshCw } from "@tamagui/lucide-icons";
+import { MessageCircle, ChevronRight } from "@tamagui/lucide-icons";
 import { MobileBottomNav } from "../../components/mobile";
 import { formatDistanceToNow } from "date-fns";
 
@@ -176,8 +175,8 @@ export function MessagesScreen({
 
   return (
     <Column width="100%" height="100%" paddingTop={insets.top}>
-      {/* Header - no flex so content below can center */}
       <Column
+        flex={1}
         gap="$md"
         paddingHorizontal="$md"
         paddingVertical="$md"
@@ -196,21 +195,16 @@ export function MessagesScreen({
             )}
           </Column>
           {!loading && (
-            <TamaguiButton
-              chromeless
-              circular
+            <Button
               size="$4"
+              backgroundColor="transparent"
+              borderWidth={1}
+              borderColor="$border"
               onPress={handleRefresh}
               disabled={refreshing}
-              opacity={refreshing ? 0.5 : 1}
-              accessibilityLabel="Refresh messages"
             >
-              {refreshing ? (
-                <Spinner size="sm" color="$primary" />
-              ) : (
-                <RefreshCw size={20} color="$text" />
-              )}
-            </TamaguiButton>
+              {refreshing ? <Spinner size="sm" /> : "Refresh"}
+            </Button>
           )}
         </Row>
       </Column>
