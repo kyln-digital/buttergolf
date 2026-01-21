@@ -14,14 +14,14 @@ import { getUserIdFromRequest } from "@/lib/auth";
  */
 export async function POST(req: Request) {
   try {
-    const userId = await getUserIdFromRequest(req);
+    const clerkId = await getUserIdFromRequest(req);
 
-    if (!userId) {
+    if (!clerkId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { clerkId },
       select: { id: true, pushTokens: true },
     });
 
@@ -44,12 +44,12 @@ export async function POST(req: Request) {
       pushTokens.push(token);
 
       await prisma.user.update({
-        where: { id: userId },
+        where: { id: user.id },
         data: { pushTokens },
       });
 
       console.log(
-        `[Push] Registered token for user ${userId}: ${token.substring(0, 20)}...`
+        `[Push] Registered token for user ${clerkId}: ${token.substring(0, 20)}...`
       );
     }
 
@@ -69,14 +69,14 @@ export async function POST(req: Request) {
  */
 export async function DELETE(req: Request) {
   try {
-    const userId = await getUserIdFromRequest(req);
+    const clerkId = await getUserIdFromRequest(req);
 
-    if (!userId) {
+    if (!clerkId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { clerkId },
       select: { id: true, pushTokens: true },
     });
 
@@ -97,12 +97,12 @@ export async function DELETE(req: Request) {
     const pushTokens = (user.pushTokens || []).filter((t) => t !== token);
 
     await prisma.user.update({
-      where: { id: userId },
+      where: { id: user.id },
       data: { pushTokens },
     });
 
     console.log(
-      `[Push] Unregistered token for user ${userId}: ${token.substring(0, 20)}...`
+      `[Push] Unregistered token for user ${clerkId}: ${token.substring(0, 20)}...`
     );
 
     return NextResponse.json({ success: true });
