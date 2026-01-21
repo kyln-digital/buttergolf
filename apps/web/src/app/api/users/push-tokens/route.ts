@@ -14,6 +14,8 @@ import { getUserIdFromRequest } from "@/lib/auth";
  */
 export async function POST(req: Request) {
   try {
+    // Note: getUserIdFromRequest returns Clerk's userId, which we store as clerkId in our database.
+    // Using the variable name 'clerkId' clarifies that this value maps to the User.clerkId column.
     const clerkId = await getUserIdFromRequest(req);
 
     if (!clerkId) {
@@ -69,6 +71,8 @@ export async function POST(req: Request) {
  */
 export async function DELETE(req: Request) {
   try {
+    // Note: getUserIdFromRequest returns Clerk's userId, which we store as clerkId in our database.
+    // Using the variable name 'clerkId' clarifies that this value maps to the User.clerkId column.
     const clerkId = await getUserIdFromRequest(req);
 
     if (!clerkId) {

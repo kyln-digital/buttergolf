@@ -116,7 +116,9 @@ export function useSellerStatus({
       if (!token) {
         console.log("[useSellerStatus] No token, returning default status");
         setStatus(DEFAULT_STATUS);
-        // Don't return early - let finally block reset fetchingRef
+        // Reset guards before early return since we won't reach finally block
+        setIsLoading(false);
+        fetchingRef.current = false;
         return;
       }
 
