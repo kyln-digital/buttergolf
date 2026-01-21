@@ -2,7 +2,7 @@
 
 import { type ReactNode } from "react";
 import { Moon, Sun, Monitor } from "@tamagui/lucide-icons";
-import { XStack, YStack, Text as TamaguiText, Button, styled, type GetProps } from "tamagui";
+import { XStack, SizableText, Button, styled, type GetProps } from "tamagui";
 import { useTheme, type ThemeMode } from "@buttergolf/app/src/hooks/useTheme";
 
 /**
@@ -19,8 +19,8 @@ const Row = styled(XStack, {
   name: "ThemeSwitcherRow",
 });
 
-// Styled text using TamaguiText
-const Text = styled(TamaguiText, {
+// Styled text using SizableText (has proper size prop)
+const Text = styled(SizableText, {
   name: "ThemeSwitcherText",
 });
 
@@ -129,7 +129,7 @@ export function ThemeSwitcher({
             />
             {showLabels && (
               <Text
-                fontSize="$4"
+                size="$4"
                 color={isActive ? "$textInverse" : "$text"}
                 fontWeight={isActive ? "600" : "400"}
               >

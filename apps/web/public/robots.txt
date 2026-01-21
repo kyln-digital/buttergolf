@@ -10,4 +10,4 @@ Host: https://www.buttergolf.com
 
 # Sitemaps
 Sitemap: https://www.buttergolf.com/sitemap.xml
-Sitemap: https://buttergolf.com/server-sitemap.xml
+Sitemap: https://www.buttergolf.com/server-sitemap.xml
