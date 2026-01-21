@@ -14,6 +14,8 @@ export * from "./navigation";
 
 export * from "./provider";
 
+export * from "./hooks";
+
 export * from "./types/product";
 export * from "./components/ProductCard";
 export * from "./components/Hero";

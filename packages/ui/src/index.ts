@@ -11,8 +11,6 @@ export * from "tamagui";
 // Button Components
 export { Button } from "./components/Button";
 export type { ButtonProps } from "./components/Button";
-export { AuthButton } from "./components/AuthButton";
-export type { AuthButtonProps } from "./components/AuthButton";
 export { BuySellToggle } from "./components/BuySellToggle";
 export type {
   BuySellToggleProps,
@@ -155,3 +153,10 @@ export {
   AdaptContents,
 } from "./components/Popover";
 export type { PopoverProps, PopoverSheetProps } from "./components/Popover";
+
+// Theme Components
+export { ThemeSwitcher, ThemeToggleButton } from "./components/ThemeSwitcher";
+export type {
+  ThemeSwitcherProps,
+  ThemeToggleButtonProps,
+} from "./components/ThemeSwitcher";

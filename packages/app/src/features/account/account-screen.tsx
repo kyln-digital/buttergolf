@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { Column, Row, ScrollView, Text, Button, Heading } from "@buttergolf/ui";
+import { Column, Row, ScrollView, Text, Button, Heading, ThemeSwitcher } from "@buttergolf/ui";
 import { Button as TamaguiButton, Avatar, Image } from "tamagui";
-import { ArrowLeft, LogOut } from "@tamagui/lucide-icons";
+import { ArrowLeft, LogOut, Palette } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface UserData {
@@ -109,8 +109,29 @@ export function AccountScreen({
           )}
         </Column>
 
-        {/* Sign Out Button */}
+        {/* Settings Section */}
         <Column paddingTop="$8" gap="$4">
+          {/* Theme Switcher */}
+          <Column
+            backgroundColor="$surface"
+            borderRadius="$lg"
+            borderWidth={1}
+            borderColor="$border"
+            padding="$4"
+            gap="$3"
+          >
+            <Row alignItems="center" gap="$2">
+              <Palette size={20} color="$text" />
+              <Text size="$5" fontWeight="600" color="$text">
+                Appearance
+              </Text>
+            </Row>
+            <ThemeSwitcher showLabels />
+          </Column>
+        </Column>
+
+        {/* Sign Out Button */}
+        <Column paddingTop="$6" gap="$4">
           <Button
             size="$5"
             backgroundColor="$surface"

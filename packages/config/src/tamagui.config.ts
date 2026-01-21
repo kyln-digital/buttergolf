@@ -454,6 +454,8 @@ const lightTheme = {
   primaryPress: brandColors.spicedClementinePress,
   primaryFocus: brandColors.spicedClementine,
   primaryLight: brandColors.vanillaCream,
+  // Subtle primary for hover backgrounds (10% opacity)
+  primarySubtle: "rgba(244, 83, 20, 0.1)",
 
   // Secondary brand color (Burnt Olive)
   secondary: brandColors.burntOlive,
@@ -542,12 +544,16 @@ const darkTheme = {
   primaryPress: brandColors.spicedClementinePress,
   primaryFocus: brandColors.spicedClementine,
   primaryLight: brandColors.ironstone,
+  // Subtle primary for hover backgrounds (15% on dark for visibility)
+  primarySubtle: "rgba(244, 83, 20, 0.15)",
 
   secondary: brandColors.lemonHaze,
   secondaryHover: brandColors.lemonHazeHover,
   secondaryPress: brandColors.lemonHazePress,
   secondaryFocus: brandColors.lemonHaze,
   secondaryLight: brandColors.ironstone,
+  // Softer border for cream buttons on dark background (Burnt Olive instead of pure black)
+  secondaryBorder: brandColors.burntOlive,
 
   success: brandColors.successBase,
   successLight: brandColors.ironstone,

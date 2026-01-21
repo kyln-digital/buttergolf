@@ -1,49 +1,72 @@
 "use client";
 
-// Reset CSS is included in config.getCSS() output below
-// import "@tamagui/core/reset.css"; // Commented out - causes webpack resolution issues in Next.js
+/**
+ * NextTamaguiProvider - Official Tamagui theme switching for Next.js App Router
+ *
+ * Uses @tamagui/next-theme as recommended in Tamagui docs:
+ * https://tamagui.dev/docs/guides/next-js#themes
+ *
+ * Features:
+ * - SSR-safe theme switching (NextThemeProvider handles hydration)
+ * - System color scheme detection
+ * - Theme persistence via localStorage (built into NextThemeProvider)
+ * - Theme toggle UI via useThemeSetting() hook
+ */
+
 import "@tamagui/polyfill-dev";
 
-import type { ReactNode } from "react";
+import { type ReactNode } from "react";
+import { StyleSheet } from "react-native";
 import { useServerInsertedHTML } from "next/navigation";
+import { NextThemeProvider, useRootTheme } from "@tamagui/next-theme";
+import { TamaguiProvider } from "tamagui";
 import { config } from "@buttergolf/config";
 
-import { Provider } from "./Provider";
-
 /**
- * Tamagui Provider for Next.js App Router
- * Fixed to light theme for v1 - theme switching disabled
- * 
- * TODO: Properly design and test light/dark theme variants
- * - Design dark theme colors in Figma matching brand identity
- * - Update tamagui.config.ts with proper dark theme tokens
- * - Test all components in both themes for readability/contrast
- * - Re-enable NextThemeProvider with useRootTheme() pattern:
- *   ```
- *   <NextThemeProvider skipNextHead defaultTheme="system">
- *     <TamaguiThemeProvider>{children}</TamaguiThemeProvider>
- *   </NextThemeProvider>
- *   ```
- * - Add theme toggle UI component in header/settings
+ * Inner provider that uses useRootTheme inside NextThemeProvider context
+ * This fixes the circular dependency issue where useRootTheme must be
+ * called within the NextThemeProvider's tree.
  */
+function TamaguiProviderInner({ children }: { children: ReactNode }) {
+  // useRootTheme MUST be inside NextThemeProvider's children
+  const [theme] = useRootTheme();
+
+  return (
+    <TamaguiProvider
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      config={config as any}
+      defaultTheme={theme}
+      disableRootThemeClass // NextThemeProvider handles the class
+    >
+      {children}
+    </TamaguiProvider>
+  );
+}
+
 export function NextTamaguiProvider({
   children,
 }: Readonly<{ children: ReactNode }>) {
+  // Inject styles for SSR (react-native-web components)
   useServerInsertedHTML(() => {
+    // @ts-ignore - RN doesn't have this type but it exists at runtime
+    const rnwStyle = StyleSheet.getSheet();
     return (
       <>
-        <link rel="stylesheet" href="/tamagui.css" />
+        {/* Prevent theme flash on load by hiding until JS runs */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `document.documentElement.classList.add('t_unmounted')`,
+          }}
+        />
+        <style
+          dangerouslySetInnerHTML={{ __html: rnwStyle.textContent }}
+          id={rnwStyle.id}
+        />
         <style
           dangerouslySetInnerHTML={{
             __html: config.getCSS({
-              exclude: "design-system",
+              exclude: process.env.NODE_ENV === "production" ? "design-system" : null,
             }),
-          }}
-        />
-        <script
-          dangerouslySetInnerHTML={{
-            // avoid flash of animated things on enter:
-            __html: `document.documentElement.classList.add('t_unmounted')`,
           }}
         />
       </>
@@ -51,12 +74,12 @@ export function NextTamaguiProvider({
   });
 
   return (
-    <Provider
-      defaultTheme="light"
-      disableInjectCSS  // CSS already injected via useServerInsertedHTML
-      disableRootThemeClass  // Prevent hydration mismatch from theme class
+    <NextThemeProvider
+      skipNextHead // Required for App Router
+      enableSystem // Enable system preference detection
+      defaultTheme="system" // Default to system preference
     >
-      {children}
-    </Provider>
+      <TamaguiProviderInner>{children}</TamaguiProviderInner>
+    </NextThemeProvider>
   );
 }

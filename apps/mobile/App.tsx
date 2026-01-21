@@ -1,5 +1,6 @@
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, DarkTheme, DefaultTheme, Theme as NavigationTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { brandColors } from "@buttergolf/constants";
 import {
   Provider,
   RoundsScreen,
@@ -42,6 +43,7 @@ import {
   Pressable as RNPressable,
   Alert,
   Platform,
+  useColorScheme,
 } from "react-native";
 import { ClerkProvider, SignedIn, SignedOut, useAuth, useUser } from "@clerk/clerk-expo";
 import { StripeProvider } from "@stripe/stripe-react-native";
@@ -1419,8 +1421,53 @@ function PushTokenRegistration() {
   return null; // This component doesn't render anything
 }
 
+/**
+ * Custom navigation theme that matches ButterGolf brand colors
+ * Based on React Navigation's DefaultTheme/DarkTheme
+ * 
+ * Uses shared brand colors from @buttergolf/constants for single source of truth.
+ * @see packages/constants/src/brandColors.ts
+ */
+const LightNavigationTheme: NavigationTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: brandColors.spicedClementine,
+    background: brandColors.vanillaCream,
+    card: brandColors.pureWhite,
+    text: brandColors.ironstone,
+    border: brandColors.cloudMist,
+    notification: brandColors.spicedClementine,
+  },
+};
+
+/**
+ * Dark navigation theme
+ * Uses shared brand colors from @buttergolf/constants.
+ */
+const DarkNavigationTheme: NavigationTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: brandColors.spicedClementine,
+    background: brandColors.burntOlive,
+    card: brandColors.burntOliveLight,
+    text: brandColors.pureWhite,
+    border: brandColors.darkBorder,
+    notification: brandColors.spicedClementine,
+  },
+};
+
 export default function App() {
   const FORCE_MINIMAL = false; // back to normal app rendering
+
+  // Official Tamagui/Expo pattern: use React Native's useColorScheme()
+  // This follows system preference automatically (app.json has userInterfaceStyle: "automatic")
+  const colorScheme = useColorScheme();
+  
+  // Validate colorScheme and default to 'light' if null/undefined
+  const validColorScheme = colorScheme === 'dark' ? 'dark' : 'light';
+  const navigationTheme = validColorScheme === 'dark' ? DarkNavigationTheme : LightNavigationTheme;
 
   // Load Urbanist font weights for React Native using expo-google-fonts
   const [fontsLoaded] = useFonts({
@@ -1569,11 +1616,11 @@ export default function App() {
           tokenCache={tokenCache}
           publishableKey={clerkPublishableKey}
         >
-        {/* Wrap app content in Tamagui Provider so SignedOut onboarding can use UI components */}
-        <Provider>
+        {/* Official Tamagui Expo pattern: use useColorScheme() for theme */}
+        <Provider defaultTheme={validColorScheme}>
           <SignedIn>
             <PushTokenRegistration />
-            <NavigationContainer linking={linking}>
+            <NavigationContainer linking={linking} theme={navigationTheme}>
               <Stack.Navigator screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="Home">
                   {({ navigation }: { navigation: any }) => (
@@ -1734,7 +1781,7 @@ export default function App() {
           </SignedIn>
           <SignedOut>
             {/* Render the designed onboarding screen (animations currently disabled for stability) */}
-            <NavigationContainer linking={linking}>
+            <NavigationContainer linking={linking} theme={navigationTheme}>
               <OnboardingFlow />
             </NavigationContainer>
           </SignedOut>
