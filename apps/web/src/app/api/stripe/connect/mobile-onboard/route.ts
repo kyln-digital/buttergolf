@@ -63,8 +63,8 @@ export async function POST(request: Request) {
         );
 
         // Check if account was deleted from Stripe
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((existingAccount as any).deleted) {
+        // @ts-expect-error - Stripe API may return 'deleted: true' on deleted accounts, but this isn't in the TypeScript types
+        if (existingAccount.deleted) {
           console.log(
             `[Stripe Mobile Onboard] Account ${stripeAccountId} was deleted, clearing from database`
           );
@@ -75,6 +75,9 @@ export async function POST(request: Request) {
               stripeConnectId: null,
               stripeOnboardingComplete: false,
               stripeAccountStatus: null,
+              stripeAccountType: null,
+              stripeRequirementsDeadline: null,
+              stripeRequirementsDue: null,
             },
           });
         }
@@ -90,6 +93,9 @@ export async function POST(request: Request) {
             stripeConnectId: null,
             stripeOnboardingComplete: false,
             stripeAccountStatus: null,
+            stripeAccountType: null,
+            stripeRequirementsDeadline: null,
+            stripeRequirementsDue: null,
           },
         });
       }

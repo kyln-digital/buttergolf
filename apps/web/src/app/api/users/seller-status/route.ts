@@ -115,13 +115,16 @@ export async function GET(request: Request) {
         stripeError
       );
 
-      // Clear invalid account from database
+      // Clear invalid account from database (including all Stripe-related fields)
       await prisma.user.update({
         where: { id: user.id },
         data: {
           stripeConnectId: null,
           stripeOnboardingComplete: false,
           stripeAccountStatus: null,
+          stripeAccountType: null,
+          stripeRequirementsDeadline: null,
+          stripeRequirementsDue: null,
         },
       });
 

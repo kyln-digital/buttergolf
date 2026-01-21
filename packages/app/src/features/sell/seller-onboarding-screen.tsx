@@ -125,7 +125,7 @@ export function SellerOnboardingScreen({
           justifyContent="center"
           marginBottom="$md"
         >
-          <Text fontSize={48}>💰</Text>
+          <Text size="$13">💰</Text>
         </View>
 
         {/* Title */}

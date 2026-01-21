@@ -6,9 +6,25 @@ import { useSellerStatus } from "@buttergolf/app/src/hooks";
 import { SellerOnboardingScreen, SellScreen } from "@buttergolf/app";
 import type { SellFormData, ImageData, Category, Brand, Model } from "@buttergolf/app";
 
+/**
+ * Navigation interface for SellerOnboardingGate.
+ * Defines the minimum navigation methods required.
+ */
+interface SellerOnboardingNavigation {
+  /**
+   * Navigate to a route by name. The params type is intentionally broad here,
+   * as this component is navigation-library agnostic beyond needing `navigate`.
+   */
+  navigate: (routeName: string, params?: unknown) => void;
+  /** Go back to the previous screen */
+  goBack: () => void;
+  /** Add a listener for navigation events */
+  addListener: (event: string, callback: () => void) => () => void;
+}
+
 export interface SellerOnboardingGateProps {
   /** Navigation object from React Navigation */
-  navigation: any;
+  navigation: SellerOnboardingNavigation;
   /** Callback to upload an image to Cloudinary */
   onUploadImage: (image: ImageData, isFirstImage: boolean) => Promise<string>;
   /** Callback to pick images from gallery */
@@ -57,6 +73,15 @@ export function SellerOnboardingGate({
     apiUrl,
     getToken,
     isAuthenticated: true,
+  });
+
+  // Debug logging
+  console.log("[SellerOnboardingGate] Render:", {
+    apiUrl,
+    isLoading,
+    error,
+    status,
+    isReadyToSell: status?.isReadyToSell,
   });
 
   // Track if we're waiting for Stripe onboarding return
@@ -137,11 +162,19 @@ export function SellerOnboardingGate({
       const url = event.url;
       console.log("[SellerOnboardingGate] Deep link received:", url);
 
-      if (url.includes("seller/onboarding/complete")) {
+      // Use precise URL matching to avoid false positives
+      const isOnboardingComplete =
+        url === "buttergolf://seller/onboarding/complete" ||
+        url.startsWith("buttergolf://seller/onboarding/complete?");
+      const isOnboardingRefresh =
+        url === "buttergolf://seller/onboarding/refresh" ||
+        url.startsWith("buttergolf://seller/onboarding/refresh?");
+
+      if (isOnboardingComplete) {
         console.log("[SellerOnboardingGate] Onboarding complete, refreshing status");
         refresh();
         setAwaitingReturn(false);
-      } else if (url.includes("seller/onboarding/refresh")) {
+      } else if (isOnboardingRefresh) {
         console.log("[SellerOnboardingGate] Onboarding refresh requested");
         refresh();
         setAwaitingReturn(false);

@@ -124,6 +124,13 @@ const linking = {
       Sell: {
         path: routes.sell.slice(1), // 'sell'
       },
+      // Seller onboarding deep link routes (handled by SellerOnboardingGate)
+      SellerOnboardingComplete: {
+        path: "seller/onboarding/complete",
+      },
+      SellerOnboardingRefresh: {
+        path: "seller/onboarding/refresh",
+      },
       SignIn: {
         path: routes.signIn.slice(1), // 'sign-in'
       },
