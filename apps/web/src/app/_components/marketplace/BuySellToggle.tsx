@@ -27,7 +27,7 @@ export function BuySellToggle({
       justifyContent="center"
       paddingVertical="$lg"
       paddingHorizontal="$md"
-      backgroundColor="$pureWhite"
+      backgroundColor="$surface"
     >
       <SharedBuySellToggle
         activeMode={activeMode}

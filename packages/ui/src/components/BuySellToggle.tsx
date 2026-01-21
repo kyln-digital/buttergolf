@@ -61,9 +61,9 @@ const StyledTab = styled(Tabs.Tab, {
   // Disable Tamagui's default tab unstyled prop
   unstyled: true,
 
-  // Default inactive state - use explicit colors to avoid conflicts
-  backgroundColor: "#FFFFFF",
-  borderColor: "#EDEDED",
+  // Default inactive state - use semantic tokens for dark mode support
+  backgroundColor: "$surface",
+  borderColor: "$border",
 
   // Web shadows for inactive
   // @ts-ignore - boxShadow only exists on web
@@ -71,7 +71,7 @@ const StyledTab = styled(Tabs.Tab, {
 
   hoverStyle: {
     opacity: 0.9,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: "$backgroundHover",
   },
 
   pressStyle: {
@@ -105,12 +105,12 @@ const StyledTab = styled(Tabs.Tab, {
         },
       },
       false: {
-        backgroundColor: "#FFFFFF",
-        borderColor: "#EDEDED",
+        backgroundColor: "$surface",
+        borderColor: "$border",
         // @ts-ignore - boxShadow only exists on web
         boxShadow: "0px 1px 5px 0px rgba(0, 0, 0, 0.1)",
         hoverStyle: {
-          backgroundColor: "#FAFAFA",
+          backgroundColor: "$backgroundHover",
           opacity: 0.95,
         },
       },
@@ -200,7 +200,7 @@ export function BuySellToggle({
           <SizableText
             size="$5"
             fontWeight={activeMode === "buying" ? "600" : "500"}
-            color={activeMode === "buying" ? "#FFFFFF" : "#323232"}
+            color={activeMode === "buying" ? "$textInverse" : "$text"}
           >
             Buying
           </SizableText>
@@ -215,7 +215,7 @@ export function BuySellToggle({
           <SizableText
             size="$5"
             fontWeight={activeMode === "selling" ? "600" : "500"}
-            color={activeMode === "selling" ? "#FFFFFF" : "#323232"}
+            color={activeMode === "selling" ? "$textInverse" : "$text"}
           >
             Selling
           </SizableText>
