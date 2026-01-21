@@ -102,15 +102,31 @@ export async function POST(request: Request) {
     }
 
     // 4. Create NEW Stripe Connect account if needed
-    // For mobile, we use Express accounts with hosted onboarding
+    // Use same account type as web (controller-based) for consistency
+    // Mobile uses hosted onboarding via account links, but same account structure
     if (!stripeAccountId) {
       const account = await stripe.accounts.create({
-        type: "express",
         country: "GB",
         email: user.email || undefined,
         capabilities: {
           card_payments: { requested: true },
           transfers: { requested: true },
+        },
+        controller: {
+          // Fully embedded - no Stripe Dashboard access for connected accounts
+          stripe_dashboard: {
+            type: "none",
+          },
+          // Platform controls requirement collection
+          requirement_collection: "application",
+          // Platform is liable for negative balances (chargebacks, fraud)
+          losses: {
+            payments: "application",
+          },
+          // Platform pays Stripe fees and charges sellers via application_fee
+          fees: {
+            payer: "application",
+          },
         },
         business_type: "individual",
         individual: {
@@ -138,7 +154,7 @@ export async function POST(request: Request) {
 
       stripeAccountId = account.id;
       console.log(
-        `[Stripe Mobile Onboard] Created new Express account ${stripeAccountId} for user ${user.id}`
+        `[Stripe Mobile Onboard] Created new account ${stripeAccountId} for user ${user.id}`
       );
 
       // Save to database
@@ -146,17 +162,18 @@ export async function POST(request: Request) {
         where: { id: user.id },
         data: {
           stripeConnectId: stripeAccountId,
-          stripeAccountType: "express",
+          stripeAccountType: "fully_embedded",
         },
       });
     }
 
     // 5. Create Account Link for hosted onboarding
-    // Deep link URLs for return to app
+    // Stripe requires HTTPS URLs, so we use web pages that redirect to deep links
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.buttergolf.com";
     const accountLink = await stripe.accountLinks.create({
       account: stripeAccountId,
-      refresh_url: "buttergolf://seller/onboarding/refresh",
-      return_url: "buttergolf://seller/onboarding/complete",
+      refresh_url: `${baseUrl}/seller/onboarding/refresh`,
+      return_url: `${baseUrl}/seller/onboarding/complete`,
       type: "account_onboarding",
       collect: "eventually_due",
     });
