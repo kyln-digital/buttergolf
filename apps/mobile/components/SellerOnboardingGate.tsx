@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Alert, Linking } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import { useAuth } from "@clerk/clerk-expo";
@@ -86,6 +86,12 @@ export function SellerOnboardingGate({
 
   // Track if we're waiting for Stripe onboarding return
   const [awaitingReturn, setAwaitingReturn] = useState(false);
+  
+  // Track if we've already processed the initial URL.
+  // Note: This ref is intentionally never reset, even if this component unmounts
+  // and remounts, so that we only handle the initial deep link once per app
+  // launch/session and avoid processing the same deep link multiple times.
+  const initialUrlChecked = useRef(false);
 
   /**
    * Start or continue Stripe onboarding via hosted flow
@@ -184,12 +190,17 @@ export function SellerOnboardingGate({
     // Listen for deep links
     const subscription = Linking.addEventListener("url", handleDeepLink);
 
-    // Also check if the app was opened with a deep link
-    Linking.getInitialURL().then((url) => {
-      if (url) {
-        handleDeepLink({ url });
-      }
-    });
+    // Check if the app was opened with a deep link - only process once
+    // This prevents the loop where re-renders cause repeated getInitialURL calls
+    if (!initialUrlChecked.current) {
+      initialUrlChecked.current = true;
+      Linking.getInitialURL().then((url) => {
+        if (url) {
+          console.log("[SellerOnboardingGate] Processing initial URL (once):", url);
+          handleDeepLink({ url });
+        }
+      });
+    }
 
     return () => {
       subscription.remove();

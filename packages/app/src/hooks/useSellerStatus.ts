@@ -79,6 +79,8 @@ export function useSellerStatus({
   // Use refs for functions to avoid them triggering useEffect reruns
   const getTokenRef = useRef(getToken);
   const apiUrlRef = useRef(apiUrl);
+  // Guard to prevent concurrent fetches (fixes loop when multiple triggers fire)
+  const fetchingRef = useRef(false);
 
   // Keep refs updated
   useEffect(() => {
@@ -87,14 +89,22 @@ export function useSellerStatus({
   });
 
   const fetchStatus = useCallback(async () => {
-    console.log("[useSellerStatus] fetchStatus called, isAuthenticated:", isAuthenticated, "apiUrl:", apiUrl);
+    console.log("[useSellerStatus] fetchStatus called, isAuthenticated:", isAuthenticated);
     
+    // Handle unauthenticated case before setting the fetching guard
     if (!isAuthenticated) {
       console.log("[useSellerStatus] Not authenticated, returning default status");
       setStatus(DEFAULT_STATUS);
       setIsLoading(false);
       return;
     }
+
+    // Prevent concurrent fetches - this is the key fix for the loop
+    if (fetchingRef.current) {
+      console.log("[useSellerStatus] fetchStatus skipped - already fetching");
+      return;
+    }
+    fetchingRef.current = true;
 
     try {
       setIsLoading(true);
@@ -106,7 +116,7 @@ export function useSellerStatus({
       if (!token) {
         console.log("[useSellerStatus] No token, returning default status");
         setStatus(DEFAULT_STATUS);
-        setIsLoading(false);
+        // Don't return early - let finally block reset fetchingRef
         return;
       }
 
@@ -135,6 +145,7 @@ export function useSellerStatus({
       setStatus(DEFAULT_STATUS);
     } finally {
       setIsLoading(false);
+      fetchingRef.current = false;
     }
   }, [isAuthenticated]); // Only depend on isAuthenticated, use refs for apiUrl and getToken
 
