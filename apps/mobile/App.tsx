@@ -1,5 +1,6 @@
 import { NavigationContainer, DarkTheme, DefaultTheme, Theme as NavigationTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { brandColors } from "@buttergolf/constants";
 import {
   Provider,
   RoundsScreen,
@@ -1424,41 +1425,36 @@ function PushTokenRegistration() {
  * Custom navigation theme that matches ButterGolf brand colors
  * Based on React Navigation's DefaultTheme/DarkTheme
  * 
- * Note: React Navigation requires hex values, so we reference our brand tokens:
- * - primary: $spicedClementine (#F45314)
- * - background: $vanillaCream (#FFFAD2)
- * - card: $pureWhite (#FFFFFF)
- * - text: $ironstone (#323232)
- * - border: $cloudMist (#EDEDED)
+ * Uses shared brand colors from @buttergolf/constants for single source of truth.
+ * @see packages/constants/src/brandColors.ts
  */
 const LightNavigationTheme: NavigationTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    primary: '#F45314', // $spicedClementine
-    background: '#FFFAD2', // $vanillaCream
-    card: '#FFFFFF', // $pureWhite
-    text: '#323232', // $ironstone
-    border: '#EDEDED', // $cloudMist
-    notification: '#F45314', // $spicedClementine
+    primary: brandColors.spicedClementine,
+    background: brandColors.vanillaCream,
+    card: brandColors.pureWhite,
+    text: brandColors.ironstone,
+    border: brandColors.cloudMist,
+    notification: brandColors.spicedClementine,
   },
 };
 
 /**
  * Dark navigation theme
- * - background: $burntOlive (#3E3B2C)
- * - text: $pureWhite (#FFFFFF)
+ * Uses shared brand colors from @buttergolf/constants.
  */
 const DarkNavigationTheme: NavigationTheme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
-    primary: '#F45314', // $spicedClementine
-    background: '#3E3B2C', // $burntOlive
-    card: '#4A473A', // Slightly lighter $burntOlive
-    text: '#FFFFFF', // $pureWhite
-    border: '#5A5749', // Lighter border for dark mode
-    notification: '#F45314', // $spicedClementine
+    primary: brandColors.spicedClementine,
+    background: brandColors.burntOlive,
+    card: brandColors.burntOliveLight,
+    text: brandColors.pureWhite,
+    border: brandColors.darkBorder,
+    notification: brandColors.spicedClementine,
   },
 };
 

@@ -33,20 +33,12 @@ export function useTheme(): UseThemeResult {
     resolvedTheme,
     toggle: () => {
       // On mobile, theme is controlled by system settings
-      // This is intentionally a no-op
-      if (process.env.NODE_ENV !== "production") {
-        console.info(
-          "[useTheme] toggle called on mobile - theme is system-controlled. " +
-            "Users can change theme in device Settings > Display."
-        );
-      }
+      // UI components using canToggle should hide themselves,
+      // so this should rarely be called. No-op by design.
     },
     setMode: () => {
-      // Same as toggle - system controlled
-      if (process.env.NODE_ENV !== "production") {
-        console.info("[useTheme] setMode called on mobile - theme is system-controlled.");
-      }
+      // Same as toggle - system controlled, no-op by design
     },
-    canToggle: false, // Mobile follows system
+    canToggle: false, // Mobile follows system - UI should check this and hide toggle controls
   };
 }
