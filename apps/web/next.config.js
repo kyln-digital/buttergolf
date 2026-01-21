@@ -178,6 +178,15 @@ module.exports = () => {
         "@buttergolf/config": resolve(__dirname, "../../packages/config/src/tamagui.config.ts"),
       };
 
+      // Add .web.ts/.web.tsx extensions for platform-specific files (React Native pattern)
+      // This enables hooks like useTheme to have web-specific implementations
+      webpackConfig.resolve.extensions = [
+        ".web.tsx",
+        ".web.ts",
+        ".web.js",
+        ...webpackConfig.resolve.extensions,
+      ];
+
       return webpackConfig;
     },
   };

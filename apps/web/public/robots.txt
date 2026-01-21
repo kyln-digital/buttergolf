@@ -6,8 +6,8 @@ Disallow: /sign-in
 Disallow: /sign-up
 
 # Host
-Host: https://buttergolf.com
+Host: https://www.buttergolf.com
 
 # Sitemaps
-Sitemap: https://buttergolf.com/sitemap.xml
+Sitemap: https://www.buttergolf.com/sitemap.xml
 Sitemap: https://buttergolf.com/server-sitemap.xml
