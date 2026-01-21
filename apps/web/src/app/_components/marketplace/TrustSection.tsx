@@ -33,7 +33,7 @@ const TRUST_ITEMS = [
 
 export function TrustSection() {
   return (
-    <Column backgroundColor="$cloudMist" paddingVertical="$10" width="100%">
+    <Column backgroundColor="$surface" paddingVertical="$10" width="100%">
       <Column
         maxWidth={1280}
         marginHorizontal="auto"
