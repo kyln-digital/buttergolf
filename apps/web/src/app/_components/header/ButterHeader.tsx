@@ -4,13 +4,12 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LazySignedIn, LazySignedOut, LazyUserButton } from "@/components/auth/LazyClerkComponents";
+import { LazySignedIn, LazySignedOut, LazyUserButton, AuthButtonsSection } from "@/components/auth/LazyClerkComponents";
 import { MessageSquare } from "@tamagui/lucide-icons";
 import {
   Row,
   Column,
   Text,
-  AuthButton,
   CategorySelector,
   GlassmorphismCard,
   getGlassmorphismStyles,
@@ -189,45 +188,49 @@ export function ButterHeader() {
               {/* Theme Toggle */}
               <ThemeToggleButton />
 
-              <LazySignedOut>
-                <AuthButton
-                  variant="login"
-                  size="$4"
-                  onPress={() => router.push('/sign-in')}
-                >
-                  Log-in
-                </AuthButton>
-                <AuthButton
-                  variant="signup"
-                  size="$4"
-                  onPress={() => router.push('/sign-up')}
-                >
-                  Sign-up
-                </AuthButton>
-              </LazySignedOut>
-
-              <LazySignedIn>
-                <Link
-                  href="/messages"
-                  style={{ textDecoration: "none" }}
-                  aria-label="Messages"
-                  title="Messages"
-                >
+              <AuthButtonsSection>
+                <LazySignedOut>
                   <Button
-                    chromeless
-                    circular
+                    butterVariant="primary"
                     size="$4"
-                    color={isActive("/messages") ? "$primary" : "$text"}
-                    hoverStyle={{
-                      backgroundColor: "$backgroundHover",
-                    }}
+                    borderRadius="$full"
+                    onPress={() => router.push('/sign-in')}
                   >
-                    <MessageSquare size={20} />
+                    Log-in
                   </Button>
-                </Link>
+                  <Button
+                    butterVariant="tertiary"
+                    size="$4"
+                    borderRadius="$full"
+                    onPress={() => router.push('/sign-up')}
+                  >
+                    Sign-up
+                  </Button>
+                </LazySignedOut>
 
-                <LazyUserButton size="default" />
-              </LazySignedIn>
+                <LazySignedIn>
+                  <Link
+                    href="/messages"
+                    style={{ textDecoration: "none" }}
+                    aria-label="Messages"
+                    title="Messages"
+                  >
+                    <Button
+                      chromeless
+                      circular
+                      size="$4"
+                      color={isActive("/messages") ? "$primary" : "$text"}
+                      hoverStyle={{
+                        backgroundColor: "$backgroundHover",
+                      }}
+                    >
+                      <MessageSquare size={20} />
+                    </Button>
+                  </Link>
+
+                  <LazyUserButton size="default" />
+                </LazySignedIn>
+              </AuthButtonsSection>
             </Row>
 
             {/* Mobile Menu Toggle */}
@@ -393,36 +396,61 @@ export function ButterHeader() {
 
           {/* Mobile Auth Buttons */}
           <Column gap="$3" marginTop="$6">
-            <LazySignedOut>
-              <AuthButton
-                variant="login"
-                size="$5"
-                fullWidth
-                onPress={() => {
-                  router.push('/sign-in');
-                  setMobileMenuOpen(false);
-                }}
-              >
-                Log-in
-              </AuthButton>
-              <AuthButton
-                variant="signup"
-                size="$5"
-                fullWidth
-                onPress={() => {
-                  router.push('/sign-up');
-                  setMobileMenuOpen(false);
-                }}
-              >
-                Sign-up
-              </AuthButton>
-            </LazySignedOut>
+            <AuthButtonsSection
+              placeholder={
+                <Column gap="$3" width="100%">
+                  <div 
+                    style={{ 
+                      width: "100%", 
+                      height: 48, 
+                      borderRadius: 9999, 
+                      backgroundColor: "rgba(244, 83, 20, 0.3)",
+                    }} 
+                  />
+                  <div 
+                    style={{ 
+                      width: "100%", 
+                      height: 48, 
+                      borderRadius: 9999, 
+                      backgroundColor: "rgba(237, 237, 237, 0.5)",
+                    }} 
+                  />
+                </Column>
+              }
+            >
+              <LazySignedOut>
+                <Button
+                  butterVariant="primary"
+                  size="$5"
+                  width="100%"
+                  borderRadius="$full"
+                  onPress={() => {
+                    router.push('/sign-in');
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  Log-in
+                </Button>
+                <Button
+                  butterVariant="tertiary"
+                  size="$5"
+                  width="100%"
+                  borderRadius="$full"
+                  onPress={() => {
+                    router.push('/sign-up');
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  Sign-up
+                </Button>
+              </LazySignedOut>
 
-            <LazySignedIn>
-              <Row justifyContent="center" paddingVertical="$4">
-                <LazyUserButton size="large" />
-              </Row>
-            </LazySignedIn>
+              <LazySignedIn>
+                <Row justifyContent="center" paddingVertical="$4">
+                  <LazyUserButton size="large" />
+                </Row>
+              </LazySignedIn>
+            </AuthButtonsSection>
           </Column>
         </Column>
       )}
