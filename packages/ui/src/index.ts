@@ -11,8 +11,6 @@ export * from "tamagui";
 // Button Components
 export { Button } from "./components/Button";
 export type { ButtonProps } from "./components/Button";
-export { AuthButton } from "./components/AuthButton";
-export type { AuthButtonProps } from "./components/AuthButton";
 export { BuySellToggle } from "./components/BuySellToggle";
 export type {
   BuySellToggleProps,

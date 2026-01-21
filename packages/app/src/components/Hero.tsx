@@ -423,35 +423,13 @@ function HeroCTAButtons({ primaryCta, secondaryCta }: HeroCTAButtonsProps) {
 
   if (!primaryCta && !secondaryCta) return null;
 
-  // Define button styling inline to avoid butterVariant prop warning
-  const primaryButtonProps = {
-    size: "$5" as const,
-    paddingHorizontal: "$4" as const,
-    paddingVertical: "$3" as const,
-    $gtSm: { size: "$4" as const, paddingHorizontal: "$3" as const, paddingVertical: "$2" as const },
-    backgroundColor: "$primary" as const,
-    borderWidth: 1,
-    borderColor: "$primaryBorder" as const,
-    color: "$textInverse" as const,
-  };
-
-  const secondaryButtonProps = {
-    size: "$5" as const,
-    paddingHorizontal: "$4" as const,
-    paddingVertical: "$3" as const,
-    $gtSm: { size: "$4" as const, paddingHorizontal: "$3" as const, paddingVertical: "$2" as const },
-    backgroundColor: "$secondary" as const,
-    borderWidth: 1,
-    borderColor: "$secondaryBorder" as const,
-    color: "$textInverse" as const,
-  };
-
   return (
     <Row gap="$md" flexWrap="wrap" marginTop="$4" justifyContent="center" $gtSm={{ justifyContent: "flex-start" }}>
       {primaryCta && (
         <Button
           butterVariant="primary"
-          {...primaryButtonProps}
+          size="$5"
+          $gtSm={{ size: "$4" }}
           onPress={primaryLink.onPress}
           accessibilityRole="link"
         >
@@ -461,7 +439,8 @@ function HeroCTAButtons({ primaryCta, secondaryCta }: HeroCTAButtonsProps) {
       {secondaryCta && (
         <Button
           butterVariant="secondary"
-          {...secondaryButtonProps}
+          size="$5"
+          $gtSm={{ size: "$4" }}
           onPress={secondaryLink.onPress}
           accessibilityRole="link"
         >

@@ -30,7 +30,7 @@ import { Platform } from "react-native";
  * Web: Combines drop shadow + inner shadow via boxShadow
  * Mobile: Only drop shadow via shadowColor/shadowOffset/shadowRadius/elevation
  */
-const getButtonShadow = (variant: "primary" | "secondary") => {
+const getButtonShadow = (variant: "primary" | "secondary" | "tertiary") => {
   const baseShadow = {
     shadowColor: "rgba(0, 0, 0, 0.25)" as const,
     shadowOffset: { width: 0, height: 1 } as const,
@@ -46,6 +46,18 @@ const getButtonShadow = (variant: "primary" | "secondary") => {
       return {
         ...baseShadow,
         boxShadow: `0px 1px 5px rgba(0,0,0,0.25), inset 0px 2px 2px rgba(244, 83, 20, 0.3)`,
+      };
+    }
+
+    if (variant === "tertiary") {
+      // Tertiary (lighter) shadow
+      // @ts-ignore - boxShadow only exists on web
+      return {
+        shadowColor: "rgba(0, 0, 0, 0.15)" as const,
+        shadowOffset: { width: 0, height: 1 } as const,
+        shadowRadius: 3 as const,
+        elevation: 2 as const,
+        boxShadow: `0px 1px 3px rgba(0, 0, 0, 0.15)`,
       };
     }
 
@@ -119,6 +131,30 @@ const ButtonBase = styled(TamaguiButton, {
           borderColor: "$secondaryFocus",
           outlineColor: "$secondaryFocus",
           outlineWidth: 2,
+        },
+      },
+
+      tertiary: {
+        backgroundColor: "$cloudMist",
+        borderWidth: 0, // No border for pill style
+        color: "$ironstone",
+        ...getButtonShadow("tertiary"),
+
+        hoverStyle: {
+          backgroundColor: "$cloudMist", // Or slightly darker? AuthButton used cloudMist with opacity
+          opacity: 0.85,
+        },
+
+        pressStyle: {
+          backgroundColor: "$cloudMist",
+          opacity: 0.75,
+          scale: 0.98,
+        },
+
+        focusStyle: {
+          backgroundColor: "$cloudMist",
+          borderWidth: 2,
+          borderColor: "$border",
         },
       },
     },
