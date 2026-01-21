@@ -36,6 +36,7 @@ import {
   MakeOfferSheet,
   OffersListScreen,
   OfferDetailScreen,
+  SellerOnboardingGate,
 } from "./components";
 import {
   View as RNView,
@@ -594,7 +595,13 @@ async function uploadImageToCloudinary(
 
 /**
  * Wrapper component for SellScreen that provides the image upload function
- * with access to Clerk authentication.
+ * with access to Clerk authentication and gates behind seller onboarding.
+ *
+ * This wrapper uses SellerOnboardingGate which:
+ * 1. Checks seller status on mount
+ * 2. Shows SellerOnboardingScreen if user hasn't completed Stripe Connect setup
+ * 3. Opens Stripe hosted onboarding flow via expo-web-browser
+ * 4. Shows SellScreen once user is ready to sell
  */
 function SellScreenWrapper({
   navigation,
@@ -615,19 +622,15 @@ function SellScreenWrapper({
   }, [getToken]);
 
   return (
-    <SellScreen
-      isAuthenticated={true}
-      onFetchCategories={fetchCategories}
-      onSearchBrands={searchBrands}
-      onSearchModels={searchModels}
+    <SellerOnboardingGate
+      navigation={navigation}
       onUploadImage={handleUploadImage}
       onPickImages={pickImages}
       onTakePhoto={takePhoto}
       onSubmitListing={handleSubmitListing}
-      onClose={() => navigation.goBack()}
-      onSuccess={(productId) => {
-        navigation.navigate("ProductDetail", { id: productId });
-      }}
+      onFetchCategories={fetchCategories}
+      onSearchBrands={searchBrands}
+      onSearchModels={searchModels}
     />
   );
 }
