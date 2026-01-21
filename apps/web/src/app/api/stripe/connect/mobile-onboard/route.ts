@@ -4,6 +4,10 @@ import { prisma } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
 
 /**
+ * @deprecated This endpoint is no longer used as of the migration to embedded Stripe Connect.
+ * Mobile now uses the unified /api/stripe/connect/account endpoint with native embedded components.
+ * This file is kept for backwards compatibility but can be safely removed in a future release.
+ * 
  * POST /api/stripe/connect/mobile-onboard
  * Creates or retrieves a Stripe Connect account and returns an account link URL
  * for mobile app onboarding via Stripe's hosted onboarding flow.

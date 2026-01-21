@@ -1,10 +1,24 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Alert, Linking } from "react-native";
-import * as WebBrowser from "expo-web-browser";
+import { Alert, StyleSheet, SafeAreaView, View, ActivityIndicator } from "react-native";
 import { useAuth } from "@clerk/clerk-expo";
 import { useSellerStatus } from "@buttergolf/app/src/hooks";
 import { SellerOnboardingScreen, SellScreen } from "@buttergolf/app";
+import {
+  ConnectComponentsProvider,
+  ConnectAccountOnboarding,
+  loadConnectAndInitialize,
+  type StripeConnectInstance,
+} from "@stripe/stripe-react-native";
 import type { SellFormData, ImageData, Category, Brand, Model } from "@buttergolf/app";
+
+// ButterGolf brand colors
+const brandColors = {
+  spicedClementine: "#F45314",
+  vanillaCream: "#FFFAD2",
+  ironstone: "#323232",
+  pureWhite: "#FFFFFF",
+  error: "#dc2626",
+};
 
 /**
  * Navigation interface for SellerOnboardingGate.
@@ -46,14 +60,12 @@ export interface SellerOnboardingGateProps {
  *
  * This component:
  * 1. Checks the user's seller status on mount
- * 2. If not ready to sell, shows SellerOnboardingScreen
- * 3. Handles Stripe Connect onboarding via expo-web-browser
- * 4. Listens for deep link return from Stripe
- * 5. Refreshes status and shows SellScreen when ready
+ * 2. If not ready to sell, shows embedded Stripe Connect onboarding (native modal)
+ * 3. Uses the same API endpoint as web for unified experience
+ * 4. Shows SellScreen when onboarding is complete
  *
- * Deep link URLs:
- * - buttergolf://seller/onboarding/complete - Success return
- * - buttergolf://seller/onboarding/refresh - User cancelled or needs retry
+ * Uses Stripe React Native SDK's native Connect embedded components which
+ * provide a seamless in-app onboarding experience with ButterGolf branding.
  */
 export function SellerOnboardingGate({
   navigation,
@@ -67,6 +79,7 @@ export function SellerOnboardingGate({
 }: SellerOnboardingGateProps) {
   const { getToken } = useAuth();
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+  const publishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
 
   // Seller status hook
   const { status, isLoading, error, refresh } = useSellerStatus({
@@ -75,6 +88,15 @@ export function SellerOnboardingGate({
     isAuthenticated: true,
   });
 
+  // Stripe Connect instance state
+  const [stripeConnectInstance, setStripeConnectInstance] = useState<StripeConnectInstance | null>(null);
+  const [onboardingLoading, setOnboardingLoading] = useState(false);
+  const [onboardingError, setOnboardingError] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  
+  // Track if we've reached the summary step (considered "complete enough")
+  const hasReachedSummaryRef = useRef(false);
+
   // Debug logging
   console.log("[SellerOnboardingGate] Render:", {
     apiUrl,
@@ -82,143 +104,124 @@ export function SellerOnboardingGate({
     error,
     status,
     isReadyToSell: status?.isReadyToSell,
+    showOnboarding,
   });
 
-  // Track if we're waiting for Stripe onboarding return
-  const [awaitingReturn, setAwaitingReturn] = useState(false);
-  
-  // Track if we've already processed the initial URL.
-  // Note: This ref is intentionally never reset, even if this component unmounts
-  // and remounts, so that we only handle the initial deep link once per app
-  // launch/session and avoid processing the same deep link multiple times.
-  const initialUrlChecked = useRef(false);
-
   /**
-   * Start or continue Stripe onboarding via hosted flow
+   * Initialize Stripe Connect instance for embedded onboarding
+   * Uses the same /api/stripe/connect/account endpoint as web
    */
-  const startOnboarding = useCallback(async () => {
+  const initializeOnboarding = useCallback(async () => {
+    if (!publishableKey) {
+      setOnboardingError("Stripe publishable key not configured");
+      return;
+    }
+
     try {
+      setOnboardingLoading(true);
+      setOnboardingError(null);
+
       const token = await getToken();
       if (!token) {
         Alert.alert("Error", "Please sign in to become a seller.");
+        setOnboardingLoading(false);
         return;
       }
 
-      // Call the mobile onboarding API
-      const response = await fetch(`${apiUrl}/api/stripe/connect/mobile-onboard`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
+      // Create the Connect instance with fetchClientSecret callback
+      // This uses the same API endpoint as web for unified experience
+      const instance = loadConnectAndInitialize({
+        publishableKey,
+        fetchClientSecret: async () => {
+          console.log("[SellerOnboardingGate] Fetching client secret...");
+          const response = await fetch(`${apiUrl}/api/stripe/connect/account`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to initialize onboarding");
+          }
+
+          const { clientSecret } = await response.json();
+          console.log("[SellerOnboardingGate] Client secret received");
+          return clientSecret;
+        },
+        appearance: {
+          variables: {
+            colorPrimary: brandColors.spicedClementine,
+            colorBackground: brandColors.pureWhite,
+            colorText: brandColors.ironstone,
+            colorDanger: brandColors.error,
+          },
         },
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to start onboarding");
-      }
-
-      const { url } = await response.json();
-
-      if (!url) {
-        throw new Error("No onboarding URL received");
-      }
-
-      console.log("[SellerOnboardingGate] Opening Stripe onboarding:", url);
-      setAwaitingReturn(true);
-
-      // Open Stripe onboarding in browser
-      // Using openAuthSessionAsync allows automatic return via deep link
-      const result = await WebBrowser.openAuthSessionAsync(
-        url,
-        "buttergolf://seller/onboarding" // Base URL for return matching
-      );
-
-      console.log("[SellerOnboardingGate] WebBrowser result:", result);
-
-      // Handle the result
-      if (result.type === "success") {
-        // User completed or returned from Stripe
-        // Refresh status to check if onboarding is complete
-        await refresh();
-      } else if (result.type === "cancel") {
-        // User manually closed the browser
-        console.log("[SellerOnboardingGate] User cancelled onboarding");
-        // Still refresh in case they completed before closing
-        await refresh();
-      }
-
-      setAwaitingReturn(false);
+      setStripeConnectInstance(instance);
+      setShowOnboarding(true);
+      console.log("[SellerOnboardingGate] Connect instance initialized");
     } catch (err) {
-      console.error("[SellerOnboardingGate] Onboarding error:", err);
-      setAwaitingReturn(false);
+      console.error("[SellerOnboardingGate] Initialization error:", err);
+      setOnboardingError(
+        err instanceof Error ? err.message : "Failed to initialize onboarding"
+      );
       Alert.alert(
         "Onboarding Error",
         err instanceof Error ? err.message : "Failed to start seller onboarding"
       );
+    } finally {
+      setOnboardingLoading(false);
     }
-  }, [apiUrl, getToken, refresh]);
+  }, [apiUrl, getToken, publishableKey]);
 
   /**
-   * Handle deep link events while the screen is mounted
-   * This catches the return from Stripe onboarding
+   * Handle onboarding exit - refresh status and hide modal
    */
-  useEffect(() => {
-    const handleDeepLink = (event: { url: string }) => {
-      const url = event.url;
-      console.log("[SellerOnboardingGate] Deep link received:", url);
-
-      // Use precise URL matching to avoid false positives
-      const isOnboardingComplete =
-        url === "buttergolf://seller/onboarding/complete" ||
-        url.startsWith("buttergolf://seller/onboarding/complete?");
-      const isOnboardingRefresh =
-        url === "buttergolf://seller/onboarding/refresh" ||
-        url.startsWith("buttergolf://seller/onboarding/refresh?");
-
-      if (isOnboardingComplete) {
-        console.log("[SellerOnboardingGate] Onboarding complete, refreshing status");
-        refresh();
-        setAwaitingReturn(false);
-      } else if (isOnboardingRefresh) {
-        console.log("[SellerOnboardingGate] Onboarding refresh requested");
-        refresh();
-        setAwaitingReturn(false);
-      }
-    };
-
-    // Listen for deep links
-    const subscription = Linking.addEventListener("url", handleDeepLink);
-
-    // Check if the app was opened with a deep link - only process once
-    // This prevents the loop where re-renders cause repeated getInitialURL calls
-    if (!initialUrlChecked.current) {
-      initialUrlChecked.current = true;
-      Linking.getInitialURL().then((url) => {
-        if (url) {
-          console.log("[SellerOnboardingGate] Processing initial URL (once):", url);
-          handleDeepLink({ url });
-        }
-      });
-    }
-
-    return () => {
-      subscription.remove();
-    };
+  const handleOnboardingExit = useCallback(async () => {
+    console.log("[SellerOnboardingGate] Onboarding exited");
+    setShowOnboarding(false);
+    setStripeConnectInstance(null);
+    hasReachedSummaryRef.current = false;
+    
+    // Refresh status to check if onboarding is complete
+    await refresh();
   }, [refresh]);
 
-  // Refresh status when screen comes into focus (user might have completed onboarding)
+  /**
+   * Handle step changes during onboarding
+   */
+  const handleStepChange = useCallback((stepChange: { step: string }) => {
+    console.log("[SellerOnboardingGate] Step changed:", stepChange.step);
+    // Track when user reaches summary step
+    if (stepChange.step === "summary" || stepChange.step.startsWith("summary_")) {
+      hasReachedSummaryRef.current = true;
+    }
+  }, []);
+
+  /**
+   * Handle load errors from the embedded component
+   */
+  const handleLoadError = useCallback((err: { error: { message?: string } }) => {
+    const errorMessage = err.error.message || "An error occurred during onboarding";
+    console.error("[SellerOnboardingGate] Load error:", errorMessage);
+    setOnboardingError(errorMessage);
+    Alert.alert("Error", errorMessage);
+  }, []);
+
+  // Refresh status when screen comes into focus
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
-      if (awaitingReturn) {
-        console.log("[SellerOnboardingGate] Screen focused while awaiting, refreshing");
-        refresh();
-        setAwaitingReturn(false);
-      }
+      console.log("[SellerOnboardingGate] Screen focused, refreshing status");
+      refresh();
     });
 
     return unsubscribe;
-  }, [navigation, awaitingReturn, refresh]);
+  }, [navigation, refresh]);
 
   // If user is ready to sell, show the SellScreen
   if (status?.isReadyToSell) {
@@ -240,16 +243,59 @@ export function SellerOnboardingGate({
     );
   }
 
-  // Otherwise, show the onboarding screen
+  // If embedded onboarding is active, show it
+  if (showOnboarding && stripeConnectInstance) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ConnectComponentsProvider connectInstance={stripeConnectInstance}>
+          <ConnectAccountOnboarding
+            title="Seller Account Setup"
+            onExit={handleOnboardingExit}
+            onStepChange={handleStepChange}
+            onLoadError={handleLoadError}
+            collectionOptions={{
+              fields: "eventually_due",
+              futureRequirements: "include",
+            }}
+          />
+        </ConnectComponentsProvider>
+      </SafeAreaView>
+    );
+  }
+
+  // Loading state while initializing onboarding
+  if (onboardingLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={brandColors.spicedClementine} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Otherwise, show the onboarding prompt screen (pre-onboarding state)
   return (
     <SellerOnboardingScreen
       sellerStatus={status}
-      isLoading={isLoading || awaitingReturn}
-      error={error}
-      onStartOnboarding={startOnboarding}
-      onContinueOnboarding={startOnboarding}
+      isLoading={isLoading}
+      error={error || onboardingError}
+      onStartOnboarding={initializeOnboarding}
+      onContinueOnboarding={initializeOnboarding}
       onCancel={() => navigation.goBack()}
       onRefresh={refresh}
     />
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: brandColors.pureWhite,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});
