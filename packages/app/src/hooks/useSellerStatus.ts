@@ -1,0 +1,152 @@
+import { useState, useEffect, useCallback, useRef } from "react";
+
+/**
+ * Seller status as returned by the /api/users/seller-status endpoint
+ */
+export interface SellerStatus {
+  /** Whether user has a Stripe Connect account */
+  hasAccount: boolean;
+  /** Whether Stripe onboarding is complete */
+  onboardingComplete: boolean;
+  /** Whether user can create listings (onboarding complete + charges enabled) */
+  isReadyToSell: boolean;
+  /** Account status: pending, active, or restricted */
+  accountStatus: "pending" | "active" | "restricted" | null;
+  /** Whether the account can accept payments */
+  chargesEnabled: boolean;
+  /** Whether the account can receive payouts */
+  payoutsEnabled: boolean;
+  /** Outstanding requirements from Stripe */
+  requirements?: string[];
+}
+
+export interface UseSellerStatusOptions {
+  /** Base API URL (e.g., process.env.EXPO_PUBLIC_API_URL) */
+  apiUrl: string;
+  /** Function to get auth token (from Clerk's useAuth) */
+  getToken: () => Promise<string | null>;
+  /** Whether the user is authenticated */
+  isAuthenticated: boolean;
+}
+
+export interface UseSellerStatusResult {
+  /** Current seller status */
+  status: SellerStatus | null;
+  /** Whether the status is being loaded */
+  isLoading: boolean;
+  /** Error message if fetch failed */
+  error: string | null;
+  /** Refresh the seller status */
+  refresh: () => Promise<void>;
+}
+
+const DEFAULT_STATUS: SellerStatus = {
+  hasAccount: false,
+  onboardingComplete: false,
+  isReadyToSell: false,
+  accountStatus: null,
+  chargesEnabled: false,
+  payoutsEnabled: false,
+};
+
+/**
+ * Hook to fetch and manage the current user's seller/Stripe Connect status.
+ *
+ * Usage:
+ * ```tsx
+ * const { status, isLoading, refresh } = useSellerStatus({
+ *   apiUrl: process.env.EXPO_PUBLIC_API_URL || '',
+ *   getToken,
+ *   isAuthenticated: true,
+ * });
+ *
+ * if (status?.isReadyToSell) {
+ *   // Show sell form
+ * } else {
+ *   // Show onboarding prompt
+ * }
+ * ```
+ */
+export function useSellerStatus({
+  apiUrl,
+  getToken,
+  isAuthenticated,
+}: UseSellerStatusOptions): UseSellerStatusResult {
+  const [status, setStatus] = useState<SellerStatus | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Use refs for functions to avoid them triggering useEffect reruns
+  const getTokenRef = useRef(getToken);
+  const apiUrlRef = useRef(apiUrl);
+
+  // Keep refs updated
+  useEffect(() => {
+    getTokenRef.current = getToken;
+    apiUrlRef.current = apiUrl;
+  });
+
+  const fetchStatus = useCallback(async () => {
+    console.log("[useSellerStatus] fetchStatus called, isAuthenticated:", isAuthenticated, "apiUrl:", apiUrl);
+    
+    if (!isAuthenticated) {
+      console.log("[useSellerStatus] Not authenticated, returning default status");
+      setStatus(DEFAULT_STATUS);
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const token = await getTokenRef.current();
+      console.log("[useSellerStatus] Token obtained:", token ? "yes" : "no");
+      
+      if (!token) {
+        console.log("[useSellerStatus] No token, returning default status");
+        setStatus(DEFAULT_STATUS);
+        setIsLoading(false);
+        return;
+      }
+
+      const url = `${apiUrlRef.current}/api/users/seller-status`;
+      console.log("[useSellerStatus] Fetching from:", url);
+      
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+
+      console.log("[useSellerStatus] Response status:", response.status);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch seller status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("[useSellerStatus] Response data:", data);
+      setStatus(data);
+    } catch (err) {
+      console.error("[useSellerStatus] Error:", err);
+      setError(err instanceof Error ? err.message : "Unknown error");
+      setStatus(DEFAULT_STATUS);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isAuthenticated]); // Only depend on isAuthenticated, use refs for apiUrl and getToken
+
+  // Fetch status on mount and when auth changes
+  useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
+
+  return {
+    status,
+    isLoading,
+    error,
+    refresh: fetchStatus,
+  };
+}

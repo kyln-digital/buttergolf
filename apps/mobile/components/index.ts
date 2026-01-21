@@ -3,3 +3,4 @@ export { MobileCheckoutSheet } from "./MobileCheckoutSheet";
 export { MakeOfferSheet } from "./MakeOfferSheet";
 export { OffersListScreen } from "./OffersListScreen";
 export { OfferDetailScreen } from "./OfferDetailScreen";
+export { SellerOnboardingGate } from "./SellerOnboardingGate";

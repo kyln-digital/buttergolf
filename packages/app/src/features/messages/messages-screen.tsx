@@ -206,7 +206,7 @@ export function MessagesScreen({
               accessibilityLabel="Refresh messages"
             >
               {refreshing ? (
-                <Spinner size="small" color="$primary" />
+                <Spinner size="sm" color="$primary" />
               ) : (
                 <RefreshCw size={20} color="$text" />
               )}

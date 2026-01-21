@@ -160,6 +160,13 @@ export function VerifyEmailScreen({
     }
   }, [fullCode, isLoaded, signUp, setActive, onSuccess]);
 
+  // Auto-submit when all 6 digits are entered
+  useEffect(() => {
+    if (fullCode.length === 6 && !isSubmitting && isLoaded && signUp) {
+      handleVerify();
+    }
+  }, [fullCode, isSubmitting, isLoaded, signUp, handleVerify]);
+
   const handleResendCode = useCallback(async () => {
     setError(null);
 
