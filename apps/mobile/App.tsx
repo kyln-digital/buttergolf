@@ -46,7 +46,7 @@ import {
   Platform,
   useColorScheme,
 } from "react-native";
-import { ClerkProvider, SignedIn, SignedOut, useAuth, useUser } from "@clerk/clerk-expo";
+import { ClerkProvider, ClerkLoaded, SignedIn, SignedOut, useAuth, useUser } from "@clerk/clerk-expo";
 import { StripeProvider } from "@stripe/stripe-react-native";
 import * as SecureStore from "expo-secure-store";
 import {
@@ -1135,6 +1135,7 @@ function HomeScreenWrapper({
       onAccountPress={() => navigation.navigate("Account")}
       onWishlistPress={() => navigation.navigate("Favourites")}
       onMessagesPress={() => navigation.navigate("Messages")}
+      onCategoryPress={(slug) => navigation.navigate("Category", { slug })}
       onLoginPress={onLoginPress}
       hideBuySellToggle={true}
     />
@@ -1628,7 +1629,8 @@ export default function App() {
         >
         {/* Official Tamagui Expo pattern: use useColorScheme() for theme */}
         <Provider defaultTheme={validColorScheme}>
-          <SignedIn>
+          <ClerkLoaded>
+            <SignedIn>
             <PushTokenRegistration />
             <NavigationContainer linking={linking} theme={navigationTheme}>
               <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -1795,6 +1797,7 @@ export default function App() {
               <OnboardingFlow />
             </NavigationContainer>
           </SignedOut>
+          </ClerkLoaded>
         </Provider>
       </ClerkProvider>
       </StripeProvider>
@@ -1829,6 +1832,7 @@ function OnboardingFlow() {
               isAuthenticated={false}
               onLoginPress={() => setFlowState("signIn")}
               onWishlistPress={() => setFlowState("signIn")}
+              onCategoryPress={(slug) => navigation.navigate("Category", { slug })}
               hideBuySellToggle={true}
             />
           )}

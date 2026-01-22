@@ -15,8 +15,6 @@ import type { ProductCardData } from "../../types/product";
 import { Hero } from "../../components/Hero";
 import { images } from "@buttergolf/assets";
 import { MobileSearchBar, MobileBottomNav } from "../../components/mobile";
-import { useLink } from "solito/navigation";
-import { routes } from "../../navigation";
 
 interface HomeScreenProps {
   products?: ProductCardData[];
@@ -26,6 +24,8 @@ interface HomeScreenProps {
   onAccountPress?: () => void;
   onWishlistPress?: () => void;
   onMessagesPress?: () => void;
+  /** Callback when a category is pressed */
+  onCategoryPress?: (slug: string) => void;
   isAuthenticated?: boolean;
   /** Hide the buying/selling toggle (mobile uses bottom nav for selling) */
   hideBuySellToggle?: boolean;
@@ -39,6 +39,7 @@ export function HomeScreen({
   onAccountPress,
   onWishlistPress,
   onMessagesPress,
+  onCategoryPress,
   isAuthenticated = false,
   hideBuySellToggle = false,
 }: Readonly<HomeScreenProps>) {
@@ -47,19 +48,11 @@ export function HomeScreen({
   const [loading, setLoading] = useState(false);
   const [buySellMode, setBuySellMode] = useState<BuySellMode>("buying");
 
-  // Navigation links for categories
-  const woodsLink = useLink({
-    href: routes.category.replace("[slug]", "woods"),
-  });
-  const ironsLink = useLink({
-    href: routes.category.replace("[slug]", "irons"),
-  });
-  const shoesLink = useLink({
-    href: routes.category.replace("[slug]", "apparel"),
-  });
-  const accessoriesLink = useLink({
-    href: routes.category.replace("[slug]", "accessories"),
-  });
+  // Category press handlers - use callback prop
+  const handleWoodsPress = () => onCategoryPress?.("woods");
+  const handleIronsPress = () => onCategoryPress?.("irons");
+  const handleApparelPress = () => onCategoryPress?.("apparel");
+  const handleAccessoriesPress = () => onCategoryPress?.("accessories");
 
   useEffect(() => {
     if (onFetchProducts && products.length === 0 && !loading) {
@@ -172,7 +165,7 @@ export function HomeScreen({
               borderRadius="$2xl"
               overflow="hidden"
               pressStyle={{ opacity: 0.9, scale: 0.98 }}
-              onPress={woodsLink.onPress}
+              onPress={handleWoodsPress}
               accessibilityRole="button"
               accessibilityLabel="Browse woods category"
             >
@@ -205,7 +198,7 @@ export function HomeScreen({
               borderRadius="$2xl"
               overflow="hidden"
               pressStyle={{ opacity: 0.9, scale: 0.98 }}
-              onPress={ironsLink.onPress}
+              onPress={handleIronsPress}
               accessibilityRole="button"
               accessibilityLabel="Browse irons category"
             >
@@ -241,7 +234,7 @@ export function HomeScreen({
               borderRadius="$2xl"
               overflow="hidden"
               pressStyle={{ opacity: 0.9, scale: 0.98 }}
-              onPress={shoesLink.onPress}
+              onPress={handleApparelPress}
               accessibilityRole="button"
               accessibilityLabel="Browse shoes category"
             >
@@ -274,7 +267,7 @@ export function HomeScreen({
               borderRadius="$2xl"
               overflow="hidden"
               pressStyle={{ opacity: 0.9, scale: 0.98 }}
-              onPress={accessoriesLink.onPress}
+              onPress={handleAccessoriesPress}
               accessibilityRole="button"
               accessibilityLabel="Browse accessories category"
             >
