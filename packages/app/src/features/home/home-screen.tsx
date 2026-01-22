@@ -29,6 +29,8 @@ interface HomeScreenProps {
   isAuthenticated?: boolean;
   /** Hide the buying/selling toggle (mobile uses bottom nav for selling) */
   hideBuySellToggle?: boolean;
+  /** Hide the bottom navigation (when rendered inside TabNavigator) */
+  hideBottomNav?: boolean;
 }
 
 export function HomeScreen({
@@ -42,6 +44,7 @@ export function HomeScreen({
   onCategoryPress,
   isAuthenticated = false,
   hideBuySellToggle = false,
+  hideBottomNav = false,
 }: Readonly<HomeScreenProps>) {
   const insets = useSafeAreaInsets();
   const [products, setProducts] = useState<ProductCardData[]>(initialProducts);
@@ -296,18 +299,20 @@ export function HomeScreen({
       </ScrollView>
 
       {/* Bottom Navigation - Fixed at bottom, extends into safe area */}
-      <Column position="absolute" bottom={0} left={0} right={0} zIndex={100}>
-        <MobileBottomNav
-          activeTab="home"
-          isAuthenticated={isAuthenticated}
-          onHomePress={() => {}}
-          onWishlistPress={onWishlistPress}
-          onSellPress={onSellPress}
-          onMessagesPress={onMessagesPress}
-          onLoginPress={onLoginPress}
-          onAccountPress={onAccountPress}
-        />
-      </Column>
+      {!hideBottomNav && (
+        <Column position="absolute" bottom={0} left={0} right={0} zIndex={100}>
+          <MobileBottomNav
+            activeTab="home"
+            isAuthenticated={isAuthenticated}
+            onHomePress={() => {}}
+            onWishlistPress={onWishlistPress}
+            onSellPress={onSellPress}
+            onMessagesPress={onMessagesPress}
+            onLoginPress={onLoginPress}
+            onAccountPress={onAccountPress}
+          />
+        </Column>
+      )}
     </Column>
   );
 }

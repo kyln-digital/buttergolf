@@ -37,7 +37,10 @@ import {
   OffersListScreen,
   OfferDetailScreen,
   SellerOnboardingGate,
+  TabNavigator,
+  MainTabs,
 } from "./components";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   View as RNView,
   Text as RNText,
@@ -1621,6 +1624,7 @@ export default function App() {
   }
 
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaProvider>
       <StripeProvider publishableKey={stripePublishableKey}>
         <ClerkProvider
@@ -1634,14 +1638,31 @@ export default function App() {
             <PushTokenRegistration />
             <NavigationContainer linking={linking} theme={navigationTheme}>
               <Stack.Navigator screenOptions={{ headerShown: false }}>
+                {/* MainTabs replaces Home, Favourites, Messages with swipeable tabs */}
                 <Stack.Screen name="Home">
                   {({ navigation }: { navigation: any }) => (
-                    <HomeScreenWrapper
-                      navigation={navigation}
-                      isAuthenticated={true}
-                    />
+                    <MainTabs navigation={navigation} initialTab="home" />
                   )}
                 </Stack.Screen>
+                {/* Favourites and Messages are now part of MainTabs,
+                    but we keep these routes for deep linking and back navigation */}
+                <Stack.Screen
+                  name="Favourites"
+                  options={{ headerShown: false }}
+                >
+                  {({ navigation }: { navigation: any }) => (
+                    <MainTabs navigation={navigation} initialTab="favourites" />
+                  )}
+                </Stack.Screen>
+                <Stack.Screen
+                  name="Messages"
+                  options={{ headerShown: false }}
+                >
+                  {({ navigation }: { navigation: any }) => (
+                    <MainTabs navigation={navigation} initialTab="messages" />
+                  )}
+                </Stack.Screen>
+                {/* Non-tab screens - these open as separate stack screens */}
                 <Stack.Screen
                   name="Rounds"
                   component={RoundsScreen}
@@ -1667,7 +1688,7 @@ export default function App() {
                       title: slug
                         ? slug.charAt(0).toUpperCase() + slug.slice(1)
                         : "Category",
-                      headerShown: false, // CategoryListScreen has its own header
+                      headerShown: false,
                     };
                   }}
                 >
@@ -1704,34 +1725,12 @@ export default function App() {
                 <Stack.Screen
                   name="Sell"
                   options={{
-                    headerShown: false, // SellScreen has its own header
+                    headerShown: false,
                     presentation: "modal",
                   }}
                 >
                   {({ navigation }: { navigation: any }) => (
                     <SellScreenWrapper navigation={navigation} />
-                  )}
-                </Stack.Screen>
-                <Stack.Screen
-                  name="Favourites"
-                  options={{ headerShown: false }}
-                >
-                  {({ navigation }: { navigation: any }) => (
-                    <FavouritesScreenWrapper
-                      navigation={navigation}
-                      isAuthenticated={true}
-                    />
-                  )}
-                </Stack.Screen>
-                <Stack.Screen
-                  name="Messages"
-                  options={{ headerShown: false }}
-                >
-                  {({ navigation }: { navigation: any }) => (
-                    <MessagesScreenWrapper
-                      navigation={navigation}
-                      isAuthenticated={true}
-                    />
                   )}
                 </Stack.Screen>
                 <Stack.Screen
@@ -1802,6 +1801,7 @@ export default function App() {
       </ClerkProvider>
       </StripeProvider>
     </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 

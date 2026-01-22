@@ -48,6 +48,8 @@ interface FavouritesScreenProps {
   onMessagesPress?: () => void;
   onLoginPress?: () => void;
   onAccountPress?: () => void;
+  /** Hide the bottom navigation (when rendered inside TabNavigator) */
+  hideBottomNav?: boolean;
 }
 
 export function FavouritesScreen({
@@ -64,6 +66,7 @@ export function FavouritesScreen({
   onMessagesPress,
   onLoginPress,
   onAccountPress,
+  hideBottomNav = false,
 }: Readonly<FavouritesScreenProps>) {
   const insets = useSafeAreaInsets();
   const [products, setProducts] = useState<FavouriteProduct[]>([]);
@@ -184,17 +187,19 @@ export function FavouritesScreen({
         </Column>
 
         {/* Bottom Navigation */}
-        <Column position="absolute" bottom={0} left={0} right={0} zIndex={100}>
-          <MobileBottomNav
-            activeTab="wishlist"
-            isAuthenticated={false}
-            onHomePress={onHomePress}
-            onWishlistPress={() => {}} // Already on wishlist
-            onSellPress={onSellPress}
-            onMessagesPress={onMessagesPress}
-            onLoginPress={onLoginPress}
-          />
-        </Column>
+        {!hideBottomNav && (
+          <Column position="absolute" bottom={0} left={0} right={0} zIndex={100}>
+            <MobileBottomNav
+              activeTab="wishlist"
+              isAuthenticated={false}
+              onHomePress={onHomePress}
+              onWishlistPress={() => {}} // Already on wishlist
+              onSellPress={onSellPress}
+              onMessagesPress={onMessagesPress}
+              onLoginPress={onLoginPress}
+            />
+          </Column>
+        )}
       </Column>
     );
   }
@@ -313,18 +318,20 @@ export function FavouritesScreen({
       </ScrollView>
 
       {/* Bottom Navigation */}
-      <Column position="absolute" bottom={0} left={0} right={0} zIndex={100}>
-        <MobileBottomNav
-          activeTab="wishlist"
-          isAuthenticated={isAuthenticated}
-          onHomePress={onHomePress}
-          onWishlistPress={() => {}} // Already on wishlist
-          onSellPress={onSellPress}
-          onMessagesPress={onMessagesPress}
-          onLoginPress={onLoginPress}
-          onAccountPress={onAccountPress}
-        />
-      </Column>
+      {!hideBottomNav && (
+        <Column position="absolute" bottom={0} left={0} right={0} zIndex={100}>
+          <MobileBottomNav
+            activeTab="wishlist"
+            isAuthenticated={isAuthenticated}
+            onHomePress={onHomePress}
+            onWishlistPress={() => {}} // Already on wishlist
+            onSellPress={onSellPress}
+            onMessagesPress={onMessagesPress}
+            onLoginPress={onLoginPress}
+            onAccountPress={onAccountPress}
+          />
+        </Column>
+      )}
     </Column>
   );
 }

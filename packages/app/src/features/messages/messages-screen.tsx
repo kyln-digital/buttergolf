@@ -50,6 +50,8 @@ interface MessagesScreenProps {
   onMessagesPress?: () => void;
   onLoginPress?: () => void;
   onAccountPress?: () => void;
+  /** Hide the bottom navigation (when rendered inside TabNavigator) */
+  hideBottomNav?: boolean;
 }
 
 export function MessagesScreen({
@@ -63,6 +65,7 @@ export function MessagesScreen({
   onMessagesPress,
   onLoginPress,
   onAccountPress,
+  hideBottomNav = false,
 }: Readonly<MessagesScreenProps>) {
   const insets = useSafeAreaInsets();
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -160,16 +163,18 @@ export function MessagesScreen({
             Sign In
           </Button>
         </Column>
-        <MobileBottomNav
-          activeTab="messages"
-          onHomePress={onHomePress}
-          onWishlistPress={onWishlistPress}
-          onSellPress={onSellPress}
-          onMessagesPress={onMessagesPress}
-          onLoginPress={onLoginPress}
-          onAccountPress={onAccountPress}
-          isAuthenticated={false}
-        />
+        {!hideBottomNav && (
+          <MobileBottomNav
+            activeTab="messages"
+            onHomePress={onHomePress}
+            onWishlistPress={onWishlistPress}
+            onSellPress={onSellPress}
+            onMessagesPress={onMessagesPress}
+            onLoginPress={onLoginPress}
+            onAccountPress={onAccountPress}
+            isAuthenticated={false}
+          />
+        )}
       </Column>
     );
   }
@@ -316,16 +321,18 @@ export function MessagesScreen({
         </ScrollView>
       )}
 
-      <MobileBottomNav
-        activeTab="messages"
-        onHomePress={onHomePress}
-        onWishlistPress={onWishlistPress}
-        onSellPress={onSellPress}
-        onMessagesPress={onMessagesPress}
-        onLoginPress={onLoginPress}
-        onAccountPress={onAccountPress}
-        isAuthenticated={isAuthenticated}
-      />
+      {!hideBottomNav && (
+        <MobileBottomNav
+          activeTab="messages"
+          onHomePress={onHomePress}
+          onWishlistPress={onWishlistPress}
+          onSellPress={onSellPress}
+          onMessagesPress={onMessagesPress}
+          onLoginPress={onLoginPress}
+          onAccountPress={onAccountPress}
+          isAuthenticated={isAuthenticated}
+        />
+      )}
     </Column>
   );
 }
