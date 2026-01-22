@@ -34,7 +34,7 @@
     "@tamagui/shorthands": "catalog:",
     "@tamagui/themes": "catalog:",
     "@types/node": "catalog:",
-    "@types/react": "19.1.0",
+    "@types/react": "19.2.9",
     "@types/react-dom": "catalog:",
     "eslint": "catalog:",
     "tamagui": "catalog:",

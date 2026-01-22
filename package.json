@@ -46,7 +46,7 @@
       "react-dom": "19.1.0",
       "react-test-renderer": "19.1.0",
       "react-is": "19.1.0",
-      "@types/react": "19.1.17",
+      "@types/react": "19.2.9",
       "@types/react-dom": "19.1.0",
       "jsdom": "false",
       "webidl-conversions": "5.0.0",
@@ -76,6 +76,6 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@types/react": "19.1.17"
+    "@types/react": "19.2.9"
   }
 }
