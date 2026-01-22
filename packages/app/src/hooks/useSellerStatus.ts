@@ -81,6 +81,9 @@ export function useSellerStatus({
   const apiUrlRef = useRef(apiUrl);
   // Guard to prevent concurrent fetches (fixes loop when multiple triggers fire)
   const fetchingRef = useRef(false);
+  // Throttle: track last successful fetch time to prevent rapid calls
+  const lastFetchTimeRef = useRef<number>(0);
+  const FETCH_COOLDOWN_MS = 5000; // 5 second cooldown between fetches
 
   // Keep refs updated
   useEffect(() => {
@@ -99,12 +102,20 @@ export function useSellerStatus({
       return;
     }
 
+    // Throttle: skip if we fetched recently (prevents rapid polling)
+    const now = Date.now();
+    if (now - lastFetchTimeRef.current < FETCH_COOLDOWN_MS) {
+      console.log("[useSellerStatus] Skipping fetch - within cooldown period");
+      return;
+    }
+
     // Prevent concurrent fetches - this is the key fix for the loop
     if (fetchingRef.current) {
       console.log("[useSellerStatus] fetchStatus skipped - already fetching");
       return;
     }
     fetchingRef.current = true;
+    lastFetchTimeRef.current = now; // Set time at start to prevent races
 
     try {
       setIsLoading(true);

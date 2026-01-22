@@ -213,16 +213,6 @@ export function SellerOnboardingGate({
     Alert.alert("Error", errorMessage);
   }, []);
 
-  // Refresh status when screen comes into focus
-  useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", () => {
-      console.log("[SellerOnboardingGate] Screen focused, refreshing status");
-      refresh();
-    });
-
-    return unsubscribe;
-  }, [navigation, refresh]);
-
   // If user is ready to sell, show the SellScreen
   if (status?.isReadyToSell) {
     return (
