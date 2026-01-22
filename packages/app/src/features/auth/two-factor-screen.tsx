@@ -102,6 +102,9 @@ export function TwoFactorScreen({
 
   const fullCode = code.join("");
 
+  // Ref to store the latest handleVerify function for auto-submit
+  const handleVerifyRef = useRef<(() => Promise<void>) | null>(null);
+
   // Detect available 2FA strategy and send email code if needed
   useEffect(() => {
     // Guard against multiple initializations (React Strict Mode, etc.)
@@ -260,6 +263,25 @@ export function TwoFactorScreen({
     }
   }, [fullCode, isLoaded, signIn, setActive, onSuccess, strategy]);
 
+  // Keep ref updated with latest handleVerify function
+  handleVerifyRef.current = handleVerify;
+
+  // Auto-submit when all 6 digits are entered
+  useEffect(() => {
+    // For email_code strategy, wait until code has been sent
+    const canAutoSubmit =
+      fullCode.length === 6 &&
+      !isSubmitting &&
+      isLoaded &&
+      signIn &&
+      strategy &&
+      (strategy !== "email_code" || codeSent);
+
+    if (canAutoSubmit) {
+      handleVerifyRef.current?.();
+    }
+  }, [fullCode, isSubmitting, isLoaded, signIn, strategy, codeSent]);
+
   return (
     <Column flex={1} backgroundColor="$background">
       <ScrollView
@@ -355,6 +377,9 @@ export function TwoFactorScreen({
                       handleKeyPress(index, nativeEvent.key)
                     }
                     keyboardType="number-pad"
+                    textContentType="oneTimeCode"
+                    autoComplete="one-time-code"
+                    inputMode="numeric"
                     maxLength={1}
                     editable={!isSubmitting}
                     selectTextOnFocus
@@ -365,9 +390,6 @@ export function TwoFactorScreen({
                       width: "100%",
                       height: "100%",
                       color: "#323232",
-                    }}
-                    onFocus={() => {
-                      // Select existing text on focus
                     }}
                     // Handle paste on first input
                     onChange={(e) => {

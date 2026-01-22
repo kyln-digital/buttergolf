@@ -111,6 +111,9 @@ export function VerifyEmailScreen({
 
   const fullCode = code.join("");
 
+  // Ref to store the latest handleVerify function for auto-submit
+  const handleVerifyRef = useRef<(() => Promise<void>) | null>(null);
+
   const handleVerify = useCallback(async () => {
     setError(null);
 
@@ -160,12 +163,15 @@ export function VerifyEmailScreen({
     }
   }, [fullCode, isLoaded, signUp, setActive, onSuccess]);
 
+  // Keep ref updated with latest handleVerify function
+  handleVerifyRef.current = handleVerify;
+
   // Auto-submit when all 6 digits are entered
   useEffect(() => {
     if (fullCode.length === 6 && !isSubmitting && isLoaded && signUp) {
-      handleVerify();
+      handleVerifyRef.current?.();
     }
-  }, [fullCode, isSubmitting, isLoaded, signUp, handleVerify]);
+  }, [fullCode, isSubmitting, isLoaded, signUp]);
 
   const handleResendCode = useCallback(async () => {
     setError(null);
@@ -273,6 +279,9 @@ export function VerifyEmailScreen({
                       handleKeyPress(index, nativeEvent.key)
                     }
                     keyboardType="number-pad"
+                    textContentType="oneTimeCode"
+                    autoComplete="one-time-code"
+                    inputMode="numeric"
                     maxLength={1}
                     editable={!isSubmitting}
                     selectTextOnFocus
