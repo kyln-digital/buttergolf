@@ -77,7 +77,8 @@ export function useSellerStatus({
   isAuthenticated,
 }: UseSellerStatusOptions): UseSellerStatusResult {
   // Log deprecation warning in development
-  if (typeof globalThis !== "undefined" && (globalThis as { __DEV__?: boolean }).__DEV__) {
+  // Using standard React Native __DEV__ check pattern
+  if (typeof __DEV__ !== "undefined" && __DEV__) {
     console.warn(
       "[useSellerStatus] DEPRECATED: This hook causes infinite API calls. " +
       "Use useSellerStatusContext from apps/mobile/context instead."

@@ -9,25 +9,9 @@ import {
 } from "react";
 import { useAuth } from "@clerk/clerk-expo";
 
-/**
- * Seller status as returned by the /api/users/seller-status endpoint
- */
-export interface SellerStatus {
-  /** Whether user has a Stripe Connect account */
-  hasAccount: boolean;
-  /** Whether Stripe onboarding is complete */
-  onboardingComplete: boolean;
-  /** Whether user can create listings (onboarding complete + charges enabled) */
-  isReadyToSell: boolean;
-  /** Account status: pending, active, or restricted */
-  accountStatus: "pending" | "active" | "restricted" | null;
-  /** Whether the account can accept payments */
-  chargesEnabled: boolean;
-  /** Whether the account can receive payouts */
-  payoutsEnabled: boolean;
-  /** Outstanding requirements from Stripe */
-  requirements?: string[];
-}
+// Re-export SellerStatus from the original hook to maintain single source of truth
+export type { SellerStatus } from "@buttergolf/app/src/hooks/useSellerStatus";
+import type { SellerStatus } from "@buttergolf/app/src/hooks/useSellerStatus";
 
 interface SellerStatusContextValue {
   /** Current seller status (null if not yet fetched) */
@@ -78,26 +62,27 @@ interface SellerStatusProviderProps {
  */
 export function SellerStatusProvider({ children }: SellerStatusProviderProps) {
   const { getToken } = useAuth();
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
   const [status, setStatus] = useState<SellerStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Refs for stable function identity and throttling
+  // Using refs for apiUrl and getToken keeps fetchStatus stable (no deps that change)
+  const apiUrlRef = useRef(process.env.EXPO_PUBLIC_API_URL || "");
   const getTokenRef = useRef(getToken);
   const lastFetchTime = useRef(0);
   const isFetching = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Keep getToken ref updated
+  // Keep getToken ref updated (synchronous assignment is fine here)
   useEffect(() => {
     getTokenRef.current = getToken;
-  });
+  }, [getToken]);
 
   const fetchStatus = useCallback(async (force?: boolean) => {
-    const isDev =
-      typeof globalThis !== "undefined" &&
-      (globalThis as { __DEV__?: boolean }).__DEV__ === true;
+    // Standard React Native __DEV__ check
+    const isDev = typeof __DEV__ !== "undefined" && __DEV__;
 
     const debugLog = (...args: unknown[]) => {
       if (isDev) {
@@ -119,8 +104,14 @@ export function SellerStatusProvider({ children }: SellerStatusProviderProps) {
       return;
     }
 
+    // Cancel any in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+    const { signal } = abortControllerRef.current;
+
     isFetching.current = true;
-    lastFetchTime.current = now;
 
     try {
       setIsLoading(true);
@@ -132,12 +123,11 @@ export function SellerStatusProvider({ children }: SellerStatusProviderProps) {
       if (!token) {
         debugLog("No token, returning default status");
         setStatus(DEFAULT_STATUS);
-        setIsLoading(false);
-        isFetching.current = false;
+        // Let finally block handle cleanup
         return;
       }
 
-      const url = `${apiUrl}/api/users/seller-status`;
+      const url = `${apiUrlRef.current}/api/users/seller-status`;
       debugLog("Fetching from:", url);
 
       const response = await fetch(url, {
@@ -145,7 +135,11 @@ export function SellerStatusProvider({ children }: SellerStatusProviderProps) {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
         },
+        signal,
       });
+
+      // Check if aborted before processing response
+      if (signal.aborted) return;
 
       debugLog("Response status:", response.status);
 
@@ -154,22 +148,42 @@ export function SellerStatusProvider({ children }: SellerStatusProviderProps) {
       }
 
       const data = await response.json();
+      
+      // Check if aborted before updating state
+      if (signal.aborted) return;
+      
       debugLog("Response data:", data);
       setStatus(data);
+      // Update lastFetchTime only on success (not at start)
+      // This ensures throttle doesn't block retries after failures
+      lastFetchTime.current = Date.now();
     } catch (err) {
+      // Ignore abort errors
+      if (err instanceof Error && err.name === "AbortError") {
+        debugLog("Fetch aborted");
+        return;
+      }
       console.error("[SellerStatusProvider] Error:", err);
       setError(err instanceof Error ? err.message : "Unknown error");
-      setStatus(DEFAULT_STATUS);
+      // Preserve previous status on transient errors (network issues)
+      // Only set DEFAULT_STATUS if we never had data
+      setStatus((prev) => prev ?? DEFAULT_STATUS);
     } finally {
       setIsLoading(false);
       isFetching.current = false;
     }
-  }, [apiUrl]);
+  }, []); // No dependencies - uses refs for all external values
 
-  // Fetch status once on mount
-  // This runs ONCE because fetchStatus is stable (only depends on apiUrl which doesn't change)
+  // Fetch status once on mount, cleanup on unmount
   useEffect(() => {
     fetchStatus();
+
+    // Cleanup: abort any in-flight request when provider unmounts
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [fetchStatus]);
 
   return (
