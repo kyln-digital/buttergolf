@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { WebView, WebViewMessageEvent } from "react-native-webview";
 import { useAuth } from "@clerk/clerk-expo";
-import { useSellerStatus } from "@buttergolf/app/src/hooks";
+import { useSellerStatusContext } from "../context";
 import { SellerOnboardingScreen, SellScreen } from "@buttergolf/app";
 import type {
   SellFormData,
@@ -76,12 +76,16 @@ interface WebViewMessage {
  * SellerOnboardingGate - Wraps SellScreen and gates it behind seller onboarding.
  *
  * This component:
- * 1. Checks the user's seller status on mount
+ * 1. Gets seller status from SellerStatusProvider context (fetched ONCE at app level)
  * 2. If not ready to sell, shows SellerOnboardingScreen (pre-onboarding prompt)
  * 3. When user taps "Get Started", opens WebView with embedded Stripe Connect
  * 4. WebView loads /mobile-onboarding page with Clerk token for auth
  * 5. Handles completion/exit messages from WebView
  * 6. Shows SellScreen when onboarding is complete
+ *
+ * IMPORTANT: This component MUST be rendered inside SellerStatusProvider.
+ * The provider handles fetching seller status once on sign-in, preventing
+ * the infinite API call loop that occurred with the old useSellerStatus hook.
  *
  * Uses WebView because @stripe/stripe-react-native does NOT support
  * Connect embedded components - only the web SDK does.
@@ -96,7 +100,7 @@ export function SellerOnboardingGate({
   onSearchBrands,
   onSearchModels,
 }: SellerOnboardingGateProps) {
-  const { getToken, isLoaded: isAuthLoaded } = useAuth();
+  const { getToken } = useAuth();
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
   // Use ref to always access the current getToken function
@@ -105,12 +109,10 @@ export function SellerOnboardingGate({
   const getTokenRef = useRef(getToken);
   getTokenRef.current = getToken; // Update on every render (synchronous, no effect needed)
 
-  // Seller status hook
-  const { status, isLoading, error, refresh } = useSellerStatus({
-    apiUrl,
-    getToken,
-    isAuthenticated: true,
-  });
+  // Get seller status from context (fetched once at app level by SellerStatusProvider)
+  // This replaces the old useSellerStatus hook which caused infinite API calls
+  // because each component mount created a new hook instance that fetched independently
+  const { status, isLoading, error, refresh } = useSellerStatusContext();
 
   // WebView state
   const [showWebView, setShowWebView] = useState(false);
@@ -264,19 +266,17 @@ export function SellerOnboardingGate({
 
   // Debug logging (after all hooks, before conditional returns)
   console.info("[SellerOnboardingGate] Render:", {
-    apiUrl,
-    isAuthLoaded,
     isLoading,
     error,
     status,
     isReadyToSell: status?.isReadyToSell,
     showWebView,
-    hasGetToken: typeof getToken === "function",
   });
 
-  // Wait for Clerk auth to be fully loaded before showing any content
-  // This prevents the stale closure issue where getToken might be captured as undefined
-  if (!isAuthLoaded) {
+  // Loading state while seller status is being fetched
+  // Note: We no longer need to check isAuthLoaded because SellerStatusProvider
+  // is placed inside <SignedIn>, guaranteeing auth is ready
+  if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>

@@ -56,28 +56,34 @@ let isFetching = false;
 const FETCH_COOLDOWN_MS = 5000; // 5 second cooldown between fetches
 
 /**
- * Hook to fetch and manage the current user's seller/Stripe Connect status.
+ * @deprecated DO NOT USE THIS HOOK - It causes infinite API call loops!
  *
- * Usage:
- * ```tsx
- * const { status, isLoading, refresh } = useSellerStatus({
- *   apiUrl: process.env.EXPO_PUBLIC_API_URL || '',
- *   getToken,
- *   isAuthenticated: true,
- * });
+ * This hook was deprecated because each component mount creates a new hook instance
+ * that fetches independently. Navigation between screens causes remounts, triggering
+ * repeated fetches that overwhelm the API.
  *
- * if (status?.isReadyToSell) {
- *   // Show sell form
- * } else {
- *   // Show onboarding prompt
- * }
- * ```
+ * INSTEAD: Use the SellerStatusProvider context in apps/mobile/context/SellerStatusContext.tsx
+ * which fetches once at app level and shares state via context.
+ *
+ * For mobile: import { useSellerStatusContext } from "../context";
+ * For web: Use server-side fetching in page.tsx (see apps/web/src/app/sell/page.tsx)
+ *
+ * This hook is kept only for the SellerStatus type export and backward compatibility.
+ * If you're reading this and need seller status, use the context-based approach.
  */
 export function useSellerStatus({
   apiUrl,
   getToken,
   isAuthenticated,
 }: UseSellerStatusOptions): UseSellerStatusResult {
+  // Log deprecation warning in development
+  if (typeof globalThis !== "undefined" && (globalThis as { __DEV__?: boolean }).__DEV__) {
+    console.warn(
+      "[useSellerStatus] DEPRECATED: This hook causes infinite API calls. " +
+      "Use useSellerStatusContext from apps/mobile/context instead."
+    );
+  }
+
   const [status, setStatus] = useState<SellerStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
