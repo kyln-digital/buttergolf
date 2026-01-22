@@ -33,13 +33,38 @@ config.resolver = {
   ...resolver,
   assetExts: resolver.assetExts.filter((ext) => ext !== 'svg'),
   sourceExts: [...resolver.sourceExts, 'svg'],
-  // Force singleton resolution for React and React Native to prevent "Invalid hook call" errors
-  // in monorepos where multiple paths could resolve to the same package
+  // Force singleton resolution to prevent "Invalid hook call" and "duplicate tamagui instances" errors
   extraNodeModules: {
-    'react': path.resolve(workspaceRoot, 'node_modules/react'),
-    'react-dom': path.resolve(workspaceRoot, 'node_modules/react-dom'),
-    'react-native': path.resolve(workspaceRoot, 'node_modules/react-native'),
     'webidl-conversions': path.resolve(workspaceRoot, 'node_modules/.pnpm/webidl-conversions@5.0.0/node_modules/webidl-conversions'),
+  },
+  // Intercept resolution to force singletons for React and Tamagui
+  resolveRequest: (context, moduleName, platform) => {
+    // Packages that must be singletons to avoid "Invalid hook call" / "duplicate instances"
+    const singletons = [
+      'react',
+      'react-dom',
+      'react-native',
+      'tamagui',
+      '@tamagui/core',
+      '@tamagui/web',
+      '@tamagui/constants',
+      '@tamagui/helpers',
+      '@tamagui/use-event',
+      '@tamagui/use-force-update',
+      '@tamagui/use-did-finish-ssr',
+      '@tamagui/compose-refs',
+      '@tamagui/is-equal-shallow',
+    ];
+    
+    if (singletons.includes(moduleName)) {
+      return {
+        filePath: require.resolve(moduleName, { paths: [workspaceRoot] }),
+        type: 'sourceFile',
+      };
+    }
+    
+    // Default resolution for everything else
+    return context.resolveRequest(context, moduleName, platform);
   },
   // #3.1 - Block web-only testing packages from being bundled (they use SharedArrayBuffer which Hermes doesn't support)
   // IMPORTANT: Only block jsdom and webidl-conversions@8.x (the problematic version)
