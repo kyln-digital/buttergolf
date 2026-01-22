@@ -220,7 +220,7 @@ export function ProductDetailScreen({
 
             {/* Views counter */}
             <Row alignItems="center" gap="$1">
-              <Eye size={14} color="$slateSmoke" />
+              <Eye size={14} color="$textSecondary" />
               <Text size="$3" color="$textSecondary">
                 {product.views} views
               </Text>
@@ -231,7 +231,7 @@ export function ProductDetailScreen({
           {(product.flex || product.loft || product.woodsSubcategory || product.headCoverIncluded !== null) && (
             <Card variant="outlined" padding="$lg">
               <Column gap="$3">
-                <Text size="$5" fontWeight="700" color="$ironstone">
+                <Text size="$5" fontWeight="700" color="$text">
                   Club Details
                 </Text>
                 <Row flexWrap="wrap" gap="$4">
@@ -271,7 +271,7 @@ export function ProductDetailScreen({
             <Card variant="outlined" padding="$lg">
               <Column gap="$3">
                 <Row alignItems="center" justifyContent="space-between">
-                  <Text size="$5" fontWeight="700" color="$ironstone">
+                  <Text size="$5" fontWeight="700" color="$text">
                     Condition Rating
                   </Text>
                   {avgCondition && (
@@ -341,7 +341,7 @@ export function ProductDetailScreen({
           {!hasConditionRatings && product.condition && (
             <Card variant="outlined" padding="$lg">
               <Row alignItems="center" justifyContent="space-between">
-                <Text size="$5" fontWeight="700" color="$ironstone">
+                <Text size="$5" fontWeight="700" color="$text">
                   Condition
                 </Text>
                 <Badge variant="neutral" size="md">
@@ -355,7 +355,7 @@ export function ProductDetailScreen({
           {product.description && (
             <Card variant="outlined" padding="$lg">
               <Column gap="$2">
-                <Text size="$5" fontWeight="700" color="$ironstone">
+                <Text size="$5" fontWeight="700" color="$text">
                   Description
                 </Text>
                 <Text size="$5" color="$text" lineHeight={24}>
@@ -368,7 +368,7 @@ export function ProductDetailScreen({
           {/* Seller Info */}
           <Card variant="outlined" padding="$lg">
             <Column gap="$3">
-              <Text size="$5" fontWeight="700" color="$ironstone">
+              <Text size="$5" fontWeight="700" color="$text">
                 Seller
               </Text>
               <Row gap="$3" alignItems="center">
@@ -406,7 +406,7 @@ export function ProductDetailScreen({
           {/* Additional Images */}
           {product.images && product.images.length > 1 && (
             <Column gap="$3">
-              <Text size="$5" fontWeight="700" color="$ironstone">
+              <Text size="$5" fontWeight="700" color="$text">
                 More Photos ({product.images.length - 1})
               </Text>
               <Row gap="$2" flexWrap="wrap">
@@ -455,7 +455,7 @@ export function ProductDetailScreen({
                 backgroundColor="$cloudMist"
                 disabled
               >
-                <Text color="$slateSmoke" fontWeight="600">
+                <Text color="$textSecondary" fontWeight="600">
                   This item has been sold
                 </Text>
               </Button>

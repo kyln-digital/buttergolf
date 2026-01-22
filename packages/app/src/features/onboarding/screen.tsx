@@ -8,7 +8,7 @@ import {
   Text as RNText,
   TouchableOpacity,
 } from "react-native";
-import { Text, YStack, View, Image, Button } from "@buttergolf/ui";
+import { Text, YStack, View, Image, Button, useTheme } from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Logo - Using SVG
@@ -105,6 +105,9 @@ export function OnboardingScreen({
   onAbout,
 }: Readonly<OnboardingScreenProps>) {
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
+  // Get theme-aware text color for RNText
+  const textSecondaryColor = theme.textSecondary?.val ?? "#545454";
 
   // Animation for two-row horizontal scroll
   // Top row scrolls left, bottom row scrolls right for staggered effect
@@ -340,7 +343,7 @@ export function OnboardingScreen({
         >
           <RNText
             style={{
-              color: "#545454",
+              color: textSecondaryColor,
               fontSize: 16,
               textAlign: "center",
               textDecorationLine: "underline",

@@ -217,17 +217,17 @@ export function DetailsStep({
   const getFieldIcon = (field: string, size: number = 20) => {
     switch (field) {
       case "category":
-        return <Tag size={size} color="$slateSmoke" />;
+        return <Tag size={size} color="$textSecondary" />;
       case "brand":
-        return <Award size={size} color="$slateSmoke" />;
+        return <Award size={size} color="$textSecondary" />;
       case "model":
-        return <Layers size={size} color="$slateSmoke" />;
+        return <Layers size={size} color="$textSecondary" />;
       case "flex":
-        return <Gauge size={size} color="$slateSmoke" />;
+        return <Gauge size={size} color="$textSecondary" />;
       case "loft":
-        return <Crosshair size={size} color="$slateSmoke" />;
+        return <Crosshair size={size} color="$textSecondary" />;
       case "woodsSubcategory":
-        return <CircleDot size={size} color="$slateSmoke" />;
+        return <CircleDot size={size} color="$textSecondary" />;
       default:
         return null;
     }
@@ -243,7 +243,7 @@ export function DetailsStep({
   ) => (
     <Column gap="$2">
       <Row alignItems="center" gap="$1">
-        <Text size="$4" fontWeight="600" color="$ironstone">
+        <Text size="$4" fontWeight="600" color="$text">
           {label}
         </Text>
         {required && (
@@ -271,13 +271,13 @@ export function DetailsStep({
           {getFieldIcon(pickerType ?? "")}
           <Text
             flex={1}
-            color={value ? "$ironstone" : "$slateSmoke"}
+            color={value ? "$text" : "$textSecondary"}
             size="$6"
             fontWeight={value ? "500" : "400"}
           >
             {value || placeholder}
           </Text>
-          <ChevronDown size={20} color="$slateSmoke" />
+          <ChevronDown size={20} color="$textSecondary" />
         </Row>
       </TouchableOpacity>
     </Column>
@@ -294,7 +294,7 @@ export function DetailsStep({
   ) => (
     <Column gap="$2">
       <Row justifyContent="space-between" alignItems="center">
-        <Text size="$4" fontWeight="600" color="$ironstone">
+        <Text size="$4" fontWeight="600" color="$text">
           {label}
         </Text>
         <Row
@@ -325,10 +325,10 @@ export function DetailsStep({
         <Slider.Thumb index={0} />
       </Slider>
       <Row justifyContent="space-between" paddingHorizontal="$1">
-        <Text size="$2" color="$slateSmoke">
+        <Text size="$2" color="$textSecondary">
           Poor
         </Text>
-        <Text size="$2" color="$slateSmoke">
+        <Text size="$2" color="$textSecondary">
           Like New
         </Text>
       </Row>
@@ -427,13 +427,13 @@ export function DetailsStep({
               justifyContent: "center",
             }}
           >
-            <X size={20} color="$ironstone" />
+            <X size={20} color="$text" />
           </TouchableOpacity>
           <Text
             fontFamily="$heading"
             size="$7"
             fontWeight="700"
-            color="$ironstone"
+            color="$text"
           >
             Select {title}
           </Text>
@@ -451,22 +451,22 @@ export function DetailsStep({
               alignItems="center"
               gap="$3"
             >
-              <Search size={20} color="$slateSmoke" />
+              <Search size={20} color="$textSecondary" />
               <Input
                 flex={1}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholder={`Search ${title.toLowerCase()}...`}
-                placeholderTextColor="$slateSmoke"
+                placeholderTextColor="$textSecondary"
                 borderWidth={0}
                 backgroundColor="transparent"
                 size="$6"
-                color="$ironstone"
+                color="$text"
                 autoFocus
               />
               {searchQuery.length > 0 && (
                 <TouchableOpacity onPress={() => setSearchQuery("")}>
-                  <X size={18} color="$slateSmoke" />
+                  <X size={18} color="$textSecondary" />
                 </TouchableOpacity>
               )}
             </Row>
@@ -477,7 +477,7 @@ export function DetailsStep({
         {isLoading && (
           <Column padding="$6" alignItems="center" gap="$3">
             <Spinner size="sm" color="$spicedClementine" />
-            <Text size="$4" color="$slateSmoke">
+            <Text size="$4" color="$textSecondary">
               Loading...
             </Text>
           </Column>
@@ -509,7 +509,7 @@ export function DetailsStep({
                       <Text
                         size="$6"
                         fontWeight={isSelected ? "600" : "500"}
-                        color="$ironstone"
+                        color="$text"
                       >
                         {item.name}
                       </Text>
@@ -533,13 +533,13 @@ export function DetailsStep({
 
             {!isLoading && items.length === 0 && (
               <Column padding="$6" alignItems="center" gap="$2">
-                <Text size="$5" fontWeight="500" color="$slateSmoke">
+                <Text size="$5" fontWeight="500" color="$textSecondary">
                   {showSearch && searchQuery
                     ? "No results found"
                     : "Start typing to search"}
                 </Text>
                 {showSearch && !searchQuery && (
-                  <Text size="$3" color="$slateSmoke">
+                  <Text size="$3" color="$textSecondary">
                     Enter at least 2 characters
                   </Text>
                 )}
@@ -578,11 +578,11 @@ export function DetailsStep({
             fontFamily="$heading"
             size="$10"
             fontWeight="800"
-            color="$ironstone"
+            color="$text"
           >
             Item details
           </Text>
-          <Text size="$5" fontWeight="400" color="$slateSmoke">
+          <Text size="$5" fontWeight="400" color="$textSecondary">
             Help buyers find your item with accurate details
           </Text>
         </Column>
@@ -671,7 +671,7 @@ export function DetailsStep({
                   alignItems="center"
                   justifyContent="space-between"
                 >
-                  <Text size="$6" fontWeight="500" color="$ironstone">
+                  <Text size="$6" fontWeight="500" color="$text">
                     Head cover included?
                   </Text>
                   <Switch
@@ -701,7 +701,7 @@ export function DetailsStep({
                   fontFamily="$heading"
                   size="$6"
                   fontWeight="700"
-                  color="$ironstone"
+                  color="$text"
                 >
                   Condition Rating
                 </Text>
@@ -709,7 +709,7 @@ export function DetailsStep({
                   *
                 </Text>
               </Row>
-              <Text size="$4" fontWeight="400" color="$slateSmoke">
+              <Text size="$4" fontWeight="400" color="$textSecondary">
                 Rate each component from 1 (Poor) to 10 (Like New)
               </Text>
             </Column>

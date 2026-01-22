@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { TextInput, Keyboard } from "react-native";
-import { Column, Row, Text, View, Input, ScrollView } from "@buttergolf/ui";
+import { Column, Row, Text, View, Input, ScrollView, useTheme } from "@buttergolf/ui";
 import { Sparkles, Type, FileText, PoundSterling } from "@tamagui/lucide-icons";
 
 import type { SellFormData } from "../types";
@@ -34,6 +34,11 @@ export function ListingStep({
   onUpdate,
   direction,
 }: Readonly<ListingStepProps>) {
+  const theme = useTheme();
+  // Get theme-aware colors for TextInput
+  const textColor = theme.text?.val ?? "#323232";
+  const placeholderColor = theme.textSecondary?.val ?? "#545454";
+  
   const [titleFocused, setTitleFocused] = useState(false);
   const [descFocused, setDescFocused] = useState(false);
   const [priceFocused, setPriceFocused] = useState(false);
@@ -127,11 +132,11 @@ export function ListingStep({
             fontFamily="$heading"
             size="$10"
             fontWeight="800"
-            color="$ironstone"
+            color="$text"
           >
             Create your listing
           </Text>
-          <Text size="$5" fontWeight="400" color="$slateSmoke">
+          <Text size="$5" fontWeight="400" color="$textSecondary">
             Write a compelling title and description to attract buyers
           </Text>
         </Column>
@@ -141,7 +146,7 @@ export function ListingStep({
           {/* Title */}
           <Column gap="$2">
             <Row alignItems="center" gap="$1">
-              <Text size="$4" fontWeight="600" color="$ironstone">
+              <Text size="$4" fontWeight="600" color="$text">
                 Title
               </Text>
               <Text size="$4" fontWeight="600" color="$error">
@@ -158,7 +163,7 @@ export function ListingStep({
               alignItems="center"
               gap="$3"
             >
-              <Type size={20} color="$slateSmoke" />
+              <Type size={20} color="$textSecondary" />
               <Input
                 flex={1}
                 value={formData.title}
@@ -166,11 +171,11 @@ export function ListingStep({
                 onFocus={() => setTitleFocused(true)}
                 onBlur={() => setTitleFocused(false)}
                 placeholder="Enter a title for your listing"
-                placeholderTextColor="$slateSmoke"
+                placeholderTextColor="$textSecondary"
                 borderWidth={0}
                 backgroundColor="transparent"
                 size="$6"
-                color="$ironstone"
+                color="$text"
               />
             </Row>
             <Row
@@ -190,7 +195,7 @@ export function ListingStep({
 
           {/* Description */}
           <Column gap="$2">
-            <Text size="$4" fontWeight="600" color="$ironstone">
+            <Text size="$4" fontWeight="600" color="$text">
               Description
             </Text>
             <Column
@@ -203,7 +208,7 @@ export function ListingStep({
               <Row paddingHorizontal="$4" paddingTop="$3" gap="$3">
                 <FileText
                   size={20}
-                  color="$slateSmoke"
+                  color="$textSecondary"
                   style={{ marginTop: 2 }}
                 />
                 <View flex={1}>
@@ -217,13 +222,13 @@ export function ListingStep({
                     onFocus={() => setDescFocused(true)}
                     onBlur={() => setDescFocused(false)}
                     placeholder="Describe your item - condition details, why you're selling, what's included..."
-                    placeholderTextColor="#545454"
+                    placeholderTextColor={placeholderColor}
                     multiline
                     numberOfLines={5}
                     textAlignVertical="top"
                     style={{
                       fontSize: 16,
-                      color: "#323232",
+                      color: textColor,
                       minHeight: 120,
                       fontFamily: "Urbanist-Regular",
                     }}
@@ -241,7 +246,7 @@ export function ListingStep({
                   color={
                     descriptionLength > maxDescLength * 0.9
                       ? "$error"
-                      : "$slateSmoke"
+                      : "$textSecondary"
                   }
                 >
                   {descriptionLength}/{maxDescLength}
@@ -253,7 +258,7 @@ export function ListingStep({
           {/* Price */}
           <Column gap="$2">
             <Row alignItems="center" gap="$1">
-              <Text size="$4" fontWeight="600" color="$ironstone">
+              <Text size="$4" fontWeight="600" color="$text">
                 Price
               </Text>
               <Text size="$4" fontWeight="600" color="$error">
@@ -275,7 +280,7 @@ export function ListingStep({
                 borderRightWidth={1}
                 borderRightColor="$cloudMist"
               >
-                <PoundSterling size={20} color="$ironstone" />
+                <PoundSterling size={20} color="$text" />
               </View>
               <Input
                 flex={1}
@@ -284,7 +289,7 @@ export function ListingStep({
                 onFocus={() => setPriceFocused(true)}
                 onBlur={() => setPriceFocused(false)}
                 placeholder="0.00"
-                placeholderTextColor="$slateSmoke"
+                placeholderTextColor="$textSecondary"
                 keyboardType="decimal-pad"
                 borderWidth={0}
                 backgroundColor="transparent"
@@ -292,11 +297,11 @@ export function ListingStep({
                 paddingVertical="$3"
                 size="$6"
                 fontWeight="600"
-                color="$ironstone"
+                color="$text"
                 focusStyle={{ borderWidth: 0, outlineWidth: 0 }}
               />
             </Row>
-            <Text size="$3" color="$slateSmoke">
+            <Text size="$3" color="$textSecondary">
               💡 Set a competitive price - check similar listings for guidance
             </Text>
           </Column>
@@ -314,32 +319,32 @@ export function ListingStep({
             fontFamily="$heading"
             size="$5"
             fontWeight="700"
-            color="$ironstone"
+            color="$text"
           >
             Pricing tips
           </Text>
           <Column gap="$2">
             <Row alignItems="flex-start" gap="$2">
-              <Text size="$4" color="$slateSmoke">
+              <Text size="$4" color="$textSecondary">
                 •
               </Text>
-              <Text size="$4" color="$slateSmoke" flex={1}>
+              <Text size="$4" color="$textSecondary" flex={1}>
                 Research similar items to price competitively
               </Text>
             </Row>
             <Row alignItems="flex-start" gap="$2">
-              <Text size="$4" color="$slateSmoke">
+              <Text size="$4" color="$textSecondary">
                 •
               </Text>
-              <Text size="$4" color="$slateSmoke" flex={1}>
+              <Text size="$4" color="$textSecondary" flex={1}>
                 Consider the condition and original retail price
               </Text>
             </Row>
             <Row alignItems="flex-start" gap="$2">
-              <Text size="$4" color="$slateSmoke">
+              <Text size="$4" color="$textSecondary">
                 •
               </Text>
-              <Text size="$4" color="$slateSmoke" flex={1}>
+              <Text size="$4" color="$textSecondary" flex={1}>
                 Items priced fairly sell 3x faster
               </Text>
             </Row>

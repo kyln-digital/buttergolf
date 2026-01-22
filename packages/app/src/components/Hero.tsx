@@ -125,9 +125,9 @@ function getImageSource(image: ImageSource): { uri: string } | number | null {
 }
 
 // Shared heading style - scales with viewport width
+// Note: color is set dynamically in HeroHeading using useTheme() for dark mode support
 const headingStyle = {
   fontSize: "clamp(36px, 5.5vw, 80px)",
-  color: "#323232",
   fontWeight: 700,
   lineHeight: 1.15,
   whiteSpace: "normal" as const,
@@ -169,7 +169,7 @@ function HeroHeading({
             key={index}
             level={1}
             fontSize={40}
-            color="$ironstone"
+            color="$text"
             fontWeight="700"
             lineHeight={46}
           >
@@ -188,7 +188,7 @@ function HeroHeading({
       lineHeight="$9"
       $md={{ fontSize: "$11", lineHeight: "$11" }}
       $lg={{ fontSize: "$14", lineHeight: "$14" }}
-      color="$ironstone"
+      color="$text"
       fontWeight="700"
       textAlign="center"
       $gtSm={{ textAlign: "left", fontSize: "$9", lineHeight: "$9" }}
@@ -384,7 +384,7 @@ export function Hero({
                   size="$7"
                   $gtSm={{ fontSize: "$8", textAlign: "left" }}
                   $md={{ fontSize: "$9" }}
-                  color="$slateSmoke"
+                  color="$textSecondary"
                   fontWeight="500"
                   marginTop="$2"
                   textAlign="center"

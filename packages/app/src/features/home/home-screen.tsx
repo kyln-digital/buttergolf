@@ -138,7 +138,7 @@ export function HomeScreen({
           <Text
             size="$8"
             fontWeight="700"
-            color="$ironstone"
+            color="$text"
             textAlign="center"
           >
             Shop by category
@@ -146,7 +146,7 @@ export function HomeScreen({
           <Text
             size="$5"
             fontWeight="400"
-            color="$slateSmoke"
+            color="$textSecondary"
             textAlign="center"
           >
             Find exactly what you need - faster.
