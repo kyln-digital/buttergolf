@@ -235,18 +235,18 @@ export function SellerOnboardingScreen({
                   onPress={onCancel}
                   disabled={isStarting}
                 >
-                  <Text color="$text" fontWeight="600">Not Now</Text>
+                  <Text color="$textSecondary" fontWeight="600">Not Now</Text>
                 </Button>
               )}
 
               {displayError && (
                 <Button
-                  chromeless
+                  butterVariant="tertiary"
                   size="$4"
                   onPress={onRefresh}
                   disabled={isStarting}
                 >
-                  <Text color="$primary">Refresh Status</Text>
+                  <Text color="$primary" fontWeight="500">Refresh Status</Text>
                 </Button>
               )}
             </>
@@ -256,7 +256,7 @@ export function SellerOnboardingScreen({
         {/* Footer note */}
         <Text
           size="$3"
-          color="$textMuted"
+          color="$textSecondary"
           textAlign="center"
           maxWidth={280}
           marginTop="$lg"

@@ -1,14 +1,9 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback } from "react";
 import { Alert, StyleSheet, SafeAreaView, View, ActivityIndicator } from "react-native";
 import { useAuth } from "@clerk/clerk-expo";
 import { useSellerStatus } from "@buttergolf/app/src/hooks";
 import { SellerOnboardingScreen, SellScreen } from "@buttergolf/app";
-import {
-  ConnectComponentsProvider,
-  ConnectAccountOnboarding,
-  loadConnectAndInitialize,
-  type StripeConnectInstance,
-} from "@stripe/stripe-react-native";
+import { StripeConnectWebView } from "./StripeConnectWebView";
 import type { SellFormData, ImageData, Category, Brand, Model } from "@buttergolf/app";
 
 // ButterGolf brand colors
@@ -60,12 +55,12 @@ export interface SellerOnboardingGateProps {
  *
  * This component:
  * 1. Checks the user's seller status on mount
- * 2. If not ready to sell, shows embedded Stripe Connect onboarding (native modal)
- * 3. Uses the same API endpoint as web for unified experience
+ * 2. If not ready to sell, shows the onboarding prompt screen
+ * 3. Shows embedded Stripe Connect onboarding in a WebView
  * 4. Shows SellScreen when onboarding is complete
  *
- * Uses Stripe React Native SDK's native Connect embedded components which
- * provide a seamless in-app onboarding experience with ButterGolf branding.
+ * Uses Stripe Connect.js embedded components via WebView for a native-like
+ * onboarding experience within the app.
  */
 export function SellerOnboardingGate({
   navigation,
@@ -79,7 +74,7 @@ export function SellerOnboardingGate({
 }: SellerOnboardingGateProps) {
   const { getToken } = useAuth();
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
-  const publishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
+  const stripePublishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
 
   // Seller status hook
   const { status, isLoading, error, refresh } = useSellerStatus({
@@ -88,14 +83,11 @@ export function SellerOnboardingGate({
     isAuthenticated: true,
   });
 
-  // Stripe Connect instance state
-  const [stripeConnectInstance, setStripeConnectInstance] = useState<StripeConnectInstance | null>(null);
+  // Onboarding state
   const [onboardingLoading, setOnboardingLoading] = useState(false);
   const [onboardingError, setOnboardingError] = useState<string | null>(null);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  
-  // Track if we've reached the summary step (considered "complete enough")
-  const hasReachedSummaryRef = useRef(false);
+  const [showWebView, setShowWebView] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
 
   // Debug logging
   console.log("[SellerOnboardingGate] Render:", {
@@ -104,19 +96,14 @@ export function SellerOnboardingGate({
     error,
     status,
     isReadyToSell: status?.isReadyToSell,
-    showOnboarding,
+    showWebView,
   });
 
   /**
-   * Initialize Stripe Connect instance for embedded onboarding
-   * Uses the same /api/stripe/connect/account endpoint as web
+   * Start Stripe Connect onboarding via embedded WebView
+   * This creates an AccountSession and shows the embedded component
    */
-  const initializeOnboarding = useCallback(async () => {
-    if (!publishableKey) {
-      setOnboardingError("Stripe publishable key not configured");
-      return;
-    }
-
+  const startOnboarding = useCallback(async () => {
     try {
       setOnboardingLoading(true);
       setOnboardingError(null);
@@ -128,90 +115,96 @@ export function SellerOnboardingGate({
         return;
       }
 
-      // Create the Connect instance with fetchClientSecret callback
-      // This uses the same API endpoint as web for unified experience
-      const instance = loadConnectAndInitialize({
-        publishableKey,
-        fetchClientSecret: async () => {
-          console.log("[SellerOnboardingGate] Fetching client secret...");
-          const response = await fetch(`${apiUrl}/api/stripe/connect/account`, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "Failed to initialize onboarding");
-          }
-
-          const { clientSecret } = await response.json();
-          console.log("[SellerOnboardingGate] Client secret received");
-          return clientSecret;
-        },
-        appearance: {
-          variables: {
-            colorPrimary: brandColors.spicedClementine,
-            colorBackground: brandColors.pureWhite,
-            colorText: brandColors.ironstone,
-            colorDanger: brandColors.error,
-          },
+      // First, ensure the user has a Connect account
+      // This may create the account if it doesn't exist
+      const accountResponse = await fetch(`${apiUrl}/api/stripe/connect/account`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
       });
 
-      setStripeConnectInstance(instance);
-      setShowOnboarding(true);
-      console.log("[SellerOnboardingGate] Connect instance initialized");
+      if (!accountResponse.ok) {
+        const errorData = await accountResponse.json();
+        throw new Error(errorData.error || "Failed to create seller account");
+      }
+
+      // Now get an AccountSession for the embedded component
+      const sessionResponse = await fetch(`${apiUrl}/api/stripe/connect/account-session`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      });
+
+      if (!sessionResponse.ok) {
+        const errorData = await sessionResponse.json();
+        throw new Error(errorData.error || "Failed to create onboarding session");
+      }
+
+      const { clientSecret: secret } = await sessionResponse.json();
+      console.log("[SellerOnboardingGate] Got client secret, showing WebView");
+
+      setClientSecret(secret);
+      setShowWebView(true);
     } catch (err) {
-      console.error("[SellerOnboardingGate] Initialization error:", err);
-      setOnboardingError(
-        err instanceof Error ? err.message : "Failed to initialize onboarding"
-      );
-      Alert.alert(
-        "Onboarding Error",
-        err instanceof Error ? err.message : "Failed to start seller onboarding"
-      );
+      console.error("[SellerOnboardingGate] Onboarding error:", err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to start seller onboarding";
+      setOnboardingError(errorMessage);
+      Alert.alert("Onboarding Error", errorMessage);
     } finally {
       setOnboardingLoading(false);
     }
-  }, [apiUrl, getToken, publishableKey]);
+  }, [apiUrl, getToken]);
 
   /**
-   * Handle onboarding exit - refresh status and hide modal
+   * Handle WebView onboarding completion
    */
-  const handleOnboardingExit = useCallback(async () => {
-    console.log("[SellerOnboardingGate] Onboarding exited");
-    setShowOnboarding(false);
-    setStripeConnectInstance(null);
-    hasReachedSummaryRef.current = false;
-    
-    // Refresh status to check if onboarding is complete
-    await refresh();
+  const handleOnboardingComplete = useCallback(() => {
+    console.log("[SellerOnboardingGate] Onboarding complete, refreshing status");
+    setShowWebView(false);
+    setClientSecret(null);
+    // Refresh seller status to check if onboarding completed
+    refresh();
   }, [refresh]);
 
   /**
-   * Handle step changes during onboarding
+   * Handle WebView exit/cancel
    */
-  const handleStepChange = useCallback((stepChange: { step: string }) => {
-    console.log("[SellerOnboardingGate] Step changed:", stepChange.step);
-    // Track when user reaches summary step
-    if (stepChange.step === "summary" || stepChange.step.startsWith("summary_")) {
-      hasReachedSummaryRef.current = true;
-    }
-  }, []);
+  const handleOnboardingExit = useCallback(() => {
+    console.log("[SellerOnboardingGate] Onboarding exited by user");
+    setShowWebView(false);
+    setClientSecret(null);
+    // Refresh status in case they partially completed
+    refresh();
+  }, [refresh]);
 
   /**
-   * Handle load errors from the embedded component
+   * Handle WebView error
    */
-  const handleLoadError = useCallback((err: { error: { message?: string } }) => {
-    const errorMessage = err.error.message || "An error occurred during onboarding";
-    console.error("[SellerOnboardingGate] Load error:", errorMessage);
-    setOnboardingError(errorMessage);
-    Alert.alert("Error", errorMessage);
+  const handleOnboardingError = useCallback((error: string) => {
+    console.error("[SellerOnboardingGate] Onboarding error:", error);
+    setOnboardingError(error);
+    setShowWebView(false);
+    setClientSecret(null);
   }, []);
+
+  // If showing the WebView onboarding
+  if (showWebView && clientSecret && stripePublishableKey) {
+    return (
+      <StripeConnectWebView
+        clientSecret={clientSecret}
+        publishableKey={stripePublishableKey}
+        onComplete={handleOnboardingComplete}
+        onExit={handleOnboardingExit}
+        onError={handleOnboardingError}
+      />
+    );
+  }
 
   // If user is ready to sell, show the SellScreen
   if (status?.isReadyToSell) {
@@ -233,26 +226,6 @@ export function SellerOnboardingGate({
     );
   }
 
-  // If embedded onboarding is active, show it
-  if (showOnboarding && stripeConnectInstance) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <ConnectComponentsProvider connectInstance={stripeConnectInstance}>
-          <ConnectAccountOnboarding
-            title="Seller Account Setup"
-            onExit={handleOnboardingExit}
-            onStepChange={handleStepChange}
-            onLoadError={handleLoadError}
-            collectionOptions={{
-              fields: "eventually_due",
-              futureRequirements: "include",
-            }}
-          />
-        </ConnectComponentsProvider>
-      </SafeAreaView>
-    );
-  }
-
   // Loading state while initializing onboarding
   if (onboardingLoading) {
     return (
@@ -264,14 +237,14 @@ export function SellerOnboardingGate({
     );
   }
 
-  // Otherwise, show the onboarding prompt screen (pre-onboarding state)
+  // Show the onboarding prompt screen
   return (
     <SellerOnboardingScreen
       sellerStatus={status}
       isLoading={isLoading}
       error={error || onboardingError}
-      onStartOnboarding={initializeOnboarding}
-      onContinueOnboarding={initializeOnboarding}
+      onStartOnboarding={startOnboarding}
+      onContinueOnboarding={startOnboarding}
       onCancel={() => navigation.goBack()}
       onRefresh={refresh}
     />
