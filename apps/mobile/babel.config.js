@@ -23,8 +23,6 @@ module.exports = function (api) {
           disableExtraction: process.env.NODE_ENV === 'development',
         },
       ],
-      // Reanimated plugin must be listed last
-      'react-native-reanimated/plugin',
     ],
   }
 }
