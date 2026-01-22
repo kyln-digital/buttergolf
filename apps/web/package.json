@@ -65,7 +65,7 @@
     "@tamagui/next-plugin": "catalog:",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "catalog:",
-    "@types/react": "19.1.0",
+    "@types/react": "19.2.9",
     "@types/react-dom": "catalog:",
     "eslint": "catalog:",
     "eslint-config-next": "catalog:",
