@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Row, Column, Input } from "@buttergolf/ui";
 import { Search as SearchIcon } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "tamagui";
 
 export interface MobileSearchBarProps {
   placeholder?: string;
@@ -32,6 +33,10 @@ export function MobileSearchBar({
   const [query, setQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
+
+  const placeholderTextColour =
+    theme.textMuted?.val ?? theme.textSecondary?.val ?? theme.text?.val ?? "#999";
 
   const handleChangeText = (text: string) => {
     setQuery(text);
@@ -58,9 +63,9 @@ export function MobileSearchBar({
         alignItems="center"
         gap="$2"
         borderWidth={isFocused ? 2 : 1}
-        borderColor={isFocused ? "$primary" : "rgba(50, 50, 50, 0.5)"}
+        borderColor={isFocused ? "$primary" : "$border"}
       >
-        <SearchIcon size={20} color="$ironstone" opacity={0.5} />
+        <SearchIcon size={20} color="$textMuted" opacity={0.7} />
         <Input
           flex={1}
           unstyled
@@ -72,7 +77,7 @@ export function MobileSearchBar({
             setTimeout(() => setIsFocused(false), 200);
           }}
           placeholder={placeholder}
-          placeholderTextColor="rgba(50, 50, 50, 0.5)"
+          placeholderTextColor={placeholderTextColour}
           fontSize={15}
           color="$text"
           borderWidth={0}
@@ -95,7 +100,7 @@ export function MobileSearchBar({
           backgroundColor="$surface"
           borderRadius="$md"
           borderWidth={1}
-          borderColor="$ironstone"
+          borderColor="$border"
           overflow="hidden"
           shadowColor="$shadowColor"
           shadowOffset={{ width: 0, height: 2 }}

@@ -8,6 +8,7 @@ import {
   SlidersHorizontal,
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "tamagui";
 
 export interface MobileCategoryHeaderProps {
   categoryName: string;
@@ -30,6 +31,10 @@ export function MobileCategoryHeader({
 }: Readonly<MobileCategoryHeaderProps>) {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = React.useState("");
+  const theme = useTheme();
+
+  const placeholderTextColour =
+    theme.textMuted?.val ?? theme.textSecondary?.val ?? theme.text?.val ?? "#999";
 
   const handleChangeText = (text: string) => {
     setQuery(text);
@@ -54,7 +59,7 @@ export function MobileCategoryHeader({
           pressStyle={{ opacity: 0.7 }}
           onPress={onBackPress}
         >
-          <ArrowLeft size={24} color="$spicedClementine" />
+          <ArrowLeft size={24} color="$primary" />
         </Column>
 
         {/* Search Input */}
@@ -67,17 +72,16 @@ export function MobileCategoryHeader({
           alignItems="center"
           gap="$2"
           borderWidth={1}
-          borderColor="rgba(50, 50, 50, 0.5)"
+          borderColor="$border"
         >
-          <SearchIcon size={20} color="$ironstone" opacity={0.5} />
+          <SearchIcon size={20} color="$textMuted" opacity={0.7} />
           <Input
             flex={1}
             unstyled
             value={query}
             onChangeText={handleChangeText}
             placeholder={placeholder}
-            placeholderTextColor="$ironstone"
-            opacity={0.5}
+            placeholderTextColor={placeholderTextColour}
             fontSize={15}
             color="$text"
             borderWidth={0}
@@ -95,7 +99,7 @@ export function MobileCategoryHeader({
           pressStyle={{ opacity: 0.7 }}
           onPress={onFilterPress}
         >
-          <SlidersHorizontal size={24} color="$spicedClementine" />
+          <SlidersHorizontal size={24} color="$primary" />
         </Column>
       </Row>
 
@@ -103,7 +107,7 @@ export function MobileCategoryHeader({
       <Text
         size="$6"
         fontWeight="700"
-        color="$ironstone"
+        color="$text"
         alignSelf="flex-start"
       >
         {categoryName}
