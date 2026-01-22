@@ -607,7 +607,7 @@ async function uploadImageToCloudinary(
  * This wrapper uses SellerOnboardingGate which:
  * 1. Checks seller status on mount
  * 2. Shows SellerOnboardingScreen if user hasn't completed Stripe Connect setup
- * 3. Opens Stripe hosted onboarding flow via expo-web-browser
+ * 3. Opens native Stripe Connect embedded onboarding (unified with web experience)
  * 4. Shows SellScreen once user is ready to sell
  */
 function SellScreenWrapper({
