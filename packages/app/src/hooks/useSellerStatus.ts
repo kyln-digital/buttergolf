@@ -36,8 +36,8 @@ export interface UseSellerStatusResult {
   isLoading: boolean;
   /** Error message if fetch failed */
   error: string | null;
-  /** Refresh the seller status */
-  refresh: () => Promise<void>;
+  /** Refresh the seller status. Pass true to force refresh (bypass throttle). */
+  refresh: (force?: boolean) => Promise<void>;
 }
 
 const DEFAULT_STATUS: SellerStatus = {
@@ -92,7 +92,7 @@ export function useSellerStatus({
     apiUrlRef.current = apiUrl;
   });
 
-  const fetchStatus = useCallback(async () => {
+  const fetchStatus = useCallback(async (force?: boolean) => {
     const isDev =
       typeof globalThis !== "undefined" &&
       (globalThis as { __DEV__?: boolean }).__DEV__ === true;
@@ -104,7 +104,7 @@ export function useSellerStatus({
       }
     };
 
-    debugLog("fetchStatus called, isAuthenticated:", isAuthenticated);
+    debugLog("fetchStatus called, isAuthenticated:", isAuthenticated, "force:", force);
     
     // Handle unauthenticated case before setting the fetching guard
     if (!isAuthenticated) {
@@ -116,8 +116,9 @@ export function useSellerStatus({
 
     // Throttle: skip if we fetched recently (prevents rapid polling)
     // Uses module-level variable to persist across component remounts
+    // Can be bypassed with force=true (e.g., after completing onboarding)
     const now = Date.now();
-    if (now - lastFetchTime < FETCH_COOLDOWN_MS) {
+    if (!force && now - lastFetchTime < FETCH_COOLDOWN_MS) {
       debugLog("Skipping fetch - within cooldown period");
       return;
     }

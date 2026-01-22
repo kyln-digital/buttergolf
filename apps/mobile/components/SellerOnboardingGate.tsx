@@ -1,15 +1,22 @@
-import { useState, useCallback, useEffect, useRef } from "react";
-import { Alert, StyleSheet, SafeAreaView, View, ActivityIndicator } from "react-native";
+import { useState, useCallback, useRef } from "react";
+import {
+  Alert,
+  StyleSheet,
+  SafeAreaView,
+  View,
+  ActivityIndicator,
+} from "react-native";
+import { WebView, WebViewMessageEvent } from "react-native-webview";
 import { useAuth } from "@clerk/clerk-expo";
 import { useSellerStatus } from "@buttergolf/app/src/hooks";
 import { SellerOnboardingScreen, SellScreen } from "@buttergolf/app";
-import {
-  ConnectComponentsProvider,
-  ConnectAccountOnboarding,
-  loadConnectAndInitialize,
-  type StripeConnectInstance,
-} from "@stripe/stripe-react-native";
-import type { SellFormData, ImageData, Category, Brand, Model } from "@buttergolf/app";
+import type {
+  SellFormData,
+  ImageData,
+  Category,
+  Brand,
+  Model,
+} from "@buttergolf/app";
 
 // ButterGolf brand colors
 const brandColors = {
@@ -56,16 +63,28 @@ export interface SellerOnboardingGateProps {
 }
 
 /**
+ * WebView message types from the mobile-onboarding page
+ */
+interface WebViewMessage {
+  type: "ready" | "initialized" | "step_change" | "exit" | "error";
+  step?: string;
+  success?: boolean;
+  message?: string;
+}
+
+/**
  * SellerOnboardingGate - Wraps SellScreen and gates it behind seller onboarding.
  *
  * This component:
  * 1. Checks the user's seller status on mount
- * 2. If not ready to sell, shows embedded Stripe Connect onboarding (native modal)
- * 3. Uses the same API endpoint as web for unified experience
- * 4. Shows SellScreen when onboarding is complete
+ * 2. If not ready to sell, shows SellerOnboardingScreen (pre-onboarding prompt)
+ * 3. When user taps "Get Started", opens WebView with embedded Stripe Connect
+ * 4. WebView loads /mobile-onboarding page with Clerk token for auth
+ * 5. Handles completion/exit messages from WebView
+ * 6. Shows SellScreen when onboarding is complete
  *
- * Uses Stripe React Native SDK's native Connect embedded components which
- * provide a seamless in-app onboarding experience with ButterGolf branding.
+ * Uses WebView because @stripe/stripe-react-native does NOT support
+ * Connect embedded components - only the web SDK does.
  */
 export function SellerOnboardingGate({
   navigation,
@@ -79,7 +98,6 @@ export function SellerOnboardingGate({
 }: SellerOnboardingGateProps) {
   const { getToken } = useAuth();
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
-  const publishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
 
   // Seller status hook
   const { status, isLoading, error, refresh } = useSellerStatus({
@@ -88,14 +106,12 @@ export function SellerOnboardingGate({
     isAuthenticated: true,
   });
 
-  // Stripe Connect instance state
-  const [stripeConnectInstance, setStripeConnectInstance] = useState<StripeConnectInstance | null>(null);
-  const [onboardingLoading, setOnboardingLoading] = useState(false);
+  // WebView state
+  const [showWebView, setShowWebView] = useState(false);
+  const [webViewLoading, setWebViewLoading] = useState(false);
+  const [webViewUrl, setWebViewUrl] = useState<string | null>(null);
   const [onboardingError, setOnboardingError] = useState<string | null>(null);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  
-  // Track if we've reached the summary step (considered "complete enough")
-  const hasReachedSummaryRef = useRef(false);
+  const webViewRef = useRef<WebView>(null);
 
   // Debug logging
   console.log("[SellerOnboardingGate] Render:", {
@@ -104,114 +120,115 @@ export function SellerOnboardingGate({
     error,
     status,
     isReadyToSell: status?.isReadyToSell,
-    showOnboarding,
+    showWebView,
   });
 
   /**
-   * Initialize Stripe Connect instance for embedded onboarding
-   * Uses the same /api/stripe/connect/account endpoint as web
+   * Start onboarding by preparing the WebView URL with auth token
    */
   const initializeOnboarding = useCallback(async () => {
-    if (!publishableKey) {
-      setOnboardingError("Stripe publishable key not configured");
-      return;
-    }
-
     try {
-      setOnboardingLoading(true);
+      setWebViewLoading(true);
       setOnboardingError(null);
 
       const token = await getToken();
       if (!token) {
         Alert.alert("Error", "Please sign in to become a seller.");
-        setOnboardingLoading(false);
+        setWebViewLoading(false);
         return;
       }
 
-      // Create the Connect instance with fetchClientSecret callback
-      // This uses the same API endpoint as web for unified experience
-      const instance = loadConnectAndInitialize({
-        publishableKey,
-        fetchClientSecret: async () => {
-          console.log("[SellerOnboardingGate] Fetching client secret...");
-          const response = await fetch(`${apiUrl}/api/stripe/connect/account`, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-          });
+      // Build the WebView URL with the auth token
+      // The mobile-onboarding page will use this token to authenticate API calls
+      const onboardingUrl = new URL("/mobile-onboarding", apiUrl);
+      onboardingUrl.searchParams.set("token", token);
+      onboardingUrl.searchParams.set("apiUrl", apiUrl);
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "Failed to initialize onboarding");
-          }
+      console.log(
+        "[SellerOnboardingGate] Opening WebView:",
+        onboardingUrl.toString().replace(token, "***")
+      );
 
-          const { clientSecret } = await response.json();
-          console.log("[SellerOnboardingGate] Client secret received");
-          return clientSecret;
-        },
-        appearance: {
-          variables: {
-            colorPrimary: brandColors.spicedClementine,
-            colorBackground: brandColors.pureWhite,
-            colorText: brandColors.ironstone,
-            colorDanger: brandColors.error,
-          },
-        },
-      });
-
-      setStripeConnectInstance(instance);
-      setShowOnboarding(true);
-      console.log("[SellerOnboardingGate] Connect instance initialized");
+      setWebViewUrl(onboardingUrl.toString());
+      setShowWebView(true);
+      setWebViewLoading(false);
     } catch (err) {
       console.error("[SellerOnboardingGate] Initialization error:", err);
       setOnboardingError(
         err instanceof Error ? err.message : "Failed to initialize onboarding"
       );
+      setWebViewLoading(false);
       Alert.alert(
         "Onboarding Error",
-        err instanceof Error ? err.message : "Failed to start seller onboarding"
+        err instanceof Error
+          ? err.message
+          : "Failed to start seller onboarding"
       );
-    } finally {
-      setOnboardingLoading(false);
     }
-  }, [apiUrl, getToken, publishableKey]);
+  }, [apiUrl, getToken]);
 
   /**
-   * Handle onboarding exit - refresh status and hide modal
+   * Handle messages from the WebView
    */
-  const handleOnboardingExit = useCallback(async () => {
-    console.log("[SellerOnboardingGate] Onboarding exited");
-    setShowOnboarding(false);
-    setStripeConnectInstance(null);
-    hasReachedSummaryRef.current = false;
-    
-    // Refresh status to check if onboarding is complete
-    await refresh();
+  const handleWebViewMessage = useCallback(
+    async (event: WebViewMessageEvent) => {
+      try {
+        const message: WebViewMessage = JSON.parse(event.nativeEvent.data);
+        console.log("[SellerOnboardingGate] WebView message:", message);
+
+        switch (message.type) {
+          case "ready":
+            console.log("[SellerOnboardingGate] WebView ready");
+            break;
+
+          case "initialized":
+            console.log("[SellerOnboardingGate] Stripe Connect initialized");
+            break;
+
+          case "step_change":
+            console.log("[SellerOnboardingGate] Step changed:", message.step);
+            break;
+
+          case "exit":
+            console.log(
+              "[SellerOnboardingGate] Onboarding exited, success:",
+              message.success
+            );
+            setShowWebView(false);
+            setWebViewUrl(null);
+
+            // Force refresh seller status (bypass throttle)
+            await refresh(true);
+            break;
+
+          case "error":
+            console.error(
+              "[SellerOnboardingGate] WebView error:",
+              message.message
+            );
+            setOnboardingError(message.message || "An error occurred");
+            // Don't auto-close - let user retry or cancel
+            break;
+        }
+      } catch (err) {
+        console.error(
+          "[SellerOnboardingGate] Failed to parse WebView message:",
+          err
+        );
+      }
+    },
+    [refresh]
+  );
+
+  /**
+   * Handle WebView close/cancel
+   */
+  const handleCloseWebView = useCallback(() => {
+    setShowWebView(false);
+    setWebViewUrl(null);
+    // Refresh status in case user completed something
+    refresh(true);
   }, [refresh]);
-
-  /**
-   * Handle step changes during onboarding
-   */
-  const handleStepChange = useCallback((stepChange: { step: string }) => {
-    console.log("[SellerOnboardingGate] Step changed:", stepChange.step);
-    // Track when user reaches summary step
-    if (stepChange.step === "summary" || stepChange.step.startsWith("summary_")) {
-      hasReachedSummaryRef.current = true;
-    }
-  }, []);
-
-  /**
-   * Handle load errors from the embedded component
-   */
-  const handleLoadError = useCallback((err: { error: { message?: string } }) => {
-    const errorMessage = err.error.message || "An error occurred during onboarding";
-    console.error("[SellerOnboardingGate] Load error:", errorMessage);
-    setOnboardingError(errorMessage);
-    Alert.alert("Error", errorMessage);
-  }, []);
 
   // If user is ready to sell, show the SellScreen
   if (status?.isReadyToSell) {
@@ -233,38 +250,119 @@ export function SellerOnboardingGate({
     );
   }
 
-  // If embedded onboarding is active, show it
-  if (showOnboarding && stripeConnectInstance) {
+  // Show WebView for Stripe Connect onboarding
+  if (showWebView && webViewUrl) {
     return (
       <SafeAreaView style={styles.container}>
-        <ConnectComponentsProvider connectInstance={stripeConnectInstance}>
-          <ConnectAccountOnboarding
-            title="Seller Account Setup"
-            onExit={handleOnboardingExit}
-            onStepChange={handleStepChange}
-            onLoadError={handleLoadError}
-            collectionOptions={{
-              fields: "eventually_due",
-              futureRequirements: "include",
-            }}
-          />
-        </ConnectComponentsProvider>
+        {/* Close button header */}
+        <View style={styles.webViewHeader}>
+          <View style={styles.headerLeft} />
+          <View style={styles.headerCenter}>
+            <View style={styles.headerTitleContainer}>
+              <ActivityIndicator
+                size="small"
+                color={brandColors.spicedClementine}
+                style={styles.headerSpinner}
+              />
+            </View>
+          </View>
+          <View style={styles.headerRight}>
+            {/* Close button - tap to cancel */}
+            <View
+              style={styles.closeButton}
+              onTouchEnd={handleCloseWebView}
+              accessibilityRole="button"
+              accessibilityLabel="Close onboarding"
+            >
+              <View style={styles.closeButtonInner}>
+                <View style={styles.closeX1} />
+                <View style={styles.closeX2} />
+              </View>
+            </View>
+          </View>
+        </View>
+
+        <WebView
+          ref={webViewRef}
+          source={{ uri: webViewUrl }}
+          style={styles.webView}
+          onMessage={handleWebViewMessage}
+          onLoadStart={() => setWebViewLoading(true)}
+          onLoadEnd={() => setWebViewLoading(false)}
+          onError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            console.error("[SellerOnboardingGate] WebView error:", nativeEvent);
+            setOnboardingError(nativeEvent.description || "Failed to load");
+          }}
+          // Security settings
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          sharedCookiesEnabled={false}
+          thirdPartyCookiesEnabled={false}
+          // UX settings
+          startInLoadingState={true}
+          renderLoading={() => (
+            <View style={styles.webViewLoading}>
+              <ActivityIndicator
+                size="large"
+                color={brandColors.spicedClementine}
+              />
+            </View>
+          )}
+          // iOS specific
+          allowsBackForwardNavigationGestures={false}
+          // Android specific
+          setSupportMultipleWindows={false}
+          // Handle external links (open in system browser if needed)
+          onShouldStartLoadWithRequest={(request) => {
+            // Allow same-origin requests
+            if (request.url.startsWith(apiUrl)) {
+              return true;
+            }
+            // Allow Stripe domains for iframes
+            if (
+              request.url.includes("stripe.com") ||
+              request.url.includes("js.stripe.com")
+            ) {
+              return true;
+            }
+            // Block other external links (or could open in system browser)
+            console.log(
+              "[SellerOnboardingGate] Blocked external URL:",
+              request.url
+            );
+            return false;
+          }}
+        />
+
+        {/* Loading overlay for WebView loading state */}
+        {webViewLoading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator
+              size="large"
+              color={brandColors.spicedClementine}
+            />
+          </View>
+        )}
       </SafeAreaView>
     );
   }
 
   // Loading state while initializing onboarding
-  if (onboardingLoading) {
+  if (webViewLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={brandColors.spicedClementine} />
+          <ActivityIndicator
+            size="large"
+            color={brandColors.spicedClementine}
+          />
         </View>
       </SafeAreaView>
     );
   }
 
-  // Otherwise, show the onboarding prompt screen (pre-onboarding state)
+  // Show the onboarding prompt screen (pre-onboarding state)
   return (
     <SellerOnboardingScreen
       sellerStatus={status}
@@ -273,7 +371,7 @@ export function SellerOnboardingGate({
       onStartOnboarding={initializeOnboarding}
       onContinueOnboarding={initializeOnboarding}
       onCancel={() => navigation.goBack()}
-      onRefresh={refresh}
+      onRefresh={() => refresh(true)}
     />
   );
 }
@@ -287,5 +385,82 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  webViewHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: brandColors.pureWhite,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EDEDED",
+  },
+  headerLeft: {
+    width: 40,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerTitleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  headerSpinner: {
+    marginLeft: 8,
+  },
+  headerRight: {
+    width: 40,
+    alignItems: "flex-end",
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#F5F5F5",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  closeButtonInner: {
+    width: 14,
+    height: 14,
+    position: "relative",
+  },
+  closeX1: {
+    position: "absolute",
+    width: 14,
+    height: 2,
+    backgroundColor: brandColors.ironstone,
+    top: 6,
+    transform: [{ rotate: "45deg" }],
+  },
+  closeX2: {
+    position: "absolute",
+    width: 14,
+    height: 2,
+    backgroundColor: brandColors.ironstone,
+    top: 6,
+    transform: [{ rotate: "-45deg" }],
+  },
+  webView: {
+    flex: 1,
+    backgroundColor: brandColors.vanillaCream,
+  },
+  webViewLoading: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: brandColors.vanillaCream,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 250, 210, 0.9)",
   },
 });
