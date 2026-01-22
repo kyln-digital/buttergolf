@@ -35,7 +35,8 @@ export function MobileSearchBar({
   const insets = useSafeAreaInsets();
   const theme = useTheme();
 
-  const placeholderTextColour = theme.textMuted?.val ?? "rgba(0, 0, 0, 0.5)";
+  const placeholderTextColour =
+    theme.textMuted?.val ?? theme.textSecondary?.val ?? theme.text?.val ?? "#999";
 
   const handleChangeText = (text: string) => {
     setQuery(text);

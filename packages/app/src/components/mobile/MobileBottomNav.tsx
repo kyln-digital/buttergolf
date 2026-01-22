@@ -9,7 +9,6 @@ import {
   MessageCircle,
   User,
 } from "@tamagui/lucide-icons";
-import { useThemeName } from "tamagui";
 
 export interface MobileBottomNavProps {
   activeTab?: "home" | "wishlist" | "sell" | "messages" | "login" | "account";
@@ -36,13 +35,8 @@ export function MobileBottomNav({
   onAccountPress,
   isAuthenticated = false,
 }: Readonly<MobileBottomNavProps>) {
-  const themeName = useThemeName();
-
   const inactiveOpacity = 0.55;
   const activeOpacity = 1;
-  const activeTabBackgroundColor = String(themeName).startsWith("dark")
-    ? "$overlayLight20"
-    : "$overlayDark10";
 
   // Determine if the user/account tab is active
   const isUserTabActive = isAuthenticated
@@ -75,7 +69,7 @@ export function MobileBottomNav({
           paddingHorizontal="$2"
           borderRadius="$xl"
           backgroundColor={
-            activeTab === "home" ? activeTabBackgroundColor : "transparent"
+            activeTab === "home" ? "$inverseSurface" : "transparent"
           }
           onPress={onHomePress}
           cursor="pointer"
@@ -107,7 +101,7 @@ export function MobileBottomNav({
           paddingHorizontal="$2"
           borderRadius="$xl"
           backgroundColor={
-            activeTab === "wishlist" ? activeTabBackgroundColor : "transparent"
+            activeTab === "wishlist" ? "$inverseSurface" : "transparent"
           }
           onPress={onWishlistPress}
           cursor="pointer"
@@ -139,7 +133,7 @@ export function MobileBottomNav({
           paddingHorizontal="$2"
           borderRadius="$xl"
           backgroundColor={
-            activeTab === "sell" ? activeTabBackgroundColor : "transparent"
+            activeTab === "sell" ? "$inverseSurface" : "transparent"
           }
           onPress={onSellPress}
           cursor="pointer"
@@ -171,7 +165,7 @@ export function MobileBottomNav({
           paddingHorizontal="$2"
           borderRadius="$xl"
           backgroundColor={
-            activeTab === "messages" ? activeTabBackgroundColor : "transparent"
+            activeTab === "messages" ? "$inverseSurface" : "transparent"
           }
           onPress={onMessagesPress}
           cursor="pointer"
@@ -202,7 +196,7 @@ export function MobileBottomNav({
           paddingVertical="$2"
           paddingHorizontal="$2"
           borderRadius="$xl"
-          backgroundColor={isUserTabActive ? activeTabBackgroundColor : "transparent"}
+          backgroundColor={isUserTabActive ? "$inverseSurface" : "transparent"}
           onPress={isAuthenticated ? onAccountPress : onLoginPress}
           cursor="pointer"
           accessibilityRole="button"

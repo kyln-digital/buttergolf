@@ -92,11 +92,22 @@ export function useSellerStatus({
   });
 
   const fetchStatus = useCallback(async () => {
-    console.log("[useSellerStatus] fetchStatus called, isAuthenticated:", isAuthenticated);
+    const isDev =
+      typeof globalThis !== "undefined" &&
+      (globalThis as { __DEV__?: boolean }).__DEV__ === true;
+
+    const debugLog = (...args: unknown[]) => {
+      if (isDev) {
+        // eslint-disable-next-line no-console
+        console.log("[useSellerStatus]", ...args);
+      }
+    };
+
+    debugLog("fetchStatus called, isAuthenticated:", isAuthenticated);
     
     // Handle unauthenticated case before setting the fetching guard
     if (!isAuthenticated) {
-      console.log("[useSellerStatus] Not authenticated, returning default status");
+      debugLog("Not authenticated, returning default status");
       setStatus(DEFAULT_STATUS);
       setIsLoading(false);
       return;
@@ -105,13 +116,13 @@ export function useSellerStatus({
     // Throttle: skip if we fetched recently (prevents rapid polling)
     const now = Date.now();
     if (now - lastFetchTimeRef.current < FETCH_COOLDOWN_MS) {
-      console.log("[useSellerStatus] Skipping fetch - within cooldown period");
+      debugLog("Skipping fetch - within cooldown period");
       return;
     }
 
     // Prevent concurrent fetches - this is the key fix for the loop
     if (fetchingRef.current) {
-      console.log("[useSellerStatus] fetchStatus skipped - already fetching");
+      debugLog("fetchStatus skipped - already fetching");
       return;
     }
     fetchingRef.current = true;
@@ -122,10 +133,10 @@ export function useSellerStatus({
       setError(null);
 
       const token = await getTokenRef.current();
-      console.log("[useSellerStatus] Token obtained:", token ? "yes" : "no");
+      debugLog("Token obtained:", token ? "yes" : "no");
       
       if (!token) {
-        console.log("[useSellerStatus] No token, returning default status");
+        debugLog("No token, returning default status");
         setStatus(DEFAULT_STATUS);
         // Reset guards before early return since we won't reach finally block
         setIsLoading(false);
@@ -134,7 +145,7 @@ export function useSellerStatus({
       }
 
       const url = `${apiUrlRef.current}/api/users/seller-status`;
-      console.log("[useSellerStatus] Fetching from:", url);
+      debugLog("Fetching from:", url);
       
       const response = await fetch(url, {
         headers: {
@@ -143,14 +154,14 @@ export function useSellerStatus({
         },
       });
 
-      console.log("[useSellerStatus] Response status:", response.status);
+  debugLog("Response status:", response.status);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch seller status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("[useSellerStatus] Response data:", data);
+      debugLog("Response data:", data);
       setStatus(data);
     } catch (err) {
       console.error("[useSellerStatus] Error:", err);
