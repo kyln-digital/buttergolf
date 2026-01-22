@@ -34,9 +34,9 @@ catalog:
   eslint: 9.28.0
   eslint-config-expo: 10.0.0
   eslint-config-next: 16.0.1
-  expo: 54.0.31
+  expo: 54.0.32
   expo-auth-session: 7.0.10
-  expo-font: 14.0.10
+  expo-font: 14.0.11
   expo-secure-store: 15.0.8
   expo-splash-screen: 31.0.13
   expo-status-bar: 3.0.9

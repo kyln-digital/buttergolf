@@ -1,52 +1,54 @@
+// Learn more https://docs.expo.dev/guides/customizing-metro
 const { getDefaultConfig } = require('expo/metro-config');
-const { FileStore } = require('metro-cache');
 const path = require('path');
 
+const config = getDefaultConfig(__dirname);
+
+// Monorepo root
 const projectRoot = __dirname;
-const workspaceRoot = path.resolve(projectRoot, '../..');
+const monorepoRoot = path.resolve(projectRoot, '../..');
 
-const config = getDefaultConfig(projectRoot);
-
-// #1 - Watch all files in the monorepo
-config.watchFolders = [workspaceRoot];
-
-// #2 - Try resolving with project modules first, then workspace modules
-config.resolver.nodeModulesPaths = [
-  path.resolve(projectRoot, 'node_modules'),
-  path.resolve(workspaceRoot, 'node_modules'),
+// Singleton packages that must resolve to single instance
+// These are hoisted to monorepo root via .npmrc public-hoist-pattern
+const singletonPackages = [
+  'react',
+  'react-native',
+  'react-dom',
+  '@tamagui/core',
+  '@tamagui/web',
+  'tamagui',
 ];
 
-// #3 - Force Metro to resolve (sub)dependencies only from the `nodeModulesPaths`
-config.resolver.disableHierarchicalLookup = true;
+// Build extraNodeModules to force resolution from monorepo root
+const extraNodeModules = {};
+singletonPackages.forEach((pkg) => {
+  try {
+    const pkgPath = path.dirname(
+      require.resolve(`${pkg}/package.json`, { paths: [monorepoRoot] })
+    );
+    extraNodeModules[pkg] = pkgPath;
+  } catch {
+    // Package not found, skip
+  }
+});
 
-// #3.5 - Configure SVG support with react-native-svg-transformer
-const { transformer, resolver } = config;
-
+// Configure SVG support with react-native-svg-transformer
 config.transformer = {
-  ...transformer,
+  ...config.transformer,
   babelTransformerPath: require.resolve('react-native-svg-transformer'),
 };
 
 config.resolver = {
-  ...resolver,
-  assetExts: resolver.assetExts.filter((ext) => ext !== 'svg'),
-  sourceExts: [...resolver.sourceExts, 'svg'],
-  // Help Metro find webidl-conversions for whatwg-url-without-unicode (it needs v5.x, not v8.x from jsdom)
-  extraNodeModules: {
-    'webidl-conversions': path.resolve(workspaceRoot, 'node_modules/.pnpm/webidl-conversions@5.0.0/node_modules/webidl-conversions'),
-  },
-  // #3.1 - Block web-only testing packages from being bundled (they use SharedArrayBuffer which Hermes doesn't support)
-  // IMPORTANT: Only block jsdom and webidl-conversions@8.x (the problematic version)
+  ...config.resolver,
+  extraNodeModules,
+  assetExts: config.resolver.assetExts.filter((ext) => ext !== 'svg'),
+  sourceExts: [...config.resolver.sourceExts, 'svg'],
+  // Block web-only testing packages from being bundled
   blockList: [
-    // jsdom itself (web-only testing library)
     /.*\/node_modules\/jsdom\/.*/,
-    // Block the pnpm store path for jsdom and its problematic deps
     /.*\/node_modules\/\.pnpm\/jsdom@.*/,
-    /.*\/node_modules\/\.pnpm\/webidl-conversions@8\..*/,
-    // happy-dom (alternative to jsdom, also web-only)  
     /.*\/node_modules\/happy-dom\/.*/,
     /.*\/node_modules\/\.pnpm\/happy-dom@.*/,
-    // Vitest and testing utilities (dev-only, not needed in app bundle)
     /.*\/node_modules\/vitest\/.*/,
     /.*\/node_modules\/\.pnpm\/vitest@.*/,
     /.*\/node_modules\/@vitest\/.*/,
@@ -55,12 +57,5 @@ config.resolver = {
     /.*\/node_modules\/@testing-library\/jest-dom\/.*/,
   ],
 };
-
-// #4 - Use turborepo to restore the cache when possible
-config.cacheStores = [
-  new FileStore({
-    root: path.join(projectRoot, 'node_modules', '.cache', 'metro'),
-  }),
-];
 
 module.exports = config;

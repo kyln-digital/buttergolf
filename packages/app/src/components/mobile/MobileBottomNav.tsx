@@ -67,10 +67,6 @@ export function MobileBottomNav({
           minWidth={60}
           paddingVertical="$2"
           paddingHorizontal="$2"
-          borderRadius="$xl"
-          backgroundColor={
-            activeTab === "home" ? "$inverseSurface" : "transparent"
-          }
           onPress={onHomePress}
           cursor="pointer"
           accessibilityRole="button"
@@ -99,10 +95,6 @@ export function MobileBottomNav({
           minWidth={60}
           paddingVertical="$2"
           paddingHorizontal="$2"
-          borderRadius="$xl"
-          backgroundColor={
-            activeTab === "wishlist" ? "$inverseSurface" : "transparent"
-          }
           onPress={onWishlistPress}
           cursor="pointer"
           accessibilityRole="button"
@@ -131,10 +123,6 @@ export function MobileBottomNav({
           minWidth={60}
           paddingVertical="$2"
           paddingHorizontal="$2"
-          borderRadius="$xl"
-          backgroundColor={
-            activeTab === "sell" ? "$inverseSurface" : "transparent"
-          }
           onPress={onSellPress}
           cursor="pointer"
           accessibilityRole="button"
@@ -163,10 +151,6 @@ export function MobileBottomNav({
           minWidth={60}
           paddingVertical="$2"
           paddingHorizontal="$2"
-          borderRadius="$xl"
-          backgroundColor={
-            activeTab === "messages" ? "$inverseSurface" : "transparent"
-          }
           onPress={onMessagesPress}
           cursor="pointer"
           accessibilityRole="button"
@@ -195,8 +179,6 @@ export function MobileBottomNav({
           minWidth={60}
           paddingVertical="$2"
           paddingHorizontal="$2"
-          borderRadius="$xl"
-          backgroundColor={isUserTabActive ? "$inverseSurface" : "transparent"}
           onPress={isAuthenticated ? onAccountPress : onLoginPress}
           cursor="pointer"
           accessibilityRole="button"
@@ -214,7 +196,7 @@ export function MobileBottomNav({
             opacity={isUserTabActive ? activeOpacity : inactiveOpacity}
             fontWeight={isUserTabActive ? "600" : "400"}
           >
-            {isAuthenticated ? "Account" : "Log-in"}
+            {isAuthenticated ? "Account" : "Account"}
           </Text>
         </Column>
       </Row>
