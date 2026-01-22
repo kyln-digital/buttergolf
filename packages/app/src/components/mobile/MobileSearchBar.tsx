@@ -36,7 +36,7 @@ export function MobileSearchBar({
   const theme = useTheme();
 
   const placeholderTextColour =
-    theme.textMuted?.val ?? theme.textSecondary?.val ?? theme.text?.val ?? "#999";
+    theme.textSecondary?.val ?? theme.text?.val ?? "#545454";
 
   const handleChangeText = (text: string) => {
     setQuery(text);
@@ -65,7 +65,7 @@ export function MobileSearchBar({
         borderWidth={isFocused ? 2 : 1}
         borderColor={isFocused ? "$primary" : "$border"}
       >
-        <SearchIcon size={20} color="$textMuted" opacity={0.7} />
+        <SearchIcon size={20} color="$textSecondary" />
         <Input
           flex={1}
           unstyled

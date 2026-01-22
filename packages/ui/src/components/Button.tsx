@@ -135,26 +135,27 @@ const ButtonBase = styled(TamaguiButton, {
       },
 
       tertiary: {
-        backgroundColor: "$cloudMist",
-        borderWidth: 0, // No border for pill style
-        color: "$ironstone",
+        backgroundColor: "$backgroundHover",
+        borderWidth: 1,
+        borderColor: "$border",
+        color: "$text",
         ...getButtonShadow("tertiary"),
 
         hoverStyle: {
-          backgroundColor: "$cloudMist", // Or slightly darker? AuthButton used cloudMist with opacity
-          opacity: 0.85,
+          backgroundColor: "$backgroundPress",
+          borderColor: "$borderHover",
         },
 
         pressStyle: {
-          backgroundColor: "$cloudMist",
-          opacity: 0.75,
+          backgroundColor: "$backgroundPress",
+          borderColor: "$border",
           scale: 0.98,
         },
 
         focusStyle: {
-          backgroundColor: "$cloudMist",
+          backgroundColor: "$backgroundHover",
           borderWidth: 2,
-          borderColor: "$border",
+          borderColor: "$borderFocus",
         },
       },
     },
