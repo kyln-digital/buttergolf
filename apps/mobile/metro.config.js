@@ -2,11 +2,13 @@
 const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
 
-const config = getDefaultConfig(__dirname);
-
-// Monorepo root
 const projectRoot = __dirname;
 const monorepoRoot = path.resolve(projectRoot, '../..');
+
+const config = getDefaultConfig(projectRoot);
+
+// Ensure Metro can resolve & watch workspace packages
+config.watchFolders = [monorepoRoot];
 
 // Singleton packages that must resolve to single instance
 // These are hoisted to monorepo root via .npmrc public-hoist-pattern
@@ -41,6 +43,14 @@ config.transformer = {
 config.resolver = {
   ...config.resolver,
   extraNodeModules,
+  // Prefer the app's node_modules, then fall back to the monorepo root.
+  nodeModulesPaths: [
+    path.resolve(projectRoot, 'node_modules'),
+    path.resolve(monorepoRoot, 'node_modules'),
+  ],
+  // Prevent Metro from trying to resolve nested node_modules inside packages.
+  // This helps avoid duplicate module instances (esp. tamagui/@tamagui/*).
+  disableHierarchicalLookup: true,
   assetExts: config.resolver.assetExts.filter((ext) => ext !== 'svg'),
   sourceExts: [...config.resolver.sourceExts, 'svg'],
   // Block web-only testing packages from being bundled

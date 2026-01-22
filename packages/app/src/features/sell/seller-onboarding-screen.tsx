@@ -230,12 +230,12 @@ export function SellerOnboardingScreen({
 
               {onCancel && (
                 <Button
-                  chromeless
-                  size="$4"
+                  butterVariant="tertiary"
+                  size="$5"
                   onPress={onCancel}
                   disabled={isStarting}
                 >
-                  <Text color="$textSecondary">Not Now</Text>
+                  <Text color="$text" fontWeight="600">Not Now</Text>
                 </Button>
               )}
 
