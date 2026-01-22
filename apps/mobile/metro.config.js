@@ -8,7 +8,9 @@ const workspaceRoot = path.resolve(projectRoot, '../..');
 const config = getDefaultConfig(projectRoot);
 
 // #1 - Watch all files in the monorepo
-config.watchFolders = [workspaceRoot];
+config.watchFolders = Array.from(
+  new Set([...(config.watchFolders ?? []), workspaceRoot]),
+);
 
 // #2 - Try resolving with project modules first, then workspace modules
 config.resolver.nodeModulesPaths = [
@@ -17,7 +19,7 @@ config.resolver.nodeModulesPaths = [
 ];
 
 // #3 - Force Metro to resolve (sub)dependencies only from the `nodeModulesPaths`
-config.resolver.disableHierarchicalLookup = true;
+config.resolver.disableHierarchicalLookup = false;
 
 // #3.5 - Configure SVG support with react-native-svg-transformer
 const { transformer, resolver } = config;
