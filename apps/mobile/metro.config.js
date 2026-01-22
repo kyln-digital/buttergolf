@@ -33,8 +33,12 @@ config.resolver = {
   ...resolver,
   assetExts: resolver.assetExts.filter((ext) => ext !== 'svg'),
   sourceExts: [...resolver.sourceExts, 'svg'],
-  // Help Metro find webidl-conversions for whatwg-url-without-unicode (it needs v5.x, not v8.x from jsdom)
+  // Force singleton resolution for React and React Native to prevent "Invalid hook call" errors
+  // in monorepos where multiple paths could resolve to the same package
   extraNodeModules: {
+    'react': path.resolve(workspaceRoot, 'node_modules/react'),
+    'react-dom': path.resolve(workspaceRoot, 'node_modules/react-dom'),
+    'react-native': path.resolve(workspaceRoot, 'node_modules/react-native'),
     'webidl-conversions': path.resolve(workspaceRoot, 'node_modules/.pnpm/webidl-conversions@5.0.0/node_modules/webidl-conversions'),
   },
   // #3.1 - Block web-only testing packages from being bundled (they use SharedArrayBuffer which Hermes doesn't support)
