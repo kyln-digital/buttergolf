@@ -9,6 +9,7 @@ import {
   MessageCircle,
   User,
 } from "@tamagui/lucide-icons";
+import { useThemeName } from "tamagui";
 
 export interface MobileBottomNavProps {
   activeTab?: "home" | "wishlist" | "sell" | "messages" | "login" | "account";
@@ -35,13 +36,21 @@ export function MobileBottomNav({
   onAccountPress,
   isAuthenticated = false,
 }: Readonly<MobileBottomNavProps>) {
+  const themeName = useThemeName();
+
+  const inactiveOpacity = 0.55;
+  const activeOpacity = 1;
+  const activeTabBackgroundColor = String(themeName).startsWith("dark")
+    ? "$overlayLight20"
+    : "$overlayDark10";
+
   // Determine if the user/account tab is active
   const isUserTabActive = isAuthenticated
     ? activeTab === "account"
     : activeTab === "login";
   return (
     <Column
-      backgroundColor="$background"
+      backgroundColor="$surface"
       borderTopLeftRadius="$2xl"
       borderTopRightRadius="$2xl"
       shadowColor="rgba(0, 0, 0, 0.15)"
@@ -62,6 +71,12 @@ export function MobileBottomNav({
           gap="$1"
           alignItems="center"
           minWidth={60}
+          paddingVertical="$2"
+          paddingHorizontal="$2"
+          borderRadius="$xl"
+          backgroundColor={
+            activeTab === "home" ? activeTabBackgroundColor : "transparent"
+          }
           onPress={onHomePress}
           cursor="pointer"
           accessibilityRole="button"
@@ -70,13 +85,13 @@ export function MobileBottomNav({
         >
           <Home
             size={24}
-            color={activeTab === "home" ? "$spicedClementine" : "$ironstone"}
-            opacity={activeTab === "home" ? 1 : 0.5}
+            color="$primary"
+            opacity={activeTab === "home" ? activeOpacity : inactiveOpacity}
           />
           <Text
             fontSize={11}
-            color="$ironstone"
-            opacity={activeTab === "home" ? 1 : 0.5}
+            color="$primary"
+            opacity={activeTab === "home" ? activeOpacity : inactiveOpacity}
             fontWeight={activeTab === "home" ? "600" : "400"}
           >
             Home
@@ -88,6 +103,12 @@ export function MobileBottomNav({
           gap="$1"
           alignItems="center"
           minWidth={60}
+          paddingVertical="$2"
+          paddingHorizontal="$2"
+          borderRadius="$xl"
+          backgroundColor={
+            activeTab === "wishlist" ? activeTabBackgroundColor : "transparent"
+          }
           onPress={onWishlistPress}
           cursor="pointer"
           accessibilityRole="button"
@@ -96,15 +117,13 @@ export function MobileBottomNav({
         >
           <Heart
             size={24}
-            color={
-              activeTab === "wishlist" ? "$spicedClementine" : "$ironstone"
-            }
-            opacity={activeTab === "wishlist" ? 1 : 0.5}
+            color="$primary"
+            opacity={activeTab === "wishlist" ? activeOpacity : inactiveOpacity}
           />
           <Text
             fontSize={11}
-            color="$ironstone"
-            opacity={activeTab === "wishlist" ? 1 : 0.5}
+            color="$primary"
+            opacity={activeTab === "wishlist" ? activeOpacity : inactiveOpacity}
             fontWeight={activeTab === "wishlist" ? "600" : "400"}
           >
             Wishlist
@@ -116,6 +135,12 @@ export function MobileBottomNav({
           gap="$1"
           alignItems="center"
           minWidth={60}
+          paddingVertical="$2"
+          paddingHorizontal="$2"
+          borderRadius="$xl"
+          backgroundColor={
+            activeTab === "sell" ? activeTabBackgroundColor : "transparent"
+          }
           onPress={onSellPress}
           cursor="pointer"
           accessibilityRole="button"
@@ -124,13 +149,13 @@ export function MobileBottomNav({
         >
           <PlusCircle
             size={24}
-            color={activeTab === "sell" ? "$spicedClementine" : "$ironstone"}
-            opacity={activeTab === "sell" ? 1 : 0.5}
+            color="$primary"
+            opacity={activeTab === "sell" ? activeOpacity : inactiveOpacity}
           />
           <Text
             fontSize={11}
-            color="$ironstone"
-            opacity={activeTab === "sell" ? 1 : 0.5}
+            color="$primary"
+            opacity={activeTab === "sell" ? activeOpacity : inactiveOpacity}
             fontWeight={activeTab === "sell" ? "600" : "400"}
           >
             Sell
@@ -142,6 +167,12 @@ export function MobileBottomNav({
           gap="$1"
           alignItems="center"
           minWidth={60}
+          paddingVertical="$2"
+          paddingHorizontal="$2"
+          borderRadius="$xl"
+          backgroundColor={
+            activeTab === "messages" ? activeTabBackgroundColor : "transparent"
+          }
           onPress={onMessagesPress}
           cursor="pointer"
           accessibilityRole="button"
@@ -150,15 +181,13 @@ export function MobileBottomNav({
         >
           <MessageCircle
             size={24}
-            color={
-              activeTab === "messages" ? "$spicedClementine" : "$ironstone"
-            }
-            opacity={activeTab === "messages" ? 1 : 0.5}
+            color="$primary"
+            opacity={activeTab === "messages" ? activeOpacity : inactiveOpacity}
           />
           <Text
             fontSize={11}
-            color="$ironstone"
-            opacity={activeTab === "messages" ? 1 : 0.5}
+            color="$primary"
+            opacity={activeTab === "messages" ? activeOpacity : inactiveOpacity}
             fontWeight={activeTab === "messages" ? "600" : "400"}
           >
             Messages
@@ -170,6 +199,10 @@ export function MobileBottomNav({
           gap="$1"
           alignItems="center"
           minWidth={60}
+          paddingVertical="$2"
+          paddingHorizontal="$2"
+          borderRadius="$xl"
+          backgroundColor={isUserTabActive ? activeTabBackgroundColor : "transparent"}
           onPress={isAuthenticated ? onAccountPress : onLoginPress}
           cursor="pointer"
           accessibilityRole="button"
@@ -178,13 +211,13 @@ export function MobileBottomNav({
         >
           <User
             size={24}
-            color={isUserTabActive ? "$spicedClementine" : "$ironstone"}
-            opacity={isUserTabActive ? 1 : 0.5}
+            color="$primary"
+            opacity={isUserTabActive ? activeOpacity : inactiveOpacity}
           />
           <Text
             fontSize={11}
-            color="$ironstone"
-            opacity={isUserTabActive ? 1 : 0.5}
+            color="$primary"
+            opacity={isUserTabActive ? activeOpacity : inactiveOpacity}
             fontWeight={isUserTabActive ? "600" : "400"}
           >
             {isAuthenticated ? "Account" : "Log-in"}
