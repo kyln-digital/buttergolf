@@ -230,12 +230,12 @@ export function SellerOnboardingScreen({
 
               {onCancel && (
                 <Button
-                  chromeless
+                  butterVariant="tertiary"
                   size="$4"
                   onPress={onCancel}
                   disabled={isStarting}
                 >
-                  <Text color="$textSecondary">Not Now</Text>
+                  <Text color="$text" fontWeight="500">Not Now</Text>
                 </Button>
               )}
 
@@ -256,7 +256,7 @@ export function SellerOnboardingScreen({
         {/* Footer note */}
         <Text
           size="$3"
-          color="$textMuted"
+          color="$textSecondary"
           textAlign="center"
           maxWidth={280}
           marginTop="$lg"
