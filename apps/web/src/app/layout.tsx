@@ -79,7 +79,7 @@ export default function RootLayout({
           <ErrorBoundary name="FavouritesProvider">
             <FavouritesProvider>
               <CartProvider>
-                <ConditionalLayout excludeRoutes={["/coming-soon", "/sign-in", "/sign-in/*", "/sign-up", "/sign-up/*"]}>
+                <ConditionalLayout excludeRoutes={["/coming-soon", "/sign-in", "/sign-in/*", "/sign-up", "/sign-up/*", "/mobile-onboarding"]}>
                   <ErrorBoundary name="ButterHeader" fallback={<div style={{ height: 72, backgroundColor: "#f5f5f5" }} />}>
                     <ButterHeader />
                   </ErrorBoundary>

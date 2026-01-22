@@ -1,37 +1,50 @@
 import { auth } from "@clerk/nextjs/server";
+import { verifyMobileSessionToken } from "@/app/api/stripe/connect/mobile-session/route";
 
 /**
- * Get user ID using Clerk's Next.js SDK auth() helper.
+ * Get user ID using Clerk's Next.js SDK auth() helper, with fallback to mobile session tokens.
  *
- * This uses Clerk's official recommended pattern for Next.js applications:
- * - auth({ acceptsToken: 'session_token' }) handles both cookies (web) and
- *   Bearer tokens (mobile) automatically through Clerk's middleware integration.
+ * This supports authentication from:
+ * 1. Clerk cookies (__session) - for same-origin web requests
+ * 2. Clerk Bearer tokens - for standard API requests (via auth({ acceptsToken: 'session_token' }))
+ * 3. Mobile session tokens - short-lived JWT tokens for WebView requests
  *
- * The acceptsToken parameter tells Clerk to accept session tokens from:
- * 1. Cookies (__session) - for same-origin web requests
- * 2. Authorization header (Bearer token) - for cross-origin mobile requests
+ * The mobile session token flow is used by the mobile app WebView:
+ * - Mobile app gets a short-lived token from /api/stripe/connect/mobile-session
+ * - WebView passes this token to API routes
+ * - This is more secure than passing long-lived Clerk tokens in URLs
  *
- * This is the official Clerk Next.js SDK pattern and works correctly with
- * Vercel's edge network and Next.js middleware.
- *
- * @param _request - Optional Request object (kept for API compatibility, not used)
+ * @param request - Optional Request object (used for mobile session token extraction)
  * @returns The Clerk user ID (userId), or null if user is not authenticated
  */
 export async function getUserIdFromRequest(
-  _request?: Request,
+  request?: Request,
 ): Promise<string | null> {
-  // Use Clerk's official auth() helper with acceptsToken parameter
-  // This is the recommended pattern for Next.js applications per Clerk docs:
-  // https://clerk.com/docs/nextjs/guides/development/verifying-oauth-access-tokens
+  // First, try Clerk's official auth() helper with acceptsToken parameter
+  // This handles both cookies (web) and Clerk Bearer tokens (mobile)
   const { isAuthenticated, userId } = await auth({
     acceptsToken: "session_token",
   });
 
-  if (!isAuthenticated || !userId) {
-    console.log("[Auth] Not authenticated via auth({ acceptsToken: 'session_token' })");
-    return null;
+  if (isAuthenticated && userId) {
+    console.log("[Auth] Authenticated via Clerk:", { userId });
+    return userId;
   }
 
-  console.log("[Auth] Authenticated successfully:", { userId });
-  return userId;
+  // If Clerk auth failed, try mobile session token from Authorization header
+  // This handles the WebView case where we use short-lived mobile session tokens
+  if (request) {
+    const authHeader = request.headers.get("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.slice(7);
+      const mobileSession = await verifyMobileSessionToken(token);
+      if (mobileSession) {
+        console.log("[Auth] Authenticated via mobile session token:", { userId: mobileSession.userId });
+        return mobileSession.userId;
+      }
+    }
+  }
+
+  console.log("[Auth] Not authenticated via any method");
+  return null;
 }
