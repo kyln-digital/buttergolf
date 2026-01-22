@@ -17,7 +17,9 @@ import type { StripeConnectInstance, StepChange } from "@stripe/connect-js";
  * the Stripe Connect embedded onboarding experience.
  *
  * Communication with React Native:
- * - Receives auth token via URL query param: ?token=xxx
+ * - Receives short-lived mobile session token via URL query param: ?token=xxx
+ *   (NOT a Clerk token - the mobile app exchanges Clerk token for this short-lived token
+ *    via /api/stripe/connect/mobile-session for security)
  * - Sends messages back via window.ReactNativeWebView.postMessage()
  *
  * Messages sent to React Native:
@@ -153,6 +155,7 @@ export default function MobileOnboardingPage() {
   if (loading) {
     return (
       <div style={styles.container}>
+        <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         <div style={styles.loadingContainer}>
           <div style={styles.spinner} />
           <p style={styles.loadingText}>Setting up your seller account...</p>
@@ -193,6 +196,7 @@ export default function MobileOnboardingPage() {
   if (!stripeConnectInstance) {
     return (
       <div style={styles.container}>
+        <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         <div style={styles.loadingContainer}>
           <div style={styles.spinner} />
           <p style={styles.loadingText}>Loading...</p>

@@ -124,29 +124,48 @@ export function SellerOnboardingGate({
   });
 
   /**
-   * Start onboarding by preparing the WebView URL with auth token
+   * Start onboarding by obtaining a short-lived session token and preparing the WebView URL
+   * 
+   * Security: We don't pass the Clerk token directly to the URL (would be exposed in logs/history).
+   * Instead, we exchange it for a short-lived mobile session token via the backend.
    */
   const initializeOnboarding = useCallback(async () => {
     try {
       setWebViewLoading(true);
       setOnboardingError(null);
 
-      const token = await getToken();
-      if (!token) {
+      const clerkToken = await getToken();
+      if (!clerkToken) {
         Alert.alert("Error", "Please sign in to become a seller.");
         setWebViewLoading(false);
         return;
       }
 
-      // Build the WebView URL with the auth token
+      // Exchange Clerk token for a short-lived mobile session token
+      // This token is safer to pass via URL as it expires in 15 minutes
+      const sessionResponse = await fetch(`${apiUrl}/api/stripe/connect/mobile-session`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${clerkToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!sessionResponse.ok) {
+        const errorData = await sessionResponse.json();
+        throw new Error(errorData.error || "Failed to create session");
+      }
+
+      const { token: mobileSessionToken } = await sessionResponse.json();
+
+      // Build the WebView URL with the short-lived session token
       // The mobile-onboarding page will use this token to authenticate API calls
       const onboardingUrl = new URL("/mobile-onboarding", apiUrl);
-      onboardingUrl.searchParams.set("token", token);
+      onboardingUrl.searchParams.set("token", mobileSessionToken);
       onboardingUrl.searchParams.set("apiUrl", apiUrl);
 
       console.log(
-        "[SellerOnboardingGate] Opening WebView:",
-        onboardingUrl.toString().replace(token, "***")
+        "[SellerOnboardingGate] Opening WebView with mobile session token"
       );
 
       setWebViewUrl(onboardingUrl.toString());

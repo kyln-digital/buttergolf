@@ -16,12 +16,17 @@ const secret = new TextEncoder().encode(MOBILE_SESSION_SECRET);
  *
  * Creates a short-lived JWT token for mobile WebView authentication.
  *
- * This allows the mobile app to:
- * 1. Get a token from this endpoint (using Clerk Bearer auth)
- * 2. Pass the token to the WebView via URL query param
- * 3. WebView uses the token to authenticate with /api/stripe/connect/account
+ * Security flow:
+ * 1. Mobile app calls this endpoint with Clerk Bearer token
+ * 2. This endpoint returns a short-lived mobile session token (15 min expiry)
+ * 3. Mobile app passes the session token to WebView via URL query param
+ * 4. WebView uses the token to authenticate with /api/stripe/connect/account
+ * 5. getUserIdFromRequest() verifies the mobile session token via verifyMobileSessionToken()
  *
- * Token is valid for 15 minutes - enough time to complete onboarding.
+ * This is more secure than passing Clerk tokens in URLs because:
+ * - Short-lived (15 min vs Clerk's longer-lived tokens)
+ * - Limited scope (only valid for onboarding flow)
+ * - Not stored in browser history/logs with full Clerk privileges
  */
 export async function POST(request: Request) {
   try {
