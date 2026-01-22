@@ -105,11 +105,11 @@ export function SellerOnboardingGate({
   const getTokenRef = useRef(getToken);
   getTokenRef.current = getToken; // Update on every render (synchronous, no effect needed)
 
-  // Seller status hook - only fetch if auth is loaded to prevent race conditions
+  // Seller status hook
   const { status, isLoading, error, refresh } = useSellerStatus({
     apiUrl,
     getToken,
-    isAuthenticated: isAuthLoaded,
+    isAuthenticated: true,
   });
 
   // WebView state
@@ -199,33 +199,6 @@ export function SellerOnboardingGate({
     }
   }, [apiUrl]); // Note: getToken removed from deps since we use ref
 
-  // Debug logging
-  console.info("[SellerOnboardingGate] Render:", {
-    apiUrl,
-    isAuthLoaded,
-    isLoading,
-    error,
-    status,
-    isReadyToSell: status?.isReadyToSell,
-    showWebView,
-    hasGetToken: typeof getToken === "function",
-  });
-
-  // Wait for Clerk auth to be fully loaded before showing any content
-  // This prevents race conditions where getToken might be undefined
-  if (!isAuthLoaded) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator
-            size="large"
-            color={brandColors.spicedClementine}
-          />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   /**
    * Handle messages from the WebView
    */
@@ -233,23 +206,23 @@ export function SellerOnboardingGate({
     async (event: WebViewMessageEvent) => {
       try {
         const message: WebViewMessage = JSON.parse(event.nativeEvent.data);
-        console.log("[SellerOnboardingGate] WebView message:", message);
+        console.info("[SellerOnboardingGate] WebView message:", message);
 
         switch (message.type) {
           case "ready":
-            console.log("[SellerOnboardingGate] WebView ready");
+            console.info("[SellerOnboardingGate] WebView ready");
             break;
 
           case "initialized":
-            console.log("[SellerOnboardingGate] Stripe Connect initialized");
+            console.info("[SellerOnboardingGate] Stripe Connect initialized");
             break;
 
           case "step_change":
-            console.log("[SellerOnboardingGate] Step changed:", message.step);
+            console.info("[SellerOnboardingGate] Step changed:", message.step);
             break;
 
           case "exit":
-            console.log(
+            console.info(
               "[SellerOnboardingGate] Onboarding exited, success:",
               message.success
             );
@@ -288,6 +261,33 @@ export function SellerOnboardingGate({
     // Refresh status in case user completed something
     refresh(true);
   }, [refresh]);
+
+  // Debug logging (after all hooks, before conditional returns)
+  console.info("[SellerOnboardingGate] Render:", {
+    apiUrl,
+    isAuthLoaded,
+    isLoading,
+    error,
+    status,
+    isReadyToSell: status?.isReadyToSell,
+    showWebView,
+    hasGetToken: typeof getToken === "function",
+  });
+
+  // Wait for Clerk auth to be fully loaded before showing any content
+  // This prevents the stale closure issue where getToken might be captured as undefined
+  if (!isAuthLoaded) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator
+            size="large"
+            color={brandColors.spicedClementine}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // If user is ready to sell, show the SellScreen
   if (status?.isReadyToSell) {
