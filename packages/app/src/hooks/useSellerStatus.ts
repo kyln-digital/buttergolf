@@ -49,6 +49,12 @@ const DEFAULT_STATUS: SellerStatus = {
   payoutsEnabled: false,
 };
 
+// Module-level throttle state - persists across component remounts
+// This is critical because the Sell screen remounts on navigation state changes
+let lastFetchTime = 0;
+let isFetching = false;
+const FETCH_COOLDOWN_MS = 5000; // 5 second cooldown between fetches
+
 /**
  * Hook to fetch and manage the current user's seller/Stripe Connect status.
  *
@@ -79,11 +85,6 @@ export function useSellerStatus({
   // Use refs for functions to avoid them triggering useEffect reruns
   const getTokenRef = useRef(getToken);
   const apiUrlRef = useRef(apiUrl);
-  // Guard to prevent concurrent fetches (fixes loop when multiple triggers fire)
-  const fetchingRef = useRef(false);
-  // Throttle: track last successful fetch time to prevent rapid calls
-  const lastFetchTimeRef = useRef<number>(0);
-  const FETCH_COOLDOWN_MS = 5000; // 5 second cooldown between fetches
 
   // Keep refs updated
   useEffect(() => {
@@ -114,19 +115,20 @@ export function useSellerStatus({
     }
 
     // Throttle: skip if we fetched recently (prevents rapid polling)
+    // Uses module-level variable to persist across component remounts
     const now = Date.now();
-    if (now - lastFetchTimeRef.current < FETCH_COOLDOWN_MS) {
+    if (now - lastFetchTime < FETCH_COOLDOWN_MS) {
       debugLog("Skipping fetch - within cooldown period");
       return;
     }
 
-    // Prevent concurrent fetches - this is the key fix for the loop
-    if (fetchingRef.current) {
+    // Prevent concurrent fetches - uses module-level variable
+    if (isFetching) {
       debugLog("fetchStatus skipped - already fetching");
       return;
     }
-    fetchingRef.current = true;
-    lastFetchTimeRef.current = now; // Set time at start to prevent races
+    isFetching = true;
+    lastFetchTime = now; // Set time at start to prevent races
 
     try {
       setIsLoading(true);
@@ -140,7 +142,7 @@ export function useSellerStatus({
         setStatus(DEFAULT_STATUS);
         // Reset guards before early return since we won't reach finally block
         setIsLoading(false);
-        fetchingRef.current = false;
+        isFetching = false;
         return;
       }
 
@@ -169,7 +171,7 @@ export function useSellerStatus({
       setStatus(DEFAULT_STATUS);
     } finally {
       setIsLoading(false);
-      fetchingRef.current = false;
+      isFetching = false;
     }
   }, [isAuthenticated]); // Only depend on isAuthenticated, use refs for apiUrl and getToken
 
