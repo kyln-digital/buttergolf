@@ -96,14 +96,20 @@ export function SellerOnboardingGate({
   onSearchBrands,
   onSearchModels,
 }: SellerOnboardingGateProps) {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded: isAuthLoaded } = useAuth();
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
-  // Seller status hook
+  // Use ref to always access the current getToken function
+  // This prevents stale closure issues where useCallback captures an undefined getToken
+  // during initial Clerk hydration, then keeps that stale reference
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken; // Update on every render (synchronous, no effect needed)
+
+  // Seller status hook - only fetch if auth is loaded to prevent race conditions
   const { status, isLoading, error, refresh } = useSellerStatus({
     apiUrl,
     getToken,
-    isAuthenticated: true,
+    isAuthenticated: isAuthLoaded,
   });
 
   // WebView state
@@ -113,28 +119,35 @@ export function SellerOnboardingGate({
   const [onboardingError, setOnboardingError] = useState<string | null>(null);
   const webViewRef = useRef<WebView>(null);
 
-  // Debug logging
-  console.log("[SellerOnboardingGate] Render:", {
-    apiUrl,
-    isLoading,
-    error,
-    status,
-    isReadyToSell: status?.isReadyToSell,
-    showWebView,
-  });
-
   /**
    * Start onboarding by obtaining a short-lived session token and preparing the WebView URL
-   * 
+   *
    * Security: We don't pass the Clerk token directly to the URL (would be exposed in logs/history).
    * Instead, we exchange it for a short-lived mobile session token via the backend.
+   *
+   * Uses getTokenRef.current to always access the latest getToken function,
+   * avoiding stale closure issues during Clerk hydration.
    */
   const initializeOnboarding = useCallback(async () => {
     try {
       setWebViewLoading(true);
       setOnboardingError(null);
 
-      const clerkToken = await getToken();
+      // Access getToken via ref to always get the current function
+      const currentGetToken = getTokenRef.current;
+
+      // Defensive check: ensure getToken is available from Clerk
+      if (typeof currentGetToken !== "function") {
+        console.error("[SellerOnboardingGate] getToken is not a function:", typeof currentGetToken);
+        Alert.alert(
+          "Authentication Error",
+          "Please close this screen and try again. If the problem persists, try signing out and back in."
+        );
+        setWebViewLoading(false);
+        return;
+      }
+
+      const clerkToken = await currentGetToken();
       if (!clerkToken) {
         Alert.alert("Error", "Please sign in to become a seller.");
         setWebViewLoading(false);
@@ -164,7 +177,7 @@ export function SellerOnboardingGate({
       onboardingUrl.searchParams.set("token", mobileSessionToken);
       onboardingUrl.searchParams.set("apiUrl", apiUrl);
 
-      console.log(
+      console.info(
         "[SellerOnboardingGate] Opening WebView with mobile session token"
       );
 
@@ -184,7 +197,34 @@ export function SellerOnboardingGate({
           : "Failed to start seller onboarding"
       );
     }
-  }, [apiUrl, getToken]);
+  }, [apiUrl]); // Note: getToken removed from deps since we use ref
+
+  // Debug logging
+  console.info("[SellerOnboardingGate] Render:", {
+    apiUrl,
+    isAuthLoaded,
+    isLoading,
+    error,
+    status,
+    isReadyToSell: status?.isReadyToSell,
+    showWebView,
+    hasGetToken: typeof getToken === "function",
+  });
+
+  // Wait for Clerk auth to be fully loaded before showing any content
+  // This prevents race conditions where getToken might be undefined
+  if (!isAuthLoaded) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator
+            size="large"
+            color={brandColors.spicedClementine}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   /**
    * Handle messages from the WebView

@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { Row, Column, Text } from "@buttergolf/ui";
 import {
   Home,
@@ -22,8 +21,12 @@ export interface MobileBottomNavProps {
 }
 
 /**
- * Mobile bottom navigation with 5 tabs: Home, Wishlist, Sell, Messages, Login.
+ * Mobile bottom navigation with 5 tabs: Home, Wishlist, Sell, Messages, Account.
  * Features curved top corners and drop shadow matching the top search bar.
+ *
+ * Color scheme:
+ * - Active tab: $primary (orange)
+ * - Inactive tab: $text (dark grey in light mode, white in dark mode)
  */
 export function MobileBottomNav({
   activeTab = "home",
@@ -35,13 +38,11 @@ export function MobileBottomNav({
   onAccountPress,
   isAuthenticated = false,
 }: Readonly<MobileBottomNavProps>) {
-  const inactiveOpacity = 0.55;
-  const activeOpacity = 1;
-
   // Determine if the user/account tab is active
   const isUserTabActive = isAuthenticated
     ? activeTab === "account"
     : activeTab === "login";
+
   return (
     <Column
       backgroundColor="$surface"
@@ -69,19 +70,17 @@ export function MobileBottomNav({
           paddingHorizontal="$2"
           onPress={onHomePress}
           cursor="pointer"
-          accessibilityRole="button"
-          accessibilityLabel="Home"
-          accessibilityState={{ selected: activeTab === "home" }}
+          role="button"
+          aria-label="Home"
+          aria-selected={activeTab === "home"}
         >
           <Home
             size={24}
-            color="$primary"
-            opacity={activeTab === "home" ? activeOpacity : inactiveOpacity}
+            color={activeTab === "home" ? "$primary" : "$text"}
           />
           <Text
-            fontSize={11}
-            color="$primary"
-            opacity={activeTab === "home" ? activeOpacity : inactiveOpacity}
+            size="$2"
+            color={activeTab === "home" ? "$primary" : "$text"}
             fontWeight={activeTab === "home" ? "600" : "400"}
           >
             Home
@@ -97,19 +96,17 @@ export function MobileBottomNav({
           paddingHorizontal="$2"
           onPress={onWishlistPress}
           cursor="pointer"
-          accessibilityRole="button"
-          accessibilityLabel="Wishlist"
-          accessibilityState={{ selected: activeTab === "wishlist" }}
+          role="button"
+          aria-label="Wishlist"
+          aria-selected={activeTab === "wishlist"}
         >
           <Heart
             size={24}
-            color="$primary"
-            opacity={activeTab === "wishlist" ? activeOpacity : inactiveOpacity}
+            color={activeTab === "wishlist" ? "$primary" : "$text"}
           />
           <Text
-            fontSize={11}
-            color="$primary"
-            opacity={activeTab === "wishlist" ? activeOpacity : inactiveOpacity}
+            size="$2"
+            color={activeTab === "wishlist" ? "$primary" : "$text"}
             fontWeight={activeTab === "wishlist" ? "600" : "400"}
           >
             Wishlist
@@ -125,19 +122,17 @@ export function MobileBottomNav({
           paddingHorizontal="$2"
           onPress={onSellPress}
           cursor="pointer"
-          accessibilityRole="button"
-          accessibilityLabel="Sell"
-          accessibilityState={{ selected: activeTab === "sell" }}
+          role="button"
+          aria-label="Sell"
+          aria-selected={activeTab === "sell"}
         >
           <PlusCircle
             size={24}
-            color="$primary"
-            opacity={activeTab === "sell" ? activeOpacity : inactiveOpacity}
+            color={activeTab === "sell" ? "$primary" : "$text"}
           />
           <Text
-            fontSize={11}
-            color="$primary"
-            opacity={activeTab === "sell" ? activeOpacity : inactiveOpacity}
+            size="$2"
+            color={activeTab === "sell" ? "$primary" : "$text"}
             fontWeight={activeTab === "sell" ? "600" : "400"}
           >
             Sell
@@ -153,19 +148,17 @@ export function MobileBottomNav({
           paddingHorizontal="$2"
           onPress={onMessagesPress}
           cursor="pointer"
-          accessibilityRole="button"
-          accessibilityLabel="Messages"
-          accessibilityState={{ selected: activeTab === "messages" }}
+          role="button"
+          aria-label="Messages"
+          aria-selected={activeTab === "messages"}
         >
           <MessageCircle
             size={24}
-            color="$primary"
-            opacity={activeTab === "messages" ? activeOpacity : inactiveOpacity}
+            color={activeTab === "messages" ? "$primary" : "$text"}
           />
           <Text
-            fontSize={11}
-            color="$primary"
-            opacity={activeTab === "messages" ? activeOpacity : inactiveOpacity}
+            size="$2"
+            color={activeTab === "messages" ? "$primary" : "$text"}
             fontWeight={activeTab === "messages" ? "600" : "400"}
           >
             Messages
@@ -181,22 +174,20 @@ export function MobileBottomNav({
           paddingHorizontal="$2"
           onPress={isAuthenticated ? onAccountPress : onLoginPress}
           cursor="pointer"
-          accessibilityRole="button"
-          accessibilityLabel={isAuthenticated ? "Account" : "Log in"}
-          accessibilityState={{ selected: isUserTabActive }}
+          role="button"
+          aria-label={isAuthenticated ? "Account" : "Log in"}
+          aria-selected={isUserTabActive}
         >
           <User
             size={24}
-            color="$primary"
-            opacity={isUserTabActive ? activeOpacity : inactiveOpacity}
+            color={isUserTabActive ? "$primary" : "$text"}
           />
           <Text
-            fontSize={11}
-            color="$primary"
-            opacity={isUserTabActive ? activeOpacity : inactiveOpacity}
+            size="$2"
+            color={isUserTabActive ? "$primary" : "$text"}
             fontWeight={isUserTabActive ? "600" : "400"}
           >
-            {isAuthenticated ? "Account" : "Account"}
+            Account
           </Text>
         </Column>
       </Row>
