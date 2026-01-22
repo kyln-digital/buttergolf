@@ -38,6 +38,7 @@ import {
   OfferDetailScreen,
   SellerOnboardingGate,
 } from "./components";
+import { SellerStatusProvider } from "./context";
 import {
   View as RNView,
   Text as RNText,
@@ -1631,6 +1632,11 @@ export default function App() {
         <Provider defaultTheme={validColorScheme}>
           <ClerkLoaded>
             <SignedIn>
+            {/* SellerStatusProvider fetches seller status ONCE on sign-in and shares via context.
+                This prevents the infinite API call loop that occurred when each screen
+                had its own useSellerStatus hook instance. DO NOT remove this provider
+                or revert to a hook-based approach - see context/SellerStatusContext.tsx */}
+            <SellerStatusProvider>
             <PushTokenRegistration />
             <NavigationContainer linking={linking} theme={navigationTheme}>
               <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -1790,6 +1796,7 @@ export default function App() {
                 </Stack.Screen>
               </Stack.Navigator>
             </NavigationContainer>
+            </SellerStatusProvider>
           </SignedIn>
           <SignedOut>
             {/* Render the designed onboarding screen (animations currently disabled for stability) */}
