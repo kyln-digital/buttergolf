@@ -14,6 +14,7 @@ const ADMIN_USER_IDS = [
   "user_37r3HD53QdkciIGzZ6JyEM6MLci",
   "user_37r3JnUd2cuKXNimgzIp3LAJfnh",
   "user_37r3MdfJ7DSPwUSNjxZhl2XRoD0",
+  "user_38ZEyOQHac106JmegFO17Jo8eDx"
 ];
 
 // Define protected routes that require authentication
