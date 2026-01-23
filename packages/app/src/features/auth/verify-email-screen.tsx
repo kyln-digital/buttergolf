@@ -9,6 +9,7 @@ import {
   Button,
   Heading,
   Spinner,
+  useTheme,
 } from "@buttergolf/ui";
 import { Button as TamaguiButton } from "tamagui";
 import { Mail, ArrowLeft } from "@tamagui/lucide-icons";
@@ -36,6 +37,9 @@ export function VerifyEmailScreen({
 }: Readonly<VerifyEmailScreenProps>) {
   const insets = useSafeAreaInsets();
   const { signUp, setActive, isLoaded } = useSignUp();
+  const theme = useTheme();
+  // Get theme-aware text color for TextInput
+  const textColor = theme.text?.val ?? "#323232";
 
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -291,7 +295,7 @@ export function VerifyEmailScreen({
                       textAlign: "center",
                       width: "100%",
                       height: "100%",
-                      color: "#323232",
+                      color: textColor,
                     }}
                     // Handle paste on first input
                     onChange={(e) => {

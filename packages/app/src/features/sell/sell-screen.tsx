@@ -188,9 +188,9 @@ export function SellScreen({
           aria-label={currentStep === 1 ? "Close" : "Go back"}
         >
           {currentStep === 1 ? (
-            <X size={24} color="$ironstone" />
+            <X size={24} color="$text" />
           ) : (
-            <ArrowLeft size={24} color="$ironstone" />
+            <ArrowLeft size={24} color="$text" />
           )}
         </Button>
 
@@ -200,11 +200,11 @@ export function SellScreen({
             fontFamily="$heading"
             size="$7"
             fontWeight="700"
-            color="$ironstone"
+            color="$text"
           >
             {stepInfo.title}
           </Text>
-          <Text size="$3" fontWeight="500" color="$slateSmoke">
+          <Text size="$3" fontWeight="500" color="$textSecondary">
             Step {currentStep} of 4
           </Text>
         </Column>
@@ -304,7 +304,7 @@ export function SellScreen({
               fontFamily="$heading"
               size="$6"
               fontWeight="700"
-              color={canProceed() ? "$pureWhite" : "$slateSmoke"}
+              color={canProceed() ? "$pureWhite" : "$textSecondary"}
             >
               Continue
             </Text>
@@ -323,7 +323,7 @@ export function SellScreen({
               fontFamily="$heading"
               size="$6"
               fontWeight="700"
-              color={isSubmitting ? "$slateSmoke" : "$pureWhite"}
+              color={isSubmitting ? "$textSecondary" : "$pureWhite"}
             >
               {isSubmitting ? "Submitting..." : "List Item"}
             </Text>

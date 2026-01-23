@@ -65,7 +65,7 @@ function ReviewSection({
             fontFamily="$heading"
             size="$5"
             fontWeight="700"
-            color="$ironstone"
+            color="$text"
           >
             {title}
           </Text>
@@ -149,12 +149,12 @@ export function ReviewStep({
               fontFamily="$heading"
               size="$10"
               fontWeight="800"
-              color="$ironstone"
+              color="$text"
             >
               Almost done!
             </Text>
           </Row>
-          <Text size="$5" fontWeight="400" color="$slateSmoke">
+          <Text size="$5" fontWeight="400" color="$textSecondary">
             Review your listing before submitting
           </Text>
         </Column>
@@ -163,7 +163,7 @@ export function ReviewStep({
           {/* Photos Section */}
           <ReviewSection
             title="Photos"
-            icon={<Camera size={18} color="$slateSmoke" />}
+            icon={<Camera size={18} color="$textSecondary" />}
             step={1}
             onEdit={onEdit}
           >
@@ -203,7 +203,7 @@ export function ReviewStep({
                 ))}
               </Row>
             </ScrollView>
-            <Text size="$3" fontWeight="500" color="$slateSmoke" marginTop="$3">
+            <Text size="$3" fontWeight="500" color="$textSecondary" marginTop="$3">
               {formData.images.length} photo
               {formData.images.length === 1 ? "" : "s"} added
             </Text>
@@ -212,16 +212,16 @@ export function ReviewStep({
           {/* Details Section */}
           <ReviewSection
             title="Item Details"
-            icon={<Tag size={18} color="$slateSmoke" />}
+            icon={<Tag size={18} color="$textSecondary" />}
             step={2}
             onEdit={onEdit}
           >
             <Column gap="$3">
               <Row justifyContent="space-between" alignItems="center">
-                <Text size="$4" fontWeight="400" color="$slateSmoke">
+                <Text size="$4" fontWeight="400" color="$textSecondary">
                   Category
                 </Text>
-                <Text size="$4" fontWeight="600" color="$ironstone">
+                <Text size="$4" fontWeight="600" color="$text">
                   {formData.categoryName || "Not set"}
                 </Text>
               </Row>
@@ -231,10 +231,10 @@ export function ReviewStep({
                 <>
                   <View height={1} backgroundColor="$cloudMist" />
                   <Row justifyContent="space-between" alignItems="center">
-                    <Text size="$4" fontWeight="400" color="$slateSmoke">
+                    <Text size="$4" fontWeight="400" color="$textSecondary">
                       Type
                     </Text>
-                    <Text size="$4" fontWeight="600" color="$ironstone">
+                    <Text size="$4" fontWeight="600" color="$text">
                       {formData.woodsSubcategory}
                     </Text>
                   </Row>
@@ -243,19 +243,19 @@ export function ReviewStep({
 
               <View height={1} backgroundColor="$cloudMist" />
               <Row justifyContent="space-between" alignItems="center">
-                <Text size="$4" fontWeight="400" color="$slateSmoke">
+                <Text size="$4" fontWeight="400" color="$textSecondary">
                   Brand
                 </Text>
-                <Text size="$4" fontWeight="600" color="$ironstone">
+                <Text size="$4" fontWeight="600" color="$text">
                   {formData.brandName || "Not set"}
                 </Text>
               </Row>
               <View height={1} backgroundColor="$cloudMist" />
               <Row justifyContent="space-between" alignItems="center">
-                <Text size="$4" fontWeight="400" color="$slateSmoke">
+                <Text size="$4" fontWeight="400" color="$textSecondary">
                   Model
                 </Text>
-                <Text size="$4" fontWeight="600" color="$ironstone">
+                <Text size="$4" fontWeight="600" color="$text">
                   {formData.modelName || "—"}
                 </Text>
               </Row>
@@ -265,10 +265,10 @@ export function ReviewStep({
                 <>
                   <View height={1} backgroundColor="$cloudMist" />
                   <Row justifyContent="space-between" alignItems="center">
-                    <Text size="$4" fontWeight="400" color="$slateSmoke">
+                    <Text size="$4" fontWeight="400" color="$textSecondary">
                       Shaft Flex
                     </Text>
-                    <Text size="$4" fontWeight="600" color="$ironstone">
+                    <Text size="$4" fontWeight="600" color="$text">
                       {FLEX_OPTIONS.find((f) => f.value === formData.flex)
                         ?.label ?? formData.flex}
                     </Text>
@@ -281,10 +281,10 @@ export function ReviewStep({
                 <>
                   <View height={1} backgroundColor="$cloudMist" />
                   <Row justifyContent="space-between" alignItems="center">
-                    <Text size="$4" fontWeight="400" color="$slateSmoke">
+                    <Text size="$4" fontWeight="400" color="$textSecondary">
                       Loft
                     </Text>
-                    <Text size="$4" fontWeight="600" color="$ironstone">
+                    <Text size="$4" fontWeight="600" color="$text">
                       {formData.loft}
                     </Text>
                   </Row>
@@ -297,7 +297,7 @@ export function ReviewStep({
                 <>
                   <View height={1} backgroundColor="$cloudMist" />
                   <Row justifyContent="space-between" alignItems="center">
-                    <Text size="$4" fontWeight="400" color="$slateSmoke">
+                    <Text size="$4" fontWeight="400" color="$textSecondary">
                       Head Cover
                     </Text>
                     <View
@@ -314,7 +314,7 @@ export function ReviewStep({
                         color={
                           formData.headCoverIncluded
                             ? "$pureWhite"
-                            : "$slateSmoke"
+                            : "$textSecondary"
                         }
                       >
                         {formData.headCoverIncluded ? "Included" : "Not included"}
@@ -328,7 +328,7 @@ export function ReviewStep({
               
               {/* Overall Condition Badge */}
               <Row justifyContent="space-between" alignItems="center">
-                <Text size="$4" fontWeight="400" color="$slateSmoke">
+                <Text size="$4" fontWeight="400" color="$textSecondary">
                   Overall Condition
                 </Text>
                 <View
@@ -351,30 +351,30 @@ export function ReviewStep({
                 borderRadius="$lg"
                 padding="$3"
               >
-                <Text size="$3" fontWeight="600" color="$slateSmoke">
+                <Text size="$3" fontWeight="600" color="$textSecondary">
                   Condition Breakdown
                 </Text>
                 <Row justifyContent="space-between">
-                  <Text size="$3" color="$slateSmoke">
+                  <Text size="$3" color="$textSecondary">
                     Grip
                   </Text>
-                  <Text size="$3" fontWeight="600" color="$ironstone">
+                  <Text size="$3" fontWeight="600" color="$text">
                     {formData.gripCondition}/10 ({getConditionLabel(formData.gripCondition)})
                   </Text>
                 </Row>
                 <Row justifyContent="space-between">
-                  <Text size="$3" color="$slateSmoke">
+                  <Text size="$3" color="$textSecondary">
                     Head
                   </Text>
-                  <Text size="$3" fontWeight="600" color="$ironstone">
+                  <Text size="$3" fontWeight="600" color="$text">
                     {formData.headCondition}/10 ({getConditionLabel(formData.headCondition)})
                   </Text>
                 </Row>
                 <Row justifyContent="space-between">
-                  <Text size="$3" color="$slateSmoke">
+                  <Text size="$3" color="$textSecondary">
                     Shaft
                   </Text>
-                  <Text size="$3" fontWeight="600" color="$ironstone">
+                  <Text size="$3" fontWeight="600" color="$text">
                     {formData.shaftCondition}/10 ({getConditionLabel(formData.shaftCondition)})
                   </Text>
                 </Row>
@@ -385,19 +385,19 @@ export function ReviewStep({
           {/* Listing Info Section */}
           <ReviewSection
             title="Listing Info"
-            icon={<FileText size={18} color="$slateSmoke" />}
+            icon={<FileText size={18} color="$textSecondary" />}
             step={3}
             onEdit={onEdit}
           >
             <Column gap="$4">
               <Column gap="$1">
-                <Text size="$2" fontWeight="500" color="$slateSmoke">
+                <Text size="$2" fontWeight="500" color="$textSecondary">
                   TITLE
                 </Text>
                 <Text
                   size="$6"
                   fontWeight="600"
-                  color="$ironstone"
+                  color="$text"
                   numberOfLines={2}
                 >
                   {formData.title || "No title"}
@@ -406,13 +406,13 @@ export function ReviewStep({
 
               {Boolean(formData.description) && (
                 <Column gap="$1">
-                  <Text size="$2" fontWeight="500" color="$slateSmoke">
+                  <Text size="$2" fontWeight="500" color="$textSecondary">
                     DESCRIPTION
                   </Text>
                   <Text
                     size="$4"
                     fontWeight="400"
-                    color="$ironstone"
+                    color="$text"
                     numberOfLines={3}
                   >
                     {formData.description}
@@ -421,7 +421,7 @@ export function ReviewStep({
               )}
 
               <Column gap="$1">
-                <Text size="$2" fontWeight="500" color="$slateSmoke">
+                <Text size="$2" fontWeight="500" color="$textSecondary">
                   PRICE
                 </Text>
                 <Text

@@ -9,6 +9,7 @@ import {
   Button,
   Heading,
   Spinner,
+  useTheme,
 } from "@buttergolf/ui";
 import { Button as TamaguiButton } from "tamagui";
 import { ArrowLeft, ShieldCheck, Smartphone, Mail } from "@tamagui/lucide-icons";
@@ -35,6 +36,9 @@ export function TwoFactorScreen({
 }: Readonly<TwoFactorScreenProps>) {
   const insets = useSafeAreaInsets();
   const { signIn, setActive, isLoaded } = useSignIn();
+  const theme = useTheme();
+  // Get theme-aware text color for TextInput
+  const textColor = theme.text?.val ?? "#323232";
 
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -389,7 +393,7 @@ export function TwoFactorScreen({
                       textAlign: "center",
                       width: "100%",
                       height: "100%",
-                      color: "#323232",
+                      color: textColor,
                     }}
                     // Handle paste on first input
                     onChange={(e) => {

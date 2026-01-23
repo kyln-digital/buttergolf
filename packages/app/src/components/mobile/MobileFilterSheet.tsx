@@ -233,7 +233,7 @@ export function MobileFilterSheet({
               pressStyle={{ opacity: 0.7 }}
               onPress={onClose}
             >
-              <X size={24} color="$ironstone" />
+              <X size={24} color="$text" />
             </Column>
           </Row>
 
@@ -250,9 +250,9 @@ export function MobileFilterSheet({
                     Sort By
                   </Text>
                   {sortExpanded ? (
-                    <ChevronUp size={20} color="$slateSmoke" />
+                    <ChevronUp size={20} color="$textSecondary" />
                   ) : (
-                    <ChevronDown size={20} color="$slateSmoke" />
+                    <ChevronDown size={20} color="$textSecondary" />
                   )}
                 </Row>
               </Pressable>
@@ -328,9 +328,9 @@ export function MobileFilterSheet({
                     Condition
                   </Text>
                   {conditionExpanded ? (
-                    <ChevronUp size={20} color="$slateSmoke" />
+                    <ChevronUp size={20} color="$textSecondary" />
                   ) : (
-                    <ChevronDown size={20} color="$slateSmoke" />
+                    <ChevronDown size={20} color="$textSecondary" />
                   )}
                 </Row>
               </Pressable>
@@ -371,9 +371,9 @@ export function MobileFilterSheet({
                     Price Range
                   </Text>
                   {priceExpanded ? (
-                    <ChevronUp size={20} color="$slateSmoke" />
+                    <ChevronUp size={20} color="$textSecondary" />
                   ) : (
-                    <ChevronDown size={20} color="$slateSmoke" />
+                    <ChevronDown size={20} color="$textSecondary" />
                   )}
                 </Row>
               </Pressable>
