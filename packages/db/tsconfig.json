@@ -1,18 +1,12 @@
 {
-    "extends": "@buttergolf/typescript-config/base.json",
-    "compilerOptions": {
-        "outDir": "./dist",
-        "rootDir": ".",
-        "composite": true,
-        "incremental": true,
-        "declarationMap": true
-    },
-    "include": [
-        "src/**/*",
-        "prisma/**/*"
-    ],
-    "exclude": [
-        "node_modules",
-        "dist"
-    ]
+  "extends": "@buttergolf/typescript-config/base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": ".",
+    "composite": true,
+    "incremental": true,
+    "declarationMap": true
+  },
+  "include": ["src/**/*", "prisma/**/*"],
+  "exclude": ["node_modules", "dist", "prisma/seed-old.ts", "prisma/migrations/**/*.ts"]
 }

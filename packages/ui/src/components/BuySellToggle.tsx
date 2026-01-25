@@ -65,7 +65,6 @@ const StyledTab = styled(Tabs.Tab, {
   borderColor: "$border",
 
   // Web shadows for inactive
-  // @ts-expect-error - boxShadow only exists on web
   boxShadow: "0px 1px 5px 0px rgba(0, 0, 0, 0.1)",
 
   hoverStyle: {
@@ -91,9 +90,7 @@ const StyledTab = styled(Tabs.Tab, {
         // Spiced Clementine - explicit hex to override any defaults
         backgroundColor: "$primary",
         borderColor: "$primary",
-        // @ts-expect-error - boxShadow only exists on web
-        boxShadow:
-          "0px 1px 5px 0px rgba(0, 0, 0, 0.25)",
+        boxShadow: "0px 1px 5px 0px rgba(0, 0, 0, 0.25)",
         hoverStyle: {
           backgroundColor: "$primaryHover",
           opacity: 1,
@@ -106,7 +103,6 @@ const StyledTab = styled(Tabs.Tab, {
       false: {
         backgroundColor: "$surface",
         borderColor: "$border",
-        // @ts-expect-error - boxShadow only exists on web
         boxShadow: "0px 1px 5px 0px rgba(0, 0, 0, 0.1)",
         hoverStyle: {
           backgroundColor: "$backgroundHover",

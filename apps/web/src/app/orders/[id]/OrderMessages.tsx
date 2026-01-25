@@ -110,45 +110,48 @@ export function OrderMessages({
     // Setup SSE connection for real-time messages
     const eventSource = new EventSource(`/api/orders/${orderId}/messages/stream`);
 
-    eventSource.addEventListener('open', () => {
-      console.log('[SSE] Connected to message stream');
+    eventSource.addEventListener("open", () => {
+      console.log("[SSE] Connected to message stream");
       setError(null);
     });
 
-    eventSource.addEventListener('message', (event) => {
+    eventSource.addEventListener("message", (event) => {
       try {
         const data = JSON.parse(event.data);
 
         // Handle new message events
-        if (data.type === 'new_message' && data.message) {
+        if (data.type === "new_message" && data.message) {
           setMessages((prev) => {
             // Check if message already exists (avoid duplicates)
             if (prev.some((m) => m.id === data.message.id)) {
               return prev;
             }
-            return [...prev, {
-              id: data.message.id,
-              orderId: data.message.orderId,
-              senderId: data.message.senderId,
-              content: data.message.content,
-              createdAt: data.message.createdAt,
-              isRead: data.message.isRead,
-            }];
+            return [
+              ...prev,
+              {
+                id: data.message.id,
+                orderId: data.message.orderId,
+                senderId: data.message.senderId,
+                content: data.message.content,
+                createdAt: data.message.createdAt,
+                isRead: data.message.isRead,
+              },
+            ];
           });
         }
       } catch (err) {
-        console.error('[SSE] Failed to parse message:', err);
+        console.error("[SSE] Failed to parse message:", err);
       }
     });
 
-    eventSource.addEventListener('error', (err) => {
-      console.error('[SSE] Connection error:', err);
-      setError('Connection lost. Attempting to reconnect...');
+    eventSource.addEventListener("error", (err) => {
+      console.error("[SSE] Connection error:", err);
+      setError("Connection lost. Attempting to reconnect...");
       // EventSource will automatically try to reconnect
     });
 
     return () => {
-      console.log('[SSE] Disconnecting from message stream');
+      console.log("[SSE] Disconnecting from message stream");
       eventSource.close();
     };
   }, [orderId]); // Only orderId - not fetchMessages
@@ -230,8 +233,7 @@ export function OrderMessages({
           ) : messages.length === 0 ? (
             <Column alignItems="center" justifyContent="center" height="100%">
               <Text size="$4" color="$textSecondary" textAlign="center">
-                No messages yet. Start a conversation with{" "}
-                {otherUserName || "the other party"}.
+                No messages yet. Start a conversation with {otherUserName || "the other party"}.
               </Text>
             </Column>
           ) : (
@@ -301,7 +303,6 @@ export function OrderMessages({
               <TextArea
                 value={newMessage}
                 onChangeText={setNewMessage}
-                // @ts-expect-error - TextArea expects different event types
                 onKeyDown={handleKeyDown}
                 placeholder="Type your message..."
                 size="md"
