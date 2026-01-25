@@ -1,4 +1,9 @@
-import { NavigationContainer, DarkTheme, DefaultTheme, Theme as NavigationTheme } from "@react-navigation/native";
+import {
+  NavigationContainer,
+  DarkTheme,
+  DefaultTheme,
+  Theme as NavigationTheme,
+} from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { brandColors } from "@buttergolf/constants";
 import {
@@ -47,9 +52,24 @@ import {
   Platform,
   useColorScheme,
 } from "react-native";
-import { ClerkProvider, ClerkLoaded, SignedIn, SignedOut, useAuth, useUser } from "@clerk/clerk-expo";
+import {
+  ClerkProvider,
+  ClerkLoaded,
+  SignedIn,
+  SignedOut,
+  useAuth,
+  useUser,
+} from "@clerk/clerk-expo";
+import { addBreadcrumb } from "./lib/breadcrumbs";
 import { StripeProvider } from "@stripe/stripe-react-native";
-import * as SecureStore from "expo-secure-store";
+import {
+  deferredFetch,
+  deferredGet,
+  deferredDelete,
+  deferredPost,
+  deferredSecureStoreGet,
+  deferredSecureStoreSet,
+} from "./lib/apiClient";
 import {
   registerForPushNotificationsAsync,
   registerPushTokenWithBackend,
@@ -72,6 +92,56 @@ import * as SplashScreen from "expo-splash-screen";
 
 // Keep splash screen visible while fonts load
 SplashScreen.preventAutoHideAsync();
+
+// Local types matching what screen components expect
+// (These are duplicated from screen components to avoid circular deps)
+type OfferStatus = "PENDING" | "ACCEPTED" | "REJECTED" | "COUNTERED" | "EXPIRED";
+
+interface Message {
+  id: string;
+  orderId: string;
+  senderId: string;
+  senderName: string;
+  senderImage: string | null;
+  content: string;
+  createdAt: string;
+  isRead: boolean;
+  senderRole?: "buyer" | "seller";
+  isOwnMessage?: boolean;
+}
+
+interface Offer {
+  id: string;
+  amount: number;
+  status: OfferStatus;
+  message?: string;
+  expiresAt?: string;
+  createdAt: string;
+  product: {
+    id: string;
+    title: string;
+    price: number;
+    images: { url: string }[];
+  };
+  buyer: {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    imageUrl?: string;
+  };
+  seller: {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    imageUrl?: string;
+  };
+  counterOffers?: {
+    id: string;
+    amount: number;
+    fromSeller: boolean;
+    createdAt: string;
+  }[];
+}
 
 // Define navigation param types
 type RootStackParamList = {
@@ -157,12 +227,7 @@ const linking = {
 function SignOutButton() {
   const { signOut } = useAuth();
   return (
-    <Button
-      size="$2"
-      chromeless
-      onPress={() => signOut()}
-      paddingHorizontal="$3"
-    >
+    <Button size="$2" chromeless onPress={() => signOut()} paddingHorizontal="$3">
       <Text>Sign Out</Text>
     </Button>
   );
@@ -184,7 +249,7 @@ async function fetchProducts(): Promise<ProductCardData[]> {
     if (!apiUrl) {
       throw new Error(
         "EXPO_PUBLIC_API_URL environment variable is not set. " +
-          "Please create apps/mobile/.env file with: EXPO_PUBLIC_API_URL=http://localhost:3000",
+          "Please create apps/mobile/.env file with: EXPO_PUBLIC_API_URL=http://localhost:3000"
       );
     }
 
@@ -207,37 +272,27 @@ async function fetchProducts(): Promise<ProductCardData[]> {
 }
 
 // Function to fetch products by category
-async function fetchProductsByCategory(
-  categorySlug: string,
-): Promise<ProductCardData[]> {
+async function fetchProductsByCategory(categorySlug: string): Promise<ProductCardData[]> {
   try {
     const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
     if (!apiUrl) {
       throw new Error(
         "EXPO_PUBLIC_API_URL environment variable is not set. " +
-          "Please create apps/mobile/.env file with: EXPO_PUBLIC_API_URL=http://localhost:3000",
+          "Please create apps/mobile/.env file with: EXPO_PUBLIC_API_URL=http://localhost:3000"
       );
     }
 
-    console.log(
-      "Fetching products for category:",
-      categorySlug,
-      "from:",
-      apiUrl,
-    );
+    console.log("Fetching products for category:", categorySlug, "from:", apiUrl);
     // Use /api/listings endpoint which properly:
     // - Supports category slug filtering
     // - Returns ProductCardData format
     // - Includes seller rating info
-    const response = await fetch(
-      `${apiUrl}/api/listings?category=${categorySlug}`,
-      {
-        headers: {
-          Accept: "application/json",
-        },
+    const response = await fetch(`${apiUrl}/api/listings?category=${categorySlug}`, {
+      headers: {
+        Accept: "application/json",
       },
-    );
+    });
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -260,7 +315,7 @@ async function fetchProduct(id: string): Promise<Product | null> {
     if (!apiUrl) {
       throw new Error(
         "EXPO_PUBLIC_API_URL environment variable is not set. " +
-          "Please create apps/mobile/.env file with: EXPO_PUBLIC_API_URL=http://localhost:3000",
+          "Please create apps/mobile/.env file with: EXPO_PUBLIC_API_URL=http://localhost:3000"
       );
     }
 
@@ -307,12 +362,9 @@ async function searchBrands(query: string): Promise<Brand[]> {
     const apiUrl = process.env.EXPO_PUBLIC_API_URL;
     if (!apiUrl || !query) return [];
 
-    const response = await fetch(
-      `${apiUrl}/api/brands?query=${encodeURIComponent(query)}`,
-      {
-        headers: { Accept: "application/json" },
-      },
-    );
+    const response = await fetch(`${apiUrl}/api/brands?query=${encodeURIComponent(query)}`, {
+      headers: { Accept: "application/json" },
+    });
 
     if (!response.ok) return [];
     return await response.json();
@@ -346,7 +398,7 @@ async function searchModels(brandId: string, query: string): Promise<Model[]> {
 // Function to submit a listing
 async function submitListingToApi(
   data: SellFormData,
-  token: string | null,
+  token: string | null
 ): Promise<{ id: string }> {
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
   if (!apiUrl) throw new Error("API URL not configured");
@@ -408,12 +460,11 @@ async function pickImages(): Promise<ImageData[]> {
   try {
     // Request permissions if not on web
     if (Platform.OS !== "web") {
-      const { status } =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
           "Permissions Required",
-          "Please grant photo library permissions to add photos.",
+          "Please grant photo library permissions to add photos."
         );
         return [];
       }
@@ -449,10 +500,7 @@ async function takePhoto(): Promise<ImageData | null> {
     if (Platform.OS !== "web") {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(
-          "Permissions Required",
-          "Please grant camera permissions to take photos.",
-        );
+        Alert.alert("Permissions Required", "Please grant camera permissions to take photos.");
         return null;
       }
     }
@@ -487,7 +535,7 @@ async function takePhoto(): Promise<ImageData | null> {
 async function uploadImageToCloudinary(
   image: ImageData,
   isFirstImage: boolean,
-  getToken: () => Promise<string | null>,
+  getToken: () => Promise<string | null>
 ): Promise<string> {
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
   if (!apiUrl) throw new Error("API URL not configured");
@@ -544,8 +592,7 @@ async function uploadImageToCloudinary(
       const errorData: unknown = await uploadResponse.json();
       if (errorData && typeof errorData === "object") {
         const possibleError =
-          (errorData as { error?: unknown }).error ??
-          (errorData as { message?: unknown }).message;
+          (errorData as { error?: unknown }).error ?? (errorData as { message?: unknown }).message;
 
         if (typeof possibleError === "string" && possibleError.trim().length > 0) {
           errorMessage = possibleError;
@@ -611,23 +658,25 @@ async function uploadImageToCloudinary(
  * 3. Opens native Stripe Connect embedded onboarding (unified with web experience)
  * 4. Shows SellScreen once user is ready to sell
  */
-function SellScreenWrapper({
-  navigation,
-}: {
-  navigation: any;
-}) {
+function SellScreenWrapper({ navigation }: { navigation: any }) {
   const { getToken } = useAuth();
 
   // Memoize handlers to prevent re-render issues during navigation
-  const handleUploadImage = useCallback(async (image: ImageData, isFirstImage: boolean): Promise<string> => {
-    return uploadImageToCloudinary(image, isFirstImage, getToken);
-  }, [getToken]);
+  const handleUploadImage = useCallback(
+    async (image: ImageData, isFirstImage: boolean): Promise<string> => {
+      return uploadImageToCloudinary(image, isFirstImage, getToken);
+    },
+    [getToken]
+  );
 
-  const handleSubmitListing = useCallback(async (data: SellFormData): Promise<{ id: string }> => {
-    const token = await getToken();
-    if (!token) throw new Error("Not authenticated");
-    return submitListingToApi(data, token);
-  }, [getToken]);
+  const handleSubmitListing = useCallback(
+    async (data: SellFormData): Promise<{ id: string }> => {
+      const token = await getToken();
+      if (!token) throw new Error("Not authenticated");
+      return submitListingToApi(data, token);
+    },
+    [getToken]
+  );
 
   return (
     <SellerOnboardingGate
@@ -647,11 +696,7 @@ function SellScreenWrapper({
  * Wrapper component for AccountScreen that provides Clerk user data
  * and sign-out functionality.
  */
-function AccountScreenWrapper({
-  navigation,
-}: {
-  navigation: any;
-}) {
+function AccountScreenWrapper({ navigation }: { navigation: any }) {
   const { user } = useUser();
   const { signOut } = useAuth();
 
@@ -700,10 +745,26 @@ function CategoryListScreenWrapper({
   const { getToken } = useAuth();
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
+  // Create a deferred fetch function that handles auth via deferredFetch
+  // This prevents TurboModule race conditions during navigation
+  const deferredFetchWithAuth = useCallback(
+    (url: string, options?: RequestInit) => {
+      // Extract signal and handle null -> undefined conversion for type compatibility
+      const { signal, ...restOptions } = options || {};
+      return deferredFetch(url, {
+        ...restOptions,
+        signal: signal ?? undefined,
+        getToken,
+      });
+    },
+    [getToken]
+  );
+
   const { favourites, toggleFavourite } = useMobileFavourites({
     apiUrl,
     getToken,
     isAuthenticated,
+    fetchFn: deferredFetchWithAuth,
   });
 
   return (
@@ -721,6 +782,7 @@ function CategoryListScreenWrapper({
       onHomePress={() => navigation.navigate("Home")}
       onWishlistPress={() => navigation.navigate("Favourites")}
       onMessagesPress={() => navigation.navigate("Messages")}
+      onProductPress={(productId) => navigation.navigate("ProductDetail", { id: productId })}
     />
   );
 }
@@ -757,35 +819,12 @@ function FavouritesScreenWrapper({
   }, [getToken]);
 
   // Memoize fetch functions to prevent re-render issues during navigation
+  // Uses deferredFetch to prevent TurboModule race conditions
   const fetchFavourites = useCallback(async () => {
-    const token = await getToken();
-    
-    // Debug: Log token retrieval
-    console.log("[FavouritesScreenWrapper] Token retrieval:", {
-      hasToken: !!token,
-      tokenLength: token?.length,
-      tokenPrefix: token?.substring(0, 20),
-      apiUrl,
-    });
-    
-    if (!token) {
-      console.log("[FavouritesScreenWrapper] No token, returning empty");
-      return { products: [], pagination: { page: 1, limit: 24, total: 0, totalPages: 0 } };
-    }
+    console.log("[FavouritesScreenWrapper] Fetching favourites");
 
     const url = `${apiUrl}/api/favourites?page=1&limit=100`;
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-    };
-    
-    console.log("[FavouritesScreenWrapper] Making request:", {
-      url,
-      hasAuthHeader: !!headers.Authorization,
-      authHeaderLength: headers.Authorization?.length,
-    });
-    
-    const response = await fetch(url, { headers });
+    const response = await deferredFetch(url, { getToken });
 
     if (!response.ok) {
       throw new Error("Failed to fetch favourites");
@@ -794,22 +833,12 @@ function FavouritesScreenWrapper({
     return response.json();
   }, [getToken, apiUrl]);
 
-  const removeFavourite = useCallback(async (productId: string) => {
-    const token = await getToken();
-    if (!token) throw new Error("Not authenticated");
-
-    const response = await fetch(`${apiUrl}/api/favourites/${productId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to remove favourite");
-    }
-  }, [getToken, apiUrl]);
+  const removeFavourite = useCallback(
+    async (productId: string) => {
+      await deferredDelete(`${apiUrl}/api/favourites/${productId}`, { getToken });
+    },
+    [getToken, apiUrl]
+  );
 
   // Handle Buy Now - fetch product and open checkout sheet
   const handleBuyNow = useCallback((productId: string) => {
@@ -829,7 +858,7 @@ function FavouritesScreenWrapper({
         console.error("Failed to fetch product for Buy Now:", error);
         Alert.alert(
           "Unable to load product",
-          "Something went wrong while loading this product. Please try again.",
+          "Something went wrong while loading this product. Please try again."
         );
       });
   }, []);
@@ -852,44 +881,50 @@ function FavouritesScreenWrapper({
         console.error("Failed to fetch product for Make Offer:", error);
         Alert.alert(
           "Unable to load product",
-          "Something went wrong while loading this product. Please try again.",
+          "Something went wrong while loading this product. Please try again."
         );
       });
   }, []);
 
   // Handle checkout success
-  const handleCheckoutSuccess = useCallback((paymentIntentId: string) => {
-    setCheckoutSheetOpen(false);
-    setSelectedProduct(null);
-    Alert.alert(
-      "Payment Successful!",
-      "Your order has been placed. You can track it in your messages.",
-      [
-        {
-          text: "View Messages",
-          onPress: () => navigation.navigate("Messages"),
-        },
-        { text: "OK" },
-      ]
-    );
-  }, [navigation]);
+  const handleCheckoutSuccess = useCallback(
+    (paymentIntentId: string) => {
+      setCheckoutSheetOpen(false);
+      setSelectedProduct(null);
+      Alert.alert(
+        "Payment Successful!",
+        "Your order has been placed. You can track it in your messages.",
+        [
+          {
+            text: "View Messages",
+            onPress: () => navigation.navigate("Messages"),
+          },
+          { text: "OK" },
+        ]
+      );
+    },
+    [navigation]
+  );
 
   // Handle offer success
-  const handleOfferSuccess = useCallback((offer: { id: string }) => {
-    setOfferSheetOpen(false);
-    setSelectedProduct(null);
-    Alert.alert(
-      "Offer Sent!",
-      "Your offer has been sent to the seller. You'll be notified when they respond.",
-      [
-        {
-          text: "View Offer",
-          onPress: () => navigation.navigate("OfferDetail", { offerId: offer.id }),
-        },
-        { text: "OK" },
-      ]
-    );
-  }, [navigation]);
+  const handleOfferSuccess = useCallback(
+    (offer: { id: string }) => {
+      setOfferSheetOpen(false);
+      setSelectedProduct(null);
+      Alert.alert(
+        "Offer Sent!",
+        "Your offer has been sent to the seller. You'll be notified when they respond.",
+        [
+          {
+            text: "View Offer",
+            onPress: () => navigation.navigate("OfferDetail", { offerId: offer.id }),
+          },
+          { text: "OK" },
+        ]
+      );
+    },
+    [navigation]
+  );
 
   return (
     <>
@@ -908,7 +943,7 @@ function FavouritesScreenWrapper({
         onLoginPress={onLoginPress}
         onAccountPress={() => navigation.navigate("Account")}
       />
-      
+
       {/* Checkout Sheet */}
       {selectedProduct && (
         <MobileCheckoutSheet
@@ -922,7 +957,7 @@ function FavouritesScreenWrapper({
           onSuccess={handleCheckoutSuccess}
         />
       )}
-      
+
       {/* Make Offer Sheet */}
       {selectedProduct && (
         <MakeOfferSheet
@@ -953,29 +988,11 @@ function MessagesScreenWrapper({
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
   // Memoize fetchConversations to prevent re-renders from triggering useEffect loops
-  // and to avoid race conditions with screen transitions
+  // and to avoid race conditions with screen transitions. Uses deferredFetch for TurboModule safety.
   const fetchConversations = useCallback(async () => {
-    const token = await getToken();
+    console.log("[MessagesScreenWrapper] Fetching conversations");
 
-    console.log("[MessagesScreenWrapper] Token retrieval:", {
-      hasToken: !!token,
-      apiUrl,
-    });
-
-    if (!token) {
-      console.log("[MessagesScreenWrapper] No token, returning empty");
-      return { conversations: [] };
-    }
-
-    const url = `${apiUrl}/api/messages`;
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-    };
-
-    console.log("[MessagesScreenWrapper] Making request:", { url });
-
-    const response = await fetch(url, { headers });
+    const response = await deferredFetch(`${apiUrl}/api/messages`, { getToken });
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -1036,69 +1053,43 @@ function MessageThreadScreenWrapper({
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
   // Memoize all fetch functions to prevent re-render issues during navigation
-  const fetchMessages = useCallback(async (id: string) => {
-    const token = await getToken();
+  // Uses deferredFetch for TurboModule safety
+  const fetchMessages = useCallback(
+    async (id: string) => {
+      console.log("[MessageThreadScreenWrapper] Fetching messages:", { id });
 
-    console.log("[MessageThreadScreenWrapper] Fetching messages:", { id });
+      const response = await deferredFetch(`${apiUrl}/api/orders/${id}/messages`, { getToken });
 
-    if (!token) {
-      throw new Error("Not authenticated");
-    }
+      if (!response.ok) {
+        throw new Error("Failed to fetch messages");
+      }
 
-    const response = await fetch(`${apiUrl}/api/orders/${id}/messages`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
-    });
+      return response.json();
+    },
+    [getToken, apiUrl]
+  );
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch messages");
-    }
+  const sendMessage = useCallback(
+    async (id: string, content: string) => {
+      const data = await deferredPost<{ message: Message }>(
+        `${apiUrl}/api/orders/${id}/messages`,
+        { content },
+        { getToken }
+      );
+      return data.message;
+    },
+    [getToken, apiUrl]
+  );
 
-    return response.json();
-  }, [getToken, apiUrl]);
-
-  const sendMessage = useCallback(async (id: string, content: string) => {
-    const token = await getToken();
-
-    if (!token) {
-      throw new Error("Not authenticated");
-    }
-
-    const response = await fetch(`${apiUrl}/api/orders/${id}/messages`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
-      body: JSON.stringify({ content }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to send message");
-    }
-
-    const data = await response.json();
-    return data.message;
-  }, [getToken, apiUrl]);
-
-  const markAsRead = useCallback(async (id: string) => {
-    const token = await getToken();
-
-    if (!token) {
-      throw new Error("Not authenticated");
-    }
-
-    await fetch(`${apiUrl}/api/orders/${id}/messages/mark-read`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  }, [getToken, apiUrl]);
+  const markAsRead = useCallback(
+    async (id: string) => {
+      await deferredFetch(`${apiUrl}/api/orders/${id}/messages/mark-read`, {
+        method: "POST",
+        getToken,
+      });
+    },
+    [getToken, apiUrl]
+  );
 
   return (
     <MessageThreadScreen
@@ -1156,7 +1147,7 @@ function ProductDetailScreenWrapper({
   isAuthenticated: boolean;
 }) {
   const { getToken } = useAuth();
-  
+
   // State for checkout and offer sheets
   const [checkoutSheetOpen, setCheckoutSheetOpen] = useState(false);
   const [offerSheetOpen, setOfferSheetOpen] = useState(false);
@@ -1190,7 +1181,7 @@ function ProductDetailScreenWrapper({
         console.error("Failed to fetch product for Buy Now:", error);
         Alert.alert(
           "Unable to load product",
-          "Something went wrong while loading this product. Please try again.",
+          "Something went wrong while loading this product. Please try again."
         );
       });
   }, []);
@@ -1213,44 +1204,50 @@ function ProductDetailScreenWrapper({
         console.error("Failed to fetch product for Make Offer:", error);
         Alert.alert(
           "Unable to load product",
-          "Something went wrong while loading this product. Please try again.",
+          "Something went wrong while loading this product. Please try again."
         );
       });
   }, []);
 
-  const handleCheckoutSuccess = useCallback((paymentIntentId: string) => {
-    setCheckoutSheetOpen(false);
-    setSelectedProduct(null);
-    // Navigate to order confirmation or messages
-    Alert.alert(
-      "Payment Successful!",
-      "Your order has been placed. You can track it in your messages.",
-      [
-        {
-          text: "View Messages",
-          onPress: () => navigation.navigate("Messages"),
-        },
-        { text: "OK" },
-      ]
-    );
-  }, [navigation]);
+  const handleCheckoutSuccess = useCallback(
+    (paymentIntentId: string) => {
+      setCheckoutSheetOpen(false);
+      setSelectedProduct(null);
+      // Navigate to order confirmation or messages
+      Alert.alert(
+        "Payment Successful!",
+        "Your order has been placed. You can track it in your messages.",
+        [
+          {
+            text: "View Messages",
+            onPress: () => navigation.navigate("Messages"),
+          },
+          { text: "OK" },
+        ]
+      );
+    },
+    [navigation]
+  );
 
-  const handleOfferSuccess = useCallback((offer: { id: string }) => {
-    setOfferSheetOpen(false);
-    setSelectedProduct(null);
-    // Navigate to offer detail
-    Alert.alert(
-      "Offer Sent!",
-      "Your offer has been sent to the seller. You'll be notified when they respond.",
-      [
-        {
-          text: "View Offer",
-          onPress: () => navigation.navigate("OfferDetail", { offerId: offer.id }),
-        },
-        { text: "OK" },
-      ]
-    );
-  }, [navigation]);
+  const handleOfferSuccess = useCallback(
+    (offer: { id: string }) => {
+      setOfferSheetOpen(false);
+      setSelectedProduct(null);
+      // Navigate to offer detail
+      Alert.alert(
+        "Offer Sent!",
+        "Your offer has been sent to the seller. You'll be notified when they respond.",
+        [
+          {
+            text: "View Offer",
+            onPress: () => navigation.navigate("OfferDetail", { offerId: offer.id }),
+          },
+          { text: "OK" },
+        ]
+      );
+    },
+    [navigation]
+  );
 
   return (
     <>
@@ -1262,7 +1259,7 @@ function ProductDetailScreenWrapper({
         onMakeOffer={handleMakeOffer}
         isAuthenticated={isAuthenticated}
       />
-      
+
       {/* Checkout Sheet */}
       {selectedProduct && (
         <MobileCheckoutSheet
@@ -1276,7 +1273,7 @@ function ProductDetailScreenWrapper({
           onSuccess={handleCheckoutSuccess}
         />
       )}
-      
+
       {/* Make Offer Sheet */}
       {selectedProduct && (
         <MakeOfferSheet
@@ -1296,31 +1293,13 @@ function ProductDetailScreenWrapper({
 /**
  * Wrapper component for OffersListScreen that provides data fetching.
  */
-function OffersListScreenWrapper({
-  navigation,
-}: {
-  navigation: any;
-}) {
+function OffersListScreenWrapper({ navigation }: { navigation: any }) {
   const { getToken } = useAuth();
   const { user } = useUser();
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
   const fetchOffers = useCallback(async () => {
-    const token = await getToken();
-    if (!token) throw new Error("Not authenticated");
-
-    const response = await fetch(`${apiUrl}/api/offers`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch offers");
-    }
-
-    const data = await response.json();
+    const data = await deferredGet<Offer[]>(`${apiUrl}/api/offers`, { getToken });
     return data || [];
   }, [getToken, apiUrl]);
 
@@ -1338,34 +1317,17 @@ function OffersListScreenWrapper({
 /**
  * Wrapper component for OfferDetailScreen that provides data fetching and actions.
  */
-function OfferDetailScreenWrapper({
-  navigation,
-  offerId,
-}: {
-  navigation: any;
-  offerId: string;
-}) {
+function OfferDetailScreenWrapper({ navigation, offerId }: { navigation: any; offerId: string }) {
   const { getToken } = useAuth();
   const { user } = useUser();
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
-  const fetchOffer = useCallback(async (id: string) => {
-    const token = await getToken();
-    if (!token) throw new Error("Not authenticated");
-
-    const response = await fetch(`${apiUrl}/api/offers/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch offer");
-    }
-
-    return response.json();
-  }, [getToken, apiUrl]);
+  const fetchOffer = useCallback(
+    async (id: string) => {
+      return deferredGet<Offer>(`${apiUrl}/api/offers/${id}`, { getToken });
+    },
+    [getToken, apiUrl]
+  );
 
   const getTokenCallback = useCallback(async () => {
     return getToken();
@@ -1400,33 +1362,64 @@ function PushTokenRegistration() {
 
   useEffect(() => {
     let mounted = true;
+    const abortController = new AbortController();
 
     const registerPushToken = async () => {
       try {
+        addBreadcrumb("turbomodule.notifications", "Starting push token registration");
+
         const authToken = await getToken();
         if (!authToken) {
-          console.log("[PushToken] No auth token, skipping registration");
+          addBreadcrumb("turbomodule.notifications", "No auth token, skipping", {}, "warning");
+          return;
+        }
+
+        // Check if we've been unmounted/cancelled
+        if (!mounted || abortController.signal.aborted) {
+          addBreadcrumb(
+            "turbomodule.notifications",
+            "Registration cancelled (unmount)",
+            {},
+            "debug"
+          );
           return;
         }
 
         // Register for push notifications
+        addBreadcrumb("turbomodule.notifications", "Calling registerForPushNotificationsAsync");
         const pushToken = await registerForPushNotificationsAsync(authToken);
 
-        if (!pushToken || !mounted) {
+        if (!pushToken || !mounted || abortController.signal.aborted) {
+          addBreadcrumb("turbomodule.notifications", "No push token or cancelled", {
+            hasPushToken: !!pushToken,
+          });
           return;
         }
 
         // Register the push token with the backend
+        addBreadcrumb("turbomodule.notifications", "Registering token with backend");
         await registerPushTokenWithBackend(pushToken, authToken, apiUrl);
+        addBreadcrumb("turbomodule.notifications", "Push registration complete");
       } catch (error) {
+        addBreadcrumb(
+          "turbomodule.notifications",
+          "Push registration failed",
+          { error: String(error) },
+          "error"
+        );
         console.error("[PushToken] Error registering push token:", error);
       }
     };
 
+    // All TurboModule-heavy operations (SecureStore, fetch) are now wrapped in
+    // InteractionManager.runAfterInteractions() via deferredFetch and deferredSecureStore.
+    // This ensures they wait for navigation animations to complete before executing,
+    // preventing race conditions without needing an arbitrary timeout.
     registerPushToken();
 
     return () => {
       mounted = false;
+      abortController.abort();
     };
   }, [getToken, apiUrl]);
 
@@ -1436,7 +1429,7 @@ function PushTokenRegistration() {
 /**
  * Custom navigation theme that matches ButterGolf brand colors
  * Based on React Navigation's DefaultTheme/DarkTheme
- * 
+ *
  * Uses shared brand colors from @buttergolf/constants for single source of truth.
  * @see packages/constants/src/brandColors.ts
  */
@@ -1476,10 +1469,10 @@ export default function App() {
   // Official Tamagui/Expo pattern: use React Native's useColorScheme()
   // This follows system preference automatically (app.json has userInterfaceStyle: "automatic")
   const colorScheme = useColorScheme();
-  
+
   // Validate colorScheme and default to 'light' if null/undefined
-  const validColorScheme = colorScheme === 'dark' ? 'dark' : 'light';
-  const navigationTheme = validColorScheme === 'dark' ? DarkNavigationTheme : LightNavigationTheme;
+  const validColorScheme = colorScheme === "dark" ? "dark" : "light";
+  const navigationTheme = validColorScheme === "dark" ? DarkNavigationTheme : LightNavigationTheme;
 
   // Load Urbanist font weights for React Native using expo-google-fonts
   const [fontsLoaded] = useFonts({
@@ -1526,21 +1519,13 @@ export default function App() {
 
   if (!fontsLoaded) return null;
 
+  // Token cache using shared deferred SecureStore to prevent TurboModule race conditions
+  // WHY: SecureStore calls race with react-native-svg unmounting during screen transitions,
+  // causing SIGABRT in ObjCTurboModule::performVoidMethodInvocation
+  // See: apps/mobile/lib/secureStore.ts for implementation details
   const tokenCache = {
-    async getToken(key: string) {
-      try {
-        return await SecureStore.getItemAsync(key);
-      } catch {
-        return null;
-      }
-    },
-    async saveToken(key: string, value: string) {
-      try {
-        await SecureStore.setItemAsync(key, value);
-      } catch {
-        // ignore
-      }
-    },
+    getToken: (key: string) => deferredSecureStoreGet(key),
+    saveToken: (key: string, value: string) => deferredSecureStoreSet(key, value),
   };
 
   if (FORCE_MINIMAL) {
@@ -1553,9 +1538,7 @@ export default function App() {
           backgroundColor: "#fbfbf9",
         }}
       >
-        <RNText style={{ fontSize: 20, marginBottom: 12 }}>
-          Minimal RN screen
-        </RNText>
+        <RNText style={{ fontSize: 20, marginBottom: 12 }}>Minimal RN screen</RNText>
         <RNPressable
           onPress={() => {}}
           style={{
@@ -1571,26 +1554,19 @@ export default function App() {
     );
   }
 
-  // Debug: Verify Clerk publishable key is loaded
+  // Debug: Verify environment keys are loaded
   const clerkPublishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
   const stripePublishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-  
-  console.log(
-    "[Clerk] Publishable key:",
-    clerkPublishableKey ? "LOADED" : "MISSING",
-  );
-  console.log(
-    "[Stripe] Publishable key:",
-    stripePublishableKey ? "LOADED" : "MISSING",
-  );
 
-  // CRITICAL: If keys are missing, show error screen instead of crashing
-  // This prevents native module initialization with empty/invalid keys
+  console.log("[Clerk] Publishable key:", clerkPublishableKey ? "LOADED" : "MISSING");
+  console.log("[Stripe] Publishable key:", stripePublishableKey ? "LOADED" : "MISSING");
+
+  // CRITICAL: If required keys are missing, show error screen
   if (!clerkPublishableKey || !stripePublishableKey) {
-    const missingKeys = [];
+    const missingKeys: string[] = [];
     if (!clerkPublishableKey) missingKeys.push("EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY");
     if (!stripePublishableKey) missingKeys.push("EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY");
-    
+
     return (
       <SafeAreaProvider>
         <RNView
@@ -1609,7 +1585,10 @@ export default function App() {
             Missing required environment variables:
           </RNText>
           {missingKeys.map((key) => (
-            <RNText key={key} style={{ fontSize: 14, fontFamily: "monospace", marginBottom: 4, color: "#ef4444" }}>
+            <RNText
+              key={key}
+              style={{ fontSize: 14, fontFamily: "monospace", marginBottom: 4, color: "#ef4444" }}
+            >
               • {key}
             </RNText>
           ))}
@@ -1624,189 +1603,161 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StripeProvider publishableKey={stripePublishableKey}>
-        <ClerkProvider
-          tokenCache={tokenCache}
-          publishableKey={clerkPublishableKey}
-        >
-        {/* Official Tamagui Expo pattern: use useColorScheme() for theme */}
-        <Provider defaultTheme={validColorScheme}>
-          <ClerkLoaded>
-            <SignedIn>
-            {/* SellerStatusProvider fetches seller status ONCE on sign-in and shares via context.
+        <ClerkProvider tokenCache={tokenCache} publishableKey={clerkPublishableKey}>
+          {/* Official Tamagui Expo pattern: use useColorScheme() for theme */}
+          <Provider defaultTheme={validColorScheme}>
+            <ClerkLoaded>
+              <SignedIn>
+                {/* SellerStatusProvider fetches seller status ONCE on sign-in and shares via context.
                 This prevents the infinite API call loop that occurred when each screen
                 had its own useSellerStatus hook instance. DO NOT remove this provider
                 or revert to a hook-based approach - see context/SellerStatusContext.tsx */}
-            <SellerStatusProvider>
-            <PushTokenRegistration />
-            <NavigationContainer linking={linking} theme={navigationTheme}>
-              <Stack.Navigator screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="Home">
-                  {({ navigation }: { navigation: any }) => (
-                    <HomeScreenWrapper
-                      navigation={navigation}
-                      isAuthenticated={true}
-                    />
-                  )}
-                </Stack.Screen>
-                <Stack.Screen
-                  name="Rounds"
-                  component={RoundsScreen}
-                  options={{ title: "Your Rounds" }}
-                />
-                <Stack.Screen
-                  name="ProductDetail"
-                  options={{ title: "Product Details", headerShown: false }}
-                >
-                  {({ route, navigation }: { route: RouteParams<"ProductDetail">; navigation: any }) => (
-                    <ProductDetailScreenWrapper
-                      navigation={navigation}
-                      productId={route.params?.id || ""}
-                      isAuthenticated={true}
-                    />
-                  )}
-                </Stack.Screen>
-                <Stack.Screen
-                  name="Category"
-                  options={({ route }: { route: RouteParams<"Category"> }) => {
-                    const slug = route.params?.slug;
-                    return {
-                      title: slug
-                        ? slug.charAt(0).toUpperCase() + slug.slice(1)
-                        : "Category",
-                      headerShown: false, // CategoryListScreen has its own header
-                    };
-                  }}
-                >
-                  {({
-                    route,
-                    navigation,
-                  }: {
-                    route: RouteParams<"Category">;
-                    navigation: any;
-                  }) => {
-                    const slug = route.params?.slug;
-                    return (
-                      <CategoryListScreenWrapper
-                        navigation={navigation}
-                        categorySlug={slug || ""}
-                        categoryName={
-                          slug
-                            ? slug.charAt(0).toUpperCase() + slug.slice(1)
-                            : "Category"
-                        }
-                        isAuthenticated={true}
+                <SellerStatusProvider>
+                  <PushTokenRegistration />
+                  <NavigationContainer linking={linking} theme={navigationTheme}>
+                    <Stack.Navigator screenOptions={{ headerShown: false }}>
+                      <Stack.Screen name="Home">
+                        {({ navigation }: { navigation: any }) => (
+                          <HomeScreenWrapper navigation={navigation} isAuthenticated={true} />
+                        )}
+                      </Stack.Screen>
+                      <Stack.Screen
+                        name="Rounds"
+                        component={RoundsScreen}
+                        options={{ title: "Your Rounds" }}
                       />
-                    );
-                  }}
-                </Stack.Screen>
-                <Stack.Screen
-                  name="Account"
-                  options={{ headerShown: false }}
-                >
-                  {({ navigation }: { navigation: any }) => (
-                    <AccountScreenWrapper navigation={navigation} />
-                  )}
-                </Stack.Screen>
-                <Stack.Screen
-                  name="Sell"
-                  options={{
-                    headerShown: false, // SellScreen has its own header
-                    presentation: "modal",
-                  }}
-                >
-                  {({ navigation }: { navigation: any }) => (
-                    <SellScreenWrapper navigation={navigation} />
-                  )}
-                </Stack.Screen>
-                <Stack.Screen
-                  name="Favourites"
-                  options={{ headerShown: false }}
-                >
-                  {({ navigation }: { navigation: any }) => (
-                    <FavouritesScreenWrapper
-                      navigation={navigation}
-                      isAuthenticated={true}
-                    />
-                  )}
-                </Stack.Screen>
-                <Stack.Screen
-                  name="Messages"
-                  options={{ headerShown: false }}
-                >
-                  {({ navigation }: { navigation: any }) => (
-                    <MessagesScreenWrapper
-                      navigation={navigation}
-                      isAuthenticated={true}
-                    />
-                  )}
-                </Stack.Screen>
-                <Stack.Screen
-                  name="MessageThread"
-                  options={{ headerShown: false }}
-                >
-                  {({
-                    route,
-                    navigation,
-                  }: {
-                    route: {
-                      params?: {
-                        orderId?: string;
-                        otherUserName?: string;
-                        otherUserImage?: string | null;
-                        productTitle?: string;
-                        userRole?: "buyer" | "seller";
-                      };
-                    };
-                    navigation: any;
-                  }) => (
-                    <MessageThreadScreenWrapper
-                      navigation={navigation}
-                      orderId={route.params?.orderId || ""}
-                      otherUserName={route.params?.otherUserName || "User"}
-                      otherUserImage={route.params?.otherUserImage ?? null}
-                      productTitle={route.params?.productTitle || "Order"}
-                      userRole={route.params?.userRole || "buyer"}
-                    />
-                  )}
-                </Stack.Screen>
-                <Stack.Screen
-                  name="Offers"
-                  options={{ headerShown: false }}
-                >
-                  {({ navigation }: { navigation: any }) => (
-                    <OffersListScreenWrapper navigation={navigation} />
-                  )}
-                </Stack.Screen>
-                <Stack.Screen
-                  name="OfferDetail"
-                  options={{ headerShown: false }}
-                >
-                  {({
-                    route,
-                    navigation,
-                  }: {
-                    route: { params?: { offerId?: string } };
-                    navigation: any;
-                  }) => (
-                    <OfferDetailScreenWrapper
-                      navigation={navigation}
-                      offerId={route.params?.offerId || ""}
-                    />
-                  )}
-                </Stack.Screen>
-              </Stack.Navigator>
-            </NavigationContainer>
-            </SellerStatusProvider>
-          </SignedIn>
-          <SignedOut>
-            {/* Render the designed onboarding screen (animations currently disabled for stability) */}
-            <NavigationContainer linking={linking} theme={navigationTheme}>
-              <OnboardingFlow />
-            </NavigationContainer>
-          </SignedOut>
-          </ClerkLoaded>
-        </Provider>
-      </ClerkProvider>
+                      <Stack.Screen
+                        name="ProductDetail"
+                        options={{ title: "Product Details", headerShown: false }}
+                      >
+                        {({
+                          route,
+                          navigation,
+                        }: {
+                          route: RouteParams<"ProductDetail">;
+                          navigation: any;
+                        }) => (
+                          <ProductDetailScreenWrapper
+                            navigation={navigation}
+                            productId={route.params?.id || ""}
+                            isAuthenticated={true}
+                          />
+                        )}
+                      </Stack.Screen>
+                      <Stack.Screen
+                        name="Category"
+                        options={({ route }: { route: RouteParams<"Category"> }) => {
+                          const slug = route.params?.slug;
+                          return {
+                            title: slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : "Category",
+                            headerShown: false, // CategoryListScreen has its own header
+                          };
+                        }}
+                      >
+                        {({
+                          route,
+                          navigation,
+                        }: {
+                          route: RouteParams<"Category">;
+                          navigation: any;
+                        }) => {
+                          const slug = route.params?.slug;
+                          return (
+                            <CategoryListScreenWrapper
+                              navigation={navigation}
+                              categorySlug={slug || ""}
+                              categoryName={
+                                slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : "Category"
+                              }
+                              isAuthenticated={true}
+                            />
+                          );
+                        }}
+                      </Stack.Screen>
+                      <Stack.Screen name="Account" options={{ headerShown: false }}>
+                        {({ navigation }: { navigation: any }) => (
+                          <AccountScreenWrapper navigation={navigation} />
+                        )}
+                      </Stack.Screen>
+                      <Stack.Screen
+                        name="Sell"
+                        options={{
+                          headerShown: false, // SellScreen has its own header
+                          presentation: "modal",
+                        }}
+                      >
+                        {({ navigation }: { navigation: any }) => (
+                          <SellScreenWrapper navigation={navigation} />
+                        )}
+                      </Stack.Screen>
+                      <Stack.Screen name="Favourites" options={{ headerShown: false }}>
+                        {({ navigation }: { navigation: any }) => (
+                          <FavouritesScreenWrapper navigation={navigation} isAuthenticated={true} />
+                        )}
+                      </Stack.Screen>
+                      <Stack.Screen name="Messages" options={{ headerShown: false }}>
+                        {({ navigation }: { navigation: any }) => (
+                          <MessagesScreenWrapper navigation={navigation} isAuthenticated={true} />
+                        )}
+                      </Stack.Screen>
+                      <Stack.Screen name="MessageThread" options={{ headerShown: false }}>
+                        {({
+                          route,
+                          navigation,
+                        }: {
+                          route: {
+                            params?: {
+                              orderId?: string;
+                              otherUserName?: string;
+                              otherUserImage?: string | null;
+                              productTitle?: string;
+                              userRole?: "buyer" | "seller";
+                            };
+                          };
+                          navigation: any;
+                        }) => (
+                          <MessageThreadScreenWrapper
+                            navigation={navigation}
+                            orderId={route.params?.orderId || ""}
+                            otherUserName={route.params?.otherUserName || "User"}
+                            otherUserImage={route.params?.otherUserImage ?? null}
+                            productTitle={route.params?.productTitle || "Order"}
+                            userRole={route.params?.userRole || "buyer"}
+                          />
+                        )}
+                      </Stack.Screen>
+                      <Stack.Screen name="Offers" options={{ headerShown: false }}>
+                        {({ navigation }: { navigation: any }) => (
+                          <OffersListScreenWrapper navigation={navigation} />
+                        )}
+                      </Stack.Screen>
+                      <Stack.Screen name="OfferDetail" options={{ headerShown: false }}>
+                        {({
+                          route,
+                          navigation,
+                        }: {
+                          route: { params?: { offerId?: string } };
+                          navigation: any;
+                        }) => (
+                          <OfferDetailScreenWrapper
+                            navigation={navigation}
+                            offerId={route.params?.offerId || ""}
+                          />
+                        )}
+                      </Stack.Screen>
+                    </Stack.Navigator>
+                  </NavigationContainer>
+                </SellerStatusProvider>
+              </SignedIn>
+              <SignedOut>
+                {/* Render the designed onboarding screen (animations currently disabled for stability) */}
+                <NavigationContainer linking={linking} theme={navigationTheme}>
+                  <OnboardingFlow />
+                </NavigationContainer>
+              </SignedOut>
+            </ClerkLoaded>
+          </Provider>
+        </ClerkProvider>
       </StripeProvider>
     </SafeAreaProvider>
   );
@@ -1849,9 +1800,7 @@ function OnboardingFlow() {
           options={({ route }: { route: RouteParams<"Category"> }) => {
             const slug = (route.params as { slug?: string })?.slug;
             return {
-              title: slug
-                ? slug.charAt(0).toUpperCase() + slug.slice(1)
-                : "Category",
+              title: slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : "Category",
               headerShown: false,
             };
           }}
@@ -1861,11 +1810,7 @@ function OnboardingFlow() {
             return (
               <CategoryListScreen
                 categorySlug={slug || ""}
-                categoryName={
-                  slug
-                    ? slug.charAt(0).toUpperCase() + slug.slice(1)
-                    : "Category"
-                }
+                categoryName={slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : "Category"}
                 onFetchProducts={fetchProductsByCategory}
                 onBack={() => navigation.goBack()}
                 onSellPress={() => setFlowState("signIn")}

@@ -124,8 +124,7 @@ export function CounterOfferForm({
               />
             </Row>
             <Text size="$3" color="$textMuted">
-              Current: £{currentAmount.toFixed(2)} | Listed: £
-              {productPrice.toFixed(2)}
+              Current: £{currentAmount.toFixed(2)} | Listed: £{productPrice.toFixed(2)}
             </Text>
           </Column>
 
@@ -159,7 +158,12 @@ export function CounterOfferForm({
             size="$5"
             width="100%"
             disabled={submitting || !amount}
-            onPress={handleSubmit as any}
+            onPress={() =>
+              handleSubmit({
+                preventDefault: () => {},
+                stopPropagation: () => {},
+              } as React.FormEvent)
+            }
           >
             {submitting ? "Sending..." : "Send Counter-Offer"}
           </Button>

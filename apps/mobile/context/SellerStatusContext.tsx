@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { useAuth } from "@clerk/clerk-expo";
+import { deferredFetch } from "../lib/apiClient";
 
 // Re-export SellerStatus from the original hook to maintain single source of truth
 export type { SellerStatus } from "@buttergolf/app/src/hooks/useSellerStatus";
@@ -117,24 +118,13 @@ export function SellerStatusProvider({ children }: SellerStatusProviderProps) {
       setIsLoading(true);
       setError(null);
 
-      const token = await getTokenRef.current();
-      debugLog("Token obtained:", token ? "yes" : "no");
-
-      if (!token) {
-        debugLog("No token, returning default status");
-        setStatus(DEFAULT_STATUS);
-        // Let finally block handle cleanup
-        return;
-      }
-
       const url = `${apiUrlRef.current}/api/users/seller-status`;
       debugLog("Fetching from:", url);
 
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
+      // Use deferredFetch to prevent TurboModule race conditions during navigation
+      // This defers the getToken call (which accesses SecureStore) until after animations complete
+      const response = await deferredFetch(url, {
+        getToken: getTokenRef.current,
         signal,
       });
 
@@ -143,15 +133,22 @@ export function SellerStatusProvider({ children }: SellerStatusProviderProps) {
 
       debugLog("Response status:", response.status);
 
+      // Handle 401 (not authenticated) - return default status
+      if (response.status === 401) {
+        debugLog("Not authenticated, returning default status");
+        setStatus(DEFAULT_STATUS);
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(`Failed to fetch seller status: ${response.status}`);
       }
 
       const data = await response.json();
-      
+
       // Check if aborted before updating state
       if (signal.aborted) return;
-      
+
       debugLog("Response data:", data);
       setStatus(data);
       // Update lastFetchTime only on success (not at start)

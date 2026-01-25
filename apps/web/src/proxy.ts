@@ -33,6 +33,7 @@ const isComingSoonAllowedRoute = createRouteMatcher([
   "/_next/(.*)",
   "/sign-in(.*)", // Allow sign-in for admin bypass
   "/sign-up(.*)", // Allow sign-up for admin bypass
+  "/mobile-onboarding(.*)", // Allow mobile Stripe onboarding (uses token-based auth, not cookies)
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

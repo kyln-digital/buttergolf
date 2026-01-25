@@ -61,6 +61,7 @@ export class ErrorBoundary extends Component<
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // Log error to console in development
+    // eslint-disable-next-line turbo/no-undeclared-env-vars
     if (process.env.NODE_ENV === "development") {
       console.error("ErrorBoundary caught an error:", error, errorInfo);
     }
@@ -117,10 +118,11 @@ export class ErrorBoundary extends Component<
             </Heading>
 
             <Text align="center" color="$textSecondary">
-              We're sorry for the inconvenience. The error has been logged and
-              we'll look into it.
+              We&apos;re sorry for the inconvenience. The error has been logged
+              and we&apos;ll look into it.
             </Text>
 
+            {/* eslint-disable-next-line turbo/no-undeclared-env-vars */}
             {process.env.NODE_ENV === "development" && this.state.error && (
               <Column
                 backgroundColor="$errorLight"

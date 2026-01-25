@@ -2,6 +2,7 @@
   "name": "buttergolf",
   "private": true,
   "scripts": {
+    "prepare": "husky",
     "build": "turbo run build",
     "dev": "turbo run dev",
     "dev:web": "turbo run dev --filter=web",
@@ -21,6 +22,7 @@
     "test:watch": "vitest --watch",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
     "check-deps": "check-dependency-version-consistency .",
     "clean": "turbo run clean && rm -rf node_modules",
@@ -34,6 +36,9 @@
     "@vitest/ui": "^4.0.13",
     "check-dependency-version-consistency": "^5.0.1",
     "dotenv": "^17.2.3",
+    "eslint": "catalog:",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.6.2",
     "tsx": "catalog:",
     "turbo": "^2.7.3",
@@ -77,5 +82,13 @@
   },
   "dependencies": {
     "@types/react": "19.1.17"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs,cjs,json,md,yaml,yml}": [
+      "pnpm exec prettier --write"
+    ],
+    "*.{js,jsx,ts,tsx,mjs,cjs}": [
+      "pnpm exec eslint --fix"
+    ]
   }
 }

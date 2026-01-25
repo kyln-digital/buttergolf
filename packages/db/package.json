@@ -8,6 +8,8 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "lint": "eslint . --fix",
+    "check-types": "tsc --noEmit",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate:dev": "prisma migrate dev",
@@ -22,7 +24,9 @@
     "@prisma/client": "catalog:"
   },
   "devDependencies": {
+    "@buttergolf/eslint-config": "workspace:*",
     "@buttergolf/typescript-config": "workspace:*",
+    "eslint": "catalog:",
     "prisma": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:"

@@ -100,11 +100,11 @@ interface AuthButtonsSectionProps {
 
 export function AuthButtonsSection({ children, placeholder }: AuthButtonsSectionProps) {
   const [isMounted, setIsMounted] = useState(false);
-  
+
   useEffect(() => {
-    setIsMounted(true);
+    setIsMounted(true); // eslint-disable-line react-hooks/set-state-in-effect -- Required for hydration
   }, []);
-  
+
   if (!isMounted) {
     return <>{placeholder || <AuthButtonsPlaceholder />}</>;
   }

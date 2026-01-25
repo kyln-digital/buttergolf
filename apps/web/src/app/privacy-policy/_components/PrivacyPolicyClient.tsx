@@ -166,7 +166,7 @@ export function PrivacyPolicyClient() {
             </Column>
 
             <Column gap="$md">
-              <Heading level={2}>8. Children's Privacy</Heading>
+              <Heading level={2}>8. Children&apos;s Privacy</Heading>
               <Text>
                 ButterGolf is not intended for users under the age of 18. We do
                 not knowingly collect personal information from children. If we
@@ -221,7 +221,7 @@ export function PrivacyPolicyClient() {
               <Text>
                 We may update this Privacy Policy from time to time. We will
                 notify you of material changes by posting the updated policy on
-                our platform and updating the "Last updated" date. Continued use
+                our platform and updating the &quot;Last updated&quot; date. Continued use
                 of ButterGolf after changes are posted constitutes acceptance of
                 the updated policy.
               </Text>

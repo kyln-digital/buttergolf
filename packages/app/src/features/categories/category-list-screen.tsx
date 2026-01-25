@@ -26,6 +26,8 @@ interface CategoryListScreenProps {
   favourites?: Set<string>;
   /** Callback when favourite is toggled */
   onToggleFavourite?: (productId: string) => Promise<{ success: boolean; requiresAuth?: boolean }>;
+  /** Callback when product is pressed - use on mobile to avoid useLink navigation issues */
+  onProductPress?: (productId: string) => void;
 }
 
 export function CategoryListScreen({
@@ -43,6 +45,7 @@ export function CategoryListScreen({
   isAuthenticated = false,
   favourites = new Set(),
   onToggleFavourite,
+  onProductPress,
 }: Readonly<CategoryListScreenProps>) {
   const insets = useSafeAreaInsets();
   const [products, setProducts] = useState<ProductCardData[]>([]);
@@ -273,6 +276,7 @@ export function CategoryListScreen({
                           product={product}
                           isFavourited={favourites.has(product.id)}
                           onFavourite={handleFavouriteToggle}
+                          onProductPress={onProductPress}
                         />
                       </Column>
                     ))}
@@ -303,8 +307,44 @@ export function CategoryListScreen({
   );
 }
 
-// Helper component to attach Solito link to ProductCard
+// Helper component to attach navigation to ProductCard
+// Uses onProductPress callback when provided (mobile), falls back to Solito link (web)
 function ProductCardWithLink({
+  product,
+  isFavourited,
+  onFavourite,
+  onProductPress,
+}: Readonly<{
+  product: ProductCardData;
+  isFavourited?: boolean;
+  onFavourite?: (productId: string) => void;
+  onProductPress?: (productId: string) => void;
+}>) {
+  // On mobile, use the callback prop to avoid useLink navigation context issues
+  if (onProductPress) {
+    return (
+      <ProductCard
+        product={product}
+        onPress={() => onProductPress(product.id)}
+        isFavourited={isFavourited}
+        onFavourite={onFavourite}
+      />
+    );
+  }
+
+  // On web, use Solito's useLink for proper routing
+  return (
+    <ProductCardWithSolitoLink
+      product={product}
+      isFavourited={isFavourited}
+      onFavourite={onFavourite}
+    />
+  );
+}
+
+// Separate component for web that uses Solito's useLink
+// Keeping hooks unconditional by isolating them in a separate component
+function ProductCardWithSolitoLink({
   product,
   isFavourited,
   onFavourite,

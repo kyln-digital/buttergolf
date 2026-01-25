@@ -34,8 +34,7 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
-import { Tabs, SizableText, styled, AnimatePresence, View } from "tamagui";
+import { Tabs, SizableText, styled } from "tamagui";
 
 export type BuySellMode = "buying" | "selling";
 
@@ -66,7 +65,6 @@ const StyledTab = styled(Tabs.Tab, {
   borderColor: "$border",
 
   // Web shadows for inactive
-  // @ts-ignore - boxShadow only exists on web
   boxShadow: "0px 1px 5px 0px rgba(0, 0, 0, 0.1)",
 
   hoverStyle: {
@@ -92,9 +90,7 @@ const StyledTab = styled(Tabs.Tab, {
         // Spiced Clementine - explicit hex to override any defaults
         backgroundColor: "$primary",
         borderColor: "$primary",
-        // @ts-ignore - boxShadow only exists on web
-        boxShadow:
-          "0px 1px 5px 0px rgba(0, 0, 0, 0.25)",
+        boxShadow: "0px 1px 5px 0px rgba(0, 0, 0, 0.25)",
         hoverStyle: {
           backgroundColor: "$primaryHover",
           opacity: 1,
@@ -107,7 +103,6 @@ const StyledTab = styled(Tabs.Tab, {
       false: {
         backgroundColor: "$surface",
         borderColor: "$border",
-        // @ts-ignore - boxShadow only exists on web
         boxShadow: "0px 1px 5px 0px rgba(0, 0, 0, 0.1)",
         hoverStyle: {
           backgroundColor: "$backgroundHover",
@@ -150,32 +145,13 @@ const StyledTabsList = styled(Tabs.List, {
   } as const,
 });
 
-/**
- * Active tab indicator that slides between tabs
- */
-const TabIndicator = styled(View, {
-  name: "BuySellTabIndicator",
-  position: "absolute",
-  bottom: 0,
-  left: 0,
-  right: 0,
-  height: 3,
-  backgroundColor: "$primary",
-  borderRadius: "$full",
-  animation: "medium",
-});
-
 export function BuySellToggle({
   activeMode,
   onModeChange,
   variant = "mobile",
 }: Readonly<BuySellToggleProps>) {
-  const [direction, setDirection] = useState<"left" | "right">("right");
-
   const handleValueChange = (value: string) => {
     const newMode = value as BuySellMode;
-    // Track direction for potential slide animations
-    setDirection(newMode === "selling" ? "right" : "left");
     onModeChange(newMode);
   };
 

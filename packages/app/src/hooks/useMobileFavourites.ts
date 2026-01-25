@@ -9,6 +9,12 @@ interface UseMobileFavouritesOptions {
   getToken: () => Promise<string | null>;
   /** Whether user is authenticated */
   isAuthenticated: boolean;
+  /**
+   * Optional custom fetch function for deferred execution.
+   * On mobile, pass deferredFetch to prevent TurboModule race conditions.
+   * When provided, the function should handle auth token injection internally.
+   */
+  fetchFn?: (url: string, options?: RequestInit) => Promise<Response>;
 }
 
 interface FavouritesState {
@@ -19,7 +25,7 @@ interface FavouritesState {
 
 /**
  * Mobile-compatible favourites hook that works with the Next.js API.
- * 
+ *
  * Unlike the web version which uses Clerk's session directly,
  * this hook accepts the API URL and token getter as props
  * to work with React Native's different auth flow.
@@ -28,6 +34,7 @@ export function useMobileFavourites({
   apiUrl,
   getToken,
   isAuthenticated,
+  fetchFn,
 }: UseMobileFavouritesOptions) {
   const [state, setState] = useState<FavouritesState>({
     favourites: new Set(),
@@ -38,16 +45,19 @@ export function useMobileFavourites({
   // Use refs for functions to avoid them triggering useEffect reruns
   const getTokenRef = useRef(getToken);
   const apiUrlRef = useRef(apiUrl);
-  
+  const fetchFnRef = useRef(fetchFn);
+
   // Keep refs updated
   useEffect(() => {
     getTokenRef.current = getToken;
     apiUrlRef.current = apiUrl;
+    fetchFnRef.current = fetchFn;
   });
 
   // Fetch user's favourites on mount and when auth changes
   useEffect(() => {
     let cancelled = false;
+    const abortController = new AbortController();
 
     async function fetchFavourites() {
       if (!isAuthenticated) {
@@ -58,39 +68,59 @@ export function useMobileFavourites({
       try {
         setState((prev) => ({ ...prev, loading: true, error: null }));
 
-        const token = await getTokenRef.current();
-        
-        // Debug: Log token retrieval
-        console.log("[useMobileFavourites] Token retrieval:", {
-          hasToken: !!token,
-          tokenLength: token?.length,
-          tokenPrefix: token?.substring(0, 20),
-          apiUrl: apiUrlRef.current,
-        });
-        
-        if (!token || cancelled) {
-          console.log("[useMobileFavourites] No token, returning empty");
-          if (!cancelled) {
-            setState({ favourites: new Set(), loading: false, error: null });
+        const url = `${apiUrlRef.current}/api/favourites?limit=1000`;
+        let response: Response;
+
+        if (fetchFnRef.current) {
+          // Use custom fetch (e.g., deferredFetch) - it handles auth internally
+          if (__DEV__) {
+            console.info("[useMobileFavourites] Using deferred fetch:", { url });
           }
-          return;
+          response = await fetchFnRef.current(url, {
+            headers: { Accept: "application/json" },
+            signal: abortController.signal,
+          });
+        } else {
+          // Use native fetch with manual auth token
+          const token = await getTokenRef.current();
+
+          if (__DEV__) {
+            console.info("[useMobileFavourites] Token retrieval:", {
+              hasToken: !!token,
+              tokenLength: token?.length,
+              apiUrl: apiUrlRef.current,
+            });
+          }
+
+          if (!token || cancelled || abortController.signal.aborted) {
+            if (__DEV__) {
+              console.info("[useMobileFavourites] No token or cancelled, returning empty");
+            }
+            if (!cancelled && !abortController.signal.aborted) {
+              setState({ favourites: new Set(), loading: false, error: null });
+            }
+            return;
+          }
+
+          const headers = {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          };
+
+          if (__DEV__) {
+            console.info("[useMobileFavourites] Making request:", {
+              url,
+              hasAuthHeader: !!headers.Authorization,
+            });
+          }
+
+          response = await fetch(url, {
+            headers,
+            signal: abortController.signal,
+          });
         }
 
-        const url = `${apiUrlRef.current}/api/favourites?limit=1000`;
-        const headers = {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        };
-        
-        console.log("[useMobileFavourites] Making request:", {
-          url,
-          hasAuthHeader: !!headers.Authorization,
-          authHeaderLength: headers.Authorization?.length,
-        });
-        
-        const response = await fetch(url, { headers });
-
-        if (cancelled) return;
+        if (cancelled || abortController.signal.aborted) return;
 
         // Handle 401 gracefully
         if (response.status === 401) {
@@ -107,12 +137,19 @@ export function useMobileFavourites({
           (data.products ?? []).map((p: { id: string }) => p.id)
         );
 
-        if (!cancelled) {
+        if (!cancelled && !abortController.signal.aborted) {
           setState({ favourites: favouriteIds, loading: false, error: null });
         }
       } catch (err) {
+        // Ignore abort errors - they're expected during cleanup
+        if (err instanceof Error && err.name === "AbortError") {
+          if (__DEV__) {
+            console.info("[useMobileFavourites] Fetch aborted (cleanup)");
+          }
+          return;
+        }
         console.error("Error fetching favourites:", err);
-        if (!cancelled) {
+        if (!cancelled && !abortController.signal.aborted) {
           setState({
             favourites: new Set(),
             loading: false,
@@ -126,8 +163,9 @@ export function useMobileFavourites({
 
     return () => {
       cancelled = true;
+      abortController.abort();
     };
-  }, [isAuthenticated]); // Only depend on isAuthenticated
+  }, [isAuthenticated]); // Only depend on isAuthenticated - fetchFn is accessed via ref
 
   /**
    * Check if a product is favourited
@@ -162,27 +200,41 @@ export function useMobileFavourites({
       });
 
       try {
-        const token = await getTokenRef.current();
-        if (!token) {
-          // Rollback
-          setState((prev) => {
-            const next = new Set(prev.favourites);
-            if (wasOptimisticAdd) {
-              next.delete(productId);
-            } else {
-              next.add(productId);
-            }
-            return { ...prev, favourites: next };
-          });
-          return { success: false, requiresAuth: true };
-        }
-
         const currentApiUrl = apiUrlRef.current;
-        const response = await fetch(
-          wasOptimisticAdd
-            ? `${currentApiUrl}/api/favourites`
-            : `${currentApiUrl}/api/favourites/${productId}`,
-          {
+        const url = wasOptimisticAdd
+          ? `${currentApiUrl}/api/favourites`
+          : `${currentApiUrl}/api/favourites/${productId}`;
+
+        let response: Response;
+
+        if (fetchFnRef.current) {
+          // Use custom fetch (e.g., deferredFetch) - it handles auth internally
+          response = await fetchFnRef.current(url, {
+            method: wasOptimisticAdd ? "POST" : "DELETE",
+            headers: {
+              ...(wasOptimisticAdd ? { "Content-Type": "application/json" } : {}),
+              Accept: "application/json",
+            },
+            body: wasOptimisticAdd ? JSON.stringify({ productId }) : undefined,
+          });
+        } else {
+          // Use native fetch with manual auth token
+          const token = await getTokenRef.current();
+          if (!token) {
+            // Rollback
+            setState((prev) => {
+              const next = new Set(prev.favourites);
+              if (wasOptimisticAdd) {
+                next.delete(productId);
+              } else {
+                next.add(productId);
+              }
+              return { ...prev, favourites: next };
+            });
+            return { success: false, requiresAuth: true };
+          }
+
+          response = await fetch(url, {
             method: wasOptimisticAdd ? "POST" : "DELETE",
             headers: {
               ...(wasOptimisticAdd ? { "Content-Type": "application/json" } : {}),
@@ -190,8 +242,8 @@ export function useMobileFavourites({
               Accept: "application/json",
             },
             body: wasOptimisticAdd ? JSON.stringify({ productId }) : undefined,
-          }
-        );
+          });
+        }
 
         if (!response.ok) {
           throw new Error("Failed to update favourite");
@@ -247,15 +299,26 @@ export function useMobileFavourites({
     if (!isAuthenticated) return;
 
     try {
-      const token = await getTokenRef.current();
-      if (!token) return;
+      const url = `${apiUrlRef.current}/api/favourites?limit=1000`;
+      let response: Response;
 
-      const response = await fetch(`${apiUrlRef.current}/api/favourites?limit=1000`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-      });
+      if (fetchFnRef.current) {
+        // Use custom fetch (e.g., deferredFetch) - it handles auth internally
+        response = await fetchFnRef.current(url, {
+          headers: { Accept: "application/json" },
+        });
+      } else {
+        // Use native fetch with manual auth token
+        const token = await getTokenRef.current();
+        if (!token) return;
+
+        response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        });
+      }
 
       if (response.status === 401) {
         setState((prev) => ({ ...prev, favourites: new Set() }));
@@ -265,9 +328,7 @@ export function useMobileFavourites({
       if (!response.ok) throw new Error("Failed to refresh favourites");
 
       const data = await response.json();
-      const favouriteIds = new Set<string>(
-        (data.products ?? []).map((p: { id: string }) => p.id)
-      );
+      const favouriteIds = new Set<string>((data.products ?? []).map((p: { id: string }) => p.id));
 
       setState((prev) => ({ ...prev, favourites: favouriteIds }));
     } catch (err) {

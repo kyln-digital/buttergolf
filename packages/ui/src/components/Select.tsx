@@ -32,7 +32,6 @@
  * ```
  */
 
-import React from "react";
 import { styled, GetProps } from "tamagui";
 import {
   Select as TamaguiSelect,

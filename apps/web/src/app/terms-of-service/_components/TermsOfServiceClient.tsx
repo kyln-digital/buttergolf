@@ -158,7 +158,7 @@ export function TermsOfServiceClient() {
                 ButterGolf is a marketplace platform that connects buyers and
                 sellers. We are not a party to transactions between users and do
                 not guarantee the quality, safety, or legality of items listed.
-                THE PLATFORM IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND.
+                THE PLATFORM IS PROVIDED &quot;AS IS&quot; WITHOUT WARRANTIES OF ANY KIND.
                 TO THE MAXIMUM EXTENT PERMITTED BY LAW, BUTTERGOLF SHALL NOT BE
                 LIABLE FOR ANY INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES.
               </Text>

@@ -148,7 +148,7 @@ export function OrderRating({
           </Row>
           {rating.comment && (
             <Text size="$4" color="$textSecondary" marginTop="$md">
-              "{rating.comment}"
+              &quot;{rating.comment}&quot;
             </Text>
           )}
           <Text size="$3" color="$textTertiary" marginTop="$sm">
