@@ -23,9 +23,8 @@ export function CategoriesSection() {
     return [...CATEGORIES, ...CATEGORIES, ...CATEGORIES];
   }, []);
 
-   
   useEffect(() => {
-    setIsMounted(true);
+    setIsMounted(true); // eslint-disable-line react-hooks/set-state-in-effect -- Required for hydration
   }, []);
 
   // Calculate animation duration based on number of items

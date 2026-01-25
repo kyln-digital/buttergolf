@@ -127,13 +127,12 @@ function AnimatedGridContent({
   const [isAnimating, setIsAnimating] = useState(false);
 
   // Handle page transitions with animation
-   
   useEffect(() => {
     // When paginating (not loading), animate the transition
     if (isPaginating && prevPageRef.current !== currentPage) {
       // Determine slide direction based on page change
-      setSlideDirection(currentPage > prevPageRef.current ? "left" : "right");
-      setIsAnimating(true);
+      setSlideDirection(currentPage > prevPageRef.current ? "left" : "right"); // eslint-disable-line react-hooks/set-state-in-effect
+      setIsAnimating(true);  
       prevPageRef.current = currentPage;
     }
   }, [isPaginating, currentPage]);

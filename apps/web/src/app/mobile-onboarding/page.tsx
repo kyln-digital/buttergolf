@@ -137,10 +137,9 @@ export default function MobileOnboardingPage() {
   }, [token, apiUrl]);
 
   // Initialize on mount - only runs once due to dependency array
-   
   useEffect(() => {
     // Use void to indicate intentional fire-and-forget
-    void initializeOnboarding();
+    void initializeOnboarding(); // eslint-disable-line react-hooks/set-state-in-effect -- Async initialization
   }, [initializeOnboarding]);
 
   const handleStepChange = useCallback((stepChange: StepChange) => {

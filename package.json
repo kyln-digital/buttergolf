@@ -34,6 +34,8 @@
     "@vitest/ui": "^4.0.13",
     "check-dependency-version-consistency": "^5.0.1",
     "dotenv": "^17.2.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.6.2",
     "tsx": "catalog:",
     "turbo": "^2.7.3",
