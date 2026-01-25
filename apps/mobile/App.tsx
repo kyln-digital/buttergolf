@@ -740,6 +740,7 @@ function CategoryListScreenWrapper({
       onHomePress={() => navigation.navigate("Home")}
       onWishlistPress={() => navigation.navigate("Favourites")}
       onMessagesPress={() => navigation.navigate("Messages")}
+      onProductPress={(productId) => navigation.navigate("ProductDetail", { id: productId })}
     />
   );
 }
