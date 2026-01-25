@@ -48,7 +48,8 @@ import {
   useColorScheme,
 } from "react-native";
 import { ClerkProvider, ClerkLoaded, SignedIn, SignedOut, useAuth, useUser } from "@clerk/clerk-expo";
-import { StripeProvider } from "@stripe/stripe-react-native";
+import { addBreadcrumb } from "./lib/breadcrumbs";
+import { LazyStripeProvider } from "./context/StripeContext";
 import * as SecureStore from "expo-secure-store";
 import {
   registerForPushNotificationsAsync,
@@ -1400,33 +1401,55 @@ function PushTokenRegistration() {
 
   useEffect(() => {
     let mounted = true;
+    const abortController = new AbortController();
 
     const registerPushToken = async () => {
       try {
+        addBreadcrumb("turbomodule.notifications", "Starting push token registration");
+        
         const authToken = await getToken();
         if (!authToken) {
-          console.log("[PushToken] No auth token, skipping registration");
+          addBreadcrumb("turbomodule.notifications", "No auth token, skipping", {}, "warning");
+          return;
+        }
+
+        // Check if we've been unmounted/cancelled
+        if (!mounted || abortController.signal.aborted) {
+          addBreadcrumb("turbomodule.notifications", "Registration cancelled (unmount)", {}, "debug");
           return;
         }
 
         // Register for push notifications
+        addBreadcrumb("turbomodule.notifications", "Calling registerForPushNotificationsAsync");
         const pushToken = await registerForPushNotificationsAsync(authToken);
 
-        if (!pushToken || !mounted) {
+        if (!pushToken || !mounted || abortController.signal.aborted) {
+          addBreadcrumb("turbomodule.notifications", "No push token or cancelled", { hasPushToken: !!pushToken });
           return;
         }
 
         // Register the push token with the backend
+        addBreadcrumb("turbomodule.notifications", "Registering token with backend");
         await registerPushTokenWithBackend(pushToken, authToken, apiUrl);
+        addBreadcrumb("turbomodule.notifications", "Push registration complete");
       } catch (error) {
+        addBreadcrumb("turbomodule.notifications", "Push registration failed", { error: String(error) }, "error");
         console.error("[PushToken] Error registering push token:", error);
       }
     };
 
-    registerPushToken();
+    // Defer TurboModule-heavy operations to avoid race conditions during initial render
+    // This gives other TurboModules (SecureStore, Clerk) time to initialize
+    const timeoutId = setTimeout(() => {
+      if (mounted && !abortController.signal.aborted) {
+        registerPushToken();
+      }
+    }, 1500);
 
     return () => {
       mounted = false;
+      abortController.abort();
+      clearTimeout(timeoutId);
     };
   }, [getToken, apiUrl]);
 
@@ -1529,15 +1552,22 @@ export default function App() {
   const tokenCache = {
     async getToken(key: string) {
       try {
-        return await SecureStore.getItemAsync(key);
-      } catch {
+        addBreadcrumb("turbomodule.securestore", "getToken called", { key });
+        const value = await SecureStore.getItemAsync(key);
+        addBreadcrumb("turbomodule.securestore", "getToken completed", { key, hasValue: !!value });
+        return value;
+      } catch (err) {
+        addBreadcrumb("turbomodule.securestore", "getToken failed", { key, error: String(err) }, "error");
         return null;
       }
     },
     async saveToken(key: string, value: string) {
       try {
+        addBreadcrumb("turbomodule.securestore", "saveToken called", { key });
         await SecureStore.setItemAsync(key, value);
-      } catch {
+        addBreadcrumb("turbomodule.securestore", "saveToken completed", { key });
+      } catch (err) {
+        addBreadcrumb("turbomodule.securestore", "saveToken failed", { key, error: String(err) }, "error");
         // ignore
       }
     },
@@ -1573,6 +1603,7 @@ export default function App() {
 
   // Debug: Verify Clerk publishable key is loaded
   const clerkPublishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  // Stripe key is now lazily loaded - only log if present
   const stripePublishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
   
   console.log(
@@ -1581,15 +1612,14 @@ export default function App() {
   );
   console.log(
     "[Stripe] Publishable key:",
-    stripePublishableKey ? "LOADED" : "MISSING",
+    stripePublishableKey ? "LOADED" : "MISSING (lazy load)",
   );
 
-  // CRITICAL: If keys are missing, show error screen instead of crashing
-  // This prevents native module initialization with empty/invalid keys
-  if (!clerkPublishableKey || !stripePublishableKey) {
-    const missingKeys = [];
-    if (!clerkPublishableKey) missingKeys.push("EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY");
-    if (!stripePublishableKey) missingKeys.push("EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY");
+  // CRITICAL: If Clerk key is missing, show error screen
+  // Stripe is lazy-loaded so it's only required when checkout is accessed
+  if (!clerkPublishableKey) {
+    const missingKeys = ["EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY"];
+    if (!stripePublishableKey) missingKeys.push("EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY (optional, lazy-loaded)");
     
     return (
       <SafeAreaProvider>
@@ -1623,7 +1653,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <StripeProvider publishableKey={stripePublishableKey}>
+      <LazyStripeProvider>
         <ClerkProvider
           tokenCache={tokenCache}
           publishableKey={clerkPublishableKey}
@@ -1807,7 +1837,7 @@ export default function App() {
           </ClerkLoaded>
         </Provider>
       </ClerkProvider>
-      </StripeProvider>
+      </LazyStripeProvider>
     </SafeAreaProvider>
   );
 }

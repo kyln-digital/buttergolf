@@ -1,6 +1,7 @@
 import * as Notifications from "expo-notifications";
 import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
+import { addBreadcrumb } from "./breadcrumbs";
 
 /**
  * Register for push notifications and store the push token
@@ -25,6 +26,7 @@ export async function registerForPushNotificationsAsync(
     // Get the project ID from app.json
     const projectId = Constants.expoConfig?.extra?.eas?.projectId;
     if (!projectId) {
+      addBreadcrumb("turbomodule.notifications", "No EAS project ID found", {}, "warning");
       console.warn(
         "[Notifications] No EAS project ID found. " +
         "Add 'extra.eas.projectId' to app.json or run 'eas build:configure' to set it up."
@@ -33,22 +35,29 @@ export async function registerForPushNotificationsAsync(
     }
 
     // Request notification permissions
+    addBreadcrumb("turbomodule.notifications", "Getting existing permissions");
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
 
     if (existingStatus !== "granted") {
+      addBreadcrumb("turbomodule.notifications", "Requesting permissions");
       const { status } = await Notifications.requestPermissionsAsync();
       finalStatus = status;
     }
 
     if (finalStatus !== "granted") {
+      addBreadcrumb("turbomodule.notifications", "Permissions not granted", { finalStatus }, "warning");
       console.log("[Notifications] Permission not granted");
       return null;
     }
 
     // Get the Expo push token
+    addBreadcrumb("turbomodule.notifications", "Getting Expo push token");
     const pushToken = await Notifications.getExpoPushTokenAsync({
       projectId,
+    });
+    addBreadcrumb("turbomodule.notifications", "Push token obtained", { 
+      tokenLength: pushToken.data?.length 
     });
 
     console.log("[Notifications] Got push token:", {
@@ -57,21 +66,22 @@ export async function registerForPushNotificationsAsync(
     });
 
     // Check if token has changed since last successful storage
-    // Note: This only optimizes local storage - caller should still register with backend
-    // if needed (e.g., after app reinstall or backend failure). The backend registration
-    // is handled separately by registerPushTokenWithBackend() which should be called
-    // regardless of whether this returns early.
+    addBreadcrumb("turbomodule.securestore", "Reading stored push token");
     const storedToken = await SecureStore.getItemAsync("expo_push_token");
     if (storedToken === pushToken.data) {
+      addBreadcrumb("turbomodule.notifications", "Push token unchanged");
       console.log("[Notifications] Push token unchanged in local storage");
       return pushToken.data;
     }
 
     // Store locally in secure store
+    addBreadcrumb("turbomodule.securestore", "Storing new push token");
     await SecureStore.setItemAsync("expo_push_token", pushToken.data);
+    addBreadcrumb("turbomodule.securestore", "Push token stored successfully");
 
     return pushToken.data;
   } catch (error) {
+    addBreadcrumb("turbomodule.notifications", "Registration failed", { error: String(error) }, "error");
     console.error("[Notifications] Error registering for push:", error);
     return null;
   }
@@ -82,9 +92,11 @@ export async function registerForPushNotificationsAsync(
  */
 export async function getStoredPushToken(): Promise<string | null> {
   try {
+    addBreadcrumb("turbomodule.securestore", "Getting stored push token");
     const token = await SecureStore.getItemAsync("expo_push_token");
     return token || null;
   } catch (error) {
+    addBreadcrumb("turbomodule.securestore", "Failed to get stored token", { error: String(error) }, "error");
     console.error("[Notifications] Error getting stored token:", error);
     return null;
   }
@@ -95,9 +107,12 @@ export async function getStoredPushToken(): Promise<string | null> {
  */
 export async function clearStoredPushToken(): Promise<void> {
   try {
+    addBreadcrumb("turbomodule.securestore", "Clearing stored push token");
     await SecureStore.deleteItemAsync("expo_push_token");
+    addBreadcrumb("turbomodule.securestore", "Push token cleared");
     console.log("[Notifications] Cleared stored push token");
   } catch (error) {
+    addBreadcrumb("turbomodule.securestore", "Failed to clear token", { error: String(error) }, "error");
     console.error("[Notifications] Error clearing token:", error);
   }
 }

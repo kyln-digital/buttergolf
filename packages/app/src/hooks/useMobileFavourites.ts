@@ -48,6 +48,7 @@ export function useMobileFavourites({
   // Fetch user's favourites on mount and when auth changes
   useEffect(() => {
     let cancelled = false;
+    const abortController = new AbortController();
 
     async function fetchFavourites() {
       if (!isAuthenticated) {
@@ -68,9 +69,9 @@ export function useMobileFavourites({
           apiUrl: apiUrlRef.current,
         });
         
-        if (!token || cancelled) {
-          console.log("[useMobileFavourites] No token, returning empty");
-          if (!cancelled) {
+        if (!token || cancelled || abortController.signal.aborted) {
+          console.log("[useMobileFavourites] No token or cancelled, returning empty");
+          if (!cancelled && !abortController.signal.aborted) {
             setState({ favourites: new Set(), loading: false, error: null });
           }
           return;
@@ -88,9 +89,12 @@ export function useMobileFavourites({
           authHeaderLength: headers.Authorization?.length,
         });
         
-        const response = await fetch(url, { headers });
+        const response = await fetch(url, { 
+          headers,
+          signal: abortController.signal,
+        });
 
-        if (cancelled) return;
+        if (cancelled || abortController.signal.aborted) return;
 
         // Handle 401 gracefully
         if (response.status === 401) {
@@ -107,12 +111,17 @@ export function useMobileFavourites({
           (data.products ?? []).map((p: { id: string }) => p.id)
         );
 
-        if (!cancelled) {
+        if (!cancelled && !abortController.signal.aborted) {
           setState({ favourites: favouriteIds, loading: false, error: null });
         }
       } catch (err) {
+        // Ignore abort errors - they're expected during cleanup
+        if (err instanceof Error && err.name === "AbortError") {
+          console.log("[useMobileFavourites] Fetch aborted (cleanup)");
+          return;
+        }
         console.error("Error fetching favourites:", err);
-        if (!cancelled) {
+        if (!cancelled && !abortController.signal.aborted) {
           setState({
             favourites: new Set(),
             loading: false,
@@ -126,6 +135,7 @@ export function useMobileFavourites({
 
     return () => {
       cancelled = true;
+      abortController.abort();
     };
   }, [isAuthenticated]); // Only depend on isAuthenticated
 

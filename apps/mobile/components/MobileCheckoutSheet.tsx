@@ -1,4 +1,4 @@
-import { useState, useCallback, memo } from "react";
+import { useState, useCallback, memo, useEffect } from "react";
 import { Sheet } from "@tamagui/sheet";
 import { useStripe, CollectionMode, AddressCollectionMode } from "@stripe/stripe-react-native";
 import {
@@ -11,6 +11,8 @@ import {
   Spinner,
 } from "@buttergolf/ui";
 import { Info } from "@tamagui/lucide-icons";
+import { useStripeContext } from "../context/StripeContext";
+import { addBreadcrumb } from "../lib/breadcrumbs";
 
 // Shipping options matching the web API
 const SHIPPING_OPTIONS = [
@@ -131,17 +133,52 @@ const SheetContents = memo(function SheetContents({
   onError,
   getToken,
 }: SheetContentsProps) {
-  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  // Initialize Stripe lazily when checkout sheet opens
+  const { isInitialized, initializeStripe, isConfigured } = useStripeContext();
+  
+  // useStripe only works after StripeProvider is mounted
+  // We'll conditionally call the hook and store results
+  const stripeHooks = isInitialized ? useStripe() : null;
   
   const [shippingOption, setShippingOption] = useState<ShippingOptionId>("standard");
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isStripeReady, setIsStripeReady] = useState(false);
+
+  // Initialize Stripe when sheet opens
+  useEffect(() => {
+    if (isOpen && !isInitialized && isConfigured) {
+      addBreadcrumb("turbomodule.stripe", "Initializing Stripe for checkout");
+      initializeStripe();
+    }
+  }, [isOpen, isInitialized, isConfigured, initializeStripe]);
+
+  // Track when Stripe is ready after initialization
+  useEffect(() => {
+    if (isInitialized && stripeHooks !== null) {
+      addBreadcrumb("turbomodule.stripe", "Stripe SDK ready for checkout");
+      setIsStripeReady(true);
+    }
+  }, [isInitialized, stripeHooks]);
 
   const selectedShipping = SHIPPING_OPTIONS.find((o) => o.id === shippingOption)!;
   const buyerProtectionFee = calculateBuyerProtectionFee(productPrice);
   const totalPrice = productPrice + selectedShipping.price / 100 + buyerProtectionFee;
 
   const handleCheckout = useCallback(async () => {
+    // Guard: Ensure Stripe is initialized
+    if (!isStripeReady || !stripeHooks) {
+      addBreadcrumb("turbomodule.stripe", "Checkout blocked - Stripe not ready", {
+        isStripeReady,
+        hasStripeHooks: stripeHooks !== null,
+      }, "warning");
+      setError("Payment system is initializing. Please wait a moment and try again.");
+      return;
+    }
+
+    const { initPaymentSheet, presentPaymentSheet } = stripeHooks;
+
+    addBreadcrumb("turbomodule.stripe", "Starting checkout flow", { productId });
     setIsProcessing(true);
     setError(null);
 
@@ -175,6 +212,8 @@ const SheetContents = memo(function SheetContents({
       if (!response.ok) {
         throw new Error(data.error || "Failed to initialize payment");
       }
+
+      addBreadcrumb("turbomodule.stripe", "Payment intent created, initializing sheet");
 
       // 3. Initialize Stripe Payment Sheet with address collection enabled
       const { error: initError } = await initPaymentSheet({
@@ -244,11 +283,11 @@ const SheetContents = memo(function SheetContents({
       setIsProcessing(false);
     }
   }, [
+    isStripeReady,
+    stripeHooks,
     getToken,
     productId,
     shippingOption,
-    initPaymentSheet,
-    presentPaymentSheet,
     onSuccess,
     onError,
     onClose,
