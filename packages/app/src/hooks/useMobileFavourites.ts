@@ -25,7 +25,7 @@ interface FavouritesState {
 
 /**
  * Mobile-compatible favourites hook that works with the Next.js API.
- * 
+ *
  * Unlike the web version which uses Clerk's session directly,
  * this hook accepts the API URL and token getter as props
  * to work with React Native's different auth flow.
@@ -73,7 +73,9 @@ export function useMobileFavourites({
 
         if (fetchFnRef.current) {
           // Use custom fetch (e.g., deferredFetch) - it handles auth internally
-          console.log("[useMobileFavourites] Using deferred fetch:", { url });
+          if (__DEV__) {
+            console.info("[useMobileFavourites] Using deferred fetch:", { url });
+          }
           response = await fetchFnRef.current(url, {
             headers: { Accept: "application/json" },
             signal: abortController.signal,
@@ -82,15 +84,18 @@ export function useMobileFavourites({
           // Use native fetch with manual auth token
           const token = await getTokenRef.current();
 
-          console.log("[useMobileFavourites] Token retrieval:", {
-            hasToken: !!token,
-            tokenLength: token?.length,
-            tokenPrefix: token?.substring(0, 20),
-            apiUrl: apiUrlRef.current,
-          });
+          if (__DEV__) {
+            console.info("[useMobileFavourites] Token retrieval:", {
+              hasToken: !!token,
+              tokenLength: token?.length,
+              apiUrl: apiUrlRef.current,
+            });
+          }
 
           if (!token || cancelled || abortController.signal.aborted) {
-            console.log("[useMobileFavourites] No token or cancelled, returning empty");
+            if (__DEV__) {
+              console.info("[useMobileFavourites] No token or cancelled, returning empty");
+            }
             if (!cancelled && !abortController.signal.aborted) {
               setState({ favourites: new Set(), loading: false, error: null });
             }
@@ -102,11 +107,12 @@ export function useMobileFavourites({
             Accept: "application/json",
           };
 
-          console.log("[useMobileFavourites] Making request:", {
-            url,
-            hasAuthHeader: !!headers.Authorization,
-            authHeaderLength: headers.Authorization?.length,
-          });
+          if (__DEV__) {
+            console.info("[useMobileFavourites] Making request:", {
+              url,
+              hasAuthHeader: !!headers.Authorization,
+            });
+          }
 
           response = await fetch(url, {
             headers,
@@ -137,7 +143,9 @@ export function useMobileFavourites({
       } catch (err) {
         // Ignore abort errors - they're expected during cleanup
         if (err instanceof Error && err.name === "AbortError") {
-          console.log("[useMobileFavourites] Fetch aborted (cleanup)");
+          if (__DEV__) {
+            console.info("[useMobileFavourites] Fetch aborted (cleanup)");
+          }
           return;
         }
         console.error("Error fetching favourites:", err);
@@ -320,9 +328,7 @@ export function useMobileFavourites({
       if (!response.ok) throw new Error("Failed to refresh favourites");
 
       const data = await response.json();
-      const favouriteIds = new Set<string>(
-        (data.products ?? []).map((p: { id: string }) => p.id)
-      );
+      const favouriteIds = new Set<string>((data.products ?? []).map((p: { id: string }) => p.id));
 
       setState((prev) => ({ ...prev, favourites: favouriteIds }));
     } catch (err) {

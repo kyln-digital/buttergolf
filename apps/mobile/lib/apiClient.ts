@@ -103,21 +103,20 @@ export async function deferredFetch(
 
         resolve(response);
       } catch (error) {
-        addBreadcrumb(
-          "api",
-          `Fetch error: ${url}`,
-          { error: String(error) },
-          "error"
-        );
+        addBreadcrumb("api", `Fetch error: ${url}`, { error: String(error) }, "error");
         reject(error);
       }
     });
 
-    // Handle abort signal
-    signal?.addEventListener("abort", () => {
-      task.cancel();
-      reject(createAbortError());
-    });
+    // Handle abort signal - use { once: true } to prevent listener leaks
+    signal?.addEventListener(
+      "abort",
+      () => {
+        task.cancel();
+        reject(createAbortError());
+      },
+      { once: true }
+    );
   });
 }
 
@@ -150,10 +149,7 @@ export async function deferredPost<T>(
 /**
  * Convenience wrapper for JSON GET requests
  */
-export async function deferredGet<T>(
-  url: string,
-  options: DeferredFetchOptions = {}
-): Promise<T> {
+export async function deferredGet<T>(url: string, options: DeferredFetchOptions = {}): Promise<T> {
   const response = await deferredFetch(url, options);
 
   if (!response.ok) {
