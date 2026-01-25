@@ -3,54 +3,56 @@ packages:
   - packages/*
 
 catalog:
-  # Auth
-  '@clerk/clerk-expo': 2.19.14
-  '@clerk/nextjs': 6.36.5
-
-  # Database
-  '@prisma/client': 6.19.0
-  prisma: 6.19.0
-
-  # Tamagui UI
-  '@tamagui/animations-css': 1.139.2
-  '@tamagui/animations-react-native': 1.139.2
-  '@tamagui/babel-plugin': 1.139.2
-  '@tamagui/card': 1.139.2
-  '@tamagui/cli': 1.139.2
-  '@tamagui/config': 1.139.2
-  '@tamagui/core': 1.139.2
-  '@tamagui/font-inter': 1.139.2
-  '@tamagui/lucide-icons': 1.139.2
-  '@tamagui/next-plugin': 1.139.2
-  '@tamagui/next-theme': 1.139.2
-  '@tamagui/polyfill-dev': 1.139.2
-  '@tamagui/popover': 1.139.2
-  '@tamagui/portal': 1.139.2
-  '@tamagui/sheet': 1.139.2
-  '@tamagui/shorthands': 1.139.2
-  '@tamagui/slider': 1.139.2
-  '@tamagui/switch': 1.139.2
-  '@tamagui/themes': 1.139.2
-  '@tamagui/toast': 1.139.2
-  tamagui: 1.139.2
-
-  # Testing
-  '@testing-library/jest-dom': 6.9.1
-  '@testing-library/react': 16.3.0
-  vitest: 4.0.13
-
-  # Types
-  '@types/node': 22.15.30
-  '@types/react': 19.1.17
-  '@types/react-dom': 19.1.0
-  '@types/canvas-confetti': 1.9.0
-
-  # Linting
+  "@clerk/clerk-expo": 2.19.14
+  "@clerk/nextjs": 6.36.5
+  "@easypost/api": 8.2.0
+  "@next/bundle-analyzer": 16.1.0
+  "@prisma/client": 6.19.0
+  "@react-navigation/native": 7.1.19
+  "@react-navigation/native-stack": 7.6.2
+  "@sentry/nextjs": 10.34.0
+  "@stripe/connect-js": 3.3.31
+  "@stripe/react-connect-js": 3.3.31
+  "@stripe/react-stripe-js": 5.3.0
+  "@stripe/stripe-js": 8.3.0
+  "@stripe/stripe-react-native": 0.50.3
+  "@tamagui/animations-css": 1.139.2
+  "@tamagui/animations-react-native": 1.139.2
+  "@tamagui/babel-plugin": 1.139.2
+  "@tamagui/card": 1.139.2
+  "@tamagui/cli": 1.139.2
+  "@tamagui/config": 1.139.2
+  "@tamagui/core": 1.139.2
+  "@tamagui/font-inter": 1.139.2
+  "@tamagui/lucide-icons": 1.139.2
+  "@tamagui/next-plugin": 1.139.2
+  "@tamagui/next-theme": 1.139.2
+  "@tamagui/polyfill-dev": 1.139.2
+  "@tamagui/popover": 1.139.2
+  "@tamagui/portal": 1.139.2
+  "@tamagui/sheet": 1.139.2
+  "@tamagui/shorthands": 1.139.2
+  "@tamagui/slider": 1.139.2
+  "@tamagui/switch": 1.139.2
+  "@tamagui/themes": 1.139.2
+  "@tamagui/toast": 1.139.2
+  "@testing-library/jest-dom": 6.9.1
+  "@testing-library/react": 16.3.0
+  "@types/canvas-confetti": 1.9.0
+  "@types/node": 22.15.30
+  "@types/react": 19.1.17
+  "@types/react-dom": 19.1.0
+  "@vercel/analytics": 1.5.0
+  "@vercel/speed-insights": 1.3.0
+  canvas-confetti: 1.9.4
+  cloudinary: 2.5.1
+  date-fns: 4.1.0
+  embla-carousel: 8.6.0
+  embla-carousel-autoplay: 8.6.0
+  embla-carousel-react: 8.6.0
   eslint: 9.28.0
   eslint-config-expo: 10.0.0
   eslint-config-next: 16.0.1
-
-  # Expo & React Native
   expo: 54.0.32
   expo-auth-session: 7.0.10
   expo-font: 14.0.11
@@ -61,6 +63,19 @@ catalog:
   expo-status-bar: 3.0.9
   expo-updates: 29.0.16
   expo-web-browser: 15.0.10
+  framer-motion: 12.23.27
+  ioredis: 5.4.1
+  jose: 6.1.3
+  lucide-react: 0.562.0
+  next: 16.1.0
+  next-cloudinary: 6.17.5
+  next-seo: 7.0.1
+  next-sitemap: 4.2.3
+  nuka-carousel: 8.2.0
+  prisma: 6.19.0
+  react: 19.1.0
+  react-dom: 19.1.0
+  react-image-crop: 11.0.10
   react-native: 0.81.5
   react-native-reanimated: 4.1.1
   react-native-safe-area-context: 5.6.2
@@ -69,60 +84,14 @@ catalog:
   react-native-web: 0.21.2
   react-native-webview: 13.15.0
   react-native-worklets: 0.5.1
-
-  # React & Next.js
-  react: 19.1.0
-  react-dom: 19.1.0
-  next: 16.1.0
-  '@next/bundle-analyzer': 16.1.0
-  solito: 5.0.0
-
-  # Stripe
-  stripe: 19.2.1
-  '@stripe/connect-js': 3.3.31
-  '@stripe/react-connect-js': 3.3.31
-  '@stripe/react-stripe-js': 5.3.0
-  '@stripe/stripe-js': 8.3.0
-  '@stripe/stripe-react-native': 0.50.3
-
-  # Monitoring & Analytics
-  '@sentry/nextjs': 10.34.0
-  '@vercel/analytics': 1.5.0
-  '@vercel/speed-insights': 1.3.0
-
-  # Media & Carousel
-  cloudinary: 2.5.1
-  next-cloudinary: 6.17.5
-  'embla-carousel': 8.6.0
-  'embla-carousel-autoplay': 8.6.0
-  'embla-carousel-react': 8.6.0
-  'nuka-carousel': 8.2.0
-  'canvas-confetti': 1.9.4
-  'react-image-crop': 11.0.10
-
-  # Utilities
-  'date-fns': 4.1.0
-  'framer-motion': 12.23.27
-  jose: 6.1.3
-  'lucide-react': 0.562.0
-  uuid: 13.0.0
-  svix: 1.81.0
-  ioredis: 5.4.1
   resend: 6.6.0
-  'socket.io': 4.8.1
-  'socket.io-client': 4.8.1
-
-  # Navigation
-  '@react-navigation/native': 7.1.19
-  '@react-navigation/native-stack': 7.6.2
-
-  # SEO
-  'next-seo': 7.0.1
-  'next-sitemap': 4.2.3
-
-  # Shipping
-  '@easypost/api': 8.2.0
-
-  # Build tools
+  socket.io: 4.8.1
+  socket.io-client: 4.8.1
+  solito: 5.0.0
+  stripe: 19.2.1
+  svix: 1.81.0
+  tamagui: 1.139.2
   tsx: 4.20.6
   typescript: 5.9.3
+  uuid: 13.0.0
+  vitest: 4.0.13
