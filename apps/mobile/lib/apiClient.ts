@@ -3,6 +3,17 @@ import { addBreadcrumb } from "./breadcrumbs";
 
 type GetTokenFn = () => Promise<string | null>;
 
+/**
+ * Creates an AbortError compatible with React Native.
+ * DOMException doesn't exist in React Native, so we create a regular Error
+ * with name="AbortError" which is what fetch implementations check for.
+ */
+function createAbortError(): Error {
+  const error = new Error("Aborted");
+  error.name = "AbortError";
+  return error;
+}
+
 interface DeferredFetchOptions extends Omit<RequestInit, "signal"> {
   /** Function to get auth token - will be called after interactions complete */
   getToken?: GetTokenFn;
@@ -45,7 +56,7 @@ export async function deferredFetch(
   return new Promise((resolve, reject) => {
     // Check if already aborted
     if (signal?.aborted) {
-      reject(new DOMException("Aborted", "AbortError"));
+      reject(createAbortError());
       return;
     }
 
@@ -53,7 +64,7 @@ export async function deferredFetch(
       try {
         // Check again after interactions complete
         if (signal?.aborted) {
-          reject(new DOMException("Aborted", "AbortError"));
+          reject(createAbortError());
           return;
         }
 
@@ -105,7 +116,7 @@ export async function deferredFetch(
     // Handle abort signal
     signal?.addEventListener("abort", () => {
       task.cancel();
-      reject(new DOMException("Aborted", "AbortError"));
+      reject(createAbortError());
     });
   });
 }
