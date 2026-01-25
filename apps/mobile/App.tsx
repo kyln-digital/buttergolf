@@ -703,10 +703,26 @@ function CategoryListScreenWrapper({
   const { getToken } = useAuth();
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
+  // Create a deferred fetch function that handles auth via deferredFetch
+  // This prevents TurboModule race conditions during navigation
+  const deferredFetchWithAuth = useCallback(
+    (url: string, options?: RequestInit) => {
+      // Extract signal and handle null -> undefined conversion for type compatibility
+      const { signal, ...restOptions } = options || {};
+      return deferredFetch(url, {
+        ...restOptions,
+        signal: signal ?? undefined,
+        getToken,
+      });
+    },
+    [getToken]
+  );
+
   const { favourites, toggleFavourite } = useMobileFavourites({
     apiUrl,
     getToken,
     isAuthenticated,
+    fetchFn: deferredFetchWithAuth,
   });
 
   return (

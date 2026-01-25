@@ -9,6 +9,12 @@ interface UseMobileFavouritesOptions {
   getToken: () => Promise<string | null>;
   /** Whether user is authenticated */
   isAuthenticated: boolean;
+  /**
+   * Optional custom fetch function for deferred execution.
+   * On mobile, pass deferredFetch to prevent TurboModule race conditions.
+   * When provided, the function should handle auth token injection internally.
+   */
+  fetchFn?: (url: string, options?: RequestInit) => Promise<Response>;
 }
 
 interface FavouritesState {
@@ -28,6 +34,7 @@ export function useMobileFavourites({
   apiUrl,
   getToken,
   isAuthenticated,
+  fetchFn,
 }: UseMobileFavouritesOptions) {
   const [state, setState] = useState<FavouritesState>({
     favourites: new Set(),
@@ -59,40 +66,51 @@ export function useMobileFavourites({
       try {
         setState((prev) => ({ ...prev, loading: true, error: null }));
 
-        const token = await getTokenRef.current();
-        
-        // Debug: Log token retrieval
-        console.log("[useMobileFavourites] Token retrieval:", {
-          hasToken: !!token,
-          tokenLength: token?.length,
-          tokenPrefix: token?.substring(0, 20),
-          apiUrl: apiUrlRef.current,
-        });
-        
-        if (!token || cancelled || abortController.signal.aborted) {
-          console.log("[useMobileFavourites] No token or cancelled, returning empty");
-          if (!cancelled && !abortController.signal.aborted) {
-            setState({ favourites: new Set(), loading: false, error: null });
-          }
-          return;
-        }
-
         const url = `${apiUrlRef.current}/api/favourites?limit=1000`;
-        const headers = {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        };
-        
-        console.log("[useMobileFavourites] Making request:", {
-          url,
-          hasAuthHeader: !!headers.Authorization,
-          authHeaderLength: headers.Authorization?.length,
-        });
-        
-        const response = await fetch(url, { 
-          headers,
-          signal: abortController.signal,
-        });
+        let response: Response;
+
+        if (fetchFn) {
+          // Use custom fetch (e.g., deferredFetch) - it handles auth internally
+          console.log("[useMobileFavourites] Using deferred fetch:", { url });
+          response = await fetchFn(url, {
+            headers: { Accept: "application/json" },
+            signal: abortController.signal,
+          });
+        } else {
+          // Use native fetch with manual auth token
+          const token = await getTokenRef.current();
+
+          console.log("[useMobileFavourites] Token retrieval:", {
+            hasToken: !!token,
+            tokenLength: token?.length,
+            tokenPrefix: token?.substring(0, 20),
+            apiUrl: apiUrlRef.current,
+          });
+
+          if (!token || cancelled || abortController.signal.aborted) {
+            console.log("[useMobileFavourites] No token or cancelled, returning empty");
+            if (!cancelled && !abortController.signal.aborted) {
+              setState({ favourites: new Set(), loading: false, error: null });
+            }
+            return;
+          }
+
+          const headers = {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          };
+
+          console.log("[useMobileFavourites] Making request:", {
+            url,
+            hasAuthHeader: !!headers.Authorization,
+            authHeaderLength: headers.Authorization?.length,
+          });
+
+          response = await fetch(url, {
+            headers,
+            signal: abortController.signal,
+          });
+        }
 
         if (cancelled || abortController.signal.aborted) return;
 
@@ -137,7 +155,7 @@ export function useMobileFavourites({
       cancelled = true;
       abortController.abort();
     };
-  }, [isAuthenticated]); // Only depend on isAuthenticated
+  }, [isAuthenticated, fetchFn]); // Depend on isAuthenticated and fetchFn
 
   /**
    * Check if a product is favourited
@@ -172,27 +190,41 @@ export function useMobileFavourites({
       });
 
       try {
-        const token = await getTokenRef.current();
-        if (!token) {
-          // Rollback
-          setState((prev) => {
-            const next = new Set(prev.favourites);
-            if (wasOptimisticAdd) {
-              next.delete(productId);
-            } else {
-              next.add(productId);
-            }
-            return { ...prev, favourites: next };
-          });
-          return { success: false, requiresAuth: true };
-        }
-
         const currentApiUrl = apiUrlRef.current;
-        const response = await fetch(
-          wasOptimisticAdd
-            ? `${currentApiUrl}/api/favourites`
-            : `${currentApiUrl}/api/favourites/${productId}`,
-          {
+        const url = wasOptimisticAdd
+          ? `${currentApiUrl}/api/favourites`
+          : `${currentApiUrl}/api/favourites/${productId}`;
+
+        let response: Response;
+
+        if (fetchFn) {
+          // Use custom fetch (e.g., deferredFetch) - it handles auth internally
+          response = await fetchFn(url, {
+            method: wasOptimisticAdd ? "POST" : "DELETE",
+            headers: {
+              ...(wasOptimisticAdd ? { "Content-Type": "application/json" } : {}),
+              Accept: "application/json",
+            },
+            body: wasOptimisticAdd ? JSON.stringify({ productId }) : undefined,
+          });
+        } else {
+          // Use native fetch with manual auth token
+          const token = await getTokenRef.current();
+          if (!token) {
+            // Rollback
+            setState((prev) => {
+              const next = new Set(prev.favourites);
+              if (wasOptimisticAdd) {
+                next.delete(productId);
+              } else {
+                next.add(productId);
+              }
+              return { ...prev, favourites: next };
+            });
+            return { success: false, requiresAuth: true };
+          }
+
+          response = await fetch(url, {
             method: wasOptimisticAdd ? "POST" : "DELETE",
             headers: {
               ...(wasOptimisticAdd ? { "Content-Type": "application/json" } : {}),
@@ -200,8 +232,8 @@ export function useMobileFavourites({
               Accept: "application/json",
             },
             body: wasOptimisticAdd ? JSON.stringify({ productId }) : undefined,
-          }
-        );
+          });
+        }
 
         if (!response.ok) {
           throw new Error("Failed to update favourite");
@@ -225,7 +257,7 @@ export function useMobileFavourites({
         return { success: false };
       }
     },
-    [isAuthenticated, state.favourites]
+    [isAuthenticated, state.favourites, fetchFn]
   );
 
   /**
@@ -257,15 +289,26 @@ export function useMobileFavourites({
     if (!isAuthenticated) return;
 
     try {
-      const token = await getTokenRef.current();
-      if (!token) return;
+      const url = `${apiUrlRef.current}/api/favourites?limit=1000`;
+      let response: Response;
 
-      const response = await fetch(`${apiUrlRef.current}/api/favourites?limit=1000`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-      });
+      if (fetchFn) {
+        // Use custom fetch (e.g., deferredFetch) - it handles auth internally
+        response = await fetchFn(url, {
+          headers: { Accept: "application/json" },
+        });
+      } else {
+        // Use native fetch with manual auth token
+        const token = await getTokenRef.current();
+        if (!token) return;
+
+        response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        });
+      }
 
       if (response.status === 401) {
         setState((prev) => ({ ...prev, favourites: new Set() }));
@@ -283,7 +326,7 @@ export function useMobileFavourites({
     } catch (err) {
       console.error("Error refreshing favourites:", err);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchFn]);
 
   return {
     favourites: state.favourites,
