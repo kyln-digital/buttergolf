@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Column, Row, Text, Heading, Spinner, Button } from "@buttergolf/ui";
 import type { ProductCardData } from "@buttergolf/app";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { FooterSection } from "../../_components/marketplace/FooterSection";
 import { HorizontalProductCard } from "./HorizontalProductCard";
 
@@ -186,14 +187,15 @@ export function FavouritesClient() {
               Browse our marketplace to discover amazing golf equipment and save
               your favourites here for easy access.
             </Text>
-            <Button
-              butterVariant="primary"
-              size="$5"
-              marginTop="$md"
-              onPress={() => router.push("/listings")}
-            >
-              Browse Listings
-            </Button>
+            <Link href="/listings">
+              <Button
+                butterVariant="primary"
+                size="$5"
+                marginTop="$md"
+              >
+                Browse Listings
+              </Button>
+            </Link>
           </Column>
         )}
 
