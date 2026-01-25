@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { Row, Column, Input } from "@buttergolf/ui";
-import { Search as SearchIcon } from "@tamagui/lucide-icons";
+import { Column } from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTheme } from "tamagui";
+import { SearchInputField } from "./SearchInputField";
 
 export interface MobileSearchBarProps {
   placeholder?: string;
@@ -21,8 +20,8 @@ export interface MobileSearchBarProps {
 }
 
 /**
- * Mobile-optimized search bar with pill shape, Cloud Mist borders, and responsive search suggestions.
- * Based on Figma mockup - sits in a container with rounded bottom edges.
+ * Mobile-optimized search bar with pill shape and responsive search suggestions.
+ * Uses shared SearchInputField for consistent styling.
  */
 export function MobileSearchBar({
   placeholder = "What are you looking for?",
@@ -33,10 +32,6 @@ export function MobileSearchBar({
   const [query, setQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const insets = useSafeAreaInsets();
-  const theme = useTheme();
-
-  const placeholderTextColour =
-    theme.textSecondary?.val ?? theme.text?.val ?? "#545454";
 
   const handleChangeText = (text: string) => {
     setQuery(text);
@@ -53,43 +48,17 @@ export function MobileSearchBar({
       alignItems="center"
     >
       {/* Search Input Container */}
-      <Row
-        width={`${widthPercent}%`}
-        alignSelf="center"
-        height={48}
-        backgroundColor="$surface"
-        borderRadius="$2xl"
-        paddingHorizontal="$4"
-        alignItems="center"
-        gap="$2"
-        borderWidth={isFocused ? 2 : 1}
-        borderColor={isFocused ? "$primary" : "$border"}
-      >
-        <SearchIcon size={20} color="$textSecondary" />
-        <Input
-          flex={1}
-          unstyled
+      <Column width={`${widthPercent}%`} alignSelf="center">
+        <SearchInputField
           value={query}
           onChangeText={handleChangeText}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => {
-            // Delay to allow suggestion clicks to register
-            setTimeout(() => setIsFocused(false), 200);
-          }}
           placeholder={placeholder}
-          placeholderTextColor={placeholderTextColour}
-          fontSize={15}
-          color="$text"
-          borderWidth={0}
-          backgroundColor="transparent"
-          height="100%"
-          // Prevent default focus styling - container handles visual state
-          focusStyle={{
-            borderWidth: 0,
-            outlineWidth: 0,
-          }}
+          showFocusState
+          isFocused={isFocused}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
         />
-      </Row>
+      </Column>
 
       {/* Search Suggestions Dropdown */}
       {showSuggestions && (

@@ -1,14 +1,13 @@
 "use client";
 
 import React from "react";
-import { Row, Column, Input, Text } from "@buttergolf/ui";
+import { Row, Column, Text } from "@buttergolf/ui";
 import {
   ArrowLeft,
-  Search as SearchIcon,
   SlidersHorizontal,
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTheme } from "tamagui";
+import { SearchInputField } from "./SearchInputField";
 
 export interface MobileCategoryHeaderProps {
   categoryName: string;
@@ -20,7 +19,7 @@ export interface MobileCategoryHeaderProps {
 
 /**
  * Mobile category header with back button, search bar, and filter icon.
- * Displays category name below the search bar.
+ * Uses shared SearchInputField for consistent styling.
  */
 export function MobileCategoryHeader({
   categoryName,
@@ -31,10 +30,6 @@ export function MobileCategoryHeader({
 }: Readonly<MobileCategoryHeaderProps>) {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = React.useState("");
-  const theme = useTheme();
-
-  const placeholderTextColour =
-    theme.textMuted?.val ?? theme.textSecondary?.val ?? theme.text?.val ?? "#999";
 
   const handleChangeText = (text: string) => {
     setQuery(text);
@@ -63,32 +58,11 @@ export function MobileCategoryHeader({
         </Column>
 
         {/* Search Input */}
-        <Row
-          flex={1}
-          height={48}
-          backgroundColor="$surface"
-          borderRadius="$2xl"
-          paddingHorizontal="$4"
-          alignItems="center"
-          gap="$2"
-          borderWidth={1}
-          borderColor="$border"
-        >
-          <SearchIcon size={20} color="$textMuted" opacity={0.7} />
-          <Input
-            flex={1}
-            unstyled
-            value={query}
-            onChangeText={handleChangeText}
-            placeholder={placeholder}
-            placeholderTextColor={placeholderTextColour}
-            fontSize={15}
-            color="$text"
-            borderWidth={0}
-            backgroundColor="transparent"
-            height="100%"
-          />
-        </Row>
+        <SearchInputField
+          value={query}
+          onChangeText={handleChangeText}
+          placeholder={placeholder}
+        />
 
         {/* Filter Button */}
         <Column
