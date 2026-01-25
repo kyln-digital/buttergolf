@@ -107,10 +107,10 @@ catalog:
   'lucide-react': 0.562.0
   uuid: 13.0.0
   svix: 1.81.0
-  ioredis: 5.4.1
+  ioredis: 5.9.2
   resend: 6.6.0
-  'socket.io': 4.8.1
-  'socket.io-client': 4.8.1
+  'socket.io': 4.8.3
+  'socket.io-client': 4.8.3
 
   # Navigation
   '@react-navigation/native': 7.1.19
