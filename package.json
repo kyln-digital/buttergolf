@@ -85,10 +85,10 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,cjs,json,md,yaml,yml}": [
-      "prettier --write"
+      "pnpm exec prettier --write"
     ],
     "*.{js,jsx,ts,tsx,mjs,cjs}": [
-      "eslint --fix"
+      "pnpm exec eslint --fix"
     ]
   }
 }
