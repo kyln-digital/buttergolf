@@ -1,12 +1,12 @@
 # Dependabot configuration for ButterGolf monorepo
-# Automatically checks for dependency updates across all packages
+# Since we use pnpm catalog for version management, updates should target the root
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
 version: 2
 updates:
   # Root workspace dependencies (pnpm catalog)
-  # CRITICAL: This is where the pnpm catalog lives, so grouping here
-  # ensures related packages are updated together in a single PR
+  # CRITICAL: This is where the pnpm catalog lives - ALL versions are centralized here
+  # Individual packages use "catalog:" references, so only root updates matter
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
@@ -15,7 +15,7 @@ updates:
     open-pull-requests-limit: 10
     groups:
       # CRITICAL: Group ALL Tamagui packages together
-      # All 18 @tamagui/* packages must be the same version
+      # All @tamagui/* packages must be the same version
       tamagui:
         patterns:
           - "tamagui"
@@ -37,22 +37,45 @@ updates:
         patterns:
           - "prisma"
           - "@prisma/*"
-      # Group Expo together
+      # Group Expo together (version-sensitive ecosystem)
       expo:
         patterns:
           - "expo"
           - "expo-*"
           - "@expo/*"
-      # Group Solito (cross-platform navigation)
-      solito:
+      # Group Stripe together (API versions must be compatible)
+      stripe:
+        patterns:
+          - "stripe"
+          - "@stripe/*"
+      # Group Clerk together (auth must be consistent)
+      clerk:
+        patterns:
+          - "@clerk/*"
+          - "svix"
+      # Group Next.js together
+      nextjs:
+        patterns:
+          - "next"
+          - "next-*"
+          - "@next/*"
+          - "eslint-config-next"
+      # Group Sentry together
+      sentry:
+        patterns:
+          - "@sentry/*"
+      # Group navigation (Solito + React Navigation)
+      navigation:
         patterns:
           - "solito"
+          - "@react-navigation/*"
       # Group testing tools
       testing:
         patterns:
           - "vitest"
+          - "@vitest/*"
           - "@testing-library/*"
-      # Group build tools
+      # Group build/dev tools
       dev-dependencies:
         patterns:
           - "prettier"
@@ -62,93 +85,48 @@ updates:
           - "eslint"
           - "eslint-*"
           - "@types/node"
-
-  # Web app (Next.js)
-  - package-ecosystem: "npm"
-    directory: "/apps/web"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
-    groups:
-      nextjs:
+      # Group carousel/media packages
+      media:
         patterns:
-          - "next"
-          - "@next/*"
-      clerk:
+          - "embla-carousel*"
+          - "nuka-carousel"
+          - "cloudinary"
+          - "next-cloudinary"
+      # Group utility packages
+      utilities:
         patterns:
-          - "@clerk/*"
-          - "svix"
-
-  # Mobile app (Expo)
-  - package-ecosystem: "npm"
-    directory: "/apps/mobile"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
-    groups:
-      expo:
-        patterns:
-          - "expo"
-          - "expo-*"
-      react-native:
-        patterns:
-          - "react-native"
-          - "react-native-*"
-      clerk:
-        patterns:
-          - "@clerk/*"
-      navigation:
-        patterns:
-          - "@react-navigation/*"
-
-  # UI package
-  - package-ecosystem: "npm"
-    directory: "/packages/ui"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
-    groups:
-      tamagui:
-        patterns:
-          - "tamagui"
-          - "@tamagui/*"
-
-  # Database package (Prisma)
-  - package-ecosystem: "npm"
-    directory: "/packages/db"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
-    groups:
-      prisma:
-        patterns:
-          - "prisma"
-          - "@prisma/*"
-
-  # App package (shared features)
-  - package-ecosystem: "npm"
-    directory: "/packages/app"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
-
-  # Config package
-  - package-ecosystem: "npm"
-    directory: "/packages/config"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
-    groups:
-      tamagui:
-        patterns:
-          - "tamagui"
-          - "@tamagui/*"
+          - "date-fns"
+          - "uuid"
+          - "jose"
+          - "ioredis"
+          - "socket.io*"
+    # CRITICAL: Ignore major version bumps for version-sensitive packages
+    # These require manual testing and migration work
+    ignore:
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-native"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "expo"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "tamagui"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@tamagui/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "prisma"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@prisma/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "stripe"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@stripe/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions workflows
   - package-ecosystem: "github-actions"
