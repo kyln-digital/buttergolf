@@ -23,6 +23,7 @@ export function CategoriesSection() {
     return [...CATEGORIES, ...CATEGORIES, ...CATEGORIES];
   }, []);
 
+   
   useEffect(() => {
     setIsMounted(true);
   }, []);

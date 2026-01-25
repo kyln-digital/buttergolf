@@ -12,7 +12,7 @@ import { Text, YStack, View, Image, Button, useTheme } from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Logo - Using SVG
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const LogoSvg =
   require("../../../../../apps/mobile/assets/logo-orange-on-white.svg").default;
 

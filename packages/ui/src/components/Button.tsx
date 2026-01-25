@@ -42,7 +42,7 @@ const getButtonShadow = (variant: "primary" | "secondary" | "tertiary") => {
     // Only the primary variant receives the inset glow on web.
     // Secondary should not have an inner inset to avoid unwanted coloration.
     if (variant === "primary") {
-      // @ts-ignore - boxShadow only exists on web
+      // @ts-expect-error - boxShadow only exists on web
       return {
         ...baseShadow,
         boxShadow: `0px 1px 5px rgba(0,0,0,0.25), inset 0px 2px 2px rgba(244, 83, 20, 0.3)`,
@@ -51,7 +51,7 @@ const getButtonShadow = (variant: "primary" | "secondary" | "tertiary") => {
 
     if (variant === "tertiary") {
       // Tertiary (lighter) shadow
-      // @ts-ignore - boxShadow only exists on web
+      // @ts-expect-error - boxShadow only exists on web
       return {
         shadowColor: "rgba(0, 0, 0, 0.15)" as const,
         shadowOffset: { width: 0, height: 1 } as const,
@@ -62,7 +62,7 @@ const getButtonShadow = (variant: "primary" | "secondary" | "tertiary") => {
     }
 
     // Secondary: keep drop shadow only (no inset)
-    // @ts-ignore - boxShadow only exists on web
+    // @ts-expect-error - boxShadow only exists on web
     return {
       ...baseShadow,
       boxShadow: `0px 1px 5px rgba(0,0,0,0.25)`,

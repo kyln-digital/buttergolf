@@ -127,6 +127,7 @@ function AnimatedGridContent({
   const [isAnimating, setIsAnimating] = useState(false);
 
   // Handle page transitions with animation
+   
   useEffect(() => {
     // When paginating (not loading), animate the transition
     if (isPaginating && prevPageRef.current !== currentPage) {

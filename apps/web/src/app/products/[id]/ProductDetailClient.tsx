@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
@@ -290,7 +290,7 @@ export default function ProductDetailClient({
       {/* Lightbox Modal */}
       {lightboxOpen && (
         <Column
-          style={{ position: "fixed" } as any}
+          style={{ position: "fixed" } as CSSProperties}
           top={0}
           left={0}
           right={0}
@@ -428,7 +428,7 @@ export default function ProductDetailClient({
       {/* Mobile Sticky Bottom Bar */}
       {showMobileBar && (
         <Row
-          style={{ position: "fixed" } as any}
+          style={{ position: "fixed" } as CSSProperties}
           bottom={0}
           left={0}
           right={0}

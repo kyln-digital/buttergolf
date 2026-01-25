@@ -47,7 +47,7 @@ export function HelpCentreClient() {
                   <Column gap="$sm" alignItems="center">
                     <Heading level={3}>Email Support</Heading>
                     <Text color="$textSecondary" textAlign="center">
-                      Send us an email and we'll respond within 24 hours
+                      Send us an email and we&apos;ll respond within 24 hours
                     </Text>
                     <Text color="$primary" fontWeight="600">
                       support@buttergolf.com
@@ -84,7 +84,7 @@ export function HelpCentreClient() {
                   <Heading level={3}>How do I list an item for sale?</Heading>
                 </Row>
                 <Text>
-                  Click "Sell Now" in the header, then fill out the listing form
+                  Click &quot;Sell Now&quot; in the header, then fill out the listing form
                   with your item details, upload photos, and set your price. Once
                   submitted, your listing will appear in the marketplace. Make
                   sure to provide accurate descriptions and clear photos to
@@ -132,8 +132,8 @@ export function HelpCentreClient() {
                 <Text>
                   Returns are handled between buyers and sellers. If an item is
                   significantly not as described, contact the seller first to
-                  resolve the issue. If you can't reach an agreement, contact our
-                  support team through live chat or email, and we'll help mediate
+                  resolve the issue. If you can&apos;t reach an agreement, contact our
+                  support team through live chat or email, and we&apos;ll help mediate
                   the situation.
                 </Text>
               </Column>
@@ -149,7 +149,7 @@ export function HelpCentreClient() {
                 </Row>
                 <Text>
                   Use our secure messaging system to communicate with other users.
-                  Click the "Message Seller" button on any listing, or access
+                  Click the &quot;Message Seller&quot; button on any listing, or access
                   your messages from the Messages page in your account. All
                   communications should happen through our platform for your
                   safety.
@@ -199,7 +199,7 @@ export function HelpCentreClient() {
                 </Row>
                 <Text>
                   If you encounter suspicious activity, unusual payment requests,
-                  or believe you've been scammed, immediately contact our support
+                  or believe you&apos;ve been scammed, immediately contact our support
                   team through live chat or email at fraud@buttergolf.com. Do not
                   complete any transactions if you have concerns, and report the
                   user through their profile page.
@@ -213,7 +213,7 @@ export function HelpCentreClient() {
             <Column gap="$md" alignItems="center">
               <Heading level={2}>Still need help?</Heading>
               <Text color="$textSecondary" textAlign="center">
-                Can't find what you're looking for? Our support team is here to
+                Can&apos;t find what you&apos;re looking for? Our support team is here to
                 help!
               </Text>
               <Row gap="$md">

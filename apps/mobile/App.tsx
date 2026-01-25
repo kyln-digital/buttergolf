@@ -50,9 +50,14 @@ import {
 import { ClerkProvider, ClerkLoaded, SignedIn, SignedOut, useAuth, useUser } from "@clerk/clerk-expo";
 import { addBreadcrumb } from "./lib/breadcrumbs";
 import { StripeProvider } from "@stripe/stripe-react-native";
-import * as SecureStore from "expo-secure-store";
-import { InteractionManager } from "react-native";
-import { deferredFetch, deferredGet, deferredDelete, deferredPost } from "./lib/apiClient";
+import {
+  deferredFetch,
+  deferredGet,
+  deferredDelete,
+  deferredPost,
+  deferredSecureStoreGet,
+  deferredSecureStoreSet,
+} from "./lib/apiClient";
 import {
   registerForPushNotificationsAsync,
   registerPushTokenWithBackend,
@@ -1340,18 +1345,15 @@ function PushTokenRegistration() {
       }
     };
 
-    // Defer TurboModule-heavy operations to avoid race conditions during initial render
-    // This gives other TurboModules (SecureStore, Clerk) time to initialize
-    const timeoutId = setTimeout(() => {
-      if (mounted && !abortController.signal.aborted) {
-        registerPushToken();
-      }
-    }, 1500);
+    // All TurboModule-heavy operations (SecureStore, fetch) are now wrapped in
+    // InteractionManager.runAfterInteractions() via deferredFetch and deferredSecureStore.
+    // This ensures they wait for navigation animations to complete before executing,
+    // preventing race conditions without needing an arbitrary timeout.
+    registerPushToken();
 
     return () => {
       mounted = false;
       abortController.abort();
-      clearTimeout(timeoutId);
     };
   }, [getToken, apiUrl]);
 
@@ -1451,40 +1453,13 @@ export default function App() {
 
   if (!fontsLoaded) return null;
 
-  // Token cache with InteractionManager to prevent TurboModule race conditions during navigation
+  // Token cache using shared deferred SecureStore to prevent TurboModule race conditions
   // WHY: SecureStore calls race with react-native-svg unmounting during screen transitions,
   // causing SIGABRT in ObjCTurboModule::performVoidMethodInvocation
+  // See: apps/mobile/lib/secureStore.ts for implementation details
   const tokenCache = {
-    async getToken(key: string): Promise<string | null> {
-      return new Promise((resolve) => {
-        InteractionManager.runAfterInteractions(async () => {
-          try {
-            addBreadcrumb("turbomodule.securestore", "getToken called", { key });
-            const value = await SecureStore.getItemAsync(key);
-            addBreadcrumb("turbomodule.securestore", "getToken completed", { key, hasValue: !!value });
-            resolve(value);
-          } catch (err) {
-            addBreadcrumb("turbomodule.securestore", "getToken failed", { key, error: String(err) }, "error");
-            resolve(null);
-          }
-        });
-      });
-    },
-    async saveToken(key: string, value: string): Promise<void> {
-      return new Promise((resolve) => {
-        InteractionManager.runAfterInteractions(async () => {
-          try {
-            addBreadcrumb("turbomodule.securestore", "saveToken called", { key });
-            await SecureStore.setItemAsync(key, value);
-            addBreadcrumb("turbomodule.securestore", "saveToken completed", { key });
-            resolve();
-          } catch (err) {
-            addBreadcrumb("turbomodule.securestore", "saveToken failed", { key, error: String(err) }, "error");
-            resolve();
-          }
-        });
-      });
-    },
+    getToken: (key: string) => deferredSecureStoreGet(key),
+    saveToken: (key: string, value: string) => deferredSecureStoreSet(key, value),
   };
 
   if (FORCE_MINIMAL) {

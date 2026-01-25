@@ -301,7 +301,7 @@ export function OrderMessages({
               <TextArea
                 value={newMessage}
                 onChangeText={setNewMessage}
-                // @ts-ignore - TextArea expects different event types
+                // @ts-expect-error - TextArea expects different event types
                 onKeyDown={handleKeyDown}
                 placeholder="Type your message..."
                 size="md"

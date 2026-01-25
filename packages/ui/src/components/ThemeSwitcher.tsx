@@ -1,6 +1,5 @@
 "use client";
 
-import { type ReactNode } from "react";
 import { Moon, Sun, Monitor } from "@tamagui/lucide-icons";
 import { XStack, SizableText, Button, styled, type GetProps } from "tamagui";
 import { useTheme, type ThemeMode } from "@buttergolf/app/src/hooks/useTheme";

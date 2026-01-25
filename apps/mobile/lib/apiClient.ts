@@ -181,3 +181,11 @@ export async function deferredDelete(
     throw new Error(error || `HTTP ${response.status}`);
   }
 }
+
+// Re-export deferred SecureStore functions for convenience
+// Import from this module or directly from ./secureStore
+export {
+  deferredSecureStoreGet,
+  deferredSecureStoreSet,
+  deferredSecureStoreDelete,
+} from "./secureStore";

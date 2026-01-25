@@ -16,7 +16,7 @@ interface PushNotificationMessage {
   body: string;
   data?: {
     orderId: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -24,7 +24,7 @@ export async function sendPushNotifications(
   pushTokens: string[],
   title: string,
   body: string,
-  data?: { orderId: string; [key: string]: any }
+  data?: { orderId: string; [key: string]: unknown }
 ): Promise<void> {
   if (!pushTokens || pushTokens.length === 0) {
     console.log("[Push] No push tokens to send to");

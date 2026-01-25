@@ -137,6 +137,7 @@ export default function MobileOnboardingPage() {
   }, [token, apiUrl]);
 
   // Initialize on mount - only runs once due to dependency array
+   
   useEffect(() => {
     // Use void to indicate intentional fire-and-forget
     void initializeOnboarding();

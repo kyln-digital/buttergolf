@@ -1,57 +1,12 @@
 import * as Notifications from "expo-notifications";
-import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
-import { InteractionManager } from "react-native";
 import { addBreadcrumb } from "./breadcrumbs";
-
-/**
- * Deferred SecureStore operations that wait for navigation animations to complete.
- * This prevents TurboModule race conditions during screen transitions.
- */
-async function deferredSecureStoreGet(key: string): Promise<string | null> {
-  return new Promise((resolve) => {
-    InteractionManager.runAfterInteractions(async () => {
-      try {
-        addBreadcrumb("turbomodule.securestore", `Deferred getItem: ${key}`);
-        const value = await SecureStore.getItemAsync(key);
-        resolve(value);
-      } catch (error) {
-        addBreadcrumb("turbomodule.securestore", `Failed getItem: ${key}`, { error: String(error) }, "error");
-        resolve(null);
-      }
-    });
-  });
-}
-
-async function deferredSecureStoreSet(key: string, value: string): Promise<void> {
-  return new Promise((resolve) => {
-    InteractionManager.runAfterInteractions(async () => {
-      try {
-        addBreadcrumb("turbomodule.securestore", `Deferred setItem: ${key}`);
-        await SecureStore.setItemAsync(key, value);
-        resolve();
-      } catch (error) {
-        addBreadcrumb("turbomodule.securestore", `Failed setItem: ${key}`, { error: String(error) }, "error");
-        resolve();
-      }
-    });
-  });
-}
-
-async function deferredSecureStoreDelete(key: string): Promise<void> {
-  return new Promise((resolve) => {
-    InteractionManager.runAfterInteractions(async () => {
-      try {
-        addBreadcrumb("turbomodule.securestore", `Deferred deleteItem: ${key}`);
-        await SecureStore.deleteItemAsync(key);
-        resolve();
-      } catch (error) {
-        addBreadcrumb("turbomodule.securestore", `Failed deleteItem: ${key}`, { error: String(error) }, "error");
-        resolve();
-      }
-    });
-  });
-}
+import { deferredFetch } from "./apiClient";
+import {
+  deferredSecureStoreGet,
+  deferredSecureStoreSet,
+  deferredSecureStoreDelete,
+} from "./secureStore";
 
 /**
  * Register for push notifications and store the push token
@@ -218,7 +173,8 @@ export function setupNotificationHandlers(
 /**
  * Register push token with backend API
  *
- * This should be called after getting a push token to sync it with the server
+ * This should be called after getting a push token to sync it with the server.
+ * Uses deferredFetch to prevent TurboModule race conditions during navigation.
  */
 export async function registerPushTokenWithBackend(
   pushToken: string,
@@ -226,7 +182,11 @@ export async function registerPushTokenWithBackend(
   apiUrl: string
 ): Promise<boolean> {
   try {
-    const response = await fetch(`${apiUrl}/api/users/push-tokens`, {
+    addBreadcrumb("api", "Registering push token with backend");
+
+    // We already have the auth token, so pass it directly in headers
+    // rather than using getToken (avoids additional SecureStore call)
+    const response = await deferredFetch(`${apiUrl}/api/users/push-tokens`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -239,9 +199,11 @@ export async function registerPushTokenWithBackend(
       throw new Error("Failed to register push token");
     }
 
+    addBreadcrumb("api", "Push token registered with backend");
     console.log("[Notifications] Push token registered with backend");
     return true;
   } catch (error) {
+    addBreadcrumb("api", "Failed to register push token", { error: String(error) }, "error");
     console.error("[Notifications] Error registering push token with backend:", error);
     return false;
   }
@@ -249,6 +211,7 @@ export async function registerPushTokenWithBackend(
 
 /**
  * Unregister push token from backend API (e.g., on logout)
+ * Uses deferredFetch to prevent TurboModule race conditions during navigation.
  */
 export async function unregisterPushTokenFromBackend(
   pushToken: string,
@@ -256,7 +219,10 @@ export async function unregisterPushTokenFromBackend(
   apiUrl: string
 ): Promise<boolean> {
   try {
-    const response = await fetch(`${apiUrl}/api/users/push-tokens`, {
+    addBreadcrumb("api", "Unregistering push token from backend");
+
+    // We already have the auth token, so pass it directly in headers
+    const response = await deferredFetch(`${apiUrl}/api/users/push-tokens`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
@@ -269,9 +235,11 @@ export async function unregisterPushTokenFromBackend(
       throw new Error("Failed to unregister push token");
     }
 
+    addBreadcrumb("api", "Push token unregistered from backend");
     console.log("[Notifications] Push token unregistered from backend");
     return true;
   } catch (error) {
+    addBreadcrumb("api", "Failed to unregister push token", { error: String(error) }, "error");
     console.error("[Notifications] Error unregistering push token:", error);
     return false;
   }

@@ -629,7 +629,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                             animation: isLoadingTracking
                               ? "spin 1s linear infinite"
                               : "none",
-                          } as any
+                          } as React.CSSProperties
                         }
                       />
                     }

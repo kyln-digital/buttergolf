@@ -38,9 +38,21 @@ const eslintConfig = [
               message:
                 "Mobile app should not import vitest directly. Tests belong in packages/ui or packages/app.",
             },
+            {
+              name: "expo-secure-store",
+              message:
+                "CRITICAL: Direct SecureStore imports cause TurboModule race conditions. Import from './lib/secureStore' or './lib/apiClient' instead. See lib/secureStore.ts for details.",
+            },
           ],
         },
       ],
+    },
+  },
+  {
+    // Allow expo-secure-store ONLY in the centralized wrapper module
+    files: ["lib/secureStore.ts"],
+    rules: {
+      "no-restricted-imports": "off",
     },
   },
 ];

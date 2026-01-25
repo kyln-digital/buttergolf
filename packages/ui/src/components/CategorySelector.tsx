@@ -60,34 +60,6 @@ const CategorySelectorContainer = styled(Row, {
   width: "100%",
 });
 
-// Category text that can be hovered
-const CategoryText = styled(Text, {
-  name: "CategoryText",
-  cursor: "pointer",
-  position: "relative",
-  whiteSpace: "nowrap",
-  userSelect: "none",
-  transition: "all 150ms ease-out",
-  variants: {
-    isActive: {
-      true: {
-        color: "$primary",
-        fontWeight: "600",
-      },
-      false: {
-        color: "$text",
-        fontWeight: "400",
-      },
-    },
-    isHovered: {
-      true: {
-        color: "$primary",
-      },
-      false: {},
-    },
-  },
-});
-
 export function CategorySelector({
   categories,
   activeCategory,

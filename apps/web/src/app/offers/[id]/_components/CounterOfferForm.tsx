@@ -159,7 +159,8 @@ export function CounterOfferForm({
             size="$5"
             width="100%"
             disabled={submitting || !amount}
-            onPress={handleSubmit as any}
+             
+            onPress={handleSubmit as unknown as () => void}
           >
             {submitting ? "Sending..." : "Send Counter-Offer"}
           </Button>

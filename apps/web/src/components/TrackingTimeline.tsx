@@ -218,7 +218,7 @@ export function TrackingTimeline({ order, events }: TrackingTimelineProps) {
       {events.length === 0 && shipmentStatus === "PRE_TRANSIT" && (
         <Column gap="$sm" padding="$md" backgroundColor="$surface" borderRadius="$md">
           <Text size="$4" color="$textSecondary" textAlign="center">
-            Package hasn't been scanned by carrier yet. Check back soon!
+            Package hasn&apos;t been scanned by carrier yet. Check back soon!
           </Text>
         </Column>
       )}
