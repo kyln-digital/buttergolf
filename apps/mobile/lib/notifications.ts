@@ -1,7 +1,57 @@
 import * as Notifications from "expo-notifications";
 import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
+import { InteractionManager } from "react-native";
 import { addBreadcrumb } from "./breadcrumbs";
+
+/**
+ * Deferred SecureStore operations that wait for navigation animations to complete.
+ * This prevents TurboModule race conditions during screen transitions.
+ */
+async function deferredSecureStoreGet(key: string): Promise<string | null> {
+  return new Promise((resolve) => {
+    InteractionManager.runAfterInteractions(async () => {
+      try {
+        addBreadcrumb("turbomodule.securestore", `Deferred getItem: ${key}`);
+        const value = await SecureStore.getItemAsync(key);
+        resolve(value);
+      } catch (error) {
+        addBreadcrumb("turbomodule.securestore", `Failed getItem: ${key}`, { error: String(error) }, "error");
+        resolve(null);
+      }
+    });
+  });
+}
+
+async function deferredSecureStoreSet(key: string, value: string): Promise<void> {
+  return new Promise((resolve) => {
+    InteractionManager.runAfterInteractions(async () => {
+      try {
+        addBreadcrumb("turbomodule.securestore", `Deferred setItem: ${key}`);
+        await SecureStore.setItemAsync(key, value);
+        resolve();
+      } catch (error) {
+        addBreadcrumb("turbomodule.securestore", `Failed setItem: ${key}`, { error: String(error) }, "error");
+        resolve();
+      }
+    });
+  });
+}
+
+async function deferredSecureStoreDelete(key: string): Promise<void> {
+  return new Promise((resolve) => {
+    InteractionManager.runAfterInteractions(async () => {
+      try {
+        addBreadcrumb("turbomodule.securestore", `Deferred deleteItem: ${key}`);
+        await SecureStore.deleteItemAsync(key);
+        resolve();
+      } catch (error) {
+        addBreadcrumb("turbomodule.securestore", `Failed deleteItem: ${key}`, { error: String(error) }, "error");
+        resolve();
+      }
+    });
+  });
+}
 
 /**
  * Register for push notifications and store the push token
@@ -67,7 +117,7 @@ export async function registerForPushNotificationsAsync(
 
     // Check if token has changed since last successful storage
     addBreadcrumb("turbomodule.securestore", "Reading stored push token");
-    const storedToken = await SecureStore.getItemAsync("expo_push_token");
+    const storedToken = await deferredSecureStoreGet("expo_push_token");
     if (storedToken === pushToken.data) {
       addBreadcrumb("turbomodule.notifications", "Push token unchanged");
       console.log("[Notifications] Push token unchanged in local storage");
@@ -76,7 +126,7 @@ export async function registerForPushNotificationsAsync(
 
     // Store locally in secure store
     addBreadcrumb("turbomodule.securestore", "Storing new push token");
-    await SecureStore.setItemAsync("expo_push_token", pushToken.data);
+    await deferredSecureStoreSet("expo_push_token", pushToken.data);
     addBreadcrumb("turbomodule.securestore", "Push token stored successfully");
 
     return pushToken.data;
@@ -93,7 +143,7 @@ export async function registerForPushNotificationsAsync(
 export async function getStoredPushToken(): Promise<string | null> {
   try {
     addBreadcrumb("turbomodule.securestore", "Getting stored push token");
-    const token = await SecureStore.getItemAsync("expo_push_token");
+    const token = await deferredSecureStoreGet("expo_push_token");
     return token || null;
   } catch (error) {
     addBreadcrumb("turbomodule.securestore", "Failed to get stored token", { error: String(error) }, "error");
@@ -108,7 +158,7 @@ export async function getStoredPushToken(): Promise<string | null> {
 export async function clearStoredPushToken(): Promise<void> {
   try {
     addBreadcrumb("turbomodule.securestore", "Clearing stored push token");
-    await SecureStore.deleteItemAsync("expo_push_token");
+    await deferredSecureStoreDelete("expo_push_token");
     addBreadcrumb("turbomodule.securestore", "Push token cleared");
     console.log("[Notifications] Cleared stored push token");
   } catch (error) {

@@ -1,6 +1,7 @@
-import { useState, useCallback, memo, useEffect } from "react";
+import { useState, useCallback, memo } from "react";
 import { Sheet } from "@tamagui/sheet";
 import { useStripe, CollectionMode, AddressCollectionMode } from "@stripe/stripe-react-native";
+import { InteractionManager } from "react-native";
 import {
   Column,
   Row,
@@ -11,7 +12,6 @@ import {
   Spinner,
 } from "@buttergolf/ui";
 import { Info } from "@tamagui/lucide-icons";
-import { useStripeContext } from "../context/StripeContext";
 import { addBreadcrumb } from "../lib/breadcrumbs";
 
 // Shipping options matching the web API
@@ -133,158 +133,133 @@ const SheetContents = memo(function SheetContents({
   onError,
   getToken,
 }: SheetContentsProps) {
-  // Initialize Stripe lazily when checkout sheet opens
-  const { isInitialized, initializeStripe, isConfigured } = useStripeContext();
-  
-  // useStripe only works after StripeProvider is mounted
-  // We'll conditionally call the hook and store results
-  const stripeHooks = isInitialized ? useStripe() : null;
+  // useStripe is now always available since StripeProvider is at root level
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
   
   const [shippingOption, setShippingOption] = useState<ShippingOptionId>("standard");
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isStripeReady, setIsStripeReady] = useState(false);
-
-  // Initialize Stripe when sheet opens
-  useEffect(() => {
-    if (isOpen && !isInitialized && isConfigured) {
-      addBreadcrumb("turbomodule.stripe", "Initializing Stripe for checkout");
-      initializeStripe();
-    }
-  }, [isOpen, isInitialized, isConfigured, initializeStripe]);
-
-  // Track when Stripe is ready after initialization
-  useEffect(() => {
-    if (isInitialized && stripeHooks !== null) {
-      addBreadcrumb("turbomodule.stripe", "Stripe SDK ready for checkout");
-      setIsStripeReady(true);
-    }
-  }, [isInitialized, stripeHooks]);
 
   const selectedShipping = SHIPPING_OPTIONS.find((o) => o.id === shippingOption)!;
   const buyerProtectionFee = calculateBuyerProtectionFee(productPrice);
   const totalPrice = productPrice + selectedShipping.price / 100 + buyerProtectionFee;
 
   const handleCheckout = useCallback(async () => {
-    // Guard: Ensure Stripe is initialized
-    if (!isStripeReady || !stripeHooks) {
-      addBreadcrumb("turbomodule.stripe", "Checkout blocked - Stripe not ready", {
-        isStripeReady,
-        hasStripeHooks: stripeHooks !== null,
-      }, "warning");
-      setError("Payment system is initializing. Please wait a moment and try again.");
-      return;
-    }
-
-    const { initPaymentSheet, presentPaymentSheet } = stripeHooks;
-
     addBreadcrumb("turbomodule.stripe", "Starting checkout flow", { productId });
     setIsProcessing(true);
     setError(null);
 
-    try {
-      // 1. Get auth token
-      const token = await getToken();
-      if (!token) {
-        throw new Error("Please sign in to continue");
-      }
+    // Defer TurboModule-heavy operations until after any animations complete
+    return new Promise<void>((resolve) => {
+      InteractionManager.runAfterInteractions(async () => {
+        try {
+          // 1. Get auth token
+          const token = await getToken();
+          if (!token) {
+            throw new Error("Please sign in to continue");
+          }
 
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-      if (!apiUrl) {
-        throw new Error("API URL not configured");
-      }
+          const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+          if (!apiUrl) {
+            throw new Error("API URL not configured");
+          }
 
-      // 2. Create payment intent via API
-      const response = await fetch(`${apiUrl}/api/checkout/create-payment-intent`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          productId,
-          shippingOptionId: shippingOption,
-        }),
-      });
+          // 2. Create payment intent via API
+          const response = await fetch(`${apiUrl}/api/checkout/create-payment-intent`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              productId,
+              shippingOptionId: shippingOption,
+            }),
+          });
 
-      const data = await response.json();
+          const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to initialize payment");
-      }
+          if (!response.ok) {
+            throw new Error(data.error || "Failed to initialize payment");
+          }
 
-      addBreadcrumb("turbomodule.stripe", "Payment intent created, initializing sheet");
+          addBreadcrumb("turbomodule.stripe", "Payment intent created, initializing sheet");
 
-      // 3. Initialize Stripe Payment Sheet with address collection enabled
-      const { error: initError } = await initPaymentSheet({
-        paymentIntentClientSecret: data.clientSecret,
-        merchantDisplayName: "ButterGolf",
-        // Enable address collection
-        billingDetailsCollectionConfiguration: {
-          address: AddressCollectionMode.FULL,
-          email: CollectionMode.ALWAYS,
-          name: CollectionMode.ALWAYS,
-          phone: CollectionMode.ALWAYS,
-        },
-        // Apple Pay / Google Pay
-        applePay: {
-          merchantCountryCode: "GB",
-        },
-        googlePay: {
-          merchantCountryCode: "GB",
-          testEnv: __DEV__,
-        },
-        // Style customization
-        appearance: {
-          colors: {
-            primary: "#F45314", // Spiced Clementine
-            background: "#FFFFFF",
-            componentBackground: "#FFFFFF",
-            componentBorder: "#EDEDED",
-            primaryText: "#323232", // Ironstone
-            secondaryText: "#545454",
-            componentText: "#323232",
-            icon: "#545454",
-          },
-          shapes: {
-            borderRadius: 10,
-            borderWidth: 1,
-          },
-        },
-        // Return URL for 3DS or bank redirects
-        returnURL: "buttergolf://checkout/complete",
-      });
+          // 3. Initialize Stripe Payment Sheet with address collection enabled
+          const { error: initError } = await initPaymentSheet({
+            paymentIntentClientSecret: data.clientSecret,
+            merchantDisplayName: "ButterGolf",
+            // Enable address collection
+            billingDetailsCollectionConfiguration: {
+              address: AddressCollectionMode.FULL,
+              email: CollectionMode.ALWAYS,
+              name: CollectionMode.ALWAYS,
+              phone: CollectionMode.ALWAYS,
+            },
+            // Apple Pay / Google Pay
+            applePay: {
+              merchantCountryCode: "GB",
+            },
+            googlePay: {
+              merchantCountryCode: "GB",
+              testEnv: __DEV__,
+            },
+            // Style customization
+            appearance: {
+              colors: {
+                primary: "#F45314", // Spiced Clementine
+                background: "#FFFFFF",
+                componentBackground: "#FFFFFF",
+                componentBorder: "#EDEDED",
+                primaryText: "#323232", // Ironstone
+                secondaryText: "#545454",
+                componentText: "#323232",
+                icon: "#545454",
+              },
+              shapes: {
+                borderRadius: 10,
+                borderWidth: 1,
+              },
+            },
+            // Return URL for 3DS or bank redirects
+            returnURL: "buttergolf://checkout/complete",
+          });
 
-      if (initError) {
-        throw new Error(initError.message);
-      }
+          if (initError) {
+            throw new Error(initError.message);
+          }
 
-      // 4. Present the payment sheet
-      const { error: presentError } = await presentPaymentSheet();
+          // 4. Present the payment sheet
+          const { error: presentError } = await presentPaymentSheet();
 
-      if (presentError) {
-        // User cancelled or payment failed
-        if (presentError.code === "Canceled") {
-          // User cancelled - don't show error
+          if (presentError) {
+            // User cancelled or payment failed
+            if (presentError.code === "Canceled") {
+              // User cancelled - don't show error
+              setIsProcessing(false);
+              resolve();
+              return;
+            }
+            throw new Error(presentError.message);
+          }
+
+          // 5. Payment succeeded
+          onSuccess(data.paymentIntentId);
+          onClose();
+          resolve();
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : "Payment failed";
+          setError(errorMessage);
+          onError?.(errorMessage);
+          resolve();
+        } finally {
           setIsProcessing(false);
-          return;
         }
-        throw new Error(presentError.message);
-      }
-
-      // 5. Payment succeeded
-      onSuccess(data.paymentIntentId);
-      onClose();
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Payment failed";
-      setError(errorMessage);
-      onError?.(errorMessage);
-    } finally {
-      setIsProcessing(false);
-    }
+      });
+    });
   }, [
-    isStripeReady,
-    stripeHooks,
+    initPaymentSheet,
+    presentPaymentSheet,
     getToken,
     productId,
     shippingOption,

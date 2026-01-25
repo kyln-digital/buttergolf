@@ -49,8 +49,10 @@ import {
 } from "react-native";
 import { ClerkProvider, ClerkLoaded, SignedIn, SignedOut, useAuth, useUser } from "@clerk/clerk-expo";
 import { addBreadcrumb } from "./lib/breadcrumbs";
-import { LazyStripeProvider } from "./context/StripeContext";
+import { StripeProvider } from "@stripe/stripe-react-native";
 import * as SecureStore from "expo-secure-store";
+import { InteractionManager } from "react-native";
+import { deferredFetch, deferredGet, deferredDelete, deferredPost } from "./lib/apiClient";
 import {
   registerForPushNotificationsAsync,
   registerPushTokenWithBackend,
@@ -758,35 +760,12 @@ function FavouritesScreenWrapper({
   }, [getToken]);
 
   // Memoize fetch functions to prevent re-render issues during navigation
+  // Uses deferredFetch to prevent TurboModule race conditions
   const fetchFavourites = useCallback(async () => {
-    const token = await getToken();
+    console.log("[FavouritesScreenWrapper] Fetching favourites");
     
-    // Debug: Log token retrieval
-    console.log("[FavouritesScreenWrapper] Token retrieval:", {
-      hasToken: !!token,
-      tokenLength: token?.length,
-      tokenPrefix: token?.substring(0, 20),
-      apiUrl,
-    });
-    
-    if (!token) {
-      console.log("[FavouritesScreenWrapper] No token, returning empty");
-      return { products: [], pagination: { page: 1, limit: 24, total: 0, totalPages: 0 } };
-    }
-
     const url = `${apiUrl}/api/favourites?page=1&limit=100`;
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-    };
-    
-    console.log("[FavouritesScreenWrapper] Making request:", {
-      url,
-      hasAuthHeader: !!headers.Authorization,
-      authHeaderLength: headers.Authorization?.length,
-    });
-    
-    const response = await fetch(url, { headers });
+    const response = await deferredFetch(url, { getToken });
 
     if (!response.ok) {
       throw new Error("Failed to fetch favourites");
@@ -796,20 +775,7 @@ function FavouritesScreenWrapper({
   }, [getToken, apiUrl]);
 
   const removeFavourite = useCallback(async (productId: string) => {
-    const token = await getToken();
-    if (!token) throw new Error("Not authenticated");
-
-    const response = await fetch(`${apiUrl}/api/favourites/${productId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to remove favourite");
-    }
+    await deferredDelete(`${apiUrl}/api/favourites/${productId}`, { getToken });
   }, [getToken, apiUrl]);
 
   // Handle Buy Now - fetch product and open checkout sheet
@@ -954,29 +920,11 @@ function MessagesScreenWrapper({
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
   // Memoize fetchConversations to prevent re-renders from triggering useEffect loops
-  // and to avoid race conditions with screen transitions
+  // and to avoid race conditions with screen transitions. Uses deferredFetch for TurboModule safety.
   const fetchConversations = useCallback(async () => {
-    const token = await getToken();
+    console.log("[MessagesScreenWrapper] Fetching conversations");
 
-    console.log("[MessagesScreenWrapper] Token retrieval:", {
-      hasToken: !!token,
-      apiUrl,
-    });
-
-    if (!token) {
-      console.log("[MessagesScreenWrapper] No token, returning empty");
-      return { conversations: [] };
-    }
-
-    const url = `${apiUrl}/api/messages`;
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-    };
-
-    console.log("[MessagesScreenWrapper] Making request:", { url });
-
-    const response = await fetch(url, { headers });
+    const response = await deferredFetch(`${apiUrl}/api/messages`, { getToken });
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -1037,21 +985,11 @@ function MessageThreadScreenWrapper({
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
   // Memoize all fetch functions to prevent re-render issues during navigation
+  // Uses deferredFetch for TurboModule safety
   const fetchMessages = useCallback(async (id: string) => {
-    const token = await getToken();
-
     console.log("[MessageThreadScreenWrapper] Fetching messages:", { id });
 
-    if (!token) {
-      throw new Error("Not authenticated");
-    }
-
-    const response = await fetch(`${apiUrl}/api/orders/${id}/messages`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
-    });
+    const response = await deferredFetch(`${apiUrl}/api/orders/${id}/messages`, { getToken });
 
     if (!response.ok) {
       throw new Error("Failed to fetch messages");
@@ -1061,43 +999,18 @@ function MessageThreadScreenWrapper({
   }, [getToken, apiUrl]);
 
   const sendMessage = useCallback(async (id: string, content: string) => {
-    const token = await getToken();
-
-    if (!token) {
-      throw new Error("Not authenticated");
-    }
-
-    const response = await fetch(`${apiUrl}/api/orders/${id}/messages`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
-      body: JSON.stringify({ content }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to send message");
-    }
-
-    const data = await response.json();
+    const data = await deferredPost<{ message: unknown }>(
+      `${apiUrl}/api/orders/${id}/messages`,
+      { content },
+      { getToken }
+    );
     return data.message;
   }, [getToken, apiUrl]);
 
   const markAsRead = useCallback(async (id: string) => {
-    const token = await getToken();
-
-    if (!token) {
-      throw new Error("Not authenticated");
-    }
-
-    await fetch(`${apiUrl}/api/orders/${id}/messages/mark-read`, {
+    await deferredFetch(`${apiUrl}/api/orders/${id}/messages/mark-read`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      getToken,
     });
   }, [getToken, apiUrl]);
 
@@ -1307,21 +1220,7 @@ function OffersListScreenWrapper({
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
   const fetchOffers = useCallback(async () => {
-    const token = await getToken();
-    if (!token) throw new Error("Not authenticated");
-
-    const response = await fetch(`${apiUrl}/api/offers`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch offers");
-    }
-
-    const data = await response.json();
+    const data = await deferredGet<unknown[]>(`${apiUrl}/api/offers`, { getToken });
     return data || [];
   }, [getToken, apiUrl]);
 
@@ -1351,21 +1250,7 @@ function OfferDetailScreenWrapper({
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
   const fetchOffer = useCallback(async (id: string) => {
-    const token = await getToken();
-    if (!token) throw new Error("Not authenticated");
-
-    const response = await fetch(`${apiUrl}/api/offers/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch offer");
-    }
-
-    return response.json();
+    return deferredGet(`${apiUrl}/api/offers/${id}`, { getToken });
   }, [getToken, apiUrl]);
 
   const getTokenCallback = useCallback(async () => {
@@ -1549,27 +1434,39 @@ export default function App() {
 
   if (!fontsLoaded) return null;
 
+  // Token cache with InteractionManager to prevent TurboModule race conditions during navigation
+  // WHY: SecureStore calls race with react-native-svg unmounting during screen transitions,
+  // causing SIGABRT in ObjCTurboModule::performVoidMethodInvocation
   const tokenCache = {
-    async getToken(key: string) {
-      try {
-        addBreadcrumb("turbomodule.securestore", "getToken called", { key });
-        const value = await SecureStore.getItemAsync(key);
-        addBreadcrumb("turbomodule.securestore", "getToken completed", { key, hasValue: !!value });
-        return value;
-      } catch (err) {
-        addBreadcrumb("turbomodule.securestore", "getToken failed", { key, error: String(err) }, "error");
-        return null;
-      }
+    async getToken(key: string): Promise<string | null> {
+      return new Promise((resolve) => {
+        InteractionManager.runAfterInteractions(async () => {
+          try {
+            addBreadcrumb("turbomodule.securestore", "getToken called", { key });
+            const value = await SecureStore.getItemAsync(key);
+            addBreadcrumb("turbomodule.securestore", "getToken completed", { key, hasValue: !!value });
+            resolve(value);
+          } catch (err) {
+            addBreadcrumb("turbomodule.securestore", "getToken failed", { key, error: String(err) }, "error");
+            resolve(null);
+          }
+        });
+      });
     },
-    async saveToken(key: string, value: string) {
-      try {
-        addBreadcrumb("turbomodule.securestore", "saveToken called", { key });
-        await SecureStore.setItemAsync(key, value);
-        addBreadcrumb("turbomodule.securestore", "saveToken completed", { key });
-      } catch (err) {
-        addBreadcrumb("turbomodule.securestore", "saveToken failed", { key, error: String(err) }, "error");
-        // ignore
-      }
+    async saveToken(key: string, value: string): Promise<void> {
+      return new Promise((resolve) => {
+        InteractionManager.runAfterInteractions(async () => {
+          try {
+            addBreadcrumb("turbomodule.securestore", "saveToken called", { key });
+            await SecureStore.setItemAsync(key, value);
+            addBreadcrumb("turbomodule.securestore", "saveToken completed", { key });
+            resolve();
+          } catch (err) {
+            addBreadcrumb("turbomodule.securestore", "saveToken failed", { key, error: String(err) }, "error");
+            resolve();
+          }
+        });
+      });
     },
   };
 
@@ -1601,9 +1498,8 @@ export default function App() {
     );
   }
 
-  // Debug: Verify Clerk publishable key is loaded
+  // Debug: Verify environment keys are loaded
   const clerkPublishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
-  // Stripe key is now lazily loaded - only log if present
   const stripePublishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
   
   console.log(
@@ -1612,14 +1508,14 @@ export default function App() {
   );
   console.log(
     "[Stripe] Publishable key:",
-    stripePublishableKey ? "LOADED" : "MISSING (lazy load)",
+    stripePublishableKey ? "LOADED" : "MISSING",
   );
 
-  // CRITICAL: If Clerk key is missing, show error screen
-  // Stripe is lazy-loaded so it's only required when checkout is accessed
-  if (!clerkPublishableKey) {
-    const missingKeys = ["EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY"];
-    if (!stripePublishableKey) missingKeys.push("EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY (optional, lazy-loaded)");
+  // CRITICAL: If required keys are missing, show error screen
+  if (!clerkPublishableKey || !stripePublishableKey) {
+    const missingKeys: string[] = [];
+    if (!clerkPublishableKey) missingKeys.push("EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY");
+    if (!stripePublishableKey) missingKeys.push("EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY");
     
     return (
       <SafeAreaProvider>
@@ -1653,7 +1549,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <LazyStripeProvider>
+      <StripeProvider publishableKey={stripePublishableKey}>
         <ClerkProvider
           tokenCache={tokenCache}
           publishableKey={clerkPublishableKey}
@@ -1837,7 +1733,7 @@ export default function App() {
           </ClerkLoaded>
         </Provider>
       </ClerkProvider>
-      </LazyStripeProvider>
+      </StripeProvider>
     </SafeAreaProvider>
   );
 }
