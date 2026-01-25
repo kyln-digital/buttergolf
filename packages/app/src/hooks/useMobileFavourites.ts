@@ -45,11 +45,13 @@ export function useMobileFavourites({
   // Use refs for functions to avoid them triggering useEffect reruns
   const getTokenRef = useRef(getToken);
   const apiUrlRef = useRef(apiUrl);
-  
+  const fetchFnRef = useRef(fetchFn);
+
   // Keep refs updated
   useEffect(() => {
     getTokenRef.current = getToken;
     apiUrlRef.current = apiUrl;
+    fetchFnRef.current = fetchFn;
   });
 
   // Fetch user's favourites on mount and when auth changes
@@ -69,10 +71,10 @@ export function useMobileFavourites({
         const url = `${apiUrlRef.current}/api/favourites?limit=1000`;
         let response: Response;
 
-        if (fetchFn) {
+        if (fetchFnRef.current) {
           // Use custom fetch (e.g., deferredFetch) - it handles auth internally
           console.log("[useMobileFavourites] Using deferred fetch:", { url });
-          response = await fetchFn(url, {
+          response = await fetchFnRef.current(url, {
             headers: { Accept: "application/json" },
             signal: abortController.signal,
           });
@@ -155,7 +157,7 @@ export function useMobileFavourites({
       cancelled = true;
       abortController.abort();
     };
-  }, [isAuthenticated, fetchFn]); // Depend on isAuthenticated and fetchFn
+  }, [isAuthenticated]); // Only depend on isAuthenticated - fetchFn is accessed via ref
 
   /**
    * Check if a product is favourited
@@ -197,9 +199,9 @@ export function useMobileFavourites({
 
         let response: Response;
 
-        if (fetchFn) {
+        if (fetchFnRef.current) {
           // Use custom fetch (e.g., deferredFetch) - it handles auth internally
-          response = await fetchFn(url, {
+          response = await fetchFnRef.current(url, {
             method: wasOptimisticAdd ? "POST" : "DELETE",
             headers: {
               ...(wasOptimisticAdd ? { "Content-Type": "application/json" } : {}),
@@ -257,7 +259,7 @@ export function useMobileFavourites({
         return { success: false };
       }
     },
-    [isAuthenticated, state.favourites, fetchFn]
+    [isAuthenticated, state.favourites]
   );
 
   /**
@@ -292,9 +294,9 @@ export function useMobileFavourites({
       const url = `${apiUrlRef.current}/api/favourites?limit=1000`;
       let response: Response;
 
-      if (fetchFn) {
+      if (fetchFnRef.current) {
         // Use custom fetch (e.g., deferredFetch) - it handles auth internally
-        response = await fetchFn(url, {
+        response = await fetchFnRef.current(url, {
           headers: { Accept: "application/json" },
         });
       } else {
@@ -326,7 +328,7 @@ export function useMobileFavourites({
     } catch (err) {
       console.error("Error refreshing favourites:", err);
     }
-  }, [isAuthenticated, fetchFn]);
+  }, [isAuthenticated]);
 
   return {
     favourites: state.favourites,
