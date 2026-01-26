@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from "react";
-import { Alert, StyleSheet, SafeAreaView, View, ActivityIndicator } from "react-native";
+import { Alert, StyleSheet, View, ActivityIndicator } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView, WebViewMessageEvent } from "react-native-webview";
 import { useAuth } from "@clerk/clerk-expo";
 import { useSellerStatusContext } from "../context";
