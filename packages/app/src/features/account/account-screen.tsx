@@ -2,9 +2,24 @@
 
 import React from "react";
 import { Column, Row, ScrollView, Text, Button, Heading, ThemeSwitcher } from "@buttergolf/ui";
-import { Button as TamaguiButton, Avatar, Image } from "tamagui";
-import { ArrowLeft, LogOut, Palette } from "@tamagui/lucide-icons";
+import { Button as TamaguiButton, Avatar, View } from "tamagui";
+import {
+  ArrowLeft,
+  LogOut,
+  Palette,
+  User,
+  ShoppingBag,
+  Store,
+  Heart,
+  MapPin,
+  CreditCard,
+  Bell,
+  HelpCircle,
+  ChevronRight,
+  Edit3,
+} from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AccountMenuItem } from "./components";
 
 interface UserData {
   id: string;
@@ -17,19 +32,55 @@ interface UserData {
 export interface AccountScreenProps {
   user: UserData | null;
   isLoading?: boolean;
+  /** Whether user has completed Stripe seller onboarding */
+  isSellerOnboarded?: boolean;
+  /** Number of pending orders */
+  pendingOrdersCount?: number;
+  /** Number of unread messages */
+  unreadMessagesCount?: number;
   onSignOut?: () => void;
   onNavigateBack?: () => void;
+  /** Navigate to profile edit screen */
+  onEditProfile?: () => void;
+  /** Navigate to My Orders list */
+  onViewOrders?: () => void;
+  /** Navigate to My Sales / Seller Dashboard */
+  onViewSellerDashboard?: () => void;
+  /** Navigate to Favourites */
+  onViewFavourites?: () => void;
+  /** Navigate to Addresses */
+  onViewAddresses?: () => void;
+  /** Navigate to Payment Methods */
+  onViewPayments?: () => void;
+  /** Navigate to Notification Settings */
+  onViewNotifications?: () => void;
+  /** Navigate to Help & Support */
+  onViewHelp?: () => void;
+  /** Start seller onboarding if not completed */
+  onStartSellerOnboarding?: () => void;
 }
 
 /**
- * Account screen displaying user profile info and sign-out option.
- * Shows user avatar (with initials fallback), name, email, and sign-out button.
+ * Account screen displaying user profile and navigation menu.
+ * Serves as the main hub for account management.
  */
 export function AccountScreen({
   user,
   isLoading = false,
+  isSellerOnboarded = false,
+  pendingOrdersCount,
+  unreadMessagesCount,
   onSignOut,
   onNavigateBack,
+  onEditProfile,
+  onViewOrders,
+  onViewSellerDashboard,
+  onViewFavourites,
+  onViewAddresses,
+  onViewPayments,
+  onViewNotifications,
+  onViewHelp,
+  onStartSellerOnboarding,
 }: Readonly<AccountScreenProps>) {
   const insets = useSafeAreaInsets();
 
@@ -56,12 +107,12 @@ export function AccountScreen({
         contentContainerStyle={{
           paddingTop: insets.top + 16,
           paddingBottom: insets.bottom + 40,
-          paddingHorizontal: 24,
+          paddingHorizontal: 16,
         }}
       >
         {/* Header with back button */}
         {onNavigateBack && (
-          <Row alignItems="center" marginBottom="$6">
+          <Row alignItems="center" marginBottom="$4">
             <TamaguiButton
               chromeless
               circular
@@ -71,46 +122,134 @@ export function AccountScreen({
             >
               <ArrowLeft size={24} color="$text" />
             </TamaguiButton>
+            <Heading level={3} marginLeft="$2">
+              Account
+            </Heading>
           </Row>
         )}
 
-        {/* Profile Section */}
-        <Column alignItems="center" gap="$4" paddingTop="$4">
-          {/* Avatar */}
-          <Avatar circular size="$12">
-            {user?.imageUrl ? (
-              <Avatar.Image
-                accessibilityLabel={getDisplayName()}
-                src={user.imageUrl}
-              />
-            ) : (
-              <Avatar.Fallback
-                backgroundColor="$primary"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <Text size="$9" color="$textInverse" fontWeight="600">
-                  {getInitials()}
+        {/* Profile Header Card */}
+        <TamaguiButton
+          unstyled
+          backgroundColor="$surface"
+          borderRadius="$lg"
+          borderWidth={1}
+          borderColor="$border"
+          padding="$4"
+          marginBottom="$6"
+          pressStyle={{ backgroundColor: "$backgroundPress", scale: 0.98 }}
+          onPress={onEditProfile}
+        >
+          <Row alignItems="center" gap="$4">
+            {/* Avatar */}
+            <Avatar circular size="$10">
+              {user?.imageUrl ? (
+                <Avatar.Image accessibilityLabel={getDisplayName()} src={user.imageUrl} />
+              ) : (
+                <Avatar.Fallback
+                  backgroundColor="$primary"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <Text size="$7" color="$textInverse" fontWeight="600">
+                    {getInitials()}
+                  </Text>
+                </Avatar.Fallback>
+              )}
+            </Avatar>
+
+            {/* Name and Email */}
+            <Column flex={1} gap="$1">
+              <Text size="$6" fontWeight="600" color="$text">
+                {getDisplayName()}
+              </Text>
+              {user?.email && (
+                <Text size="$4" color="$textSecondary" numberOfLines={1}>
+                  {user.email}
                 </Text>
-              </Avatar.Fallback>
-            )}
-          </Avatar>
+              )}
+            </Column>
 
-          {/* User Name */}
-          <Heading level={2} size="$8" color="$text" textAlign="center">
-            {getDisplayName()}
-          </Heading>
+            {/* Edit indicator */}
+            {onEditProfile && <Edit3 size={20} color="$textMuted" />}
+          </Row>
+        </TamaguiButton>
 
-          {/* User Email */}
-          {user?.email && (
-            <Text size="$5" color="$textSecondary" textAlign="center">
-              {user.email}
-            </Text>
+        {/* Shopping Section */}
+        <Column gap="$3" marginBottom="$6">
+          <Text size="$3" color="$textSecondary" fontWeight="600" marginLeft="$2" marginBottom="$1">
+            SHOPPING
+          </Text>
+
+          <AccountMenuItem
+            icon={<ShoppingBag size={22} color="$primary" />}
+            label="My Orders"
+            description="View your purchase history"
+            badge={pendingOrdersCount && pendingOrdersCount > 0 ? pendingOrdersCount : undefined}
+            badgeVariant="primary"
+            onPress={onViewOrders}
+          />
+
+          <AccountMenuItem
+            icon={<Heart size={22} color="$error" />}
+            label="Favourites"
+            description="Your saved items"
+            onPress={onViewFavourites}
+          />
+        </Column>
+
+        {/* Selling Section */}
+        <Column gap="$3" marginBottom="$6">
+          <Text size="$3" color="$textSecondary" fontWeight="600" marginLeft="$2" marginBottom="$1">
+            SELLING
+          </Text>
+
+          {isSellerOnboarded ? (
+            <AccountMenuItem
+              icon={<Store size={22} color="$success" />}
+              label="Seller Dashboard"
+              description="Manage your sales and listings"
+              onPress={onViewSellerDashboard}
+            />
+          ) : (
+            <AccountMenuItem
+              icon={<Store size={22} color="$textSecondary" />}
+              label="Start Selling"
+              description="Set up your seller account"
+              badge="Setup"
+              badgeVariant="warning"
+              onPress={onStartSellerOnboarding}
+            />
           )}
         </Column>
 
-        {/* Settings Section */}
-        <Column paddingTop="$8" gap="$4">
+        {/* Account Section */}
+        <Column gap="$3" marginBottom="$6">
+          <Text size="$3" color="$textSecondary" fontWeight="600" marginLeft="$2" marginBottom="$1">
+            ACCOUNT
+          </Text>
+
+          <AccountMenuItem
+            icon={<MapPin size={22} color="$info" />}
+            label="Addresses"
+            description="Manage shipping addresses"
+            onPress={onViewAddresses}
+          />
+
+          <AccountMenuItem
+            icon={<CreditCard size={22} color="$warning" />}
+            label="Payment Methods"
+            description="Manage payment options"
+            onPress={onViewPayments}
+          />
+        </Column>
+
+        {/* Preferences Section */}
+        <Column gap="$3" marginBottom="$6">
+          <Text size="$3" color="$textSecondary" fontWeight="600" marginLeft="$2" marginBottom="$1">
+            PREFERENCES
+          </Text>
+
           {/* Theme Switcher */}
           <Column
             backgroundColor="$surface"
@@ -121,31 +260,57 @@ export function AccountScreen({
             gap="$3"
           >
             <Row alignItems="center" gap="$2">
-              <Palette size={20} color="$text" />
-              <Text size="$5" fontWeight="600" color="$text">
+              <Palette size={22} color="$text" />
+              <Text size="$5" fontWeight="500" color="$text">
                 Appearance
               </Text>
             </Row>
             <ThemeSwitcher showLabels />
           </Column>
+
+          <AccountMenuItem
+            icon={<Bell size={22} color="$text" />}
+            label="Notifications"
+            description="Manage notification preferences"
+            onPress={onViewNotifications}
+          />
+        </Column>
+
+        {/* Support Section */}
+        <Column gap="$3" marginBottom="$6">
+          <Text size="$3" color="$textSecondary" fontWeight="600" marginLeft="$2" marginBottom="$1">
+            SUPPORT
+          </Text>
+
+          <AccountMenuItem
+            icon={<HelpCircle size={22} color="$text" />}
+            label="Help & Support"
+            description="FAQ and contact us"
+            onPress={onViewHelp}
+          />
         </Column>
 
         {/* Sign Out Button */}
-        <Column paddingTop="$6" gap="$4">
+        <Column paddingTop="$2" gap="$4">
           <Button
             size="$5"
             backgroundColor="$surface"
             borderWidth={1}
-            borderColor="$border"
+            borderColor="$error"
             onPress={onSignOut}
             disabled={isLoading}
-            icon={<LogOut size={20} color="$text" />}
+            icon={<LogOut size={20} color="$error" />}
           >
-            <Text color="$text" fontWeight="500">
+            <Text color="$error" fontWeight="500">
               Sign Out
             </Text>
           </Button>
         </Column>
+
+        {/* Version info */}
+        <Text size="$2" color="$textMuted" textAlign="center" marginTop="$6">
+          ButterGolf v1.0.0
+        </Text>
       </ScrollView>
     </Column>
   );

@@ -22,7 +22,18 @@ import {
   ResetPasswordScreen,
   TwoFactorScreen,
   AccountScreen,
+  ProfileEditScreen,
+  AddressesScreen,
+  NotificationSettingsScreen,
+  HelpSupportScreen,
 } from "@buttergolf/app";
+import { OrdersScreen, OrderDetailScreen } from "@buttergolf/app/src/features/orders";
+import type { SellerRating } from "@buttergolf/app/src/features/orders";
+import {
+  SellerDashboardScreen,
+  SellerSalesScreen,
+  SellerListingsScreen,
+} from "@buttergolf/app/src/features/seller";
 import type {
   ProductCardData,
   Product,
@@ -219,6 +230,33 @@ const linking = {
       },
       Account: {
         path: routes.account.slice(1), // 'account'
+      },
+      ProfileEdit: {
+        path: "account/profile",
+      },
+      Orders: {
+        path: "account/orders",
+      },
+      OrderDetail: {
+        path: "account/orders/:orderId",
+      },
+      Addresses: {
+        path: "account/addresses",
+      },
+      NotificationSettings: {
+        path: "account/notifications",
+      },
+      HelpSupport: {
+        path: "account/help",
+      },
+      SellerDashboard: {
+        path: "seller/dashboard",
+      },
+      SellerSales: {
+        path: "seller/sales",
+      },
+      SellerListings: {
+        path: "seller/listings",
       },
     },
   },
@@ -698,7 +736,36 @@ function SellScreenWrapper({ navigation }: { navigation: any }) {
  */
 function AccountScreenWrapper({ navigation }: { navigation: any }) {
   const { user } = useUser();
-  const { signOut } = useAuth();
+  const { signOut, getToken } = useAuth();
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+
+  // Fetch pending orders count and seller status
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
+  const [isSellerOnboarded, setIsSellerOnboarded] = useState(false);
+
+  useEffect(() => {
+    const fetchAccountData = async () => {
+      try {
+        // Fetch orders to get pending count
+        const ordersResponse = await deferredGet<{ orders: any[]; stats?: { active: number } }>(
+          `${apiUrl}/api/orders?filter=active&limit=1`,
+          { getToken }
+        );
+        setPendingOrdersCount(ordersResponse?.stats?.active || 0);
+
+        // Fetch seller status
+        const sellerResponse = await deferredGet<{ stripeOnboardingComplete: boolean }>(
+          `${apiUrl}/api/seller/status`,
+          { getToken }
+        );
+        setIsSellerOnboarded(sellerResponse?.stripeOnboardingComplete || false);
+      } catch (error) {
+        console.error("Failed to fetch account data:", error);
+      }
+    };
+
+    void fetchAccountData();
+  }, [getToken, apiUrl]);
 
   // Memoize handler to prevent re-render issues during navigation
   const handleSignOut = useCallback(async () => {
@@ -719,8 +786,459 @@ function AccountScreenWrapper({ navigation }: { navigation: any }) {
             }
           : null
       }
+      isSellerOnboarded={isSellerOnboarded}
+      pendingOrdersCount={pendingOrdersCount}
       onSignOut={handleSignOut}
       onNavigateBack={() => navigation.goBack()}
+      onEditProfile={() => navigation.navigate("ProfileEdit")}
+      onViewOrders={() => navigation.navigate("Orders")}
+      onViewFavourites={() => navigation.navigate("Favourites")}
+      onViewSellerDashboard={() => navigation.navigate("SellerDashboard")}
+      onStartSellerOnboarding={() => navigation.navigate("Sell")}
+      onViewAddresses={() => navigation.navigate("Addresses")}
+      onViewPayments={() => {
+        // TODO: Implement payments WebView for Stripe Connect
+        Alert.alert("Coming Soon", "Payment settings will be available soon.");
+      }}
+      onViewNotifications={() => navigation.navigate("NotificationSettings")}
+      onViewHelp={() => navigation.navigate("HelpSupport")}
+    />
+  );
+}
+
+/**
+ * Wrapper component for ProfileEditScreen with Clerk integration.
+ */
+function ProfileEditScreenWrapper({ navigation }: { navigation: any }) {
+  const { user } = useUser();
+  const { getToken } = useAuth();
+
+  const handleUpdateProfile = useCallback(
+    async (data: { firstName?: string; lastName?: string }) => {
+      if (!user) throw new Error("Not authenticated");
+      // Update via Clerk SDK - webhook syncs to database
+      await user.update({
+        firstName: data.firstName,
+        lastName: data.lastName,
+      });
+    },
+    [user]
+  );
+
+  const handlePickImage = useCallback(async () => {
+    const images = await pickImages();
+    return images[0] || null;
+  }, []);
+
+  const handleUpdateProfileImage = useCallback(
+    async (image: { uri: string; width?: number; height?: number }) => {
+      if (!user) throw new Error("Not authenticated");
+      // Upload to Cloudinary then update Clerk profile
+      const imageUrl = await uploadImageToCloudinary(image, false, getToken);
+      await user.setProfileImage({ file: imageUrl });
+      return imageUrl;
+    },
+    [user, getToken]
+  );
+
+  return (
+    <ProfileEditScreen
+      user={
+        user
+          ? {
+              id: user.id,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              email: user.primaryEmailAddress?.emailAddress,
+              imageUrl: user.imageUrl,
+            }
+          : null
+      }
+      onUpdateProfile={handleUpdateProfile}
+      onPickImage={handlePickImage}
+      onUpdateProfileImage={handleUpdateProfileImage}
+      onBack={() => navigation.goBack()}
+    />
+  );
+}
+
+/**
+ * Wrapper component for OrdersScreen with API integration.
+ */
+function OrdersScreenWrapper({ navigation }: { navigation: any }) {
+  const { getToken } = useAuth();
+  const { user } = useUser();
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+
+  const fetchOrders = useCallback(
+    async (filter?: string) => {
+      const params = new URLSearchParams();
+      if (filter && filter !== "all") params.append("filter", filter);
+      params.append("limit", "50");
+
+      const data = await deferredGet<any>(`${apiUrl}/api/orders?${params.toString()}`, {
+        getToken,
+      });
+      return data;
+    },
+    [getToken, apiUrl]
+  );
+
+  return (
+    <OrdersScreen
+      currentUserId={user?.id || ""}
+      onFetchOrders={fetchOrders}
+      onViewOrder={(orderId) => navigation.navigate("OrderDetail", { orderId })}
+      onBack={() => navigation.goBack()}
+      onBrowseProducts={() => navigation.navigate("Home")}
+    />
+  );
+}
+
+/**
+ * Wrapper component for OrderDetailScreen with API integration.
+ */
+function OrderDetailScreenWrapper({ navigation, orderId }: { navigation: any; orderId: string }) {
+  const { getToken } = useAuth();
+  const { user } = useUser();
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+
+  const fetchOrder = useCallback(
+    async (id: string) => {
+      return deferredGet<any>(`${apiUrl}/api/orders/${id}`, { getToken });
+    },
+    [getToken, apiUrl]
+  );
+
+  const confirmReceipt = useCallback(
+    async (id: string) => {
+      await deferredPost(`${apiUrl}/api/orders/${id}/confirm-receipt`, {}, { getToken });
+    },
+    [getToken, apiUrl]
+  );
+
+  const submitRating = useCallback(
+    async (id: string, rating: number, review?: string) => {
+      return deferredPost<SellerRating>(
+        `${apiUrl}/api/orders/${id}/rate`,
+        { rating, review },
+        { getToken }
+      );
+    },
+    [getToken, apiUrl]
+  );
+
+  const generateLabel = useCallback(
+    async (id: string) => {
+      return deferredPost<{ labelUrl: string }>(
+        `${apiUrl}/api/orders/${id}/shipping-label`,
+        {},
+        { getToken }
+      );
+    },
+    [getToken, apiUrl]
+  );
+
+  const downloadLabel = useCallback(
+    async (id: string) => {
+      // Open label URL in browser
+      const order = await deferredGet<{ shippingLabel?: { labelUrl: string } }>(
+        `${apiUrl}/api/orders/${id}`,
+        { getToken }
+      );
+      if (order?.shippingLabel?.labelUrl) {
+        const { Linking } = await import("react-native");
+        void Linking.openURL(order.shippingLabel.labelUrl);
+      }
+    },
+    [getToken, apiUrl]
+  );
+
+  const markShipped = useCallback(
+    async (id: string, trackingNumber: string, carrier: string) => {
+      await deferredPost(
+        `${apiUrl}/api/orders/${id}/ship`,
+        { trackingNumber, carrier },
+        { getToken }
+      );
+    },
+    [getToken, apiUrl]
+  );
+
+  return (
+    <OrderDetailScreen
+      orderId={orderId}
+      currentUserId={user?.id || ""}
+      onFetchOrder={fetchOrder}
+      onConfirmReceipt={confirmReceipt}
+      onSubmitRating={submitRating}
+      onGenerateLabel={generateLabel}
+      onDownloadLabel={downloadLabel}
+      onMarkShipped={markShipped}
+      onMessageSeller={(sellerId: string) =>
+        navigation.navigate("MessageThread", {
+          orderId,
+          userRole: "buyer",
+        })
+      }
+      onMessageBuyer={(buyerId: string) =>
+        navigation.navigate("MessageThread", {
+          orderId,
+          userRole: "seller",
+        })
+      }
+      onBack={() => navigation.goBack()}
+    />
+  );
+}
+
+/**
+ * Wrapper component for AddressesScreen with API integration.
+ */
+function AddressesScreenWrapper({ navigation }: { navigation: any }) {
+  const { getToken } = useAuth();
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+
+  const fetchAddresses = useCallback(async () => {
+    const data = await deferredGet<any[]>(`${apiUrl}/api/addresses`, { getToken });
+    return data || [];
+  }, [getToken, apiUrl]);
+
+  const createAddress = useCallback(
+    async (address: any) => {
+      return deferredPost<any>(`${apiUrl}/api/addresses`, address, { getToken });
+    },
+    [getToken, apiUrl]
+  );
+
+  const updateAddress = useCallback(
+    async (id: string, address: any) => {
+      const response = await deferredFetch(`${apiUrl}/api/addresses/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(address),
+        getToken,
+      });
+      return response.json();
+    },
+    [getToken, apiUrl]
+  );
+
+  const deleteAddress = useCallback(
+    async (id: string) => {
+      await deferredDelete(`${apiUrl}/api/addresses/${id}`, { getToken });
+    },
+    [getToken, apiUrl]
+  );
+
+  const setDefault = useCallback(
+    async (id: string) => {
+      await deferredPost(`${apiUrl}/api/addresses/${id}/default`, {}, { getToken });
+    },
+    [getToken, apiUrl]
+  );
+
+  return (
+    <AddressesScreen
+      onFetchAddresses={fetchAddresses}
+      onCreateAddress={createAddress}
+      onUpdateAddress={updateAddress}
+      onDeleteAddress={deleteAddress}
+      onSetDefault={setDefault}
+      onBack={() => navigation.goBack()}
+    />
+  );
+}
+
+/**
+ * Wrapper component for NotificationSettingsScreen.
+ */
+function NotificationSettingsScreenWrapper({ navigation }: { navigation: any }) {
+  const { getToken } = useAuth();
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+
+  const handleUpdateSettings = useCallback(
+    async (settings: any) => {
+      await deferredPost(`${apiUrl}/api/user/notifications`, settings, { getToken });
+    },
+    [getToken, apiUrl]
+  );
+
+  return (
+    <NotificationSettingsScreen
+      onUpdateSettings={handleUpdateSettings}
+      onBack={() => navigation.goBack()}
+    />
+  );
+}
+
+/**
+ * Wrapper component for HelpSupportScreen.
+ */
+function HelpSupportScreenWrapper({ navigation }: { navigation: any }) {
+  return (
+    <HelpSupportScreen supportEmail="support@buttergolf.com" onBack={() => navigation.goBack()} />
+  );
+}
+
+/**
+ * Wrapper component for SellerDashboardScreen with API integration.
+ */
+function SellerDashboardScreenWrapper({ navigation }: { navigation: any }) {
+  const { getToken } = useAuth();
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchStats = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await deferredGet<any>(`${apiUrl}/api/seller/dashboard`, { getToken });
+      setStats(data);
+    } catch (err) {
+      console.error("Failed to fetch seller stats:", err);
+      setError("Failed to load dashboard");
+    } finally {
+      setLoading(false);
+    }
+  }, [getToken, apiUrl]);
+
+  useEffect(() => {
+    void fetchStats();
+  }, [fetchStats]);
+
+  return (
+    <SellerDashboardScreen
+      stats={stats}
+      loading={loading}
+      error={error}
+      onListItem={() => navigation.navigate("Sell")}
+      onViewSales={() => navigation.navigate("SellerSales")}
+      onViewListings={() => navigation.navigate("SellerListings")}
+      onViewPayments={() => {
+        Alert.alert("Coming Soon", "Payment settings will be available soon.");
+      }}
+      onViewPayouts={() => {
+        Alert.alert("Coming Soon", "Payout settings will be available soon.");
+      }}
+      onViewSettings={() => navigation.navigate("Account")}
+      onBack={() => navigation.goBack()}
+      onRefresh={fetchStats}
+    />
+  );
+}
+
+/**
+ * Wrapper component for SellerSalesScreen with API integration.
+ */
+function SellerSalesScreenWrapper({ navigation }: { navigation: any }) {
+  const { getToken } = useAuth();
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+
+  const fetchSales = useCallback(
+    async (filter?: string) => {
+      const params = new URLSearchParams();
+      if (filter) params.append("filter", filter);
+      return deferredGet<any>(`${apiUrl}/api/seller/sales?${params.toString()}`, { getToken });
+    },
+    [getToken, apiUrl]
+  );
+
+  const generateLabel = useCallback(
+    async (orderId: string) => {
+      return deferredPost<{ labelUrl: string }>(
+        `${apiUrl}/api/orders/${orderId}/shipping-label`,
+        {},
+        { getToken }
+      );
+    },
+    [getToken, apiUrl]
+  );
+
+  const downloadLabel = useCallback(
+    async (orderId: string) => {
+      const order = await deferredGet<{ shippingLabel?: { labelUrl: string } }>(
+        `${apiUrl}/api/orders/${orderId}`,
+        { getToken }
+      );
+      if (order?.shippingLabel?.labelUrl) {
+        const { Linking } = await import("react-native");
+        void Linking.openURL(order.shippingLabel.labelUrl);
+      }
+    },
+    [getToken, apiUrl]
+  );
+
+  const markShipped = useCallback(
+    async (orderId: string, trackingNumber: string, carrier: string) => {
+      await deferredPost(
+        `${apiUrl}/api/orders/${orderId}/ship`,
+        { trackingNumber, carrier },
+        { getToken }
+      );
+    },
+    [getToken, apiUrl]
+  );
+
+  return (
+    <SellerSalesScreen
+      onFetchSales={fetchSales}
+      onGenerateLabel={generateLabel}
+      onDownloadLabel={downloadLabel}
+      onMarkShipped={markShipped}
+      onViewOrder={(orderId) => navigation.navigate("OrderDetail", { orderId })}
+      onMessageBuyer={(buyerId, orderId) =>
+        navigation.navigate("MessageThread", {
+          orderId,
+          userRole: "seller",
+        })
+      }
+      onBack={() => navigation.goBack()}
+    />
+  );
+}
+
+/**
+ * Wrapper component for SellerListingsScreen with API integration.
+ */
+function SellerListingsScreenWrapper({ navigation }: { navigation: any }) {
+  const { getToken } = useAuth();
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+
+  const fetchListings = useCallback(
+    async (filter?: string) => {
+      const params = new URLSearchParams();
+      if (filter) params.append("status", filter);
+      return deferredGet<any>(`${apiUrl}/api/seller/listings?${params.toString()}`, { getToken });
+    },
+    [getToken, apiUrl]
+  );
+
+  const toggleStatus = useCallback(
+    async (listingId: string, active: boolean) => {
+      await deferredPost(`${apiUrl}/api/products/${listingId}/status`, { active }, { getToken });
+    },
+    [getToken, apiUrl]
+  );
+
+  const deleteListing = useCallback(
+    async (listingId: string) => {
+      await deferredDelete(`${apiUrl}/api/products/${listingId}`, { getToken });
+    },
+    [getToken, apiUrl]
+  );
+
+  return (
+    <SellerListingsScreen
+      onFetchListings={fetchListings}
+      onCreateListing={() => navigation.navigate("Sell")}
+      onEditListing={(listingId) => navigation.navigate("Sell", { editId: listingId })}
+      onViewListing={(listingId) => navigation.navigate("ProductDetail", { id: listingId })}
+      onToggleStatus={toggleStatus}
+      onDeleteListing={deleteListing}
+      onBack={() => navigation.goBack()}
     />
   );
 }
@@ -1677,6 +2195,60 @@ export default function App() {
                       <Stack.Screen name="Account" options={{ headerShown: false }}>
                         {({ navigation }: { navigation: any }) => (
                           <AccountScreenWrapper navigation={navigation} />
+                        )}
+                      </Stack.Screen>
+                      <Stack.Screen name="ProfileEdit" options={{ headerShown: false }}>
+                        {({ navigation }: { navigation: any }) => (
+                          <ProfileEditScreenWrapper navigation={navigation} />
+                        )}
+                      </Stack.Screen>
+                      <Stack.Screen name="Orders" options={{ headerShown: false }}>
+                        {({ navigation }: { navigation: any }) => (
+                          <OrdersScreenWrapper navigation={navigation} />
+                        )}
+                      </Stack.Screen>
+                      <Stack.Screen name="OrderDetail" options={{ headerShown: false }}>
+                        {({
+                          route,
+                          navigation,
+                        }: {
+                          route: { params?: { orderId?: string } };
+                          navigation: any;
+                        }) => (
+                          <OrderDetailScreenWrapper
+                            navigation={navigation}
+                            orderId={route.params?.orderId || ""}
+                          />
+                        )}
+                      </Stack.Screen>
+                      <Stack.Screen name="Addresses" options={{ headerShown: false }}>
+                        {({ navigation }: { navigation: any }) => (
+                          <AddressesScreenWrapper navigation={navigation} />
+                        )}
+                      </Stack.Screen>
+                      <Stack.Screen name="NotificationSettings" options={{ headerShown: false }}>
+                        {({ navigation }: { navigation: any }) => (
+                          <NotificationSettingsScreenWrapper navigation={navigation} />
+                        )}
+                      </Stack.Screen>
+                      <Stack.Screen name="HelpSupport" options={{ headerShown: false }}>
+                        {({ navigation }: { navigation: any }) => (
+                          <HelpSupportScreenWrapper navigation={navigation} />
+                        )}
+                      </Stack.Screen>
+                      <Stack.Screen name="SellerDashboard" options={{ headerShown: false }}>
+                        {({ navigation }: { navigation: any }) => (
+                          <SellerDashboardScreenWrapper navigation={navigation} />
+                        )}
+                      </Stack.Screen>
+                      <Stack.Screen name="SellerSales" options={{ headerShown: false }}>
+                        {({ navigation }: { navigation: any }) => (
+                          <SellerSalesScreenWrapper navigation={navigation} />
+                        )}
+                      </Stack.Screen>
+                      <Stack.Screen name="SellerListings" options={{ headerShown: false }}>
+                        {({ navigation }: { navigation: any }) => (
+                          <SellerListingsScreenWrapper navigation={navigation} />
                         )}
                       </Stack.Screen>
                       <Stack.Screen
