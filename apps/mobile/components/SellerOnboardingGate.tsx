@@ -410,22 +410,40 @@ export function SellerOnboardingGate({
           domStorageEnabled={true}
           sharedCookiesEnabled={false}
           thirdPartyCookiesEnabled={false}
-          // iOS specific
+          // iOS specific - CRITICAL for keyboard/input handling in Stripe forms
           allowsBackForwardNavigationGestures={false}
+          keyboardDisplayRequiresUserAction={false}
+          allowsInlineMediaPlayback={true}
+          automaticallyAdjustContentInsets={false}
+          contentInsetAdjustmentBehavior="never"
           // Android specific
           setSupportMultipleWindows={false}
+          overScrollMode="never"
+          // Prevent bouncing/scroll issues that can cause reloads
+          bounces={false}
+          scrollEnabled={true}
           // Handle external links (open in system browser if needed)
           onShouldStartLoadWithRequest={(request) => {
+            // Allow about:blank - Stripe uses this for internal iframe handling
+            // Blocking it causes the WebView to crash/reload
+            if (request.url === "about:blank" || request.url.startsWith("about:")) {
+              return true;
+            }
             // Allow same-origin requests
             if (request.url.startsWith(apiUrl)) {
               return true;
             }
-            // Allow Stripe domains for iframes
-            if (request.url.includes("stripe.com") || request.url.includes("js.stripe.com")) {
+            // Allow ALL Stripe-related domains for Connect embedded components
+            // Stripe uses multiple subdomains for their embedded forms:
+            // - *.stripe.com (main, connect, js, api, etc.)
+            // - *.stripe.network (telemetry/analytics)
+            // - *.stripecdn.com (static assets)
+            const stripeDomainsRegex = /stripe\.com|stripe\.network|stripecdn\.com/i;
+            if (stripeDomainsRegex.test(request.url)) {
               return true;
             }
             // Block other external links (or could open in system browser)
-            console.log("[SellerOnboardingGate] Blocked external URL:", request.url);
+            console.warn("[SellerOnboardingGate] Blocked external URL:", request.url);
             return false;
           }}
         />

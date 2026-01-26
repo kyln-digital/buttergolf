@@ -1,5 +1,21 @@
-import { auth } from "@clerk/nextjs/server";
-import { verifyMobileSessionToken } from "@/lib/mobile-session";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { verifyMobileSessionToken, getMobileSessionUserData } from "@/lib/mobile-session";
+import { createClerkClient } from "@clerk/backend";
+
+// Clerk backend client for fetching user data by ID
+const clerkBackend = createClerkClient({
+  secretKey: process.env.CLERK_SECRET_KEY,
+});
+
+/**
+ * User profile data returned from Clerk
+ */
+export interface ClerkUserData {
+  userId: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+}
 
 /**
  * Get user ID using Clerk's Next.js SDK auth() helper, with fallback to mobile session tokens.
@@ -41,6 +57,89 @@ export async function getUserIdFromRequest(request?: Request): Promise<string | 
           userId: mobileSession.userId,
         });
         return mobileSession.userId;
+      }
+    }
+  }
+
+  console.log("[Auth] Not authenticated via any method");
+  return null;
+}
+
+/**
+ * Get Clerk user profile data from the request.
+ *
+ * This supports authentication from:
+ * 1. Clerk cookies (__session) - uses currentUser() for same-origin web requests
+ * 2. Mobile session tokens - uses Clerk backend API to fetch user by ID
+ *
+ * @param request - Optional Request object (used for mobile session token extraction)
+ * @returns User profile data (userId, firstName, lastName, email), or null if not authenticated
+ */
+export async function getClerkUserFromRequest(request?: Request): Promise<ClerkUserData | null> {
+  // First, try Clerk's official auth() helper
+  const { isAuthenticated, userId } = await auth({
+    acceptsToken: "session_token",
+  });
+
+  if (isAuthenticated && userId) {
+    // For web requests, use currentUser() to get full profile
+    const user = await currentUser();
+    if (user) {
+      console.log("[Auth] Got Clerk user data:", {
+        userId: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.emailAddresses[0]?.emailAddress,
+      });
+      return {
+        userId: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.emailAddresses[0]?.emailAddress || null,
+      };
+    }
+  }
+
+  // If Clerk auth failed, try mobile session token from Authorization header
+  if (request) {
+    const authHeader = request.headers.get("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.slice(7);
+
+      // First try getting user data embedded in the mobile session token
+      const mobileUserData = await getMobileSessionUserData(token);
+      if (mobileUserData) {
+        console.log("[Auth] Got user data from mobile session token:", mobileUserData);
+        return mobileUserData;
+      }
+
+      // Fall back to verifying token and fetching from Clerk backend
+      const mobileSession = await verifyMobileSessionToken(token);
+      if (mobileSession) {
+        try {
+          const user = await clerkBackend.users.getUser(mobileSession.userId);
+          console.log("[Auth] Got Clerk user data via backend API:", {
+            userId: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.emailAddresses[0]?.emailAddress,
+          });
+          return {
+            userId: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.emailAddresses[0]?.emailAddress || null,
+          };
+        } catch (error) {
+          console.error("[Auth] Failed to fetch user from Clerk backend:", error);
+          // Return partial data with just userId
+          return {
+            userId: mobileSession.userId,
+            firstName: null,
+            lastName: null,
+            email: null,
+          };
+        }
       }
     }
   }

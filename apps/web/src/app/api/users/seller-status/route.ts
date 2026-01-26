@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@buttergolf/db";
-import { getUserIdFromRequest } from "@/lib/auth";
+import { getClerkUserFromRequest } from "@/lib/auth";
 
 /**
  * GET /api/users/seller-status
@@ -10,6 +10,10 @@ import { getUserIdFromRequest } from "@/lib/auth";
  * This endpoint is optimized for quick status checks without creating
  * or modifying accounts. It syncs the database with Stripe's current
  * status if a Connect account exists.
+ *
+ * IMPORTANT: This endpoint also syncs the user to the database from Clerk
+ * if they don't exist yet. This handles the case where webhooks haven't
+ * fired (e.g., local development without ngrok).
  *
  * Response:
  * - hasAccount: boolean - Whether user has a Stripe Connect account
@@ -22,22 +26,73 @@ import { getUserIdFromRequest } from "@/lib/auth";
 export async function GET(request: Request) {
   try {
     // Support both web cookies and mobile Bearer tokens
-    const userId = await getUserIdFromRequest(request);
-    if (!userId) {
+    // Use getClerkUserFromRequest to get full profile data for user sync
+    const userData = await getClerkUserFromRequest(request);
+    if (!userData) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
+    const userId = userData.userId;
+
+    let user = await prisma.user.findUnique({
       where: { clerkId: userId },
       select: {
         id: true,
+        email: true,
         stripeConnectId: true,
         stripeOnboardingComplete: true,
         stripeAccountStatus: true,
       },
     });
 
-    // If user doesn't exist yet (webhook race condition), return no account
+    // If user doesn't exist yet (webhook hasn't fired), create from Clerk data
+    if (!user && userData.email) {
+      console.log(`[Seller Status] User not found, creating from Clerk data: ${userId}`);
+      try {
+        user = await prisma.user.create({
+          data: {
+            clerkId: userId,
+            email: userData.email,
+            firstName: userData.firstName || "",
+            lastName: userData.lastName || "",
+          },
+          select: {
+            id: true,
+            email: true,
+            stripeConnectId: true,
+            stripeOnboardingComplete: true,
+            stripeAccountStatus: true,
+          },
+        });
+        console.log(`[Seller Status] Created user ${user.id} from Clerk data`);
+      } catch (createError) {
+        // User might have been created by another request (race condition)
+        console.error(`[Seller Status] Failed to create user:`, createError);
+        user = await prisma.user.findUnique({
+          where: { clerkId: userId },
+          select: {
+            id: true,
+            email: true,
+            stripeConnectId: true,
+            stripeOnboardingComplete: true,
+            stripeAccountStatus: true,
+          },
+        });
+      }
+    } else if (user && !user.email && userData.email) {
+      // User exists but with empty data, update with Clerk data
+      console.log(`[Seller Status] Updating user ${user.id} with Clerk data`);
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          email: userData.email,
+          firstName: userData.firstName || "",
+          lastName: userData.lastName || "",
+        },
+      });
+    }
+
+    // If user still doesn't exist, return no account
     if (!user) {
       return NextResponse.json({
         hasAccount: false,
