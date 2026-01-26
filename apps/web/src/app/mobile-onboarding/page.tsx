@@ -237,7 +237,7 @@ const styles: Record<string, React.CSSProperties> = {
   spinner: {
     width: 40,
     height: 40,
-    border: `3px solid #EDEDED`,
+    border: `3px solid ${brandColors.cloudMist}`,
     borderTopColor: brandColors.spicedClementine,
     borderRadius: "50%",
     animation: "spin 1s linear infinite",

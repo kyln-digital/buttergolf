@@ -2145,7 +2145,10 @@ export default function App() {
                             <HomeScreenWrapper navigation={navigation} isAuthenticated={true} />
                           )}
                         </Stack.Screen>
-                        {/* Products screen - reuses HomeScreen (which displays product listings) */}
+                        {/* Products screen - intentionally reuses HomeScreenWrapper for deep linking support.
+                            This allows /products URLs to be handled by the app while sharing the same
+                            product listing UI as Home. In the future, this could have different filters
+                            or UI treatments if needed. See also Home screen which displays the same. */}
                         <Stack.Screen name="Products">
                           {({ navigation }: { navigation: any }) => (
                             <HomeScreenWrapper navigation={navigation} isAuthenticated={true} />

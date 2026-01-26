@@ -61,41 +61,83 @@ interface WebViewMessage {
 }
 
 /**
- * JavaScript to inject into WebView on load:
- * 1. Ensures viewport meta tag is set correctly to prevent zoom issues
- * 2. Hides Tidio chat widget which shouldn't appear in embedded WebView
+ * Hides the Tidio chat widget, which shouldn't appear in the embedded WebView.
+ *
+ * NOTE: Viewport configuration is handled server-side in the mobile-onboarding
+ * layout file (width: device-width, initialScale: 1, maximumScale: 1, userScalable: false),
+ * so we don't need to manipulate it here.
  */
 const INJECTED_JAVASCRIPT = `
   (function() {
-    // Ensure viewport is set correctly for WebView
-    var viewport = document.querySelector('meta[name="viewport"]');
-    if (viewport) {
-      viewport.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
-    } else {
-      var meta = document.createElement('meta');
-      meta.name = 'viewport';
-      meta.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no';
-      document.head.appendChild(meta);
-    }
-    
-    // Hide Tidio chat widget if it exists
+    // Hide Tidio chat widget if it exists.
+    // Returns true if a Tidio element or API was found and hide was attempted.
     var hideTidio = function() {
+      var hidSomething = false;
       var tidioChat = document.getElementById('tidio-chat');
       if (tidioChat) {
         tidioChat.style.display = 'none';
+        hidSomething = true;
       }
-      // Also try to hide via Tidio API if available
-      if (window.tidioChatApi) {
-        window.tidioChatApi.hide();
+      // Also try to hide via Tidio API if available (with defensive type checking)
+      if (
+        typeof window !== 'undefined' &&
+        typeof window.tidioChatApi !== 'undefined' &&
+        window.tidioChatApi &&
+        typeof window.tidioChatApi.hide === 'function'
+      ) {
+        try {
+          window.tidioChatApi.hide();
+          hidSomething = true;
+        } catch (e) {
+          // Ignore errors from Tidio API
+        }
+      }
+      return hidSomething;
+    };
+
+    var observer = null;
+    var observerTimeoutId = null;
+
+    var stopObserver = function() {
+      if (observer) {
+        observer.disconnect();
+        observer = null;
+      }
+      if (observerTimeoutId !== null) {
+        clearTimeout(observerTimeoutId);
+        observerTimeoutId = null;
       }
     };
-    
-    // Run immediately and on DOM changes (Tidio loads asynchronously)
+
+    var startObserver = function() {
+      if (!document.body) {
+        return;
+      }
+      if (observer) {
+        return;
+      }
+      observer = new MutationObserver(function() {
+        if (hideTidio()) {
+          // Once we've successfully hidden Tidio, we no longer need to observe.
+          stopObserver();
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      // Safety timeout: ensure we always clean up the observer after a bounded time (10 seconds).
+      observerTimeoutId = setTimeout(stopObserver, 10000);
+    };
+
+    // Run immediately to catch any already-loaded Tidio instance
     hideTidio();
-    var observer = new MutationObserver(hideTidio);
-    observer.observe(document.body, { childList: true, subtree: true });
-    
-    // Also hide after a delay in case Tidio loads late
+
+    // Start observing once the DOM is ready so document.body exists.
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', startObserver);
+    } else {
+      startObserver();
+    }
+
+    // Also hide after delays in case Tidio loads slightly later
     setTimeout(hideTidio, 1000);
     setTimeout(hideTidio, 3000);
   })();
@@ -357,7 +399,10 @@ export function SellerOnboardingGate({
             console.error("[SellerOnboardingGate] WebView error:", nativeEvent);
             setOnboardingError(nativeEvent.description || "Failed to load");
           }}
-          // Inject JS to fix viewport and hide Tidio chat
+          // Inject JS to hide Tidio chat widget in the WebView
+          // NOTE: INJECTED_JAVASCRIPT is a static constant defined in this file.
+          // Do NOT interpolate user input or external data into injectedJavaScript, as it
+          // executes directly inside the WebView and could introduce JS injection/XSS issues.
           injectedJavaScript={INJECTED_JAVASCRIPT}
           // Security settings
           javaScriptEnabled={true}
