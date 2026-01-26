@@ -70,17 +70,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-    >
+    <html lang="en" suppressHydrationWarning>
       <body className={urbanist.className}>
         <NextTamaguiProvider>
           <ErrorBoundary name="FavouritesProvider">
             <FavouritesProvider>
               <CartProvider>
-                <ConditionalLayout excludeRoutes={["/coming-soon", "/sign-in", "/sign-in/*", "/sign-up", "/sign-up/*", "/mobile-onboarding"]}>
-                  <ErrorBoundary name="ButterHeader" fallback={<div style={{ height: 72, backgroundColor: "#f5f5f5" }} />}>
+                <ConditionalLayout
+                  excludeRoutes={[
+                    "/coming-soon",
+                    "/sign-in",
+                    "/sign-in/*",
+                    "/sign-up",
+                    "/sign-up/*",
+                    "/mobile-onboarding",
+                  ]}
+                >
+                  <ErrorBoundary
+                    name="ButterHeader"
+                    fallback={<div style={{ height: 72, backgroundColor: "#f5f5f5" }} />}
+                  >
                     <ButterHeader />
                   </ErrorBoundary>
                   <AppPromoBanner />
@@ -92,7 +101,13 @@ export default function RootLayout({
           </ErrorBoundary>
         </NextTamaguiProvider>
         <Analytics />
-        <Script src="//code.tidio.co/ba25ralqm9iybtdmfwzusfi6xuyd2qag.js" strategy="afterInteractive" />
+        {/* Tidio chat - excluded from mobile-onboarding WebView */}
+        <ConditionalLayout excludeRoutes={["/mobile-onboarding"]}>
+          <Script
+            src="//code.tidio.co/ba25ralqm9iybtdmfwzusfi6xuyd2qag.js"
+            strategy="afterInteractive"
+          />
+        </ConditionalLayout>
       </body>
     </html>
   );
