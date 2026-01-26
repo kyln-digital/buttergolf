@@ -141,7 +141,13 @@ export function MessagesScreen({
   if (!isAuthenticated) {
     return (
       <Column width="100%" height="100%" paddingTop={insets.top}>
-        <Column flex={1} alignItems="center" justifyContent="center" gap="$lg" paddingHorizontal="$lg">
+        <Column
+          flex={1}
+          alignItems="center"
+          justifyContent="center"
+          gap="$lg"
+          paddingHorizontal="$lg"
+        >
           <MessageCircle size={64} color="$primary" />
           <Heading level={2} textAlign="center">
             Sign in to Message
@@ -231,7 +237,13 @@ export function MessagesScreen({
           <Text color="$textSecondary">Loading messages...</Text>
         </Column>
       ) : conversations.length === 0 ? (
-        <Column flex={1} alignItems="center" justifyContent="center" gap="$lg" paddingHorizontal="$lg">
+        <Column
+          flex={1}
+          alignItems="center"
+          justifyContent="center"
+          gap="$lg"
+          paddingHorizontal="$lg"
+        >
           <MessageCircle size={56} color="$textTertiary" />
           <Heading level={2} textAlign="center">
             No messages yet
@@ -288,7 +300,9 @@ export function MessagesScreen({
                       </Column>
                       {conversation.unreadCount > 0 && (
                         <Badge size="sm" backgroundColor="$primary">
-                          {conversation.unreadCount}
+                          <Text size="$2" color="$textInverse" fontWeight="600">
+                            {conversation.unreadCount}
+                          </Text>
                         </Badge>
                       )}
                     </Row>
@@ -304,7 +318,9 @@ export function MessagesScreen({
 
                     <Row alignItems="center" justifyContent="space-between">
                       <Text size="$3" color="$textTertiary">
-                        {formatDistanceToNow(new Date(conversation.lastMessageAt), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(conversation.lastMessageAt), {
+                          addSuffix: true,
+                        })}
                       </Text>
                       <ChevronRight size={16} color="$textTertiary" />
                     </Row>

@@ -745,22 +745,34 @@ function AccountScreenWrapper({ navigation }: { navigation: any }) {
 
   useEffect(() => {
     const fetchAccountData = async () => {
+      // Skip API calls if no API URL configured
+      if (!apiUrl) return;
+
+      // Fetch orders count - fail silently if endpoint doesn't exist
       try {
-        // Fetch orders to get pending count
         const ordersResponse = await deferredGet<{ orders: any[]; stats?: { active: number } }>(
           `${apiUrl}/api/orders?filter=active&limit=1`,
           { getToken }
         );
-        setPendingOrdersCount(ordersResponse?.stats?.active || 0);
+        // Only update if we got a valid response with expected shape
+        if (ordersResponse && "orders" in ordersResponse) {
+          setPendingOrdersCount(ordersResponse?.stats?.active || 0);
+        }
+      } catch {
+        // Endpoint may not exist yet - use default value
+      }
 
-        // Fetch seller status
+      // Fetch seller status - fail silently if endpoint doesn't exist
+      try {
         const sellerResponse = await deferredGet<{ stripeOnboardingComplete: boolean }>(
           `${apiUrl}/api/seller/status`,
           { getToken }
         );
-        setIsSellerOnboarded(sellerResponse?.stripeOnboardingComplete || false);
-      } catch (error) {
-        console.error("Failed to fetch account data:", error);
+        if (sellerResponse && typeof sellerResponse === "object") {
+          setIsSellerOnboarded(sellerResponse?.stripeOnboardingComplete || false);
+        }
+      } catch {
+        // Endpoint may not exist yet - use default value
       }
     };
 

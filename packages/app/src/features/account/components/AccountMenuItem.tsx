@@ -86,7 +86,9 @@ export function AccountMenuItem({
                         : "neutral"
             }
           >
-            {badge}
+            <Text size="$2" color="$textInverse" fontWeight="600">
+              {badge}
+            </Text>
           </Badge>
         )}
 
