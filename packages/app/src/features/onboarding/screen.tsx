@@ -20,70 +20,61 @@ const CARD_HEIGHT = CAROUSEL_HEIGHT * 0.46; // Each row is ~46% of carousel heig
 const CARD_WIDTH = CARD_HEIGHT * 1.5; // 3:2 aspect ratio to match image dimensions (1536×1024)
 const GAP = 12; // Gap between cards
 
-// Shuffle array using Fisher-Yates algorithm
-function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
-  }
-  return shuffled;
-}
-
-// Branded club images - premium golf equipment photos
-const brandedClubImages = [
+// Top row images: image.png, image2.png, image4.png, image6.png
+const topRowImages = [
   {
-    id: "branded-0",
+    id: "top-0",
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     source: require("../../../../../apps/mobile/assets/branded_clubs/image.png"),
     label: "Premium Golf Club",
   },
   {
-    id: "branded-1",
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    source: require("../../../../../apps/mobile/assets/branded_clubs/image1.png"),
-    label: "Premium Golf Club",
-  },
-  {
-    id: "branded-2",
+    id: "top-2",
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     source: require("../../../../../apps/mobile/assets/branded_clubs/image2.png"),
     label: "Premium Golf Club",
   },
   {
-    id: "branded-3",
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    source: require("../../../../../apps/mobile/assets/branded_clubs/image3.png"),
-    label: "Premium Golf Club",
-  },
-  {
-    id: "branded-4",
+    id: "top-4",
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     source: require("../../../../../apps/mobile/assets/branded_clubs/image4.png"),
     label: "Premium Golf Club",
   },
   {
-    id: "branded-5",
+    id: "top-6",
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    source: require("../../../../../apps/mobile/assets/branded_clubs/image6.png"),
+    label: "Premium Golf Club",
+  },
+];
+
+// Bottom row images: image1.png, image3.png, image5.png, image7.png
+const bottomRowImages = [
+  {
+    id: "bottom-1",
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    source: require("../../../../../apps/mobile/assets/branded_clubs/image1.png"),
+    label: "Premium Golf Club",
+  },
+  {
+    id: "bottom-3",
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    source: require("../../../../../apps/mobile/assets/branded_clubs/image3.png"),
+    label: "Premium Golf Club",
+  },
+  {
+    id: "bottom-5",
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     source: require("../../../../../apps/mobile/assets/branded_clubs/image5.png"),
     label: "Premium Golf Club",
   },
   {
-    id: "branded-6",
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    source: require("../../../../../apps/mobile/assets/branded_clubs/image6.png"),
-    label: "Premium Golf Club",
-  },
-  {
-    id: "branded-7",
+    id: "bottom-7",
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     source: require("../../../../../apps/mobile/assets/branded_clubs/image7.png"),
     label: "Premium Golf Club",
   },
 ];
-
-// Shuffle images once at module load for random order
-const carouselImages = shuffleArray(brandedClubImages);
 
 interface OnboardingScreenProps {
   onSkip?: () => void;
@@ -108,11 +99,9 @@ export function OnboardingScreen({
   const topRowX = useRef(new Animated.Value(0)).current;
   const bottomRowX = useRef(new Animated.Value(0)).current;
 
-  // Duplicate images for seamless loop
-  const loopedImages = [...carouselImages, ...carouselImages];
-
-  // Calculate total width of one set of images
-  const singleWidth = carouselImages.length * (CARD_WIDTH + GAP);
+  // Calculate total width of one set of images for each row
+  const topRowWidth = topRowImages.length * (CARD_WIDTH + GAP);
+  const bottomRowWidth = bottomRowImages.length * (CARD_WIDTH + GAP);
 
   useEffect(() => {
     // Duration for smooth scrolling
@@ -121,7 +110,7 @@ export function OnboardingScreen({
     // Top row scrolls left
     const topAnimation = Animated.loop(
       Animated.timing(topRowX, {
-        toValue: -singleWidth,
+        toValue: -topRowWidth,
         duration,
         easing: Easing.linear,
         useNativeDriver: true,
@@ -131,7 +120,7 @@ export function OnboardingScreen({
     // Bottom row scrolls right (starts offset for stagger effect)
     const bottomAnimation = Animated.loop(
       Animated.timing(bottomRowX, {
-        toValue: singleWidth,
+        toValue: bottomRowWidth,
         duration,
         easing: Easing.linear,
         useNativeDriver: true,
@@ -145,7 +134,7 @@ export function OnboardingScreen({
       topAnimation.stop();
       bottomAnimation.stop();
     };
-  }, [topRowX, bottomRowX, singleWidth]);
+  }, [topRowX, bottomRowX, topRowWidth, bottomRowWidth]);
 
   return (
     <YStack
@@ -194,9 +183,9 @@ export function OnboardingScreen({
             transform: [{ translateX: topRowX }],
           }}
         >
-          {carouselImages.concat(carouselImages).map((item, index) => (
+          {topRowImages.concat(topRowImages).map((item, index) => (
             <View
-              key={`top-${item.id}-${index}`}
+              key={`${item.id}-${index}`}
               width={CARD_WIDTH}
               height={CARD_HEIGHT}
               marginRight={GAP}
@@ -231,9 +220,9 @@ export function OnboardingScreen({
             transform: [{ translateX: bottomRowX }],
           }}
         >
-          {carouselImages.concat(carouselImages).map((item, index) => (
+          {bottomRowImages.concat(bottomRowImages).map((item, index) => (
             <View
-              key={`bottom-${item.id}-${index}`}
+              key={`${item.id}-${index}`}
               width={CARD_WIDTH}
               height={CARD_HEIGHT}
               marginLeft={GAP}
