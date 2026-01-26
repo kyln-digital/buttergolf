@@ -1,11 +1,8 @@
 "use client";
 
 import React from "react";
-import { Row, Column, Text } from "@buttergolf/ui";
-import {
-  ArrowLeft,
-  SlidersHorizontal,
-} from "@tamagui/lucide-icons";
+import { Row, Column } from "@buttergolf/ui";
+import { ArrowLeft, SlidersHorizontal } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SearchInputField } from "./SearchInputField";
 
@@ -37,12 +34,7 @@ export function MobileCategoryHeader({
   };
 
   return (
-    <Column
-      paddingHorizontal="$4"
-      paddingTop={insets.top + 16}
-      paddingBottom="$3"
-      gap="$3"
-    >
+    <Column paddingHorizontal="$4" paddingTop={insets.top + 16} paddingBottom="$3">
       {/* Header Row with Back Button, Search, and Filter */}
       <Row width="100%" alignItems="center" gap="$3">
         {/* Back Button */}
@@ -58,11 +50,7 @@ export function MobileCategoryHeader({
         </Column>
 
         {/* Search Input */}
-        <SearchInputField
-          value={query}
-          onChangeText={handleChangeText}
-          placeholder={placeholder}
-        />
+        <SearchInputField value={query} onChangeText={handleChangeText} placeholder={placeholder} />
 
         {/* Filter Button */}
         <Column
@@ -76,16 +64,6 @@ export function MobileCategoryHeader({
           <SlidersHorizontal size={24} color="$primary" />
         </Column>
       </Row>
-
-      {/* Category Name */}
-      <Text
-        size="$6"
-        fontWeight="700"
-        color="$text"
-        alignSelf="flex-start"
-      >
-        {categoryName}
-      </Text>
     </Column>
   );
 }

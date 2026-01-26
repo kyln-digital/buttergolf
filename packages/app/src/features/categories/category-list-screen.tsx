@@ -7,7 +7,12 @@ import type { ProductCardData } from "../../types/product";
 import { useLink } from "solito/navigation";
 import { routes } from "../../navigation";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MobileCategoryHeader, MobileBottomNav, MobileFilterSheet, type FilterState } from "../../components/mobile";
+import {
+  MobileCategoryHeader,
+  MobileBottomNav,
+  MobileFilterSheet,
+  type FilterState,
+} from "../../components/mobile";
 
 interface CategoryListScreenProps {
   categorySlug: string;
@@ -64,9 +69,7 @@ export function CategoryListScreen({
       setLoading(true);
       onFetchProducts(categorySlug)
         .then((fetchedProducts) => {
-          console.log(
-            `Fetched ${fetchedProducts.length} products for ${categorySlug}`,
-          );
+          console.log(`Fetched ${fetchedProducts.length} products for ${categorySlug}`);
           setProducts(fetchedProducts);
         })
         .catch((error) => {
@@ -107,7 +110,7 @@ export function CategoryListScreen({
         }
         return;
       }
-      
+
       const result = await onToggleFavourite(productId);
       if (result.requiresAuth && onLoginPress) {
         onLoginPress();
@@ -130,8 +133,7 @@ export function CategoryListScreen({
     // Apply condition filter
     if (filters.conditions.length > 0) {
       result = result.filter(
-        (product) =>
-          product.condition && filters.conditions.includes(product.condition)
+        (product) => product.condition && filters.conditions.includes(product.condition)
       );
     }
 
@@ -206,7 +208,7 @@ export function CategoryListScreen({
       {/* Scrollable Content */}
       <ScrollView
         contentContainerStyle={{
-          paddingTop: insets.top + 130, // Account for sticky header
+          paddingTop: insets.top + 90, // Account for sticky header (search bar only)
           paddingBottom: insets.bottom + 80, // Account for bottom nav
           paddingHorizontal: 16,
         }}
@@ -225,12 +227,7 @@ export function CategoryListScreen({
             <Text size="$4" color="$primary" fontWeight="500">
               {activeFilterCount} filter{activeFilterCount !== 1 ? "s" : ""} active
             </Text>
-            <Text
-              size="$4"
-              color="$primary"
-              fontWeight="600"
-              onPress={handleClearFilters}
-            >
+            <Text size="$4" color="$primary" fontWeight="600" onPress={handleClearFilters}>
               Clear
             </Text>
           </Row>
@@ -265,27 +262,23 @@ export function CategoryListScreen({
         ) : (
           /* 2-column grid */
           <Column gap="$4">
-            {Array.from({ length: Math.ceil(filteredProducts.length / 2) }).map(
-              (_, rowIndex) => (
-                <Row key={rowIndex} gap="$4">
-                  {filteredProducts
-                    .slice(rowIndex * 2, rowIndex * 2 + 2)
-                    .map((product) => (
-                      <Column key={product.id} flex={1}>
-                        <ProductCardWithLink
-                          product={product}
-                          isFavourited={favourites.has(product.id)}
-                          onFavourite={handleFavouriteToggle}
-                          onProductPress={onProductPress}
-                        />
-                      </Column>
-                    ))}
-                  {/* Add empty column if odd number of products in last row */}
-                  {rowIndex === Math.ceil(filteredProducts.length / 2) - 1 &&
-                    filteredProducts.length % 2 !== 0 && <Column flex={1} />}
-                </Row>
-              ),
-            )}
+            {Array.from({ length: Math.ceil(filteredProducts.length / 2) }).map((_, rowIndex) => (
+              <Row key={rowIndex} gap="$4">
+                {filteredProducts.slice(rowIndex * 2, rowIndex * 2 + 2).map((product) => (
+                  <Column key={product.id} flex={1}>
+                    <ProductCardWithLink
+                      product={product}
+                      isFavourited={favourites.has(product.id)}
+                      onFavourite={handleFavouriteToggle}
+                      onProductPress={onProductPress}
+                    />
+                  </Column>
+                ))}
+                {/* Add empty column if odd number of products in last row */}
+                {rowIndex === Math.ceil(filteredProducts.length / 2) - 1 &&
+                  filteredProducts.length % 2 !== 0 && <Column flex={1} />}
+              </Row>
+            ))}
           </Column>
         )}
       </ScrollView>
