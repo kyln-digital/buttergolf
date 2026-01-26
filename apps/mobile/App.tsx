@@ -87,6 +87,7 @@ import {
   setupNotificationHandlers,
 } from "./lib/notifications";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { PortalProvider } from "@tamagui/portal";
 import { Button, Text } from "@buttergolf/ui";
 import { useState, useEffect, useCallback } from "react";
 import { useFonts } from "expo-font";
@@ -181,6 +182,9 @@ const linking = {
       Rounds: {
         path: routes.rounds.slice(1), // Remove leading '/' for React Navigation
         exact: true,
+      },
+      Products: {
+        path: "products", // 'products' for product listing (maps to Home)
       },
       ProductDetail: {
         path: "products/:id", // 'products/:id' for dynamic routing
@@ -2124,212 +2128,228 @@ export default function App() {
       <StripeProvider publishableKey={stripePublishableKey}>
         <ClerkProvider tokenCache={tokenCache} publishableKey={clerkPublishableKey}>
           {/* Official Tamagui Expo pattern: use useColorScheme() for theme */}
-          <Provider defaultTheme={validColorScheme}>
-            <ClerkLoaded>
-              <SignedIn>
-                {/* SellerStatusProvider fetches seller status ONCE on sign-in and shares via context.
+          <PortalProvider shouldAddRootHost>
+            <Provider defaultTheme={validColorScheme}>
+              <ClerkLoaded>
+                <SignedIn>
+                  {/* SellerStatusProvider fetches seller status ONCE on sign-in and shares via context.
                 This prevents the infinite API call loop that occurred when each screen
                 had its own useSellerStatus hook instance. DO NOT remove this provider
                 or revert to a hook-based approach - see context/SellerStatusContext.tsx */}
-                <SellerStatusProvider>
-                  <PushTokenRegistration />
-                  <NavigationContainer linking={linking} theme={navigationTheme}>
-                    <Stack.Navigator screenOptions={{ headerShown: false }}>
-                      <Stack.Screen name="Home">
-                        {({ navigation }: { navigation: any }) => (
-                          <HomeScreenWrapper navigation={navigation} isAuthenticated={true} />
-                        )}
-                      </Stack.Screen>
-                      <Stack.Screen
-                        name="Rounds"
-                        component={RoundsScreen}
-                        options={{ title: "Your Rounds" }}
-                      />
-                      <Stack.Screen
-                        name="ProductDetail"
-                        options={{ title: "Product Details", headerShown: false }}
-                      >
-                        {({
-                          route,
-                          navigation,
-                        }: {
-                          route: RouteParams<"ProductDetail">;
-                          navigation: any;
-                        }) => (
-                          <ProductDetailScreenWrapper
-                            navigation={navigation}
-                            productId={route.params?.id || ""}
-                            isAuthenticated={true}
-                          />
-                        )}
-                      </Stack.Screen>
-                      <Stack.Screen
-                        name="Category"
-                        options={({ route }: { route: RouteParams<"Category"> }) => {
-                          const slug = route.params?.slug;
-                          return {
-                            title: slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : "Category",
-                            headerShown: false, // CategoryListScreen has its own header
-                          };
-                        }}
-                      >
-                        {({
-                          route,
-                          navigation,
-                        }: {
-                          route: RouteParams<"Category">;
-                          navigation: any;
-                        }) => {
-                          const slug = route.params?.slug;
-                          return (
-                            <CategoryListScreenWrapper
+                  <SellerStatusProvider>
+                    <PushTokenRegistration />
+                    <NavigationContainer linking={linking} theme={navigationTheme}>
+                      <Stack.Navigator screenOptions={{ headerShown: false }}>
+                        <Stack.Screen name="Home">
+                          {({ navigation }: { navigation: any }) => (
+                            <HomeScreenWrapper navigation={navigation} isAuthenticated={true} />
+                          )}
+                        </Stack.Screen>
+                        {/* Products screen - intentionally reuses HomeScreenWrapper for deep linking support.
+                            This allows /products URLs to be handled by the app while sharing the same
+                            product listing UI as Home. In the future, this could have different filters
+                            or UI treatments if needed. See also Home screen which displays the same. */}
+                        <Stack.Screen name="Products">
+                          {({ navigation }: { navigation: any }) => (
+                            <HomeScreenWrapper navigation={navigation} isAuthenticated={true} />
+                          )}
+                        </Stack.Screen>
+                        <Stack.Screen
+                          name="Rounds"
+                          component={RoundsScreen}
+                          options={{ title: "Your Rounds" }}
+                        />
+                        <Stack.Screen
+                          name="ProductDetail"
+                          options={{ title: "Product Details", headerShown: false }}
+                        >
+                          {({
+                            route,
+                            navigation,
+                          }: {
+                            route: RouteParams<"ProductDetail">;
+                            navigation: any;
+                          }) => (
+                            <ProductDetailScreenWrapper
                               navigation={navigation}
-                              categorySlug={slug || ""}
-                              categoryName={
-                                slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : "Category"
-                              }
+                              productId={route.params?.id || ""}
                               isAuthenticated={true}
                             />
-                          );
-                        }}
-                      </Stack.Screen>
-                      <Stack.Screen name="Account" options={{ headerShown: false }}>
-                        {({ navigation }: { navigation: any }) => (
-                          <AccountScreenWrapper navigation={navigation} />
-                        )}
-                      </Stack.Screen>
-                      <Stack.Screen name="ProfileEdit" options={{ headerShown: false }}>
-                        {({ navigation }: { navigation: any }) => (
-                          <ProfileEditScreenWrapper navigation={navigation} />
-                        )}
-                      </Stack.Screen>
-                      <Stack.Screen name="Orders" options={{ headerShown: false }}>
-                        {({ navigation }: { navigation: any }) => (
-                          <OrdersScreenWrapper navigation={navigation} />
-                        )}
-                      </Stack.Screen>
-                      <Stack.Screen name="OrderDetail" options={{ headerShown: false }}>
-                        {({
-                          route,
-                          navigation,
-                        }: {
-                          route: { params?: { orderId?: string } };
-                          navigation: any;
-                        }) => (
-                          <OrderDetailScreenWrapper
-                            navigation={navigation}
-                            orderId={route.params?.orderId || ""}
-                          />
-                        )}
-                      </Stack.Screen>
-                      <Stack.Screen name="Addresses" options={{ headerShown: false }}>
-                        {({ navigation }: { navigation: any }) => (
-                          <AddressesScreenWrapper navigation={navigation} />
-                        )}
-                      </Stack.Screen>
-                      <Stack.Screen name="NotificationSettings" options={{ headerShown: false }}>
-                        {({ navigation }: { navigation: any }) => (
-                          <NotificationSettingsScreenWrapper navigation={navigation} />
-                        )}
-                      </Stack.Screen>
-                      <Stack.Screen name="HelpSupport" options={{ headerShown: false }}>
-                        {({ navigation }: { navigation: any }) => (
-                          <HelpSupportScreenWrapper navigation={navigation} />
-                        )}
-                      </Stack.Screen>
-                      <Stack.Screen name="SellerDashboard" options={{ headerShown: false }}>
-                        {({ navigation }: { navigation: any }) => (
-                          <SellerDashboardScreenWrapper navigation={navigation} />
-                        )}
-                      </Stack.Screen>
-                      <Stack.Screen name="SellerSales" options={{ headerShown: false }}>
-                        {({ navigation }: { navigation: any }) => (
-                          <SellerSalesScreenWrapper navigation={navigation} />
-                        )}
-                      </Stack.Screen>
-                      <Stack.Screen name="SellerListings" options={{ headerShown: false }}>
-                        {({ navigation }: { navigation: any }) => (
-                          <SellerListingsScreenWrapper navigation={navigation} />
-                        )}
-                      </Stack.Screen>
-                      <Stack.Screen
-                        name="Sell"
-                        options={{
-                          headerShown: false, // SellScreen has its own header
-                          presentation: "modal",
-                        }}
-                      >
-                        {({ navigation }: { navigation: any }) => (
-                          <SellScreenWrapper navigation={navigation} />
-                        )}
-                      </Stack.Screen>
-                      <Stack.Screen name="Favourites" options={{ headerShown: false }}>
-                        {({ navigation }: { navigation: any }) => (
-                          <FavouritesScreenWrapper navigation={navigation} isAuthenticated={true} />
-                        )}
-                      </Stack.Screen>
-                      <Stack.Screen name="Messages" options={{ headerShown: false }}>
-                        {({ navigation }: { navigation: any }) => (
-                          <MessagesScreenWrapper navigation={navigation} isAuthenticated={true} />
-                        )}
-                      </Stack.Screen>
-                      <Stack.Screen name="MessageThread" options={{ headerShown: false }}>
-                        {({
-                          route,
-                          navigation,
-                        }: {
-                          route: {
-                            params?: {
-                              orderId?: string;
-                              otherUserName?: string;
-                              otherUserImage?: string | null;
-                              productTitle?: string;
-                              userRole?: "buyer" | "seller";
+                          )}
+                        </Stack.Screen>
+                        <Stack.Screen
+                          name="Category"
+                          options={({ route }: { route: RouteParams<"Category"> }) => {
+                            const slug = route.params?.slug;
+                            return {
+                              title: slug
+                                ? slug.charAt(0).toUpperCase() + slug.slice(1)
+                                : "Category",
+                              headerShown: false, // CategoryListScreen has its own header
                             };
-                          };
-                          navigation: any;
-                        }) => (
-                          <MessageThreadScreenWrapper
-                            navigation={navigation}
-                            orderId={route.params?.orderId || ""}
-                            otherUserName={route.params?.otherUserName || "User"}
-                            otherUserImage={route.params?.otherUserImage ?? null}
-                            productTitle={route.params?.productTitle || "Order"}
-                            userRole={route.params?.userRole || "buyer"}
-                          />
-                        )}
-                      </Stack.Screen>
-                      <Stack.Screen name="Offers" options={{ headerShown: false }}>
-                        {({ navigation }: { navigation: any }) => (
-                          <OffersListScreenWrapper navigation={navigation} />
-                        )}
-                      </Stack.Screen>
-                      <Stack.Screen name="OfferDetail" options={{ headerShown: false }}>
-                        {({
-                          route,
-                          navigation,
-                        }: {
-                          route: { params?: { offerId?: string } };
-                          navigation: any;
-                        }) => (
-                          <OfferDetailScreenWrapper
-                            navigation={navigation}
-                            offerId={route.params?.offerId || ""}
-                          />
-                        )}
-                      </Stack.Screen>
-                    </Stack.Navigator>
+                          }}
+                        >
+                          {({
+                            route,
+                            navigation,
+                          }: {
+                            route: RouteParams<"Category">;
+                            navigation: any;
+                          }) => {
+                            const slug = route.params?.slug;
+                            return (
+                              <CategoryListScreenWrapper
+                                navigation={navigation}
+                                categorySlug={slug || ""}
+                                categoryName={
+                                  slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : "Category"
+                                }
+                                isAuthenticated={true}
+                              />
+                            );
+                          }}
+                        </Stack.Screen>
+                        <Stack.Screen name="Account" options={{ headerShown: false }}>
+                          {({ navigation }: { navigation: any }) => (
+                            <AccountScreenWrapper navigation={navigation} />
+                          )}
+                        </Stack.Screen>
+                        <Stack.Screen name="ProfileEdit" options={{ headerShown: false }}>
+                          {({ navigation }: { navigation: any }) => (
+                            <ProfileEditScreenWrapper navigation={navigation} />
+                          )}
+                        </Stack.Screen>
+                        <Stack.Screen name="Orders" options={{ headerShown: false }}>
+                          {({ navigation }: { navigation: any }) => (
+                            <OrdersScreenWrapper navigation={navigation} />
+                          )}
+                        </Stack.Screen>
+                        <Stack.Screen name="OrderDetail" options={{ headerShown: false }}>
+                          {({
+                            route,
+                            navigation,
+                          }: {
+                            route: { params?: { orderId?: string } };
+                            navigation: any;
+                          }) => (
+                            <OrderDetailScreenWrapper
+                              navigation={navigation}
+                              orderId={route.params?.orderId || ""}
+                            />
+                          )}
+                        </Stack.Screen>
+                        <Stack.Screen name="Addresses" options={{ headerShown: false }}>
+                          {({ navigation }: { navigation: any }) => (
+                            <AddressesScreenWrapper navigation={navigation} />
+                          )}
+                        </Stack.Screen>
+                        <Stack.Screen name="NotificationSettings" options={{ headerShown: false }}>
+                          {({ navigation }: { navigation: any }) => (
+                            <NotificationSettingsScreenWrapper navigation={navigation} />
+                          )}
+                        </Stack.Screen>
+                        <Stack.Screen name="HelpSupport" options={{ headerShown: false }}>
+                          {({ navigation }: { navigation: any }) => (
+                            <HelpSupportScreenWrapper navigation={navigation} />
+                          )}
+                        </Stack.Screen>
+                        <Stack.Screen name="SellerDashboard" options={{ headerShown: false }}>
+                          {({ navigation }: { navigation: any }) => (
+                            <SellerDashboardScreenWrapper navigation={navigation} />
+                          )}
+                        </Stack.Screen>
+                        <Stack.Screen name="SellerSales" options={{ headerShown: false }}>
+                          {({ navigation }: { navigation: any }) => (
+                            <SellerSalesScreenWrapper navigation={navigation} />
+                          )}
+                        </Stack.Screen>
+                        <Stack.Screen name="SellerListings" options={{ headerShown: false }}>
+                          {({ navigation }: { navigation: any }) => (
+                            <SellerListingsScreenWrapper navigation={navigation} />
+                          )}
+                        </Stack.Screen>
+                        <Stack.Screen
+                          name="Sell"
+                          options={{
+                            headerShown: false, // SellScreen has its own header
+                            presentation: "modal",
+                          }}
+                        >
+                          {({ navigation }: { navigation: any }) => (
+                            <SellScreenWrapper navigation={navigation} />
+                          )}
+                        </Stack.Screen>
+                        <Stack.Screen name="Favourites" options={{ headerShown: false }}>
+                          {({ navigation }: { navigation: any }) => (
+                            <FavouritesScreenWrapper
+                              navigation={navigation}
+                              isAuthenticated={true}
+                            />
+                          )}
+                        </Stack.Screen>
+                        <Stack.Screen name="Messages" options={{ headerShown: false }}>
+                          {({ navigation }: { navigation: any }) => (
+                            <MessagesScreenWrapper navigation={navigation} isAuthenticated={true} />
+                          )}
+                        </Stack.Screen>
+                        <Stack.Screen name="MessageThread" options={{ headerShown: false }}>
+                          {({
+                            route,
+                            navigation,
+                          }: {
+                            route: {
+                              params?: {
+                                orderId?: string;
+                                otherUserName?: string;
+                                otherUserImage?: string | null;
+                                productTitle?: string;
+                                userRole?: "buyer" | "seller";
+                              };
+                            };
+                            navigation: any;
+                          }) => (
+                            <MessageThreadScreenWrapper
+                              navigation={navigation}
+                              orderId={route.params?.orderId || ""}
+                              otherUserName={route.params?.otherUserName || "User"}
+                              otherUserImage={route.params?.otherUserImage ?? null}
+                              productTitle={route.params?.productTitle || "Order"}
+                              userRole={route.params?.userRole || "buyer"}
+                            />
+                          )}
+                        </Stack.Screen>
+                        <Stack.Screen name="Offers" options={{ headerShown: false }}>
+                          {({ navigation }: { navigation: any }) => (
+                            <OffersListScreenWrapper navigation={navigation} />
+                          )}
+                        </Stack.Screen>
+                        <Stack.Screen name="OfferDetail" options={{ headerShown: false }}>
+                          {({
+                            route,
+                            navigation,
+                          }: {
+                            route: { params?: { offerId?: string } };
+                            navigation: any;
+                          }) => (
+                            <OfferDetailScreenWrapper
+                              navigation={navigation}
+                              offerId={route.params?.offerId || ""}
+                            />
+                          )}
+                        </Stack.Screen>
+                      </Stack.Navigator>
+                    </NavigationContainer>
+                  </SellerStatusProvider>
+                </SignedIn>
+                <SignedOut>
+                  {/* Render the designed onboarding screen (animations currently disabled for stability) */}
+                  <NavigationContainer linking={linking} theme={navigationTheme}>
+                    <OnboardingFlow />
                   </NavigationContainer>
-                </SellerStatusProvider>
-              </SignedIn>
-              <SignedOut>
-                {/* Render the designed onboarding screen (animations currently disabled for stability) */}
-                <NavigationContainer linking={linking} theme={navigationTheme}>
-                  <OnboardingFlow />
-                </NavigationContainer>
-              </SignedOut>
-            </ClerkLoaded>
-          </Provider>
+                </SignedOut>
+              </ClerkLoaded>
+            </Provider>
+          </PortalProvider>
         </ClerkProvider>
       </StripeProvider>
     </SafeAreaProvider>
