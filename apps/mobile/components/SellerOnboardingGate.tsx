@@ -329,13 +329,7 @@ export function SellerOnboardingGate({
         <View style={styles.webViewHeader}>
           <View style={styles.headerLeft} />
           <View style={styles.headerCenter}>
-            <View style={styles.headerTitleContainer}>
-              <ActivityIndicator
-                size="small"
-                color={brandColors.spicedClementine}
-                style={styles.headerSpinner}
-              />
-            </View>
+            <View style={styles.headerTitleContainer}>{/* Loading handled by web page */}</View>
           </View>
           <View style={styles.headerRight}>
             {/* Close button - tap to cancel */}
@@ -358,8 +352,6 @@ export function SellerOnboardingGate({
           source={{ uri: webViewUrl }}
           style={styles.webView}
           onMessage={handleWebViewMessage}
-          onLoadStart={() => setWebViewLoading(true)}
-          onLoadEnd={() => setWebViewLoading(false)}
           onError={(syntheticEvent) => {
             const { nativeEvent } = syntheticEvent;
             console.error("[SellerOnboardingGate] WebView error:", nativeEvent);
@@ -372,13 +364,6 @@ export function SellerOnboardingGate({
           domStorageEnabled={true}
           sharedCookiesEnabled={false}
           thirdPartyCookiesEnabled={false}
-          // UX settings
-          startInLoadingState={true}
-          renderLoading={() => (
-            <View style={styles.webViewLoading}>
-              <ActivityIndicator size="large" color={brandColors.spicedClementine} />
-            </View>
-          )}
           // iOS specific
           allowsBackForwardNavigationGestures={false}
           // Android specific
@@ -398,13 +383,6 @@ export function SellerOnboardingGate({
             return false;
           }}
         />
-
-        {/* Loading overlay for WebView loading state */}
-        {webViewLoading && (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color={brandColors.spicedClementine} />
-          </View>
-        )}
       </SafeAreaView>
     );
   }
@@ -503,22 +481,6 @@ const styles = StyleSheet.create({
   },
   webView: {
     flex: 1,
-    backgroundColor: brandColors.vanillaCream,
-  },
-  webViewLoading: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: brandColors.vanillaCream,
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(255, 250, 210, 0.9)",
+    backgroundColor: brandColors.pureWhite,
   },
 });

@@ -3,10 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { loadConnectAndInitialize } from "@stripe/connect-js";
-import {
-  ConnectAccountOnboarding,
-  ConnectComponentsProvider,
-} from "@stripe/react-connect-js";
+import { ConnectAccountOnboarding, ConnectComponentsProvider } from "@stripe/react-connect-js";
 import { brandColors } from "@buttergolf/config";
 import type { StripeConnectInstance, StepChange } from "@stripe/connect-js";
 
@@ -53,8 +50,9 @@ export default function MobileOnboardingPage() {
   const token = searchParams.get("token");
   const apiUrl = searchParams.get("apiUrl") || "";
 
-  const [stripeConnectInstance, setStripeConnectInstance] =
-    useState<StripeConnectInstance | null>(null);
+  const [stripeConnectInstance, setStripeConnectInstance] = useState<StripeConnectInstance | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -89,22 +87,17 @@ export default function MobileOnboardingPage() {
       const instance = loadConnectAndInitialize({
         publishableKey,
         fetchClientSecret: async () => {
-          const response = await fetch(
-            `${baseUrl}/api/stripe/connect/account`,
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
+          const response = await fetch(`${baseUrl}/api/stripe/connect/account`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
 
           if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(
-              errorData.error || "Failed to initialize onboarding"
-            );
+            throw new Error(errorData.error || "Failed to initialize onboarding");
           }
 
           const { clientSecret } = await response.json();
@@ -127,8 +120,7 @@ export default function MobileOnboardingPage() {
       setLoading(false);
       postMessageToRN({ type: "initialized" });
     } catch (err) {
-      const errorMsg =
-        err instanceof Error ? err.message : "Failed to initialize onboarding";
+      const errorMsg = err instanceof Error ? err.message : "Failed to initialize onboarding";
       console.error("[MobileOnboarding] Error:", err);
       setError(errorMsg);
       setLoading(false);
@@ -226,9 +218,11 @@ export default function MobileOnboardingPage() {
 const styles: Record<string, React.CSSProperties> = {
   container: {
     minHeight: "100vh",
-    backgroundColor: brandColors.vanillaCream,
+    backgroundColor: brandColors.pureWhite,
     display: "flex",
     flexDirection: "column",
+    paddingLeft: 16,
+    paddingRight: 16,
   },
   loadingContainer: {
     flex: 1,
@@ -238,11 +232,12 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "center",
     padding: 24,
     minHeight: "100vh",
+    backgroundColor: brandColors.pureWhite,
   },
   spinner: {
     width: 40,
     height: 40,
-    border: `3px solid ${brandColors.vanillaCream}`,
+    border: `3px solid #EDEDED`,
     borderTopColor: brandColors.spicedClementine,
     borderRadius: "50%",
     animation: "spin 1s linear infinite",
@@ -261,6 +256,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "center",
     padding: 24,
     minHeight: "100vh",
+    backgroundColor: brandColors.pureWhite,
   },
   errorTitle: {
     color: brandColors.error,
