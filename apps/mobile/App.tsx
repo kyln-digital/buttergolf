@@ -764,8 +764,10 @@ function AccountScreenWrapper({ navigation }: { navigation: any }) {
         if (ordersResponse && "orders" in ordersResponse) {
           setPendingOrdersCount(ordersResponse?.stats?.active || 0);
         }
-      } catch {
-        // Endpoint may not exist yet - use default value
+      } catch (err) {
+        // Endpoint may not exist yet - log for debugging and use default value
+        // eslint-disable-next-line no-console
+        console.log("Orders API not available:", err);
       }
     };
 

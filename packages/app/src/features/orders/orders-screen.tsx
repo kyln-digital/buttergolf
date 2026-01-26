@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Column, Row, Text, Button, Heading, Spinner, Image, ScrollView } from "@buttergolf/ui";
 import { Button as TamaguiButton, View } from "tamagui";
-import { Badge } from "@buttergolf/ui";
 import { ArrowLeft, Package, Truck, CheckCircle, Clock, RefreshCw } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -70,9 +69,17 @@ export interface OrdersScreenProps {
   onBrowseProducts?: () => void;
 }
 
+type OrderStatusColorToken =
+  | "$info"
+  | "$warning"
+  | "$primary"
+  | "$success"
+  | "$error"
+  | "$textSecondary";
+
 function getStatusConfig(status: OrderStatus): {
   label: string;
-  color: string;
+  color: OrderStatusColorToken;
   icon: React.ReactNode;
 } {
   switch (status) {
@@ -330,7 +337,7 @@ export function OrdersScreen({
 
                       <Row alignItems="center" gap="$2" marginTop="$1">
                         {statusConfig.icon}
-                        <Text size="$3" color={statusConfig.color as "$primary"} fontWeight="500">
+                        <Text size="$3" color={statusConfig.color} fontWeight="500">
                           {statusConfig.label}
                         </Text>
                       </Row>

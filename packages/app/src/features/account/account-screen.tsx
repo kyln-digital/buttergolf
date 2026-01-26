@@ -2,12 +2,11 @@
 
 import React from "react";
 import { Column, Row, ScrollView, Text, Button, Heading, ThemeSwitcher } from "@buttergolf/ui";
-import { Button as TamaguiButton, Avatar, View } from "tamagui";
+import { Button as TamaguiButton, Avatar } from "tamagui";
 import {
   ArrowLeft,
   LogOut,
   Palette,
-  User,
   ShoppingBag,
   Store,
   Heart,
@@ -15,7 +14,6 @@ import {
   CreditCard,
   Bell,
   HelpCircle,
-  ChevronRight,
   Edit3,
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

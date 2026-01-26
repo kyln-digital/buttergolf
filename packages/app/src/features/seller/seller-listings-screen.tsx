@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Column, Row, Text, Button, Heading, ScrollView, Spinner, Badge } from "@buttergolf/ui";
+import { Column, Row, Text, Button, Heading, ScrollView, Spinner } from "@buttergolf/ui";
 import { Button as TamaguiButton, View } from "tamagui";
 import {
   ArrowLeft,
@@ -12,8 +12,6 @@ import {
   Eye,
   EyeOff,
   ChevronRight,
-  DollarSign,
-  Clock,
   Check,
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -63,11 +61,17 @@ export interface SellerListingsScreenProps {
 
 type FilterTab = "all" | "active" | "sold" | "draft";
 
-const statusConfig: Record<ListingStatus, { label: string; color: string }> = {
-  ACTIVE: { label: "Active", color: "$success" },
-  SOLD: { label: "Sold", color: "$primary" },
-  DRAFT: { label: "Draft", color: "$textMuted" },
-  INACTIVE: { label: "Inactive", color: "$warning" },
+type StatusColorToken = "$success" | "$primary" | "$textMuted" | "$warning";
+type StatusColorLightToken = "$successLight" | "$primaryLight" | "$gray200" | "$warningLight";
+
+const statusConfig: Record<
+  ListingStatus,
+  { label: string; color: StatusColorToken; bgColor: StatusColorLightToken }
+> = {
+  ACTIVE: { label: "Active", color: "$success", bgColor: "$successLight" },
+  SOLD: { label: "Sold", color: "$primary", bgColor: "$primaryLight" },
+  DRAFT: { label: "Draft", color: "$textMuted", bgColor: "$gray200" },
+  INACTIVE: { label: "Inactive", color: "$warning", bgColor: "$warningLight" },
 };
 
 export function SellerListingsScreen({
@@ -415,12 +419,12 @@ export function SellerListingsScreen({
                       </Text>
                       <Row alignItems="center" gap="$2">
                         <View
-                          backgroundColor={`${config.color}Light` as any}
+                          backgroundColor={config.bgColor}
                           paddingHorizontal="$2"
                           paddingVertical="$1"
                           borderRadius="$sm"
                         >
-                          <Text size="$2" color={config.color as any} fontWeight="600">
+                          <Text size="$2" color={config.color} fontWeight="600">
                             {config.label}
                           </Text>
                         </View>

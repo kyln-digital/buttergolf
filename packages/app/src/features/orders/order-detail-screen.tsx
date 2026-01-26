@@ -12,20 +12,18 @@ import {
   ScrollView,
   Badge,
 } from "@buttergolf/ui";
-import { Button as TamaguiButton, View, Avatar, TextArea, Progress } from "tamagui";
+import { Button as TamaguiButton, View, Avatar, TextArea } from "tamagui";
 import {
   ArrowLeft,
   Package,
   Truck,
   CheckCircle,
-  Clock,
   MapPin,
   User,
   MessageCircle,
   Star,
   Download,
   ExternalLink,
-  AlertCircle,
   Shield,
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

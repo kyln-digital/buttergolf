@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Column, Row, Text, Button, Heading, ScrollView, Spinner } from "@buttergolf/ui";
-import { Button as TamaguiButton, View, Card } from "tamagui";
+import { Button as TamaguiButton, View } from "tamagui";
 import {
   ArrowLeft,
   Package,
@@ -54,11 +54,13 @@ export interface SellerDashboardScreenProps {
   onRefresh?: () => void;
 }
 
+type StatColorToken = "$primary" | "$success" | "$warning" | "$info" | "$error" | "$text";
+
 interface StatCardProps {
   label: string;
   value: string | number;
   icon: React.ReactNode;
-  color?: string;
+  color?: StatColorToken;
   onPress?: () => void;
 }
 
@@ -79,7 +81,7 @@ function StatCard({ label, value, icon, color = "$primary", onPress }: StatCardP
           {label}
         </Text>
       </Row>
-      <Text size="$7" fontWeight="700" color={color as any}>
+      <Text size="$7" fontWeight="700" color={color}>
         {value}
       </Text>
     </Column>

@@ -2,8 +2,8 @@
 
 import React, { useState, useCallback } from "react";
 import { Column, Row, Text, Button, Heading, Spinner, Input } from "@buttergolf/ui";
-import { Button as TamaguiButton, Avatar, View, Image } from "tamagui";
-import { ArrowLeft, Camera, Check, User } from "@tamagui/lucide-icons";
+import { Button as TamaguiButton, Avatar, View } from "tamagui";
+import { ArrowLeft, Camera, Check } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Alert } from "react-native";
 

@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Column, Row, Text, Button, Heading, ScrollView, Spinner, Badge } from "@buttergolf/ui";
-import { Button as TamaguiButton, View, YStack } from "tamagui";
+import { Column, Row, Text, Button, Heading, ScrollView, Spinner } from "@buttergolf/ui";
+import { Button as TamaguiButton, View } from "tamagui";
 import {
   ArrowLeft,
   Package,
@@ -13,7 +13,6 @@ import {
   ChevronRight,
   Download,
   MessageCircle,
-  User,
   MapPin,
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -97,13 +96,49 @@ export interface SellerSalesScreenProps {
 
 type FilterTab = "all" | "pending" | "shipped" | "delivered";
 
-const statusConfig: Record<OrderStatus, { label: string; color: string; icon: React.ReactNode }> = {
-  PENDING_SHIPPING: { label: "Awaiting Shipment", color: "$warning", icon: <Clock size={16} /> },
-  SHIPPED: { label: "Shipped", color: "$info", icon: <Truck size={16} /> },
-  IN_TRANSIT: { label: "In Transit", color: "$info", icon: <Truck size={16} /> },
-  DELIVERED: { label: "Delivered", color: "$success", icon: <Check size={16} /> },
-  CONFIRMED: { label: "Completed", color: "$success", icon: <Check size={16} /> },
-  CANCELLED: { label: "Cancelled", color: "$error", icon: <AlertCircle size={16} /> },
+type SalesStatusColorToken = "$warning" | "$info" | "$success" | "$error";
+type SalesStatusBgToken = "$warningLight" | "$infoLight" | "$successLight" | "$errorLight";
+
+const statusConfig: Record<
+  OrderStatus,
+  {
+    label: string;
+    color: SalesStatusColorToken;
+    bgColor: SalesStatusBgToken;
+    icon: React.ReactNode;
+  }
+> = {
+  PENDING_SHIPPING: {
+    label: "Awaiting Shipment",
+    color: "$warning",
+    bgColor: "$warningLight",
+    icon: <Clock size={16} />,
+  },
+  SHIPPED: { label: "Shipped", color: "$info", bgColor: "$infoLight", icon: <Truck size={16} /> },
+  IN_TRANSIT: {
+    label: "In Transit",
+    color: "$info",
+    bgColor: "$infoLight",
+    icon: <Truck size={16} />,
+  },
+  DELIVERED: {
+    label: "Delivered",
+    color: "$success",
+    bgColor: "$successLight",
+    icon: <Check size={16} />,
+  },
+  CONFIRMED: {
+    label: "Completed",
+    color: "$success",
+    bgColor: "$successLight",
+    icon: <Check size={16} />,
+  },
+  CANCELLED: {
+    label: "Cancelled",
+    color: "$error",
+    bgColor: "$errorLight",
+    icon: <AlertCircle size={16} />,
+  },
 };
 
 export function SellerSalesScreen({
@@ -146,7 +181,7 @@ export function SellerSalesScreen({
     async (order: SellerOrder) => {
       setProcessingOrder(order.id);
       try {
-        const { labelUrl } = await onGenerateLabel(order.id);
+        await onGenerateLabel(order.id);
         Alert.alert(
           "Label Generated",
           "Your shipping label has been created. Download it to print.",
@@ -205,13 +240,6 @@ export function SellerSalesScreen({
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(amount / 100);
-
-  const formatDate = (dateString: string) =>
-    new Date(dateString).toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
 
   // Loading state
   if (loading) {
@@ -368,14 +396,14 @@ export function SellerSalesScreen({
                         </Text>
                         <Row alignItems="center" gap="$2">
                           <View
-                            backgroundColor={`${config.color}Light` as any}
+                            backgroundColor={config.bgColor}
                             paddingHorizontal="$2"
                             paddingVertical="$1"
                             borderRadius="$sm"
                           >
                             <Row alignItems="center" gap="$1">
                               {config.icon}
-                              <Text size="$2" color={config.color as any} fontWeight="600">
+                              <Text size="$2" color={config.color} fontWeight="600">
                                 {config.label}
                               </Text>
                             </Row>

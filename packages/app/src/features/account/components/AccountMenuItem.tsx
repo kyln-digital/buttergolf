@@ -70,22 +70,7 @@ export function AccountMenuItem({
 
         {/* Badge */}
         {badge !== undefined && (
-          <Badge
-            size="sm"
-            variant={
-              badgeVariant === "primary"
-                ? "primary"
-                : badgeVariant === "success"
-                  ? "success"
-                  : badgeVariant === "warning"
-                    ? "warning"
-                    : badgeVariant === "error"
-                      ? "error"
-                      : badgeVariant === "info"
-                        ? "info"
-                        : "neutral"
-            }
-          >
+          <Badge size="sm" variant={badgeVariant}>
             <Text size="$2" color="$textInverse" fontWeight="600">
               {badge}
             </Text>
