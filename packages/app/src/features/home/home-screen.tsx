@@ -62,10 +62,7 @@ export function HomeScreen({
         .then((fetchedProducts) => {
           console.log(`Fetched ${fetchedProducts.length} products`);
           if (fetchedProducts.length > 0) {
-            console.log(
-              "First product image URL:",
-              fetchedProducts[0]?.imageUrl,
-            );
+            console.log("First product image URL:", fetchedProducts[0]?.imageUrl);
           }
           setProducts(fetchedProducts);
         })
@@ -81,14 +78,16 @@ export function HomeScreen({
       {/* Sticky Search Bar - Fixed at top, extends into safe area */}
       <Column position="absolute" top={0} left={0} right={0} zIndex={100}>
         <Column
-          backgroundColor="$background"
+          backgroundColor="$chromeBackground"
           borderBottomLeftRadius="$2xl"
           borderBottomRightRadius="$2xl"
-          shadowColor="rgba(0, 0, 0, 0.15)"
-          shadowOffset={{ width: 0, height: 4 }}
-          shadowOpacity={1}
-          shadowRadius={8}
-          elevation={8}
+          style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.25,
+            shadowRadius: 12,
+            elevation: 12,
+          }}
         >
           <MobileSearchBar
             placeholder="What are you looking for?"
@@ -121,34 +120,16 @@ export function HomeScreen({
         {/* Buying/Selling Toggle Buttons - Hidden on mobile where selling is via bottom nav */}
         {!hideBuySellToggle && (
           <Row paddingHorizontal="$4" paddingVertical="$4">
-            <BuySellToggle
-              activeMode={buySellMode}
-              onModeChange={setBuySellMode}
-            />
+            <BuySellToggle activeMode={buySellMode} onModeChange={setBuySellMode} />
           </Row>
         )}
 
         {/* Shop by Category Section */}
-        <Column
-          paddingHorizontal="$4"
-          paddingTop="$4"
-          paddingBottom="$6"
-          gap="$3"
-        >
-          <Text
-            size="$8"
-            fontWeight="700"
-            color="$text"
-            textAlign="center"
-          >
+        <Column paddingHorizontal="$4" paddingTop="$4" paddingBottom="$6" gap="$3">
+          <Text size="$8" fontWeight="700" color="$text" textAlign="center">
             Shop by category
           </Text>
-          <Text
-            size="$5"
-            fontWeight="400"
-            color="$textSecondary"
-            textAlign="center"
-          >
+          <Text size="$5" fontWeight="400" color="$textSecondary" textAlign="center">
             Find exactly what you need - faster.
           </Text>
         </Column>

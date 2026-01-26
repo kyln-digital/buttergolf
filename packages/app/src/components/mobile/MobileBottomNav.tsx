@@ -1,13 +1,7 @@
 "use client";
 
 import { Row, Column, Text } from "@buttergolf/ui";
-import {
-  Home,
-  Heart,
-  PlusCircle,
-  MessageCircle,
-  User,
-} from "@tamagui/lucide-icons";
+import { Home, Heart, PlusCircle, MessageCircle, User } from "@tamagui/lucide-icons";
 
 export interface MobileBottomNavProps {
   activeTab?: "home" | "wishlist" | "sell" | "messages" | "login" | "account";
@@ -39,28 +33,24 @@ export function MobileBottomNav({
   isAuthenticated = false,
 }: Readonly<MobileBottomNavProps>) {
   // Determine if the user/account tab is active
-  const isUserTabActive = isAuthenticated
-    ? activeTab === "account"
-    : activeTab === "login";
+  const isUserTabActive = isAuthenticated ? activeTab === "account" : activeTab === "login";
 
   return (
     <Column
-      backgroundColor="$surface"
+      backgroundColor="$chromeBackground"
       borderTopLeftRadius="$2xl"
       borderTopRightRadius="$2xl"
-      shadowColor="rgba(0, 0, 0, 0.15)"
-      shadowOffset={{ width: 0, height: -4 }}
-      shadowOpacity={1}
-      shadowRadius={8}
-      elevation={8}
+      style={{
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -6 },
+        shadowOpacity: 0.25,
+        shadowRadius: 12,
+        elevation: 12,
+      }}
       paddingTop="$3"
       paddingBottom="$6"
     >
-      <Row
-        alignItems="center"
-        justifyContent="space-around"
-        paddingHorizontal="$4"
-      >
+      <Row alignItems="center" justifyContent="space-around" paddingHorizontal="$4">
         {/* Home */}
         <Column
           gap="$1"
@@ -74,10 +64,7 @@ export function MobileBottomNav({
           aria-label="Home"
           aria-selected={activeTab === "home"}
         >
-          <Home
-            size={24}
-            color={activeTab === "home" ? "$primary" : "$text"}
-          />
+          <Home size={24} color={activeTab === "home" ? "$primary" : "$text"} />
           <Text
             size="$2"
             color={activeTab === "home" ? "$primary" : "$text"}
@@ -100,10 +87,7 @@ export function MobileBottomNav({
           aria-label="Wishlist"
           aria-selected={activeTab === "wishlist"}
         >
-          <Heart
-            size={24}
-            color={activeTab === "wishlist" ? "$primary" : "$text"}
-          />
+          <Heart size={24} color={activeTab === "wishlist" ? "$primary" : "$text"} />
           <Text
             size="$2"
             color={activeTab === "wishlist" ? "$primary" : "$text"}
@@ -126,10 +110,7 @@ export function MobileBottomNav({
           aria-label="Sell"
           aria-selected={activeTab === "sell"}
         >
-          <PlusCircle
-            size={24}
-            color={activeTab === "sell" ? "$primary" : "$text"}
-          />
+          <PlusCircle size={24} color={activeTab === "sell" ? "$primary" : "$text"} />
           <Text
             size="$2"
             color={activeTab === "sell" ? "$primary" : "$text"}
@@ -152,10 +133,7 @@ export function MobileBottomNav({
           aria-label="Messages"
           aria-selected={activeTab === "messages"}
         >
-          <MessageCircle
-            size={24}
-            color={activeTab === "messages" ? "$primary" : "$text"}
-          />
+          <MessageCircle size={24} color={activeTab === "messages" ? "$primary" : "$text"} />
           <Text
             size="$2"
             color={activeTab === "messages" ? "$primary" : "$text"}
@@ -178,10 +156,7 @@ export function MobileBottomNav({
           aria-label={isAuthenticated ? "Account" : "Log in"}
           aria-selected={isUserTabActive}
         >
-          <User
-            size={24}
-            color={isUserTabActive ? "$primary" : "$text"}
-          />
+          <User size={24} color={isUserTabActive ? "$primary" : "$text"} />
           <Text
             size="$2"
             color={isUserTabActive ? "$primary" : "$text"}

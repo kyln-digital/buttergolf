@@ -375,6 +375,9 @@ const customTokens = createTokens({
     // White token (referenced by themes)
     white: brandColors.pureWhite,
 
+    // Chrome background (for top/bottom navigation bars) - theme-specific
+    chromeBackground: brandColors.pureWhite, // Default to light theme value
+
     // Backward compatibility aliases removed — use semantic tokens (e.g. "$background", "$textMuted")
   },
 
@@ -519,17 +522,20 @@ const lightTheme = {
   // Utility colors
   white: brandColors.pureWhite,
   cream: brandColors.vanillaCream,
+
+  // Chrome background (for top/bottom navigation bars)
+  chromeBackground: brandColors.pureWhite,
 };
 
-// Dark theme with semantic token mappings (Burnt Olive becomes dominant)
+// Dark theme with semantic token mappings (Ironstone for consistent dark backgrounds)
 const darkTheme = {
-  // Background colors - override tokens for dark mode (Burnt Olive)
-  background: brandColors.burntOlive,
-  backgroundHover: brandColors.burntOliveHover,
-  backgroundPress: brandColors.burntOlivePress,
-  backgroundFocus: brandColors.burntOliveHover,
+  // Background colors - override tokens for dark mode (Ironstone)
+  background: brandColors.ironstone,
+  backgroundHover: brandColors.ironstoneHover,
+  backgroundPress: brandColors.ironstonePress,
+  backgroundFocus: brandColors.ironstoneHover,
   backgroundStrong: brandColors.ironstone,
-  backgroundTransparent: "rgba(62, 59, 44, 0)",
+  backgroundTransparent: "rgba(50, 50, 50, 0)",
 
   // Text colors - override for dark mode (Pure White on dark)
   color: brandColors.pureWhite,
@@ -605,6 +611,9 @@ const darkTheme = {
   // Utility colors
   white: brandColors.pureWhite,
   cream: brandColors.vanillaCream,
+
+  // Chrome background (for top/bottom navigation bars)
+  chromeBackground: brandColors.burntOlive,
 };
 
 // Sub-theme for active states (light mode)
