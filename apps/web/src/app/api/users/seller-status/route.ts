@@ -45,41 +45,29 @@ export async function GET(request: Request) {
       },
     });
 
-    // If user doesn't exist yet (webhook hasn't fired), create from Clerk data
+    // If user doesn't exist yet (webhook hasn't fired), create from Clerk data using upsert
+    // upsert is atomic and prevents race conditions where multiple requests try to create the same user
     if (!user && userData.email) {
-      console.log(`[Seller Status] User not found, creating from Clerk data: ${userId}`);
-      try {
-        user = await prisma.user.create({
-          data: {
-            clerkId: userId,
-            email: userData.email,
-            firstName: userData.firstName || "",
-            lastName: userData.lastName || "",
-          },
-          select: {
-            id: true,
-            email: true,
-            stripeConnectId: true,
-            stripeOnboardingComplete: true,
-            stripeAccountStatus: true,
-          },
-        });
-        console.log(`[Seller Status] Created user ${user.id} from Clerk data`);
-      } catch (createError) {
-        // User might have been created by another request (race condition)
-        console.error(`[Seller Status] Failed to create user:`, createError);
-        user = await prisma.user.findUnique({
-          where: { clerkId: userId },
-          select: {
-            id: true,
-            email: true,
-            stripeConnectId: true,
-            stripeOnboardingComplete: true,
-            stripeAccountStatus: true,
-          },
-        });
-      }
-    } else if (user && !user.email && userData.email) {
+      console.log(`[Seller Status] User not found, upserting from Clerk data: ${userId}`);
+      user = await prisma.user.upsert({
+        where: { clerkId: userId },
+        create: {
+          clerkId: userId,
+          email: userData.email,
+          firstName: userData.firstName || "",
+          lastName: userData.lastName || "",
+        },
+        update: {}, // Don't update existing data if user was created by another request
+        select: {
+          id: true,
+          email: true,
+          stripeConnectId: true,
+          stripeOnboardingComplete: true,
+          stripeAccountStatus: true,
+        },
+      });
+      console.log(`[Seller Status] Upserted user ${user.id} from Clerk data`);
+    } else if (user && (!user.email || user.email === "") && userData.email) {
       // User exists but with empty data, update with Clerk data
       console.log(`[Seller Status] Updating user ${user.id} with Clerk data`);
       await prisma.user.update({

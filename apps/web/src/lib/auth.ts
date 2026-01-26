@@ -3,8 +3,15 @@ import { verifyMobileSessionToken, getMobileSessionUserData } from "@/lib/mobile
 import { createClerkClient } from "@clerk/backend";
 
 // Clerk backend client for fetching user data by ID
+// Validated at initialization to fail fast if secret key is missing
+const clerkSecretKey = process.env.CLERK_SECRET_KEY;
+
+if (!clerkSecretKey) {
+  throw new Error("CLERK_SECRET_KEY is required for Clerk backend client");
+}
+
 const clerkBackend = createClerkClient({
-  secretKey: process.env.CLERK_SECRET_KEY,
+  secretKey: clerkSecretKey,
 });
 
 /**
@@ -96,6 +103,18 @@ export async function getClerkUserFromRequest(request?: Request): Promise<ClerkU
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.emailAddresses[0]?.emailAddress || null,
+      };
+    } else {
+      // Authenticated via Clerk but failed to load full user profile.
+      // Return partial data with just the userId instead of falling back to mobile tokens.
+      console.warn(
+        "[Auth] Clerk auth succeeded (isAuthenticated && userId) but currentUser() returned null; returning partial user data."
+      );
+      return {
+        userId,
+        firstName: null,
+        lastName: null,
+        email: null,
       };
     }
   }

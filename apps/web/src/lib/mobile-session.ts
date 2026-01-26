@@ -72,11 +72,13 @@ export async function getMobileSessionUserData(
     if (payload.type !== "mobile_onboarding_session" || !payload.sub) {
       return null;
     }
+    // Explicit type validation for JWT payload properties
+    // Ensures we return null for missing/malformed data rather than masking issues
     return {
       userId: payload.sub as string,
-      firstName: (payload.firstName as string) || null,
-      lastName: (payload.lastName as string) || null,
-      email: (payload.email as string) || null,
+      firstName: typeof payload.firstName === "string" ? payload.firstName : null,
+      lastName: typeof payload.lastName === "string" ? payload.lastName : null,
+      email: typeof payload.email === "string" ? payload.email : null,
     };
   } catch {
     return null;

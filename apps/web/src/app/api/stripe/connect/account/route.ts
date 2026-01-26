@@ -31,14 +31,15 @@ export async function POST(request: Request) {
 
     // If user doesn't exist, the Clerk webhook hasn't fired yet
     // Create a user record with data from Clerk so onboarding is prefilled
-    if (!user) {
+    // Only create if we have an email to avoid unique constraint violations (email: "" would conflict)
+    if (!user && userData.email) {
       console.log(
         `[Stripe Connect] User not found for clerkId ${userId}, creating record from Clerk data`
       );
       user = await prisma.user.create({
         data: {
           clerkId: userId,
-          email: userData.email || "",
+          email: userData.email,
           firstName: userData.firstName || "",
           lastName: userData.lastName || "",
         },
@@ -46,7 +47,17 @@ export async function POST(request: Request) {
       console.log(
         `[Stripe Connect] Created user record ${user.id} for clerkId ${userId} with Clerk data`
       );
-    } else if (!user.email && userData.email) {
+    } else if (!user) {
+      // No email available from Clerk - cannot create user record safely
+      // This is rare (Clerk usually provides email) but we handle it gracefully
+      console.warn(
+        `[Stripe Connect] Cannot create user for clerkId ${userId}: no email available from Clerk`
+      );
+      return NextResponse.json(
+        { error: "User profile incomplete - please ensure your account has an email address" },
+        { status: 400 }
+      );
+    } else if ((!user.email || user.email === "") && userData.email) {
       // User exists but with empty data (created before we had Clerk data)
       // Update with Clerk data now that we have it
       console.log(`[Stripe Connect] Updating user ${user.id} with Clerk data`);

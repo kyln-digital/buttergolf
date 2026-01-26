@@ -410,12 +410,13 @@ export function SellerOnboardingGate({
           domStorageEnabled={true}
           sharedCookiesEnabled={false}
           thirdPartyCookiesEnabled={false}
-          // iOS specific - CRITICAL for keyboard/input handling in Stripe forms
+          // iOS specific WebView behaviour
           allowsBackForwardNavigationGestures={false}
-          keyboardDisplayRequiresUserAction={false}
           allowsInlineMediaPlayback={true}
           automaticallyAdjustContentInsets={false}
           contentInsetAdjustmentBehavior="never"
+          // iOS specific - CRITICAL for keyboard/input handling in Stripe forms
+          keyboardDisplayRequiresUserAction={false}
           // Android specific
           setSupportMultipleWindows={false}
           overScrollMode="never"
