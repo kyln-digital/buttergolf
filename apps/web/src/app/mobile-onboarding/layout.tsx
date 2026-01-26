@@ -8,11 +8,7 @@ import { Suspense } from "react";
  * - Wraps in Suspense for useSearchParams
  * - Uses the app's default providers from root layout
  */
-export default function MobileOnboardingLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function MobileOnboardingLayout({ children }: { children: React.ReactNode }) {
   return (
     <Suspense
       fallback={
@@ -37,4 +33,13 @@ export default function MobileOnboardingLayout({
 export const metadata = {
   title: "Seller Setup - ButterGolf",
   robots: "noindex, nofollow", // Don't index this page
+};
+
+// Viewport settings optimised for WebView embedding
+// Prevents zoom issues where content flows off screen edges
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };

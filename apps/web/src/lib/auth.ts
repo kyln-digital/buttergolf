@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
-import { verifyMobileSessionToken } from "@/app/api/stripe/connect/mobile-session/route";
+import { verifyMobileSessionToken } from "@/lib/mobile-session";
 
 /**
  * Get user ID using Clerk's Next.js SDK auth() helper, with fallback to mobile session tokens.
@@ -17,9 +17,7 @@ import { verifyMobileSessionToken } from "@/app/api/stripe/connect/mobile-sessio
  * @param request - Optional Request object (used for mobile session token extraction)
  * @returns The Clerk user ID (userId), or null if user is not authenticated
  */
-export async function getUserIdFromRequest(
-  request?: Request,
-): Promise<string | null> {
+export async function getUserIdFromRequest(request?: Request): Promise<string | null> {
   // First, try Clerk's official auth() helper with acceptsToken parameter
   // This handles both cookies (web) and Clerk Bearer tokens (mobile)
   const { isAuthenticated, userId } = await auth({
@@ -39,7 +37,9 @@ export async function getUserIdFromRequest(
       const token = authHeader.slice(7);
       const mobileSession = await verifyMobileSessionToken(token);
       if (mobileSession) {
-        console.log("[Auth] Authenticated via mobile session token:", { userId: mobileSession.userId });
+        console.log("[Auth] Authenticated via mobile session token:", {
+          userId: mobileSession.userId,
+        });
         return mobileSession.userId;
       }
     }

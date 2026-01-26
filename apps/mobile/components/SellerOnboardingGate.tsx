@@ -1,22 +1,10 @@
 import { useState, useCallback, useRef } from "react";
-import {
-  Alert,
-  StyleSheet,
-  SafeAreaView,
-  View,
-  ActivityIndicator,
-} from "react-native";
+import { Alert, StyleSheet, SafeAreaView, View, ActivityIndicator } from "react-native";
 import { WebView, WebViewMessageEvent } from "react-native-webview";
 import { useAuth } from "@clerk/clerk-expo";
 import { useSellerStatusContext } from "../context";
 import { SellerOnboardingScreen, SellScreen } from "@buttergolf/app";
-import type {
-  SellFormData,
-  ImageData,
-  Category,
-  Brand,
-  Model,
-} from "@buttergolf/app";
+import type { SellFormData, ImageData, Category, Brand, Model } from "@buttergolf/app";
 
 // ButterGolf brand colors
 const brandColors = {
@@ -71,6 +59,90 @@ interface WebViewMessage {
   success?: boolean;
   message?: string;
 }
+
+/**
+ * Hides the Tidio chat widget, which shouldn't appear in the embedded WebView.
+ *
+ * NOTE: Viewport configuration is handled server-side in the mobile-onboarding
+ * layout file (width: device-width, initialScale: 1, maximumScale: 1, userScalable: false),
+ * so we don't need to manipulate it here.
+ */
+const INJECTED_JAVASCRIPT = `
+  (function() {
+    // Hide Tidio chat widget if it exists.
+    // Returns true if a Tidio element or API was found and hide was attempted.
+    var hideTidio = function() {
+      var hidSomething = false;
+      var tidioChat = document.getElementById('tidio-chat');
+      if (tidioChat) {
+        tidioChat.style.display = 'none';
+        hidSomething = true;
+      }
+      // Also try to hide via Tidio API if available (with defensive type checking)
+      if (
+        typeof window !== 'undefined' &&
+        typeof window.tidioChatApi !== 'undefined' &&
+        window.tidioChatApi &&
+        typeof window.tidioChatApi.hide === 'function'
+      ) {
+        try {
+          window.tidioChatApi.hide();
+          hidSomething = true;
+        } catch (e) {
+          // Ignore errors from Tidio API
+        }
+      }
+      return hidSomething;
+    };
+
+    var observer = null;
+    var observerTimeoutId = null;
+
+    var stopObserver = function() {
+      if (observer) {
+        observer.disconnect();
+        observer = null;
+      }
+      if (observerTimeoutId !== null) {
+        clearTimeout(observerTimeoutId);
+        observerTimeoutId = null;
+      }
+    };
+
+    var startObserver = function() {
+      if (!document.body) {
+        return;
+      }
+      if (observer) {
+        return;
+      }
+      observer = new MutationObserver(function() {
+        if (hideTidio()) {
+          // Once we've successfully hidden Tidio, we no longer need to observe.
+          stopObserver();
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      // Safety timeout: ensure we always clean up the observer after a bounded time (10 seconds).
+      observerTimeoutId = setTimeout(stopObserver, 10000);
+    };
+
+    // Run immediately to catch any already-loaded Tidio instance
+    hideTidio();
+
+    // Start observing once the DOM is ready so document.body exists.
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', startObserver);
+    } else {
+      startObserver();
+    }
+
+    // Also hide after delays in case Tidio loads slightly later
+    setTimeout(hideTidio, 1000);
+    setTimeout(hideTidio, 3000);
+  })();
+  true;
+`;
 
 /**
  * SellerOnboardingGate - Wraps SellScreen and gates it behind seller onboarding.
@@ -179,24 +251,18 @@ export function SellerOnboardingGate({
       onboardingUrl.searchParams.set("token", mobileSessionToken);
       onboardingUrl.searchParams.set("apiUrl", apiUrl);
 
-      console.info(
-        "[SellerOnboardingGate] Opening WebView with mobile session token"
-      );
+      console.info("[SellerOnboardingGate] Opening WebView with mobile session token");
 
       setWebViewUrl(onboardingUrl.toString());
       setShowWebView(true);
       setWebViewLoading(false);
     } catch (err) {
       console.error("[SellerOnboardingGate] Initialization error:", err);
-      setOnboardingError(
-        err instanceof Error ? err.message : "Failed to initialize onboarding"
-      );
+      setOnboardingError(err instanceof Error ? err.message : "Failed to initialize onboarding");
       setWebViewLoading(false);
       Alert.alert(
         "Onboarding Error",
-        err instanceof Error
-          ? err.message
-          : "Failed to start seller onboarding"
+        err instanceof Error ? err.message : "Failed to start seller onboarding"
       );
     }
   }, [apiUrl]); // Note: getToken removed from deps since we use ref
@@ -224,10 +290,7 @@ export function SellerOnboardingGate({
             break;
 
           case "exit":
-            console.info(
-              "[SellerOnboardingGate] Onboarding exited, success:",
-              message.success
-            );
+            console.info("[SellerOnboardingGate] Onboarding exited, success:", message.success);
             setShowWebView(false);
             setWebViewUrl(null);
 
@@ -236,19 +299,13 @@ export function SellerOnboardingGate({
             break;
 
           case "error":
-            console.error(
-              "[SellerOnboardingGate] WebView error:",
-              message.message
-            );
+            console.error("[SellerOnboardingGate] WebView error:", message.message);
             setOnboardingError(message.message || "An error occurred");
             // Don't auto-close - let user retry or cancel
             break;
         }
       } catch (err) {
-        console.error(
-          "[SellerOnboardingGate] Failed to parse WebView message:",
-          err
-        );
+        console.error("[SellerOnboardingGate] Failed to parse WebView message:", err);
       }
     },
     [refresh]
@@ -280,10 +337,7 @@ export function SellerOnboardingGate({
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator
-            size="large"
-            color={brandColors.spicedClementine}
-          />
+          <ActivityIndicator size="large" color={brandColors.spicedClementine} />
         </View>
       </SafeAreaView>
     );
@@ -317,13 +371,7 @@ export function SellerOnboardingGate({
         <View style={styles.webViewHeader}>
           <View style={styles.headerLeft} />
           <View style={styles.headerCenter}>
-            <View style={styles.headerTitleContainer}>
-              <ActivityIndicator
-                size="small"
-                color={brandColors.spicedClementine}
-                style={styles.headerSpinner}
-              />
-            </View>
+            <View style={styles.headerTitleContainer}>{/* Loading handled by web page */}</View>
           </View>
           <View style={styles.headerRight}>
             {/* Close button - tap to cancel */}
@@ -346,28 +394,21 @@ export function SellerOnboardingGate({
           source={{ uri: webViewUrl }}
           style={styles.webView}
           onMessage={handleWebViewMessage}
-          onLoadStart={() => setWebViewLoading(true)}
-          onLoadEnd={() => setWebViewLoading(false)}
           onError={(syntheticEvent) => {
             const { nativeEvent } = syntheticEvent;
             console.error("[SellerOnboardingGate] WebView error:", nativeEvent);
             setOnboardingError(nativeEvent.description || "Failed to load");
           }}
+          // Inject JS to hide Tidio chat widget in the WebView
+          // NOTE: INJECTED_JAVASCRIPT is a static constant defined in this file.
+          // Do NOT interpolate user input or external data into injectedJavaScript, as it
+          // executes directly inside the WebView and could introduce JS injection/XSS issues.
+          injectedJavaScript={INJECTED_JAVASCRIPT}
           // Security settings
           javaScriptEnabled={true}
           domStorageEnabled={true}
           sharedCookiesEnabled={false}
           thirdPartyCookiesEnabled={false}
-          // UX settings
-          startInLoadingState={true}
-          renderLoading={() => (
-            <View style={styles.webViewLoading}>
-              <ActivityIndicator
-                size="large"
-                color={brandColors.spicedClementine}
-              />
-            </View>
-          )}
           // iOS specific
           allowsBackForwardNavigationGestures={false}
           // Android specific
@@ -379,30 +420,14 @@ export function SellerOnboardingGate({
               return true;
             }
             // Allow Stripe domains for iframes
-            if (
-              request.url.includes("stripe.com") ||
-              request.url.includes("js.stripe.com")
-            ) {
+            if (request.url.includes("stripe.com") || request.url.includes("js.stripe.com")) {
               return true;
             }
             // Block other external links (or could open in system browser)
-            console.log(
-              "[SellerOnboardingGate] Blocked external URL:",
-              request.url
-            );
+            console.log("[SellerOnboardingGate] Blocked external URL:", request.url);
             return false;
           }}
         />
-
-        {/* Loading overlay for WebView loading state */}
-        {webViewLoading && (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator
-              size="large"
-              color={brandColors.spicedClementine}
-            />
-          </View>
-        )}
       </SafeAreaView>
     );
   }
@@ -412,10 +437,7 @@ export function SellerOnboardingGate({
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator
-            size="large"
-            color={brandColors.spicedClementine}
-          />
+          <ActivityIndicator size="large" color={brandColors.spicedClementine} />
         </View>
       </SafeAreaView>
     );
@@ -504,22 +526,6 @@ const styles = StyleSheet.create({
   },
   webView: {
     flex: 1,
-    backgroundColor: brandColors.vanillaCream,
-  },
-  webViewLoading: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: brandColors.vanillaCream,
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(255, 250, 210, 0.9)",
+    backgroundColor: brandColors.pureWhite,
   },
 });

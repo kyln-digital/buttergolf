@@ -23,6 +23,7 @@
     "@stripe/stripe-react-native": "catalog:",
     "@tamagui/animations-react-native": "catalog:",
     "@tamagui/card": "catalog:",
+    "@tamagui/portal": "catalog:",
     "@tamagui/sheet": "catalog:",
     "@tamagui/toast": "catalog:",
     "burnt": "^0.13.0",
