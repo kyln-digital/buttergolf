@@ -54,7 +54,7 @@ import {
   OfferDetailScreen,
   SellerOnboardingGate,
 } from "./components";
-import { SellerStatusProvider } from "./context";
+import { SellerStatusProvider, useSellerStatusContext } from "./context";
 import {
   View as RNView,
   Text as RNText,
@@ -739,9 +739,11 @@ function AccountScreenWrapper({ navigation }: { navigation: any }) {
   const { signOut, getToken } = useAuth();
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
-  // Fetch pending orders count and seller status
+  // Get seller status from context (already fetched at app level)
+  const { status: sellerStatus } = useSellerStatusContext();
+
+  // Fetch pending orders count
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
-  const [isSellerOnboarded, setIsSellerOnboarded] = useState(false);
 
   useEffect(() => {
     const fetchAccountData = async () => {
@@ -757,19 +759,6 @@ function AccountScreenWrapper({ navigation }: { navigation: any }) {
         // Only update if we got a valid response with expected shape
         if (ordersResponse && "orders" in ordersResponse) {
           setPendingOrdersCount(ordersResponse?.stats?.active || 0);
-        }
-      } catch {
-        // Endpoint may not exist yet - use default value
-      }
-
-      // Fetch seller status - fail silently if endpoint doesn't exist
-      try {
-        const sellerResponse = await deferredGet<{ stripeOnboardingComplete: boolean }>(
-          `${apiUrl}/api/seller/status`,
-          { getToken }
-        );
-        if (sellerResponse && typeof sellerResponse === "object") {
-          setIsSellerOnboarded(sellerResponse?.stripeOnboardingComplete || false);
         }
       } catch {
         // Endpoint may not exist yet - use default value
@@ -798,7 +787,7 @@ function AccountScreenWrapper({ navigation }: { navigation: any }) {
             }
           : null
       }
-      isSellerOnboarded={isSellerOnboarded}
+      isSellerOnboarded={sellerStatus?.isReadyToSell ?? false}
       pendingOrdersCount={pendingOrdersCount}
       onSignOut={handleSignOut}
       onNavigateBack={() => navigation.goBack()}
