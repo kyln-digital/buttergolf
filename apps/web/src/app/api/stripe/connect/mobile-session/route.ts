@@ -62,9 +62,24 @@ export async function POST(request: Request) {
         });
         console.log("[Mobile Session] Synced user to database:", userData.userId);
       } catch (dbError) {
-        // Log but don't fail - user might already exist with different email
-        // The Stripe account creation will still work, just without prefilled data
-        console.error("[Mobile Session] Failed to sync user to database:", dbError);
+        // Handle unique constraint violation (P2002) - another request may have created
+        // the user with a different clerkId but same email. This is recoverable.
+        const isUniqueConstraintError =
+          dbError instanceof Error &&
+          "code" in dbError &&
+          (dbError as { code: string }).code === "P2002";
+
+        if (isUniqueConstraintError) {
+          console.warn(
+            "[Mobile Session] Unique constraint violation during user sync, likely email conflict:",
+            userData.userId
+          );
+          // Continue - the token will still work, Stripe prefilling may just be incomplete
+        } else {
+          // Log other errors but don't fail - user might already exist
+          // The Stripe account creation will still work, just without prefilled data
+          console.error("[Mobile Session] Failed to sync user to database:", dbError);
+        }
       }
     }
 

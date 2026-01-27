@@ -3,16 +3,24 @@ import { verifyMobileSessionToken, getMobileSessionUserData } from "@/lib/mobile
 import { createClerkClient } from "@clerk/backend";
 
 // Clerk backend client for fetching user data by ID
-// Validated at initialization to fail fast if secret key is missing
-const clerkSecretKey = process.env.CLERK_SECRET_KEY;
+// Lazily initialised to avoid build-time failures when env vars are unavailable
+let clerkBackend: ReturnType<typeof createClerkClient> | null = null;
 
-if (!clerkSecretKey) {
-  throw new Error("CLERK_SECRET_KEY is required for Clerk backend client");
+function getClerkBackend() {
+  if (!clerkBackend) {
+    const clerkSecretKey = process.env.CLERK_SECRET_KEY;
+
+    if (!clerkSecretKey) {
+      throw new Error("CLERK_SECRET_KEY is required for Clerk backend client");
+    }
+
+    clerkBackend = createClerkClient({
+      secretKey: clerkSecretKey,
+    });
+  }
+
+  return clerkBackend;
 }
-
-const clerkBackend = createClerkClient({
-  secretKey: clerkSecretKey,
-});
 
 /**
  * User profile data returned from Clerk
@@ -136,7 +144,7 @@ export async function getClerkUserFromRequest(request?: Request): Promise<ClerkU
       const mobileSession = await verifyMobileSessionToken(token);
       if (mobileSession) {
         try {
-          const user = await clerkBackend.users.getUser(mobileSession.userId);
+          const user = await getClerkBackend().users.getUser(mobileSession.userId);
           console.log("[Auth] Got Clerk user data via backend API:", {
             userId: user.id,
             firstName: user.firstName,

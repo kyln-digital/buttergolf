@@ -49,24 +49,51 @@ export async function GET(request: Request) {
     // upsert is atomic and prevents race conditions where multiple requests try to create the same user
     if (!user && userData.email) {
       console.log(`[Seller Status] User not found, upserting from Clerk data: ${userId}`);
-      user = await prisma.user.upsert({
-        where: { clerkId: userId },
-        create: {
-          clerkId: userId,
-          email: userData.email,
-          firstName: userData.firstName || "",
-          lastName: userData.lastName || "",
-        },
-        update: {}, // Don't update existing data if user was created by another request
-        select: {
-          id: true,
-          email: true,
-          stripeConnectId: true,
-          stripeOnboardingComplete: true,
-          stripeAccountStatus: true,
-        },
-      });
-      console.log(`[Seller Status] Upserted user ${user.id} from Clerk data`);
+      try {
+        user = await prisma.user.upsert({
+          where: { clerkId: userId },
+          create: {
+            clerkId: userId,
+            email: userData.email,
+            firstName: userData.firstName || "",
+            lastName: userData.lastName || "",
+          },
+          update: {}, // Don't update existing data if user was created by another request
+          select: {
+            id: true,
+            email: true,
+            stripeConnectId: true,
+            stripeOnboardingComplete: true,
+            stripeAccountStatus: true,
+          },
+        });
+        console.log(`[Seller Status] Upserted user ${user.id} from Clerk data`);
+      } catch (upsertError) {
+        // Handle unique constraint violation (P2002) - another request may have created
+        // the user with a different clerkId but same email
+        if (
+          upsertError instanceof Error &&
+          "code" in upsertError &&
+          (upsertError as { code: string }).code === "P2002"
+        ) {
+          console.warn(
+            `[Seller Status] Unique constraint violation for user ${userId}, re-fetching`
+          );
+          // Re-fetch the user that was created by another request
+          user = await prisma.user.findUnique({
+            where: { clerkId: userId },
+            select: {
+              id: true,
+              email: true,
+              stripeConnectId: true,
+              stripeOnboardingComplete: true,
+              stripeAccountStatus: true,
+            },
+          });
+        } else {
+          throw upsertError;
+        }
+      }
     } else if (user && (!user.email || user.email === "") && userData.email) {
       // User exists but with empty data, update with Clerk data
       console.log(`[Seller Status] Updating user ${user.id} with Clerk data`);
