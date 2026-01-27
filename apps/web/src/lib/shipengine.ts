@@ -2,6 +2,16 @@ import { prisma } from "@buttergolf/db";
 import { PENDING_ADDRESS, SHIPENGINE_CARRIER_CODES } from "./constants";
 import { buildTrackingUrl } from "./utils/format";
 import { sendLabelGeneratedEmail } from "./email";
+import { cacheGetOrSet } from "./redis";
+import {
+  validateUKAddress,
+  validateSellerCanShip,
+  validatePostcodeOnly,
+  normalizeUKPostcode,
+  AddressErrorCode,
+  type AddressValidationError,
+  type ShippingAddress,
+} from "./address-validation";
 
 // ShipEngine API client for UK shipping
 const SHIPENGINE_API_KEY = process.env.SHIPENGINE_API_KEY;
@@ -45,7 +55,18 @@ export interface ShippingCalculationResult {
     weight: number;
   };
   fallback?: boolean;
+  cached?: boolean;
 }
+
+export interface ShippingValidationError {
+  code: AddressErrorCode | "PRODUCT_NOT_FOUND" | "PRODUCT_SOLD" | "NO_RATES_AVAILABLE";
+  message: string;
+  field?: string;
+  errors?: AddressValidationError[];
+}
+
+// Cache TTL for shipping rates (15 minutes)
+const SHIPPING_RATE_CACHE_TTL = 15 * 60;
 
 interface ShipEngineRateResponse {
   rate_response: {
@@ -73,7 +94,7 @@ async function shipEngineRequest<T>(
   endpoint: string,
   method: "GET" | "POST" = "GET",
   body?: unknown,
-  retryCount = 0,
+  retryCount = 0
 ): Promise<T> {
   if (!SHIPENGINE_API_KEY) {
     throw new Error("ShipEngine API key not configured");
@@ -104,12 +125,10 @@ async function shipEngineRequest<T>(
         : Math.pow(2, retryCount) * 2; // Exponential backoff: 2s, 4s, 8s
 
       console.warn(
-        `ShipEngine rate limit hit. Retrying in ${retryAfterSeconds}s (attempt ${retryCount + 1}/3)`,
+        `ShipEngine rate limit hit. Retrying in ${retryAfterSeconds}s (attempt ${retryCount + 1}/3)`
       );
 
-      await new Promise((resolve) =>
-        setTimeout(resolve, retryAfterSeconds * 1000),
-      );
+      await new Promise((resolve) => setTimeout(resolve, retryAfterSeconds * 1000));
 
       return shipEngineRequest<T>(endpoint, method, body, retryCount + 1);
     }
@@ -135,21 +154,50 @@ async function shipEngineRequest<T>(
 }
 
 /**
- * Calculate shipping rates using ShipEngine API with fallback
+ * Build a cache key for shipping rates.
+ * Format: shipping:rates:{fromPostcode}:{toPostcode}:{productId}
+ */
+function buildRateCacheKey(fromPostcode: string, toPostcode: string, productId: string): string {
+  const normalizedFrom = normalizeUKPostcode(fromPostcode).replace(/\s/g, "");
+  const normalizedTo = normalizeUKPostcode(toPostcode).replace(/\s/g, "");
+  return `shipping:rates:${normalizedFrom}:${normalizedTo}:${productId}`;
+}
+
+/**
+ * Calculate shipping rates using ShipEngine API with validation and caching.
+ *
+ * Features:
+ * - Validates buyer and seller addresses before API call
+ * - Caches rates for 15 minutes by from/to postcode and product
+ * - Falls back to estimated rates if ShipEngine fails
+ * - Returns structured errors for validation failures
+ *
+ * @throws {ShippingValidationError} When validation fails
  */
 export async function calculateShippingRates(
-  request: ShippingCalculationRequest,
+  request: ShippingCalculationRequest
 ): Promise<ShippingCalculationResult> {
   const { productId, toAddress, fromAddressId } = request;
 
   // Validate required fields
-  if (
-    !productId ||
-    !toAddress?.street1 ||
-    !toAddress?.city ||
-    !toAddress?.zip
-  ) {
-    throw new Error("Missing required shipping calculation fields");
+  if (!productId) {
+    const error: ShippingValidationError = {
+      code: "PRODUCT_NOT_FOUND",
+      message: "Product ID is required",
+    };
+    throw error;
+  }
+
+  // Validate buyer's address
+  const buyerValidation = validateUKAddress(toAddress as ShippingAddress);
+  if (!buyerValidation.isValid) {
+    const error: ShippingValidationError = {
+      code: buyerValidation.errors[0].code,
+      message: buyerValidation.errors[0].message,
+      field: buyerValidation.errors[0].field,
+      errors: buyerValidation.errors,
+    };
+    throw error;
   }
 
   // Get product with seller information
@@ -168,17 +216,30 @@ export async function calculateShippingRates(
   });
 
   if (!product) {
-    throw new Error("Product not found");
+    const error: ShippingValidationError = {
+      code: "PRODUCT_NOT_FOUND",
+      message: "Product not found",
+    };
+    throw error;
   }
 
   if (product.isSold) {
-    throw new Error("Product is already sold");
+    const error: ShippingValidationError = {
+      code: "PRODUCT_SOLD",
+      message: "This product has already been sold",
+    };
+    throw error;
   }
 
-  // Get seller's address
+  // Get and validate seller's address
   const fromAddress = product.user.addresses[0];
-  if (!fromAddress) {
-    throw new Error("Seller has no shipping address configured");
+  const sellerValidation = validateSellerCanShip(fromAddress as ShippingAddress | null);
+  if (!sellerValidation.canShip) {
+    const error: ShippingValidationError = {
+      code: sellerValidation.error!.code,
+      message: sellerValidation.error!.message,
+    };
+    throw error;
   }
 
   // Get shipping dimensions (use defaults if not provided)
@@ -189,93 +250,24 @@ export async function calculateShippingRates(
     weight: product.weight || 500, // grams
   };
 
-  // Try to get real shipping rates from ShipEngine
+  // Build cache key for rate lookup
+  const cacheKey = buildRateCacheKey(fromAddress.zip, toAddress.zip, productId);
+
+  // Try to get cached or fresh shipping rates from ShipEngine
   if (SHIPENGINE_API_KEY) {
     try {
-      // ShipEngine expects dimensions in inches and weight in ounces/pounds
-      // Convert from cm to inches and grams to ounces
-      const lengthInches = dimensions.length / 2.54;
-      const widthInches = dimensions.width / 2.54;
-      const heightInches = dimensions.height / 2.54;
-      const weightOunces = dimensions.weight / 28.3495;
-
-      const rateRequest = {
-        rate_options: {
-          carrier_ids: [], // Will use all connected carriers
-          service_codes: [],
-          calculate_tax_amount: false,
-        },
-        shipment: {
-          ship_from: {
-            name: fromAddress.name,
-            address_line1: fromAddress.street1,
-            address_line2: fromAddress.street2 || undefined,
-            city_locality: fromAddress.city,
-            state_province: fromAddress.state || "",
-            postal_code: fromAddress.zip,
-            country_code: fromAddress.country || "GB",
-            phone: fromAddress.phone || undefined,
-          },
-          ship_to: {
-            name: "Buyer",
-            address_line1: toAddress.street1,
-            address_line2: toAddress.street2 || undefined,
-            city_locality: toAddress.city,
-            state_province: toAddress.state || "",
-            postal_code: toAddress.zip,
-            country_code: toAddress.country || "GB",
-          },
-          packages: [
-            {
-              weight: {
-                value: weightOunces,
-                unit: "ounce",
-              },
-              dimensions: {
-                length: lengthInches,
-                width: widthInches,
-                height: heightInches,
-                unit: "inch",
-              },
-            },
-          ],
-        },
-      };
-
-      const response = await shipEngineRequest<ShipEngineRateResponse>(
-        "/v1/rates",
-        "POST",
-        rateRequest,
+      // Use cache-aside pattern for rate lookup
+      const cachedResult = await cacheGetOrSet<ShippingCalculationResult | null>(
+        cacheKey,
+        SHIPPING_RATE_CACHE_TTL,
+        async () => {
+          return await fetchShipEngineRates(fromAddress, toAddress, dimensions);
+        }
       );
 
-      if (response.rate_response.errors?.length) {
-        console.warn("ShipEngine rate errors:", response.rate_response.errors);
-      }
-
-      // Process rates
-      const rates: ShippingRate[] = response.rate_response.rates
-        .filter((rate) => rate.shipping_amount.amount > 0)
-        .slice(0, 5) // Limit to 5 options
-        .map((rate) => {
-          // Convert to pence (ShipEngine returns GBP for UK)
-          const amountInPence = Math.ceil(rate.shipping_amount.amount * 100);
-          return {
-            carrier: rate.carrier_friendly_name || "Unknown",
-            service: rate.service_type || "Standard",
-            rate: amountInPence.toString(),
-            rateDisplay: `£${(amountInPence / 100).toFixed(2)}`,
-            estimatedDays: rate.delivery_days || 5,
-            deliveryDate: rate.estimated_delivery_date || undefined,
-            id: rate.rate_id,
-          };
-        });
-
-      // Sort by price (cheapest first)
-      rates.sort((a, b) => Number.parseInt(a.rate) - Number.parseInt(b.rate));
-
-      if (rates.length > 0) {
+      if (cachedResult && cachedResult.rates.length > 0) {
         return {
-          rates,
+          ...cachedResult,
           fromAddress: {
             city: fromAddress.city,
             state: fromAddress.state,
@@ -283,19 +275,153 @@ export async function calculateShippingRates(
           },
           toAddress,
           dimensions,
+          cached: true,
         };
       }
     } catch (shipEngineError: unknown) {
-      console.warn(
-        "ShipEngine API error, falling back to estimation:",
-        shipEngineError,
-      );
+      console.warn("ShipEngine API error, falling back to estimation:", shipEngineError);
       // Fall through to fallback calculation
     }
   }
 
   // Fallback calculation if ShipEngine is not available or fails
-  // UK-specific carriers and pricing in GBP (pence)
+  return getFallbackRates(fromAddress, toAddress, dimensions);
+}
+
+/**
+ * Fetch shipping rates from ShipEngine API.
+ * Separated for caching - this is the expensive operation.
+ */
+async function fetchShipEngineRates(
+  fromAddress: {
+    name: string;
+    street1: string;
+    street2: string | null;
+    city: string;
+    state: string;
+    zip: string;
+    country: string;
+    phone: string | null;
+  },
+  toAddress: ShippingCalculationRequest["toAddress"],
+  dimensions: { length: number; width: number; height: number; weight: number }
+): Promise<ShippingCalculationResult | null> {
+  try {
+    // ShipEngine expects dimensions in inches and weight in ounces/pounds
+    // Convert from cm to inches and grams to ounces
+    const lengthInches = dimensions.length / 2.54;
+    const widthInches = dimensions.width / 2.54;
+    const heightInches = dimensions.height / 2.54;
+    const weightOunces = dimensions.weight / 28.3495;
+
+    const rateRequest = {
+      rate_options: {
+        carrier_ids: [], // Will use all connected carriers
+        service_codes: [],
+        calculate_tax_amount: false,
+      },
+      shipment: {
+        ship_from: {
+          name: fromAddress.name,
+          address_line1: fromAddress.street1,
+          address_line2: fromAddress.street2 || undefined,
+          city_locality: fromAddress.city,
+          state_province: fromAddress.state || "",
+          postal_code: fromAddress.zip,
+          country_code: fromAddress.country || "GB",
+          phone: fromAddress.phone || undefined,
+        },
+        ship_to: {
+          name: "Buyer",
+          address_line1: toAddress.street1,
+          address_line2: toAddress.street2 || undefined,
+          city_locality: toAddress.city,
+          state_province: toAddress.state || "",
+          postal_code: toAddress.zip,
+          country_code: toAddress.country || "GB",
+        },
+        packages: [
+          {
+            weight: {
+              value: weightOunces,
+              unit: "ounce",
+            },
+            dimensions: {
+              length: lengthInches,
+              width: widthInches,
+              height: heightInches,
+              unit: "inch",
+            },
+          },
+        ],
+      },
+    };
+
+    const response = await shipEngineRequest<ShipEngineRateResponse>(
+      "/v1/rates",
+      "POST",
+      rateRequest
+    );
+
+    if (response.rate_response.errors?.length) {
+      console.warn("ShipEngine rate errors:", response.rate_response.errors);
+    }
+
+    // Process rates
+    const rates: ShippingRate[] = response.rate_response.rates
+      .filter((rate) => rate.shipping_amount.amount > 0)
+      .slice(0, 5) // Limit to 5 options
+      .map((rate) => {
+        // Convert to pence (ShipEngine returns GBP for UK)
+        const amountInPence = Math.ceil(rate.shipping_amount.amount * 100);
+        return {
+          carrier: rate.carrier_friendly_name || "Unknown",
+          service: rate.service_type || "Standard",
+          rate: amountInPence.toString(),
+          rateDisplay: `£${(amountInPence / 100).toFixed(2)}`,
+          estimatedDays: rate.delivery_days || 5,
+          deliveryDate: rate.estimated_delivery_date || undefined,
+          id: rate.rate_id,
+        };
+      });
+
+    // Sort by price (cheapest first)
+    rates.sort((a, b) => Number.parseInt(a.rate) - Number.parseInt(b.rate));
+
+    if (rates.length > 0) {
+      return {
+        rates,
+        fromAddress: {
+          city: fromAddress.city,
+          state: fromAddress.state,
+          zip: fromAddress.zip,
+        },
+        toAddress,
+        dimensions: {
+          length: dimensions.length,
+          width: dimensions.width,
+          height: dimensions.height,
+          weight: dimensions.weight,
+        },
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.warn("ShipEngine API error in fetchShipEngineRates:", error);
+    return null;
+  }
+}
+
+/**
+ * Get fallback rates when ShipEngine is unavailable.
+ * UK-specific carriers and pricing in GBP (pence).
+ */
+function getFallbackRates(
+  fromAddress: { city: string; state: string; zip: string },
+  toAddress: ShippingCalculationRequest["toAddress"],
+  dimensions: { length: number; width: number; height: number; weight: number }
+): ShippingCalculationResult {
   const fallbackRates: ShippingRate[] = [
     {
       carrier: "Royal Mail",
@@ -346,7 +472,7 @@ export async function calculateShippingRates(
 export async function estimateShippingRate(
   productId: string,
   postcode: string,
-  county: string = "",
+  county: string = ""
 ): Promise<{
   estimatedRate: number;
   estimatedDisplay: string;
@@ -466,9 +592,27 @@ export async function generateShippingLabel(params: {
     throw new Error("Label already generated for this order");
   }
 
-  // Validate seller address
-  if (order.fromAddress.street1 === PENDING_ADDRESS) {
-    throw new Error("Seller must update their shipping address before generating a label");
+  // Validate seller address using comprehensive validation
+  const sellerAddressValidation = validateUKAddress(
+    {
+      street1: order.fromAddress.street1,
+      street2: order.fromAddress.street2 || undefined,
+      city: order.fromAddress.city,
+      state: order.fromAddress.state || undefined,
+      zip: order.fromAddress.zip,
+      country: order.fromAddress.country || "GB",
+      phone: order.fromAddress.phone || undefined,
+    },
+    { isSeller: true }
+  );
+
+  if (!sellerAddressValidation.isValid) {
+    const firstError = sellerAddressValidation.errors[0];
+    throw new Error(
+      firstError.code === AddressErrorCode.SELLER_ADDRESS_INCOMPLETE
+        ? "Seller must update their shipping address before generating a label"
+        : `Invalid seller address: ${firstError.message}`
+    );
   }
 
   // Prepare dimensions
@@ -532,7 +676,7 @@ export async function generateShippingLabel(params: {
   const ratesResponse = await shipEngineRequest<ShipEngineRateResponse>(
     "/v1/rates",
     "POST",
-    rateRequest,
+    rateRequest
   );
 
   // Find a rate that fits within the shipping budget
@@ -546,10 +690,8 @@ export async function generateShippingLabel(params: {
 
   // Select the best rate within budget, or the cheapest if all are over budget
   const budgetInCurrency = order.shippingCost;
-  let selectedRate = availableRates.find(
-    (rate) => rate.shipping_amount.amount <= budgetInCurrency
-  );
-  
+  let selectedRate = availableRates.find((rate) => rate.shipping_amount.amount <= budgetInCurrency);
+
   if (!selectedRate) {
     // Use cheapest if nothing within budget (platform absorbs the difference)
     selectedRate = availableRates[0];
@@ -568,7 +710,7 @@ export async function generateShippingLabel(params: {
   const labelResponse = await shipEngineRequest<ShipEngineLabelResponse>(
     "/v1/labels",
     "POST",
-    labelRequest,
+    labelRequest
   );
 
   // Build carrier-specific tracking URL
@@ -696,4 +838,3 @@ export async function getOrderTracking(orderId: string): Promise<{
     return null;
   }
 }
-
