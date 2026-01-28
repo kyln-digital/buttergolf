@@ -36,7 +36,7 @@ const categoryToClubKind: Record<keyof ClubModelsData, ClubKind> = {
 
 /**
  * Seed ClubModel reference data for product upload dropdowns
- * 
+ *
  * This populates the ClubModel table with verified equipment models that users
  * can select when listing their products. Includes historic and current models
  * across all major brands and categories.
@@ -46,9 +46,7 @@ export async function seedClubModels(prisma: PrismaClient) {
 
   // Load fixture data
   const fixturesPath = join(__dirname, "../fixtures/clubModels.json");
-  const fixtureData = JSON.parse(
-    readFileSync(fixturesPath, "utf-8"),
-  ) as ClubModelsData;
+  const fixtureData = JSON.parse(readFileSync(fixturesPath, "utf-8")) as ClubModelsData;
 
   // Get all brands from database for slug lookup
   const brands = await prisma.brand.findMany();
@@ -100,9 +98,7 @@ export async function seedClubModels(prisma: PrismaClient) {
 
           totalCreated++;
         } catch (error) {
-          console.error(
-            `    ❌ Error creating ${brand.name} ${modelName}: ${error}`,
-          );
+          console.error(`    ❌ Error creating ${brand.name} ${modelName}: ${error}`);
           totalSkipped++;
         }
       }
@@ -110,13 +106,13 @@ export async function seedClubModels(prisma: PrismaClient) {
   }
 
   console.log(
-    `\n✅ Club models seeding complete: ${totalCreated} created/updated, ${totalSkipped} skipped`,
+    `\n✅ Club models seeding complete: ${totalCreated} created/updated, ${totalSkipped} skipped`
   );
 }
 
 /**
  * Calculate realistic usage count for autocomplete ranking
- * 
+ *
  * Popular/current models get higher counts, older/discontinued models get lower counts.
  * This affects the order of suggestions in autocomplete dropdowns.
  */

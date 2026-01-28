@@ -35,12 +35,7 @@ import Image from "next/image";
 Or reference directly from public folder:
 
 ```tsx
-<Image
-  src="/_assets/images/golf-hero-1.jpg"
-  alt="Golf"
-  width={400}
-  height={400}
-/>
+<Image src="/_assets/images/golf-hero-1.jpg" alt="Golf" width={400} height={400} />
 ```
 
 ## Adding New Images

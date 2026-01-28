@@ -10,10 +10,7 @@ import { getUserIdFromRequest } from "@/lib/auth";
  * (e.g., using Intersection Observer in the frontend) rather than automatically
  * on GET to provide a more accurate read status.
  */
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Support both web cookies and mobile Bearer tokens
     const clerkId = await getUserIdFromRequest(req);
@@ -65,9 +62,6 @@ export async function POST(
     });
   } catch (error) {
     console.error("Error marking messages as read:", error);
-    return NextResponse.json(
-      { error: "Failed to mark messages as read" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to mark messages as read" }, { status: 500 });
   }
 }

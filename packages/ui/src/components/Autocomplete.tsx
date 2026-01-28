@@ -13,8 +13,7 @@ export interface AutocompleteSuggestion {
   metadata?: Record<string, unknown>;
 }
 
-export interface AutocompleteProps
-  extends Omit<InputProps, "value" | "onChangeText"> {
+export interface AutocompleteProps extends Omit<InputProps, "value" | "onChangeText"> {
   value: string;
   onValueChange: (value: string) => void;
   onSelectSuggestion: (suggestion: AutocompleteSuggestion) => void;
@@ -43,9 +42,7 @@ export function Autocomplete({
   const [loading, setLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined,
-  );
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Fetch suggestions with debounce
   const fetchSuggestionsDebounced = useCallback(
@@ -75,7 +72,7 @@ export function Autocomplete({
         }
       }, debounceMs);
     },
-    [fetchSuggestions, debounceMs, minChars, allowCustom],
+    [fetchSuggestions, debounceMs, minChars, allowCustom]
   );
 
   // Handle input change
@@ -112,9 +109,7 @@ export function Autocomplete({
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault();
-        setSelectedIndex((prev) =>
-          prev < suggestions.length - 1 ? prev + 1 : prev,
-        );
+        setSelectedIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : prev));
         break;
       case "ArrowUp":
         e.preventDefault();
@@ -139,10 +134,7 @@ export function Autocomplete({
   // Click outside to close
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
         setSelectedIndex(-1);
       }
@@ -160,11 +152,7 @@ export function Autocomplete({
   };
 
   return (
-    <Column
-      ref={containerRef}
-      position="relative"
-      width="100%"
-    >
+    <Column ref={containerRef} position="relative" width="100%">
       <div onKeyDown={handleKeyDown}>
         <Input
           value={value}
@@ -207,9 +195,7 @@ export function Autocomplete({
                   key={suggestion.id || suggestion.name}
                   padding="$md"
                   cursor="pointer"
-                  backgroundColor={
-                    selectedIndex === index ? "$backgroundHover" : "$surface"
-                  }
+                  backgroundColor={selectedIndex === index ? "$backgroundHover" : "$surface"}
                   hoverStyle={{
                     backgroundColor: "$backgroundHover",
                   }}
@@ -230,9 +216,7 @@ export function Autocomplete({
               hoverStyle={{
                 backgroundColor: "$backgroundHover",
               }}
-              onPress={() =>
-                handleSelectSuggestion({ id: null, name: value.trim() })
-              }
+              onPress={() => handleSelectSuggestion({ id: null, name: value.trim() })}
             >
               <Text size="$3" color="$textMuted">
                 Add &quot;{value}&quot; as new model

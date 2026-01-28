@@ -1,28 +1,13 @@
 "use client";
 
 import { useState, useEffect, useSyncExternalStore } from "react";
-import {
-  Column,
-  Row,
-  Text,
-  Heading,
-  Button,
-  Card,
-  Spinner,
-} from "@buttergolf/ui";
+import { Column, Row, Text, Heading, Button, Card, Spinner } from "@buttergolf/ui";
 import { X, Zap, Star, CheckCircle } from "@tamagui/lucide-icons";
-import {
-  Elements,
-  PaymentElement,
-  useStripe,
-  useElements,
-} from "@stripe/react-stripe-js";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 
 // Initialize Stripe
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-);
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 type PromotionType = "BUMP" | "PRO_SHOP_FEATURE";
 
@@ -171,12 +156,7 @@ function PromotionPaymentForm({
           >
             Back
           </Button>
-          <Button
-            butterVariant="primary"
-            size="$4"
-            flex={2}
-            disabled={!stripe || loading}
-          >
+          <Button butterVariant="primary" size="$4" flex={2} disabled={!stripe || loading}>
             {loading ? (
               <Row gap="$sm" alignItems="center">
                 <Spinner size="sm" color="$textInverse" />
@@ -277,12 +257,7 @@ function PromotionPurchaseContent({
       {/* Header */}
       <Row justifyContent="space-between" alignItems="center">
         <Heading level={3}>Boost Your Listing</Heading>
-        <Button
-          size="$3"
-          chromeless
-          onPress={onClose}
-          aria-label="Close"
-        >
+        <Button size="$3" chromeless onPress={onClose} aria-label="Close">
           <X size={24} />
         </Button>
       </Row>

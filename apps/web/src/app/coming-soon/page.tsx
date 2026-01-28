@@ -46,8 +46,7 @@ export default function ComingSoonPage() {
           position: "absolute",
           top: "16px",
           right: "16px",
-          fontFamily:
-            'Urbanist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: 'Urbanist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
           fontSize: "14px",
           fontWeight: 500,
           color: "rgba(255, 250, 210, 0.6)", // Subtle Vanilla Cream
@@ -67,8 +66,7 @@ export default function ComingSoonPage() {
       {/* Coming Soon Text */}
       <h1
         style={{
-          fontFamily:
-            'Urbanist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: 'Urbanist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
           fontSize: "clamp(32px, 8vw, 64px)",
           fontWeight: 700,
           color: "#FFFAD2", // Vanilla Cream
@@ -84,8 +82,7 @@ export default function ComingSoonPage() {
       {/* Tagline */}
       <p
         style={{
-          fontFamily:
-            'Urbanist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: 'Urbanist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
           fontSize: "clamp(16px, 4vw, 24px)",
           fontWeight: 400,
           color: "rgba(255, 250, 210, 0.85)", // Vanilla Cream with opacity

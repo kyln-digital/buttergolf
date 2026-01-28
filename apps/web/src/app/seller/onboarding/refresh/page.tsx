@@ -6,7 +6,7 @@ import { Column, Text, Spinner } from "@buttergolf/ui";
 
 /**
  * /seller/onboarding/refresh
- * 
+ *
  * Web redirect page for Stripe Connect onboarding refresh/retry.
  * Stripe redirects here if the account link expired or user needs to retry,
  * then we redirect to the mobile app via deep link.
@@ -18,9 +18,9 @@ export default function SellerOnboardingRefreshPage() {
     // Build deep link with any query params Stripe passed
     const params = searchParams.toString();
     const deepLink = `buttergolf://seller/onboarding/refresh${params ? `?${params}` : ""}`;
-    
+
     console.log("[SellerOnboardingRefresh] Redirecting to deep link:", deepLink);
-    
+
     // Redirect to the mobile app
     window.location.href = deepLink;
   }, [searchParams]);

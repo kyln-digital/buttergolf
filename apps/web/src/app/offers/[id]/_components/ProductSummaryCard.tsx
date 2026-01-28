@@ -1,15 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Column,
-  Row,
-  Text,
-  Button,
-  Heading,
-  Badge,
-  Image,
-} from "@buttergolf/ui";
+import { Column, Row, Text, Button, Heading, Badge, Image } from "@buttergolf/ui";
 import { useRouter } from "next/navigation";
 
 interface ProductSummaryCardProps {
@@ -151,7 +143,9 @@ export function ProductSummaryCard({
       {/* Seller Info */}
       <Column gap="$sm">
         <Text size="$3" color="$slateSmoke" weight="bold">
-          {isUserSeller ? "Your listing" : `Seller: ${`${product.user.firstName} ${product.user.lastName}`.trim() || "Unknown"}`}
+          {isUserSeller
+            ? "Your listing"
+            : `Seller: ${`${product.user.firstName} ${product.user.lastName}`.trim() || "Unknown"}`}
         </Text>
         {ratingCount > 0 && (
           <Row gap="$xs" alignItems="center">
@@ -244,9 +238,7 @@ export function ProductSummaryCard({
         {(isOfferExpired || isOfferRejected) && (
           <Column alignItems="center" padding="$md">
             <Text size="$4" color="$textSecondary" textAlign="center">
-              {isOfferExpired
-                ? "This offer has expired"
-                : "This offer was rejected"}
+              {isOfferExpired ? "This offer has expired" : "This offer was rejected"}
             </Text>
           </Column>
         )}

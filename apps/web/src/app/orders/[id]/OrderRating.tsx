@@ -1,16 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Card,
-  Column,
-  Row,
-  Text,
-  TextArea,
-  Button,
-  Heading,
-  Badge,
-} from "@buttergolf/ui";
+import { Card, Column, Row, Text, TextArea, Button, Heading, Badge } from "@buttergolf/ui";
 import { RATING_LIMITS } from "@/lib/constants";
 import { formatDate } from "@/lib/utils/format";
 
@@ -36,12 +27,7 @@ function getRatingLabel(rating: number): string {
   return labels[rating] || "";
 }
 
-export function OrderRating({
-  orderId,
-  isDelivered,
-  isBuyer,
-  sellerName,
-}: OrderRatingProps) {
+export function OrderRating({ orderId, isDelivered, isBuyer, sellerName }: OrderRatingProps) {
   const [rating, setRating] = useState<Rating | null>(null);
   const [canRate, setCanRate] = useState(false);
   const [loading, setLoading] = useState(true);

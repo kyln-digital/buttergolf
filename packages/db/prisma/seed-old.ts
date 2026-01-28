@@ -57,8 +57,8 @@ async function main() {
           sortOrder: categoryDef.sortOrder,
         },
         create: categoryDef,
-      }),
-    ),
+      })
+    )
   );
 
   console.log(`✅ Created ${categories.length} categories`);

@@ -60,14 +60,17 @@ const store = new Map<string, RateLimitEntry>();
  * Cleanup expired entries periodically
  * Runs every 5 minutes to prevent memory leaks
  */
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, value] of store.entries()) {
-    if (value.resetAt.getTime() < now) {
-      store.delete(key);
+setInterval(
+  () => {
+    const now = Date.now();
+    for (const [key, value] of store.entries()) {
+      if (value.resetAt.getTime() < now) {
+        store.delete(key);
+      }
     }
-  }
-}, 5 * 60 * 1000);
+  },
+  5 * 60 * 1000
+);
 
 /**
  * Check if request should be rate limited
@@ -92,10 +95,7 @@ setInterval(() => {
  *   return rateLimitResponse(rateLimit.resetAt);
  * }
  */
-export function checkRateLimit(
-  userId: string,
-  config: RateLimitConfig
-): RateLimitResult {
+export function checkRateLimit(userId: string, config: RateLimitConfig): RateLimitResult {
   const key = config.keyFn(userId);
   const now = Date.now();
 

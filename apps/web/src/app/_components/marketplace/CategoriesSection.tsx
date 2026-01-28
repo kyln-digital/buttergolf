@@ -31,18 +31,8 @@ export function CategoriesSection() {
   const animationDuration = CATEGORIES.length * 4; // 4 seconds per category
 
   return (
-    <Column
-      width="100%"
-      paddingVertical="$2xl"
-      backgroundColor="$surface"
-      overflow="hidden"
-    >
-      <Column
-        maxWidth={1200}
-        marginHorizontal="auto"
-        paddingHorizontal="$md"
-        marginBottom="$2xl"
-      >
+    <Column width="100%" paddingVertical="$2xl" backgroundColor="$surface" overflow="hidden">
+      <Column maxWidth={1200} marginHorizontal="auto" paddingHorizontal="$md" marginBottom="$2xl">
         {/* Headings */}
         <Column gap="$sm" alignItems="center">
           <h2
@@ -116,8 +106,7 @@ export function CategoriesSection() {
                 borderRadius: "14px",
                 flexShrink: 0,
                 textDecoration: "none",
-                boxShadow:
-                  "0 8px 16px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1)",
+                boxShadow: "0 8px 16px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1)",
                 transition: "transform 0.3s ease, box-shadow 0.3s ease",
               }}
             >

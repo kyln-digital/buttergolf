@@ -48,7 +48,11 @@ async function main() {
     },
   });
 
-  console.log("✅ Created users:", [`${user1.firstName} ${user1.lastName}`, `${user2.firstName} ${user2.lastName}`, `${user3.firstName} ${user3.lastName}`]);
+  console.log("✅ Created users:", [
+    `${user1.firstName} ${user1.lastName}`,
+    `${user2.firstName} ${user2.lastName}`,
+    `${user3.firstName} ${user3.lastName}`,
+  ]);
 
   // Create categories from centralized constants
   const categories = await Promise.all(
@@ -62,8 +66,8 @@ async function main() {
           sortOrder: categoryDef.sortOrder,
         },
         create: categoryDef,
-      }),
-    ),
+      })
+    )
   );
 
   console.log(`✅ Created ${categories.length} categories`);
@@ -79,8 +83,8 @@ async function main() {
           sortOrder: brandDef.sortOrder,
         },
         create: brandDef,
-      }),
-    ),
+      })
+    )
   );
 
   console.log(`✅ Created ${brands.length} brands`);
@@ -310,4 +314,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-

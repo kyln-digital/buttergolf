@@ -30,9 +30,7 @@ export function ProductCard({ product, onPress, showHoverActions = true }: Produ
       setShowAuthMessage(true);
       // Redirect to sign-in after 1 second
       setTimeout(() => {
-        router.push(
-          `/sign-in?redirect_url=${encodeURIComponent(globalThis.location.pathname)}`,
-        );
+        router.push(`/sign-in?redirect_url=${encodeURIComponent(globalThis.location.pathname)}`);
       }, 1000);
       return;
     }
@@ -70,12 +68,7 @@ export function ProductCard({ product, onPress, showHoverActions = true }: Produ
             zIndex: 9999,
           }}
         >
-          <Card
-            variant="elevated"
-            padding="$md"
-            backgroundColor="$secondary"
-            borderRadius="$md"
-          >
+          <Card variant="elevated" padding="$md" backgroundColor="$secondary" borderRadius="$md">
             <Text fontSize="$4" color="$textInverse" fontWeight="500">
               Please sign in to add favourites
             </Text>

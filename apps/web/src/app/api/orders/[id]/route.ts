@@ -3,10 +3,7 @@ import { prisma } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
 
 // GET /api/orders/[id] - Get single order details
-export async function GET(
-  req: Request,
-  context: { params: Promise<{ id: string }> },
-) {
+export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
     // Support both web cookies and mobile Bearer tokens
     const clerkId = await getUserIdFromRequest(req);
@@ -79,9 +76,6 @@ export async function GET(
     return NextResponse.json(orderWithRole);
   } catch (error) {
     console.error("Error fetching order:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch order" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to fetch order" }, { status: 500 });
   }
 }

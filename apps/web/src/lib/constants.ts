@@ -16,8 +16,8 @@ export const PENDING_ADDRESS = "Address pending";
 // ============================================================================
 
 export const POLLING_INTERVALS = {
-  MESSAGES: 10000,        // 10 seconds
-  ORDER_STATUS: 15000,    // 15 seconds
+  MESSAGES: 10000, // 10 seconds
+  ORDER_STATUS: 15000, // 15 seconds
 } as const;
 
 // ============================================================================
@@ -67,11 +67,11 @@ export const MESSAGE_PAGINATION = {
  */
 export const CARRIER_TRACKING_URLS: Record<string, (code: string) => string> = {
   "Royal Mail": (code) => `https://www.royalmail.com/track-your-item#/tracking-results/${code}`,
-  "Evri": (code) => `https://www.evri.com/track-parcel/${code}`,
-  "DPD": (code) => `https://www.dpd.co.uk/apps/tracking/?reference=${code}`,
-  "USPS": (code) => `https://tools.usps.com/go/TrackConfirmAction?tLabels=${code}`,
-  "UPS": (code) => `https://www.ups.com/track?tracknum=${code}`,
-  "FedEx": (code) => `https://www.fedex.com/fedextrack/?trknbr=${code}`,
+  Evri: (code) => `https://www.evri.com/track-parcel/${code}`,
+  DPD: (code) => `https://www.dpd.co.uk/apps/tracking/?reference=${code}`,
+  USPS: (code) => `https://tools.usps.com/go/TrackConfirmAction?tLabels=${code}`,
+  UPS: (code) => `https://www.ups.com/track?tracknum=${code}`,
+  FedEx: (code) => `https://www.fedex.com/fedextrack/?trknbr=${code}`,
 };
 
 // ============================================================================
@@ -84,9 +84,9 @@ export const CARRIER_TRACKING_URLS: Record<string, (code: string) => string> = {
  */
 export const SHIPENGINE_CARRIER_CODES: Record<string, string> = {
   "Royal Mail": "royal_mail",
-  "Evri": "evri_uk",
-  "DPD": "dpd_uk",
-  "USPS": "stamps_com",
-  "UPS": "ups",
-  "FedEx": "fedex",
+  Evri: "evri_uk",
+  DPD: "dpd_uk",
+  USPS: "stamps_com",
+  UPS: "ups",
+  FedEx: "fedex",
 };

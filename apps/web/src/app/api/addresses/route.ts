@@ -32,10 +32,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(addresses);
   } catch (error) {
     console.error("Error fetching addresses:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch addresses" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to fetch addresses" }, { status: 500 });
   }
 }
 
@@ -65,19 +62,13 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields (state/county is optional for UK)
     if (!street1 || !city || !zip) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     // Validate name - either combined name or first+last required
     const fullName = name || `${firstName || ""} ${lastName || ""}`.trim();
     if (!fullName) {
-      return NextResponse.json(
-        { error: "Name is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
     // Get user from database
@@ -118,9 +109,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(address, { status: 201 });
   } catch (error) {
     console.error("Error creating address:", error);
-    return NextResponse.json(
-      { error: "Failed to create address" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to create address" }, { status: 500 });
   }
 }

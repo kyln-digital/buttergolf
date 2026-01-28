@@ -34,10 +34,7 @@ type WebhookEvent = {
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
   if (!WEBHOOK_SECRET) {
-    return NextResponse.json(
-      { error: "Missing CLERK_WEBHOOK_SECRET" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Missing CLERK_WEBHOOK_SECRET" }, { status: 500 });
   }
 
   const headerPayload = await headers();
@@ -46,10 +43,7 @@ export async function POST(req: Request) {
   const svix_signature = headerPayload.get("svix-signature");
 
   if (!svix_id || !svix_timestamp || !svix_signature) {
-    return NextResponse.json(
-      { error: "Missing Svix headers" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Missing Svix headers" }, { status: 400 });
   }
 
   const payload = await req.json();
@@ -75,8 +69,7 @@ export async function POST(req: Request) {
     if (eventType === "user.created" || eventType === "user.updated") {
       const data = evt.data;
       const clerkId: string = data.id;
-      const email: string | undefined =
-        data.email_addresses?.[0]?.email_address;
+      const email: string | undefined = data.email_addresses?.[0]?.email_address;
       const firstName = data.first_name || "";
       const lastName = data.last_name || "";
       const imageUrl: string | undefined = data.image_url;
@@ -127,24 +120,26 @@ export async function POST(req: Request) {
 
         // Delete Stripe Connect account if exists
         if (user.stripeConnectId) {
-          console.log(`[Clerk Webhook] Attempting to delete Stripe account: ${user.stripeConnectId}`);
+          console.log(
+            `[Clerk Webhook] Attempting to delete Stripe account: ${user.stripeConnectId}`
+          );
           try {
             const stripe = getStripeClient();
             if (!stripe) {
               console.warn(
-                "[Clerk Webhook] STRIPE_SECRET_KEY is not set; skipping Stripe Connect account deletion",
+                "[Clerk Webhook] STRIPE_SECRET_KEY is not set; skipping Stripe Connect account deletion"
               );
             } else {
               await stripe.accounts.del(user.stripeConnectId);
             }
             console.log(
-              `[Clerk Webhook] Successfully deleted Stripe Connect account ${user.stripeConnectId}`,
+              `[Clerk Webhook] Successfully deleted Stripe Connect account ${user.stripeConnectId}`
             );
           } catch (stripeError) {
             // Log but don't fail - account may already be deleted or invalid
             console.error(
               `[Clerk Webhook] Failed to delete Stripe Connect account ${user.stripeConnectId}:`,
-              stripeError,
+              stripeError
             );
           }
         } else {

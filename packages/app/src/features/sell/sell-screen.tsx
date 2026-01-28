@@ -5,14 +5,7 @@ import { Column, Row, Text, Button, View } from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, X } from "@tamagui/lucide-icons";
 
-import type {
-  SellFormData,
-  SellStep,
-  Category,
-  Brand,
-  Model,
-  ImageData,
-} from "./types";
+import type { SellFormData, SellStep, Category, Brand, Model, ImageData } from "./types";
 import { SELL_STEPS } from "./types";
 import { PhotoStep } from "./components/PhotoStep";
 import { DetailsStep } from "./components/DetailsStep";
@@ -196,12 +189,7 @@ export function SellScreen({
 
         {/* Title & Step Counter */}
         <Column alignItems="center" gap="$1">
-          <Text
-            fontFamily="$heading"
-            size="$7"
-            fontWeight="700"
-            color="$text"
-          >
+          <Text fontFamily="$heading" size="$7" fontWeight="700" color="$text">
             {stepInfo.title}
           </Text>
           <Text size="$3" fontWeight="500" color="$textSecondary">

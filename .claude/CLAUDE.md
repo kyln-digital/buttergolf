@@ -1053,6 +1053,7 @@ grep -r '<Row.*justify="' apps/web/src/app --include="*.tsx"
 - **Core Concepts**: https://tamagui.dev/docs/intro/introduction
 
 **Core Documentation:**
+
 - [Animations](https://tamagui.dev/docs/core/animations.md): Animation system and utilities
 - [Config V4](https://tamagui.dev/docs/core/config-v4.md): Version 4 configuration guide
 - [Configuration](https://tamagui.dev/docs/core/configuration.md): General configuration options
@@ -1064,12 +1065,14 @@ grep -r '<Row.*justify="' apps/web/src/app --include="*.tsx"
 - [Variants](https://tamagui.dev/docs/core/variants.md): Component variants system
 
 **Component Documentation:**
+
 - All components at: https://tamagui.dev/ui/[component-name]
 - [Button](https://tamagui.dev/ui/button.md): Customizable button with variants and themes
 - [Text](https://tamagui.dev/ui/text.md): Text display component
 - [Stacks](https://tamagui.dev/ui/stacks.md): Layout stack components (XStack/YStack)
 
 **Guides:**
+
 - [Next.js Guide](https://tamagui.dev/docs/guides/next-js): Next.js integration
 - [Theme Builder](https://tamagui.dev/docs/guides/theme-builder): Creating custom themes
 

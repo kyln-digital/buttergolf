@@ -19,9 +19,7 @@ interface MarketplaceHomeClientProps {
   readonly products: ProductCardData[];
 }
 
-export default function MarketplaceHomeClient({
-  products,
-}: Readonly<MarketplaceHomeClientProps>) {
+export default function MarketplaceHomeClient({ products }: Readonly<MarketplaceHomeClientProps>) {
   const [activeMode, setActiveMode] = useState<"buying" | "selling">("buying");
   const { isSignedIn } = useUser();
 
@@ -56,9 +54,7 @@ export default function MarketplaceHomeClient({
           </AnimatedView>
         </>
       ) : (
-        <AnimatedView delay={0}>
-          {isSignedIn ? <SellerHub /> : <SellingPlaceholder />}
-        </AnimatedView>
+        <AnimatedView delay={0}>{isSignedIn ? <SellerHub /> : <SellingPlaceholder />}</AnimatedView>
       )}
 
       <AnimatedView delay={0}>

@@ -34,7 +34,7 @@ If you specify the account’s country or request any capabilities for it, then 
 - **No Stripe Dashboard**: If Stripe is responsible for collecting requirements, then the onboarding flow lets the account owner select any acquiring country. Otherwise, your custom onboarding flow must set the country and request capabilities.
 
 > #### Use include to populate objects in the response
-> 
+>
 > When you create, retrieve or update an `Account` in API v2, certain properties are only populated in the response if you specify them [in the include parameter](https://docs.stripe.com/api-includable-response-values.md). For any of those properties that you don’t specify, the response includes them as null, regardless of their actual value.
 
 ```curl
@@ -108,14 +108,15 @@ For details about using these collection options, see the documentation for the 
 
 ## Determine whether to collect all information up front
 
-As the platform, you must decide if you want to collect the required information from your connected accounts *up front* (Upfront onboarding is a type of onboarding where you collect all required verification information from your users at sign-up) or *incrementally* (Incremental onboarding is a type of onboarding where you gradually collect required verification information from your users. You collect a minimum amount of information at sign-up, and you collect more information as the connected account earns more revenue). Up-front onboarding collects the `eventually_due` requirements for the account, while incremental onboarding only collects the `currently_due` requirements.
+As the platform, you must decide if you want to collect the required information from your connected accounts _up front_ (Upfront onboarding is a type of onboarding where you collect all required verification information from your users at sign-up) or _incrementally_ (Incremental onboarding is a type of onboarding where you gradually collect required verification information from your users. You collect a minimum amount of information at sign-up, and you collect more information as the connected account earns more revenue). Up-front onboarding collects the `eventually_due` requirements for the account, while incremental onboarding only collects the `currently_due` requirements.
 
-| Onboarding type | Advantages                                                                                                                                                                                                               |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Up-front**    | - Normally requires only one request for all information
-  - Avoids the possibility of payout and processing issues due to missed deadlines
-  - Exposes potential risk early when accounts refuse to provide information |
-| **Incremental** | - Accounts can onboard quickly because they don’t have to provide as much information                                                                                                                                    |
+| Onboarding type | Advantages                                               |
+| --------------- | -------------------------------------------------------- |
+| **Up-front**    | - Normally requires only one request for all information |
+
+- Avoids the possibility of payout and processing issues due to missed deadlines
+- Exposes potential risk early when accounts refuse to provide information |
+  | **Incremental** | - Accounts can onboard quickly because they don’t have to provide as much information |
 
 To determine whether to use up-front or incremental onboarding, review the [requirements](https://docs.stripe.com/connect/required-verification-information.md) for your connected accounts’ locations and capabilities. While Stripe tries to minimise any impact to connected accounts, requirements might change over time.
 
@@ -218,10 +219,10 @@ AccountSession accountSession = client.v1().accountSessions().create(params);
 ```node
 // Set your secret key. Remember to switch to your live secret key in production.
 // See your keys here: https://dashboard.stripe.com/apikeys
-const stripe = require('stripe')('<<YOUR_SECRET_KEY>>');
+const stripe = require("stripe")("<<YOUR_SECRET_KEY>>");
 
 const accountSession = await stripe.accountSessions.create({
-  account: '{{CONNECTEDACCOUNT_ID}}',
+  account: "{{CONNECTEDACCOUNT_ID}}",
   components: {
     account_onboarding: {
       enabled: true,
@@ -272,9 +273,9 @@ After creating the Account Session and [initialising ConnectJS](https://docs.str
 
 ```js
 // Include this element in your HTML
-const accountOnboarding = stripeConnectInstance.create('account-onboarding');
+const accountOnboarding = stripeConnectInstance.create("account-onboarding");
 accountOnboarding.setOnExit(() => {
-  console.log('User exited the onboarding flow');
+  console.log("User exited the onboarding flow");
 });
 container.appendChild(accountOnboarding);
 
@@ -301,24 +302,24 @@ const AccountOnboardingUI = () => {
   return (
     <ConnectComponentsProvider connectInstance={stripeConnectInstance}>
       <ConnectAccountOnboarding
-          onExit={() => {
-            console.log("The account has exited onboarding");
-          }}
-          // Optional: make sure to follow our policy instructions above
-          // fullTermsOfServiceUrl="{{URL}}"
-          // recipientTermsOfServiceUrl="{{URL}}"
-          // privacyPolicyUrl="{{URL}}"
-          // collectionOptions={{
-          //   fields: 'eventually_due',
-          //   futureRequirements: 'include',
-          // }}
-          // onStepChange={(stepChange) => {
-          //   console.log(`User entered: ${stepChange.step}`);
-          // }}
-        />
+        onExit={() => {
+          console.log("The account has exited onboarding");
+        }}
+        // Optional: make sure to follow our policy instructions above
+        // fullTermsOfServiceUrl="{{URL}}"
+        // recipientTermsOfServiceUrl="{{URL}}"
+        // privacyPolicyUrl="{{URL}}"
+        // collectionOptions={{
+        //   fields: 'eventually_due',
+        //   futureRequirements: 'include',
+        // }}
+        // onStepChange={(stepChange) => {
+        //   console.log(`User entered: ${stepChange.step}`);
+        // }}
+      />
     </ConnectComponentsProvider>
   );
-}
+};
 ```
 
 See [Account onboarding](https://docs.stripe.com/connect/supported-embedded-components/account-onboarding.md) for onboarding features such as:
@@ -345,13 +346,13 @@ Accounts store identity information in the `identity` hash.
 Listen to the [v2.core.account[requirements].updated](https://docs.stripe.com/api/v2/core/events/event-types.md?api-version=preview) event. If the account contains any requirements with a [minimum_deadline.status](https://docs.stripe.com/api/v2/core/accounts/retrieve.md#v2_retrieve_accounts-response-requirements-entries-minimum_deadline-status) of `currently_due` when the deadline arrives, the corresponding functionality is disabled and those statuses become `past_due`.
 
 Let your accounts remediate their verification requirements by directing them to the [Account onboarding component](https://docs.stripe.com/connect/supported-embedded-components/account-onboarding.md).
- (See full diagram at https://docs.stripe.com/connect/embedded-onboarding)
+(See full diagram at https://docs.stripe.com/connect/embedded-onboarding)
+
 ### Disable Stripe user authentication
 
 When using embedded onboarding, [Stripe user authentication](https://docs.stripe.com/connect/get-started-connect-embedded-components.md#user-authentication-in-connect-embedded-components) is enabled by default. You can use [`disable_stripe_user_authentication`](https://docs.stripe.com/api/account_sessions/create.md#create_account_session-components-account_onboarding-features-disable_stripe_user_authentication) to remove this behaviour.
 
 We recommend implementing two-factor authentication or equivalent security measures as a [best practice](https://docs.stripe.com/connect/risk-management/best-practices.md#prevent-account-take-overs). For account configurations that support this feature, such as Custom, you assume liability for connected accounts if they can’t pay back [negative balances](https://docs.stripe.com/connect/risk-management/best-practices.md#decide-your-approach-to-negative-balance-liability).
-
 
 # Accounts v1
 
@@ -477,18 +478,18 @@ Account account = client.v1().accounts().create(params);
 ```node
 // Set your secret key. Remember to switch to your live secret key in production.
 // See your keys here: https://dashboard.stripe.com/apikeys
-const stripe = require('stripe')('<<YOUR_SECRET_KEY>>');
+const stripe = require("stripe")("<<YOUR_SECRET_KEY>>");
 
 const account = await stripe.accounts.create({
   controller: {
     fees: {
-      payer: 'application',
+      payer: "application",
     },
     losses: {
-      payments: 'application',
+      payments: "application",
     },
     stripe_dashboard: {
-      type: 'express',
+      type: "express",
     },
   },
 });
@@ -587,10 +588,10 @@ Account account = client.v1().accounts().create(params);
 ```node
 // Set your secret key. Remember to switch to your live secret key in production.
 // See your keys here: https://dashboard.stripe.com/apikeys
-const stripe = require('stripe')('<<YOUR_SECRET_KEY>>');
+const stripe = require("stripe")("<<YOUR_SECRET_KEY>>");
 
 const account = await stripe.accounts.create({
-  type: 'standard',
+  type: "standard",
 });
 ```
 
@@ -603,4 +604,5 @@ result, err := sc.V1Accounts.Create(context.TODO(), params)
 ```
 
 ```dotnet
-// Set your secret 
+// Set your secret
+```

@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  ConnectBalances,
-  ConnectPayouts,
-  ConnectPayoutsList,
-} from "@stripe/react-connect-js";
+import { ConnectBalances, ConnectPayouts, ConnectPayoutsList } from "@stripe/react-connect-js";
 import { Column, Heading, Text, Card } from "@buttergolf/ui";
 
 /**

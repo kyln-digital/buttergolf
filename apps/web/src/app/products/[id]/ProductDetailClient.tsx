@@ -4,15 +4,7 @@ import { useState, useEffect, useCallback, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
-import {
-  Column,
-  Row,
-  Container,
-  Text,
-  Button,
-  Card,
-  Image,
-} from "@buttergolf/ui";
+import { Column, Row, Container, Text, Button, Card, Image } from "@buttergolf/ui";
 import { ProductInformation } from "./_components/ProductInformation";
 import { BuyNowSheet } from "./_components/BuyNowSheet";
 
@@ -57,9 +49,7 @@ interface ProductDetailClientProps {
   product: Product;
 }
 
-export default function ProductDetailClient({
-  product,
-}: ProductDetailClientProps) {
+export default function ProductDetailClient({ product }: ProductDetailClientProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [showMobileBar, setShowMobileBar] = useState(false);
@@ -118,18 +108,13 @@ export default function ProductDetailClient({
 
       if (e.key === "ArrowLeft" && selectedImageIndex > 0) {
         setSelectedImageIndex((prev) => Math.max(0, prev - 1));
-      } else if (
-        e.key === "ArrowRight" &&
-        selectedImageIndex < product.images.length - 1
-      ) {
-        setSelectedImageIndex((prev) =>
-          Math.min(product.images.length - 1, prev + 1),
-        );
+      } else if (e.key === "ArrowRight" && selectedImageIndex < product.images.length - 1) {
+        setSelectedImageIndex((prev) => Math.min(product.images.length - 1, prev + 1));
       } else if (e.key === "Escape") {
         setLightboxOpen(false);
       }
     },
-    [lightboxOpen, product.images.length, selectedImageIndex],
+    [lightboxOpen, product.images.length, selectedImageIndex]
   );
 
   useEffect(() => {
@@ -144,26 +129,15 @@ export default function ProductDetailClient({
           {/* Breadcrumb */}
           <Row gap="$sm" alignItems="center" flexWrap="wrap">
             <Link href="/" style={{ textDecoration: "none" }}>
-              <Text
-                size="$3"
-                color="$ironstone"
-                hoverStyle={{ color: "$primary" }}
-              >
+              <Text size="$3" color="$ironstone" hoverStyle={{ color: "$primary" }}>
                 Listings
               </Text>
             </Link>
             <Text size="$3" color="$ironstone">
               &gt;
             </Text>
-            <Link
-              href={`/category/${product.category.slug}`}
-              style={{ textDecoration: "none" }}
-            >
-              <Text
-                size="$3"
-                color="$ironstone"
-                hoverStyle={{ color: "$primary" }}
-              >
+            <Link href={`/category/${product.category.slug}`} style={{ textDecoration: "none" }}>
+              <Text size="$3" color="$ironstone" hoverStyle={{ color: "$primary" }}>
                 {product.category.name}
               </Text>
             </Link>
@@ -206,9 +180,7 @@ export default function ProductDetailClient({
                         padding="$0"
                         cursor="pointer"
                         onPress={() => setSelectedImageIndex(index)}
-                        borderColor={
-                          index === selectedImageIndex ? "$primary" : "$border"
-                        }
+                        borderColor={index === selectedImageIndex ? "$primary" : "$border"}
                         borderWidth={index === selectedImageIndex ? 3 : 1}
                         backgroundColor="$surface"
                         hoverStyle={{
@@ -486,11 +458,7 @@ export default function ProductDetailClient({
       />
 
       {/* Buy Now Sheet */}
-      <BuyNowSheet
-        product={product}
-        isOpen={buyNowSheetOpen}
-        onOpenChange={setBuyNowSheetOpen}
-      />
+      <BuyNowSheet product={product} isOpen={buyNowSheetOpen} onOpenChange={setBuyNowSheetOpen} />
     </>
   );
 }

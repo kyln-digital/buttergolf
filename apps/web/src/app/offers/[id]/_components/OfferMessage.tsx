@@ -40,11 +40,7 @@ export function OfferMessage({
         <Column gap="$sm">
           {/* Sender name and badge */}
           <Row justifyContent="space-between" alignItems="center" gap="$sm">
-            <Text
-              size="$3"
-              fontWeight="600"
-              color={fromSeller ? "$textInverse" : "$textSecondary"}
-            >
+            <Text size="$3" fontWeight="600" color={fromSeller ? "$textInverse" : "$textSecondary"}>
               {senderName}
             </Text>
             {isInitialOffer ? (
@@ -63,11 +59,7 @@ export function OfferMessage({
           </Row>
 
           {/* Offer amount */}
-          <Text
-            size="$7"
-            fontWeight="700"
-            color={fromSeller ? "$textInverse" : "$text"}
-          >
+          <Text size="$7" fontWeight="700" color={fromSeller ? "$textInverse" : "$text"}>
             £{amount.toFixed(2)}
           </Text>
 

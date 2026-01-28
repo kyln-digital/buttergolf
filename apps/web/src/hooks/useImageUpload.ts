@@ -20,10 +20,7 @@ export function useImageUpload(): UseImageUploadReturn {
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
 
-  const upload = async (
-    file: File,
-    isFirstImage = false,
-  ): Promise<UploadResult> => {
+  const upload = async (file: File, isFirstImage = false): Promise<UploadResult> => {
     setUploading(true);
     setError(null);
     setProgress(0);
@@ -38,13 +35,7 @@ export function useImageUpload(): UseImageUploadReturn {
     }
 
     // Validate file type
-    const allowedTypes = [
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/webp",
-      "image/gif",
-    ];
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
     if (!allowedTypes.includes(file.type)) {
       const errorMsg = "Only image files (JPEG, PNG, WebP, GIF) are allowed";
       setError(errorMsg);
@@ -79,7 +70,7 @@ export function useImageUpload(): UseImageUploadReturn {
             "Content-Type": file.type,
           },
           body: file,
-        },
+        }
       );
 
       setProgress(70);
@@ -90,9 +81,9 @@ export function useImageUpload(): UseImageUploadReturn {
       }
 
       const result: UploadResult = await response.json();
-      
+
       console.log("✅ useImageUpload: Server response:", result);
-      
+
       setProgress(100);
       setUploading(false);
 

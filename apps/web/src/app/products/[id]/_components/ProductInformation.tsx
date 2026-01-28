@@ -1,14 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Column,
-  Row,
-  Text,
-  Button,
-  Heading,
-  Popover,
-} from "@buttergolf/ui";
+import { Column, Row, Text, Button, Heading, Popover } from "@buttergolf/ui";
 import type { Product } from "../ProductDetailClient";
 
 interface User {
@@ -26,11 +19,7 @@ interface ProductInformationProps {
   onSubmitOffer: (amount: number) => Promise<void>;
 }
 
-export function ProductInformation({
-  product,
-  onBuyNow,
-  onSubmitOffer,
-}: ProductInformationProps) {
+export function ProductInformation({ product, onBuyNow, onSubmitOffer }: ProductInformationProps) {
   const [isFavourite, setIsFavourite] = useState(false);
   const [offerAmount, setOfferAmount] = useState("");
   const [offerError, setOfferError] = useState("");
@@ -134,9 +123,7 @@ export function ProductInformation({
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = "scale(1)";
           }}
-          aria-label={
-            isFavourite ? "Remove from favourites" : "Add to favourites"
-          }
+          aria-label={isFavourite ? "Remove from favourites" : "Add to favourites"}
         >
           <svg
             width="20"
@@ -263,19 +250,21 @@ export function ProductInformation({
           pressStyle={{ backgroundColor: "$spicedClementinePress" }}
           hoverStyle={{ backgroundColor: "$spicedClementineHover" }}
         >
-          {product.isSold
-            ? "Sold Out"
-            : "Buy now"}
+          {product.isSold ? "Sold Out" : "Buy now"}
         </Button>
 
         {/* Make an Offer Popover */}
-        <Popover placement="top" open={popoverOpen} onOpenChange={(open) => {
-          setPopoverOpen(open);
-          if (!open) {
-            setOfferAmount("");
-            setOfferError("");
-          }
-        }}>
+        <Popover
+          placement="top"
+          open={popoverOpen}
+          onOpenChange={(open) => {
+            setPopoverOpen(open);
+            if (!open) {
+              setOfferAmount("");
+              setOfferError("");
+            }
+          }}
+        >
           <Popover.Trigger asChild>
             <Button
               butterVariant="secondary"
@@ -313,7 +302,7 @@ export function ProductInformation({
               <Text size="$5" fontWeight="600" color="$text">
                 Make an offer
               </Text>
-              
+
               {/* Price Input */}
               <div style={{ position: "relative" }}>
                 <span

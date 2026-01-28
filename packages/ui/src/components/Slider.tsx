@@ -58,7 +58,7 @@ const SliderTrackActive = styled(TamaguiSlider.TrackActive, {
 // NOTE: Do NOT use `circular` prop - it overrides our explicit sizing
 const SliderThumb = styled(TamaguiSlider.Thumb, {
   name: "SliderThumb",
-  
+
   // Explicit sizing - must use !important pattern via size: undefined to prevent Tamagui size inheritance
   size: undefined,
   width: 20,
@@ -67,24 +67,24 @@ const SliderThumb = styled(TamaguiSlider.Thumb, {
   minHeight: 20,
   maxWidth: 20,
   maxHeight: 20,
-  
+
   // Circular shape
   borderRadius: 10,
-  
+
   // Primary colour - consistent across all states
   backgroundColor: "$primary",
-  
+
   // White border for clean separation from track
   borderWidth: 2,
   borderColor: "$pureWhite",
-  
+
   // Subtle shadow for depth and visibility
   shadowColor: "rgba(0,0,0,0.2)",
   shadowOffset: { width: 0, height: 1 },
   shadowOpacity: 1,
   shadowRadius: 3,
   elevation: 3,
-  
+
   cursor: "grab",
 
   // Hover - slight grow, deeper shadow

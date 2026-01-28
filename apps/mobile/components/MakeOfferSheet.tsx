@@ -1,15 +1,6 @@
 import { useState, useCallback, memo } from "react";
 import { Sheet } from "@tamagui/sheet";
-import {
-  Column,
-  Row,
-  Text,
-  Button,
-  Heading,
-  Card,
-  Spinner,
-  Input,
-} from "@buttergolf/ui";
+import { Column, Row, Text, Button, Heading, Card, Spinner, Input } from "@buttergolf/ui";
 
 interface MakeOfferSheetProps {
   productId: string;
@@ -114,7 +105,7 @@ const SheetContents = memo(function SheetContents({
 
   const minimumOffer = productPrice * 0.5;
   const parsedAmount = parseFloat(offerAmount) || 0;
-  
+
   // Validation
   const isTooLow = parsedAmount > 0 && parsedAmount < minimumOffer;
   const isTooHigh = parsedAmount >= productPrice;
@@ -122,7 +113,9 @@ const SheetContents = memo(function SheetContents({
 
   const handleSubmitOffer = useCallback(async () => {
     if (!isValidAmount) {
-      setError(`Offer must be between £${minimumOffer.toFixed(2)} and £${(productPrice - 0.01).toFixed(2)}`);
+      setError(
+        `Offer must be between £${minimumOffer.toFixed(2)} and £${(productPrice - 0.01).toFixed(2)}`
+      );
       return;
     }
 
@@ -235,7 +228,7 @@ const SheetContents = memo(function SheetContents({
               error={!!(isTooLow || isTooHigh)}
             />
           </Row>
-          
+
           {/* Validation Messages */}
           {isTooLow && (
             <Text size="$3" color="$error">
@@ -265,33 +258,23 @@ const SheetContents = memo(function SheetContents({
                 key={suggestion.label}
                 flex={1}
                 size="$3"
-                backgroundColor={
-                  parsedAmount === suggestion.amount ? "$primary" : "transparent"
-                }
+                backgroundColor={parsedAmount === suggestion.amount ? "$primary" : "transparent"}
                 borderWidth={1}
-                borderColor={
-                  parsedAmount === suggestion.amount ? "$primary" : "$border"
-                }
+                borderColor={parsedAmount === suggestion.amount ? "$primary" : "$border"}
                 color={parsedAmount === suggestion.amount ? "$textInverse" : "$text"}
                 onPress={() => setOfferAmount(suggestion.amount.toFixed(2))}
               >
                 <Column alignItems="center">
                   <Text
                     size="$2"
-                    color={
-                      parsedAmount === suggestion.amount
-                        ? "$textInverse"
-                        : "$textSecondary"
-                    }
+                    color={parsedAmount === suggestion.amount ? "$textInverse" : "$textSecondary"}
                   >
                     {suggestion.label}
                   </Text>
                   <Text
                     size="$3"
                     fontWeight="600"
-                    color={
-                      parsedAmount === suggestion.amount ? "$textInverse" : "$text"
-                    }
+                    color={parsedAmount === suggestion.amount ? "$textInverse" : "$text"}
                   >
                     £{suggestion.amount.toFixed(2)}
                   </Text>

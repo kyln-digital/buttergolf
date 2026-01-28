@@ -76,12 +76,7 @@ export default function CheckoutCancelPage() {
 
           {/* Action Buttons */}
           <Row gap="$md" marginTop="$lg" fullWidth>
-            <Button
-              butterVariant="primary"
-              size="$5"
-              onPress={() => router.back()}
-              flex={1}
-            >
+            <Button butterVariant="primary" size="$5" onPress={() => router.back()} flex={1}>
               Try Again
             </Button>
             <Link href="/" style={{ textDecoration: "none", flex: 1 }}>

@@ -80,13 +80,13 @@ export function MobileFilterSheet({
 }: Readonly<MobileFilterSheetProps>) {
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = Dimensions.get("window");
-  
+
   // Local state for editing filters
   const [localFilters, setLocalFilters] = useState<FilterState>(filters);
   const [conditionExpanded, setConditionExpanded] = useState(true);
   const [priceExpanded, setPriceExpanded] = useState(true);
   const [sortExpanded, setSortExpanded] = useState(true);
-  
+
   // Animation values - using useState to avoid ref access during render issues
   const [slideAnim] = useState(() => new Animated.Value(-screenHeight));
   const [backdropAnim] = useState(() => new Animated.Value(0));
@@ -167,12 +167,7 @@ export function MobileFilterSheet({
   if (!visible) return null;
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="none"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
       {/* Backdrop */}
       <Animated.View
         style={{
@@ -221,9 +216,7 @@ export function MobileFilterSheet({
           >
             <Text size="$6" fontWeight="700" color="$text">
               Filters
-              {activeFilterCount > 0 && (
-                <Text color="$primary"> ({activeFilterCount})</Text>
-              )}
+              {activeFilterCount > 0 && <Text color="$primary"> ({activeFilterCount})</Text>}
             </Text>
             <Column
               width={40}
@@ -259,17 +252,12 @@ export function MobileFilterSheet({
               {sortExpanded && (
                 <Column gap="$2" paddingTop="$2">
                   {SORT_OPTIONS.map((option) => (
-                    <Pressable
-                      key={option.value}
-                      onPress={() => handleSortChange(option.value)}
-                    >
+                    <Pressable key={option.value} onPress={() => handleSortChange(option.value)}>
                       <Row
                         paddingVertical="$2"
                         paddingHorizontal="$3"
                         backgroundColor={
-                          localFilters.sortBy === option.value
-                            ? "$primaryLight"
-                            : "transparent"
+                          localFilters.sortBy === option.value ? "$primaryLight" : "transparent"
                         }
                         borderRadius="$md"
                         alignItems="center"
@@ -281,9 +269,7 @@ export function MobileFilterSheet({
                           borderRadius="$full"
                           borderWidth={2}
                           borderColor={
-                            localFilters.sortBy === option.value
-                              ? "$primary"
-                              : "$border"
+                            localFilters.sortBy === option.value ? "$primary" : "$border"
                           }
                           alignItems="center"
                           justifyContent="center"
@@ -299,14 +285,8 @@ export function MobileFilterSheet({
                         </Column>
                         <Text
                           size="$4"
-                          color={
-                            localFilters.sortBy === option.value
-                              ? "$primary"
-                              : "$text"
-                          }
-                          fontWeight={
-                            localFilters.sortBy === option.value ? "600" : "400"
-                          }
+                          color={localFilters.sortBy === option.value ? "$primary" : "$text"}
+                          fontWeight={localFilters.sortBy === option.value ? "600" : "400"}
                         >
                           {option.label}
                         </Text>
@@ -318,7 +298,12 @@ export function MobileFilterSheet({
             </Column>
 
             {/* Divider */}
-            <Column height={1} backgroundColor="$border" marginVertical="$3" marginHorizontal="$4" />
+            <Column
+              height={1}
+              backgroundColor="$border"
+              marginVertical="$3"
+              marginHorizontal="$4"
+            />
 
             {/* Condition Section */}
             <Column paddingHorizontal="$4">
@@ -341,11 +326,7 @@ export function MobileFilterSheet({
                       key={condition.value}
                       onPress={() => handleConditionToggle(condition.value)}
                     >
-                      <Row
-                        paddingVertical="$2"
-                        alignItems="center"
-                        gap="$3"
-                      >
+                      <Row paddingVertical="$2" alignItems="center" gap="$3">
                         <NativeCheckbox
                           checked={localFilters.conditions.includes(condition.value)}
                           onPress={() => handleConditionToggle(condition.value)}
@@ -361,7 +342,12 @@ export function MobileFilterSheet({
             </Column>
 
             {/* Divider */}
-            <Column height={1} backgroundColor="$border" marginVertical="$3" marginHorizontal="$4" />
+            <Column
+              height={1}
+              backgroundColor="$border"
+              marginVertical="$3"
+              marginHorizontal="$4"
+            />
 
             {/* Price Range Section */}
             <Column paddingHorizontal="$4">
@@ -431,7 +417,9 @@ export function MobileFilterSheet({
                           color={localFilters.maxPrice !== null ? "$text" : "$textMuted"}
                           paddingLeft="$1"
                         >
-                          {localFilters.maxPrice !== null ? localFilters.maxPrice.toString() : "Any"}
+                          {localFilters.maxPrice !== null
+                            ? localFilters.maxPrice.toString()
+                            : "Any"}
                         </Text>
                       </Pressable>
                     </Row>
@@ -459,12 +447,7 @@ export function MobileFilterSheet({
             >
               Clear All
             </Button>
-            <Button
-              flex={2}
-              butterVariant="primary"
-              size="$5"
-              onPress={handleApply}
-            >
+            <Button flex={2} butterVariant="primary" size="$5" onPress={handleApply}>
               Apply Filters
             </Button>
           </Row>

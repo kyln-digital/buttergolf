@@ -9,15 +9,11 @@ interface BeforeInstallPromptEvent extends Event {
 
 export function AppPromoBanner() {
   const [showBanner, setShowBanner] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
 
-  const trackEvent = (
-    eventName: string,
-    properties?: Record<string, string | boolean>,
-  ) => {
+  const trackEvent = (eventName: string, properties?: Record<string, string | boolean>) => {
     // TODO: Integrate with your analytics service
     console.log("Analytics Event:", eventName, properties);
 
@@ -29,11 +25,9 @@ export function AppPromoBanner() {
     // Only show on mobile/tablet devices
     const ua = navigator.userAgent || "";
     const isTouch =
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(pointer: coarse)").matches;
+      typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
     const isSmallScreen =
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(max-width: 1024px)").matches;
+      typeof window !== "undefined" && window.matchMedia?.("(max-width: 1024px)").matches;
     const isMobileUA = /Android|iPhone|iPad|iPod|Mobile|Tablet|iOS/i.test(ua);
     const isMobileDevice = Boolean(isMobileUA || isTouch) && isSmallScreen;
 
@@ -48,16 +42,14 @@ export function AppPromoBanner() {
     setIsStandalone(standalone);
 
     // Check if iOS
-    const iOS =
-      /iPad|iPhone|iPod/.test(navigator.userAgent) && !("MSStream" in window);
+    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !("MSStream" in window);
 
     setIsIOS(iOS);
 
     // Don't show banner if already dismissed or installed
     const dismissed = localStorage.getItem("app-banner-dismissed");
     const lastDismissed = dismissed ? parseInt(dismissed) : 0;
-    const daysSinceDismiss =
-      (Date.now() - lastDismissed) / (1000 * 60 * 60 * 24);
+    const daysSinceDismiss = (Date.now() - lastDismissed) / (1000 * 60 * 60 * 24);
 
     if (standalone || (dismissed && daysSinceDismiss < 7)) {
       return;
@@ -85,10 +77,7 @@ export function AppPromoBanner() {
 
     return () => {
       clearTimeout(timer);
-      window.removeEventListener(
-        "beforeinstallprompt",
-        handleBeforeInstallPrompt,
-      );
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     };
   }, []);
 
@@ -170,14 +159,10 @@ export function AppPromoBanner() {
 
         {/* Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div
-            style={{ fontSize: "14px", fontWeight: "600", color: "#111827" }}
-          >
+          <div style={{ fontSize: "14px", fontWeight: "600", color: "#111827" }}>
             ButterGolf App
           </div>
-          <div style={{ fontSize: "12px", color: "#6b7280" }}>
-            Get the full experience
-          </div>
+          <div style={{ fontSize: "12px", color: "#6b7280" }}>Get the full experience</div>
         </div>
 
         {/* CTA Button */}

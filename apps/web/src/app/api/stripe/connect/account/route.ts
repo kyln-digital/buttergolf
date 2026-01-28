@@ -48,12 +48,16 @@ export async function POST(request: Request) {
       try {
         // Verify the account exists in Stripe
         const existingAccount = await stripe.accounts.retrieve(stripeAccountId);
-        console.log(`[Stripe Connect] Verified existing account ${stripeAccountId} for user ${user.id}`);
-        
+        console.log(
+          `[Stripe Connect] Verified existing account ${stripeAccountId} for user ${user.id}`
+        );
+
         // Check if account was deleted from Stripe
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((existingAccount as any).deleted) {
-          console.log(`[Stripe Connect] Account ${stripeAccountId} was deleted in Stripe, clearing from database`);
+          console.log(
+            `[Stripe Connect] Account ${stripeAccountId} was deleted in Stripe, clearing from database`
+          );
           stripeAccountId = null;
           await prisma.user.update({
             where: { id: user.id },
@@ -67,7 +71,9 @@ export async function POST(request: Request) {
       } catch (error) {
         // Account doesn't exist in Stripe (404) or other error
         console.error(`[Stripe Connect] Error retrieving account ${stripeAccountId}:`, error);
-        console.log(`[Stripe Connect] Clearing invalid stripeConnectId from database for user ${user.id}`);
+        console.log(
+          `[Stripe Connect] Clearing invalid stripeConnectId from database for user ${user.id}`
+        );
         stripeAccountId = null;
         await prisma.user.update({
           where: { id: user.id },
@@ -178,7 +184,7 @@ export async function POST(request: Request) {
         error: "Failed to create Connect account",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -273,7 +279,7 @@ export async function GET(request: Request) {
         error: "Failed to fetch account status",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

@@ -27,16 +27,11 @@ export function ProductCarousel({
   // Initialize Embla with optional Autoplay plugin
   const [emblaRef, emblaApi] = useEmblaCarousel(
     { align: "start", loop: true, dragFree: false },
-    autoplay
-      ? [Autoplay({ delay: autoplayDelay, stopOnInteraction: false })]
-      : [],
+    autoplay ? [Autoplay({ delay: autoplayDelay, stopOnInteraction: false })] : []
   );
 
   // Scroll to specific index (for dot navigation)
-  const scrollTo = useCallback(
-    (index: number) => emblaApi?.scrollTo(index),
-    [emblaApi],
-  );
+  const scrollTo = useCallback((index: number) => emblaApi?.scrollTo(index), [emblaApi]);
 
   // Check if desktop for pagination dots
   useEffect(() => {
@@ -109,11 +104,7 @@ export function ProductCarousel({
       </div>
 
       {/* Pagination Dots (Desktop Only) */}
-      <Row
-        gap="$sm"
-        justifyContent="center"
-        display={isDesktop ? "flex" : "none"}
-      >
+      <Row gap="$sm" justifyContent="center" display={isDesktop ? "flex" : "none"}>
         {scrollSnaps.map((_, index) => (
           <button
             key={index}
@@ -123,8 +114,7 @@ export function ProductCarousel({
               height: "10px",
               borderRadius: "5px",
               border: "none",
-              backgroundColor:
-                selectedIndex === index ? "#F45314" : "rgba(244, 83, 20, 0.5)",
+              backgroundColor: selectedIndex === index ? "#F45314" : "rgba(244, 83, 20, 0.5)",
               cursor: "pointer",
               transition: "all 0.3s ease",
               padding: 0,

@@ -9,14 +9,7 @@ import { useMemo } from "react";
  * Displays white/cream colored logo on orange background
  */
 // Stable path identifiers for React keys (derived from path content hash)
-const PATH_IDS = [
-  "golf-g",
-  "golf-o",
-  "golf-l",
-  "golf-f",
-  "butter-mascot",
-  "script-text",
-];
+const PATH_IDS = ["golf-g", "golf-o", "golf-l", "golf-f", "butter-mascot", "script-text"];
 
 export function AnimatedLogo() {
   // Check for reduced motion preference

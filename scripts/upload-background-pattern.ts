@@ -44,7 +44,7 @@ async function uploadBackgroundPattern() {
 
     const imagePath = join(
       process.cwd(),
-      "packages/assets/images/image-backgrounds/Butter Golf_Brand identity creation_Bacground pattern 1_BI81_V1.png",
+      "packages/assets/images/image-backgrounds/Butter Golf_Brand identity creation_Bacground pattern 1_BI81_V1.png"
     );
     const imageBuffer = readFileSync(imagePath);
     const base64Image = `data:image/png;base64,${imageBuffer.toString("base64")}`;
@@ -62,7 +62,7 @@ async function uploadBackgroundPattern() {
     console.log("📐 Dimensions:", `${result.width}x${result.height}`);
     console.log("\n🎉 You can now use this pattern in product image uploads!");
     console.log(
-      "   The upload API will automatically apply it as background after removing the original background.",
+      "   The upload API will automatically apply it as background after removing the original background."
     );
   } catch (error) {
     console.error("❌ Upload failed:", error);

@@ -1,19 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import {
-  Column,
-  Row,
-  Heading,
-  Text,
-  Button,
-  Card,
-  Spinner,
-} from "@buttergolf/ui";
-import {
-  ConnectAccountOnboarding,
-  ConnectComponentsProvider,
-} from "@stripe/react-connect-js";
+import { Column, Row, Heading, Text, Button, Card, Spinner } from "@buttergolf/ui";
+import { ConnectAccountOnboarding, ConnectComponentsProvider } from "@stripe/react-connect-js";
 import { loadConnectAndInitialize } from "@stripe/connect-js";
 import type { StepChange } from "@stripe/connect-js";
 
@@ -32,10 +21,7 @@ interface SellerOnboardingProps {
  *
  * The embedded component is highly customizable via theming
  */
-export function SellerOnboarding({
-  onComplete,
-  onExit,
-}: SellerOnboardingProps) {
+export function SellerOnboarding({ onComplete, onExit }: SellerOnboardingProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stripeConnectInstance, setStripeConnectInstance] = useState<ReturnType<
@@ -92,9 +78,7 @@ export function SellerOnboarding({
       setStripeConnectInstance(instance);
     } catch (err) {
       console.error("Error initializing Stripe Connect:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to initialize onboarding",
-      );
+      setError(err instanceof Error ? err.message : "Failed to initialize onboarding");
     } finally {
       setLoading(false);
     }
@@ -167,8 +151,8 @@ export function SellerOnboarding({
       <Column gap="$sm">
         <Heading level={2}>Become a Seller</Heading>
         <Text color="$textSecondary">
-          Complete the onboarding process to start selling golf equipment on
-          ButterGolf. This should only take a few minutes.
+          Complete the onboarding process to start selling golf equipment on ButterGolf. This should
+          only take a few minutes.
         </Text>
       </Column>
 

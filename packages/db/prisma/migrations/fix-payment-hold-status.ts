@@ -82,7 +82,9 @@ async function main() {
   });
 
   if (oldPendingOrders.length > 0) {
-    console.log(`\n⚠️  Found ${oldPendingOrders.length} old orders (>14 days) still in HELD status:`);
+    console.log(
+      `\n⚠️  Found ${oldPendingOrders.length} old orders (>14 days) still in HELD status:`
+    );
     console.log("These may need manual review:\n");
     oldPendingOrders.forEach((order) => {
       console.log(`  - ${order.id}`);

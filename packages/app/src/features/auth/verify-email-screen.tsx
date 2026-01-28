@@ -56,6 +56,9 @@ export function VerifyEmailScreen({
   // Ref to track if we're currently auto-submitting (prevents double-submit)
   const isAutoSubmittingRef = useRef(false);
 
+  // Ref to store handleVerify function for use in handleDigitChange (avoids circular dependency)
+  const handleVerifyRef = useRef<(code: string) => Promise<void>>();
+
   const handleDigitChange = useCallback(
     (index: number, value: string) => {
       // Handle autofill/paste of full code
@@ -78,7 +81,7 @@ export function VerifyEmailScreen({
           isAutoSubmittingRef.current = true;
           // Use setTimeout to ensure state is settled before submitting
           setTimeout(() => {
-            handleVerify(newCode.join(""));
+            handleVerifyRef.current?.(newCode.join(""));
             isAutoSubmittingRef.current = false;
           }, 100);
         }
@@ -103,7 +106,7 @@ export function VerifyEmailScreen({
         ) {
           isAutoSubmittingRef.current = true;
           setTimeout(() => {
-            handleVerify(fullCodeValue);
+            handleVerifyRef.current?.(fullCodeValue);
             isAutoSubmittingRef.current = false;
           }, 100);
         }
@@ -121,7 +124,7 @@ export function VerifyEmailScreen({
         setError(null);
       }
     },
-    [error, isLoaded, signUp, isSubmitting, handleVerify]
+    [error, isLoaded, signUp, isSubmitting]
   );
 
   const handleKeyPress = useCallback(
@@ -186,6 +189,9 @@ export function VerifyEmailScreen({
     },
     [fullCode, isLoaded, signUp, setActive, onSuccess]
   );
+
+  // Keep ref updated with latest handleVerify
+  handleVerifyRef.current = handleVerify;
 
   const handleResendCode = useCallback(async () => {
     setError(null);
@@ -321,7 +327,7 @@ export function VerifyEmailScreen({
             size="$5"
             borderRadius="$full"
             fontWeight="600"
-            onPress={handleVerify}
+            onPress={() => handleVerify()}
             disabled={isSubmitting || fullCode.length !== 6}
             opacity={isSubmitting || fullCode.length !== 6 ? 0.7 : 1}
           >

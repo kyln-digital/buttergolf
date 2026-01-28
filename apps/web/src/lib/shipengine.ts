@@ -73,7 +73,7 @@ async function shipEngineRequest<T>(
   endpoint: string,
   method: "GET" | "POST" = "GET",
   body?: unknown,
-  retryCount = 0,
+  retryCount = 0
 ): Promise<T> {
   if (!SHIPENGINE_API_KEY) {
     throw new Error("ShipEngine API key not configured");
@@ -104,12 +104,10 @@ async function shipEngineRequest<T>(
         : Math.pow(2, retryCount) * 2; // Exponential backoff: 2s, 4s, 8s
 
       console.warn(
-        `ShipEngine rate limit hit. Retrying in ${retryAfterSeconds}s (attempt ${retryCount + 1}/3)`,
+        `ShipEngine rate limit hit. Retrying in ${retryAfterSeconds}s (attempt ${retryCount + 1}/3)`
       );
 
-      await new Promise((resolve) =>
-        setTimeout(resolve, retryAfterSeconds * 1000),
-      );
+      await new Promise((resolve) => setTimeout(resolve, retryAfterSeconds * 1000));
 
       return shipEngineRequest<T>(endpoint, method, body, retryCount + 1);
     }
@@ -138,17 +136,12 @@ async function shipEngineRequest<T>(
  * Calculate shipping rates using ShipEngine API with fallback
  */
 export async function calculateShippingRates(
-  request: ShippingCalculationRequest,
+  request: ShippingCalculationRequest
 ): Promise<ShippingCalculationResult> {
   const { productId, toAddress, fromAddressId } = request;
 
   // Validate required fields
-  if (
-    !productId ||
-    !toAddress?.street1 ||
-    !toAddress?.city ||
-    !toAddress?.zip
-  ) {
+  if (!productId || !toAddress?.street1 || !toAddress?.city || !toAddress?.zip) {
     throw new Error("Missing required shipping calculation fields");
   }
 
@@ -245,7 +238,7 @@ export async function calculateShippingRates(
       const response = await shipEngineRequest<ShipEngineRateResponse>(
         "/v1/rates",
         "POST",
-        rateRequest,
+        rateRequest
       );
 
       if (response.rate_response.errors?.length) {
@@ -286,10 +279,7 @@ export async function calculateShippingRates(
         };
       }
     } catch (shipEngineError: unknown) {
-      console.warn(
-        "ShipEngine API error, falling back to estimation:",
-        shipEngineError,
-      );
+      console.warn("ShipEngine API error, falling back to estimation:", shipEngineError);
       // Fall through to fallback calculation
     }
   }
@@ -346,7 +336,7 @@ export async function calculateShippingRates(
 export async function estimateShippingRate(
   productId: string,
   postcode: string,
-  county: string = "",
+  county: string = ""
 ): Promise<{
   estimatedRate: number;
   estimatedDisplay: string;
@@ -532,7 +522,7 @@ export async function generateShippingLabel(params: {
   const ratesResponse = await shipEngineRequest<ShipEngineRateResponse>(
     "/v1/rates",
     "POST",
-    rateRequest,
+    rateRequest
   );
 
   // Find a rate that fits within the shipping budget
@@ -546,10 +536,8 @@ export async function generateShippingLabel(params: {
 
   // Select the best rate within budget, or the cheapest if all are over budget
   const budgetInCurrency = order.shippingCost;
-  let selectedRate = availableRates.find(
-    (rate) => rate.shipping_amount.amount <= budgetInCurrency
-  );
-  
+  let selectedRate = availableRates.find((rate) => rate.shipping_amount.amount <= budgetInCurrency);
+
   if (!selectedRate) {
     // Use cheapest if nothing within budget (platform absorbs the difference)
     selectedRate = availableRates[0];
@@ -568,7 +556,7 @@ export async function generateShippingLabel(params: {
   const labelResponse = await shipEngineRequest<ShipEngineLabelResponse>(
     "/v1/labels",
     "POST",
-    labelRequest,
+    labelRequest
   );
 
   // Build carrier-specific tracking URL
@@ -696,4 +684,3 @@ export async function getOrderTracking(orderId: string): Promise<{
     return null;
   }
 }
-

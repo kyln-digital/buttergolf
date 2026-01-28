@@ -6,10 +6,7 @@ import { getUserIdFromRequest } from "@/lib/auth";
  * GET /api/offers/[id]
  * Fetch a single offer with full conversation history
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Support both web cookies and mobile Bearer tokens
     const clerkId = await getUserIdFromRequest(request);
@@ -50,18 +47,11 @@ export async function GET(
 
     // Authorization check: user must be buyer or seller
     if (offer.buyerId !== user.id && offer.sellerId !== user.id) {
-      return NextResponse.json(
-        { error: "Unauthorized to view this offer" },
-        { status: 403 },
-      );
+      return NextResponse.json({ error: "Unauthorized to view this offer" }, { status: 403 });
     }
 
     // Check if offer has expired and update status
-    if (
-      offer.expiresAt &&
-      new Date(offer.expiresAt) < new Date() &&
-      offer.status === "PENDING"
-    ) {
+    if (offer.expiresAt && new Date(offer.expiresAt) < new Date() && offer.status === "PENDING") {
       const updatedOffer = await prisma.offer.update({
         where: { id },
         data: { status: "EXPIRED" },
@@ -85,10 +75,7 @@ export async function GET(
     return NextResponse.json(offer);
   } catch (error) {
     console.error("Error fetching offer:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -96,10 +83,7 @@ export async function GET(
  * PATCH /api/offers/[id]
  * Update offer status (accept/reject)
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Support both web cookies and mobile Bearer tokens
     const clerkId = await getUserIdFromRequest(request);
@@ -122,7 +106,7 @@ export async function PATCH(
     if (!["ACCEPTED", "REJECTED"].includes(status)) {
       return NextResponse.json(
         { error: "Invalid status. Must be ACCEPTED or REJECTED" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -145,10 +129,7 @@ export async function PATCH(
     const isBuyerAction = user.id === offer.buyerId;
 
     if (!isSellerAction && !isBuyerAction) {
-      return NextResponse.json(
-        { error: "Unauthorized to update this offer" },
-        { status: 403 },
-      );
+      return NextResponse.json({ error: "Unauthorized to update this offer" }, { status: 403 });
     }
 
     // Check if offer is still pending/countered
@@ -157,7 +138,7 @@ export async function PATCH(
         {
           error: `Cannot ${status.toLowerCase()} offer with status ${offer.status}`,
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -193,9 +174,6 @@ export async function PATCH(
     return NextResponse.json(updatedOffer);
   } catch (error) {
     console.error("Error updating offer:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

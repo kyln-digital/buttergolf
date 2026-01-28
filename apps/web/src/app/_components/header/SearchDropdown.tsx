@@ -38,10 +38,9 @@ export function SearchDropdown({ query, onSelect }: SearchDropdownProps) {
       setError(null);
 
       try {
-        const response = await fetch(
-          `/api/search?q=${encodeURIComponent(query)}&limit=10`,
-          { signal: abortController.signal },
-        );
+        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=10`, {
+          signal: abortController.signal,
+        });
 
         if (!response.ok) {
           throw new Error("Failed to fetch search results");
@@ -78,24 +77,18 @@ export function SearchDropdown({ query, onSelect }: SearchDropdownProps) {
             Popular searches:
           </Text>
           <Row gap="$2" flexWrap="wrap">
-            {["Drivers", "Titleist", "Golf Balls", "Irons", "Putters"].map(
-              (term) => (
-                <Link
-                  key={term}
-                  href={`/listings?q=${term}`}
-                  onClick={onSelect}
+            {["Drivers", "Titleist", "Golf Balls", "Irons", "Putters"].map((term) => (
+              <Link key={term} href={`/listings?q=${term}`} onClick={onSelect}>
+                <Text
+                  size="$2"
+                  {...{ color: "$primary" }}
+                  hoverStyle={{ textDecoration: "underline" }}
+                  cursor="pointer"
                 >
-                  <Text
-                    size="$2"
-                    {...{ color: "$primary" }}
-                    hoverStyle={{ textDecoration: "underline" }}
-                    cursor="pointer"
-                  >
-                    {term}
-                  </Text>
-                </Link>
-              ),
-            )}
+                  {term}
+                </Text>
+              </Link>
+            ))}
           </Row>
         </Column>
       </Column>
@@ -148,11 +141,7 @@ export function SearchDropdown({ query, onSelect }: SearchDropdownProps) {
       <ScrollView maxHeight={400}>
         <Column>
           {results.map((product) => (
-            <SearchResultItem
-              key={product.id}
-              product={product}
-              onSelect={onSelect}
-            />
+            <SearchResultItem key={product.id} product={product} onSelect={onSelect} />
           ))}
         </Column>
       </ScrollView>
@@ -165,10 +154,7 @@ export function SearchDropdown({ query, onSelect }: SearchDropdownProps) {
           padding="$3"
           backgroundColor="$backgroundHover"
         >
-          <Link
-            href={`/listings?q=${encodeURIComponent(query)}`}
-            onClick={onSelect}
-          >
+          <Link href={`/listings?q=${encodeURIComponent(query)}`} onClick={onSelect}>
             <Text
               size="$3"
               weight="medium"

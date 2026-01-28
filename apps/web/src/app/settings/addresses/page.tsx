@@ -3,15 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import {
-  Column,
-  Row,
-  Heading,
-  Text,
-  Button,
-  Input,
-  Card,
-} from "@buttergolf/ui";
+import { Column, Row, Heading, Text, Button, Input, Card } from "@buttergolf/ui";
 
 interface Address {
   id: string;
@@ -59,13 +51,7 @@ function formatUKPostcode(postcode: string): string {
 }
 
 // Form Label component
-const FormLabel = ({
-  children,
-  required,
-}: {
-  children: React.ReactNode;
-  required?: boolean;
-}) => (
+const FormLabel = ({ children, required }: { children: React.ReactNode; required?: boolean }) => (
   <Row gap="$xs" marginBottom="$xs">
     <Text size="$3" weight="medium" color="$text">
       {children}
@@ -149,9 +135,7 @@ export default function AddressesPage() {
     const formattedPostcode = formatUKPostcode(formData.postcode);
 
     try {
-      const url = editingAddress
-        ? `/api/addresses/${editingAddress.id}`
-        : "/api/addresses";
+      const url = editingAddress ? `/api/addresses/${editingAddress.id}` : "/api/addresses";
       const method = editingAddress ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -200,7 +184,7 @@ export default function AddressesPage() {
     const nameParts = (address.name || "").split(" ");
     const firstName = address.firstName || nameParts[0] || "";
     const lastName = address.lastName || nameParts.slice(1).join(" ") || "";
-    
+
     setFormData({
       firstName,
       lastName,
@@ -259,12 +243,7 @@ export default function AddressesPage() {
   }
 
   return (
-    <Column
-      backgroundColor="$background"
-      minHeight="100vh"
-      alignItems="center"
-      width="100%"
-    >
+    <Column backgroundColor="$background" minHeight="100vh" alignItems="center" width="100%">
       <Column
         maxWidth={800}
         paddingHorizontal="$6"
@@ -276,23 +255,13 @@ export default function AddressesPage() {
           {/* Header */}
           <Row justifyContent="space-between" alignItems="center" width="100%">
             <Column gap="$sm">
-              <Button
-                chromeless
-                size="$3"
-                onPress={() => router.push("/settings")}
-              >
+              <Button chromeless size="$3" onPress={() => router.push("/settings")}>
                 ← Back to Settings
               </Button>
               <Heading level={2}>Shipping Addresses</Heading>
-              <Text color="$textSecondary">
-                Manage addresses where you can ship items from
-              </Text>
+              <Text color="$textSecondary">Manage addresses where you can ship items from</Text>
             </Column>
-            <Button
-              butterVariant="primary"
-              size="$4"
-              onPress={() => setShowForm(true)}
-            >
+            <Button butterVariant="primary" size="$4" onPress={() => setShowForm(true)}>
               Add Address
             </Button>
           </Row>
@@ -308,9 +277,7 @@ export default function AddressesPage() {
             <Card variant="elevated" padding="$lg">
               <Column gap="$lg">
                 <Row justifyContent="space-between" alignItems="center">
-                  <Heading level={3}>
-                    {editingAddress ? "Edit Address" : "Add New Address"}
-                  </Heading>
+                  <Heading level={3}>{editingAddress ? "Edit Address" : "Add New Address"}</Heading>
                   <Button
                     chromeless
                     size="$3"
@@ -330,9 +297,7 @@ export default function AddressesPage() {
                       <FormLabel required>First Name</FormLabel>
                       <Input
                         value={formData.firstName}
-                        onChangeText={(value) =>
-                          setFormData({ ...formData, firstName: value })
-                        }
+                        onChangeText={(value) => setFormData({ ...formData, firstName: value })}
                         placeholder="John"
                         size="$4"
                         autoComplete="given-name"
@@ -343,9 +308,7 @@ export default function AddressesPage() {
                       <FormLabel required>Last Name</FormLabel>
                       <Input
                         value={formData.lastName}
-                        onChangeText={(value) =>
-                          setFormData({ ...formData, lastName: value })
-                        }
+                        onChangeText={(value) => setFormData({ ...formData, lastName: value })}
                         placeholder="Smith"
                         size="$4"
                         autoComplete="family-name"
@@ -359,9 +322,7 @@ export default function AddressesPage() {
                     <FormLabel required>Address Line 1</FormLabel>
                     <Input
                       value={formData.street1}
-                      onChangeText={(value) =>
-                        setFormData({ ...formData, street1: value })
-                      }
+                      onChangeText={(value) => setFormData({ ...formData, street1: value })}
                       placeholder="10 Downing Street"
                       size="$4"
                       autoComplete="address-line1"
@@ -374,9 +335,7 @@ export default function AddressesPage() {
                     <FormLabel>Address Line 2 (Optional)</FormLabel>
                     <Input
                       value={formData.street2}
-                      onChangeText={(value) =>
-                        setFormData({ ...formData, street2: value })
-                      }
+                      onChangeText={(value) => setFormData({ ...formData, street2: value })}
                       placeholder="Flat 2B"
                       size="$4"
                       autoComplete="address-line2"
@@ -389,9 +348,7 @@ export default function AddressesPage() {
                       <FormLabel required>Town/City</FormLabel>
                       <Input
                         value={formData.city}
-                        onChangeText={(value) =>
-                          setFormData({ ...formData, city: value })
-                        }
+                        onChangeText={(value) => setFormData({ ...formData, city: value })}
                         placeholder="London"
                         size="$4"
                         autoComplete="address-level2"
@@ -402,9 +359,7 @@ export default function AddressesPage() {
                       <FormLabel>County</FormLabel>
                       <Input
                         value={formData.county}
-                        onChangeText={(value) =>
-                          setFormData({ ...formData, county: value })
-                        }
+                        onChangeText={(value) => setFormData({ ...formData, county: value })}
                         placeholder="Greater London"
                         size="$4"
                         autoComplete="address-level1"
@@ -427,7 +382,9 @@ export default function AddressesPage() {
                       required
                     />
                     {postcodeError && (
-                      <Text size="$3" color="$error">{postcodeError}</Text>
+                      <Text size="$3" color="$error">
+                        {postcodeError}
+                      </Text>
                     )}
                   </Column>
 
@@ -436,9 +393,7 @@ export default function AddressesPage() {
                     <FormLabel>Phone Number</FormLabel>
                     <Input
                       value={formData.phone}
-                      onChangeText={(value) =>
-                        setFormData({ ...formData, phone: value })
-                      }
+                      onChangeText={(value) => setFormData({ ...formData, phone: value })}
                       placeholder="+44 7700 900000"
                       size="$4"
                       inputMode="tel"
@@ -474,11 +429,7 @@ export default function AddressesPage() {
                   </Row>
                 </Column>
 
-                <Button
-                  butterVariant="primary"
-                  size="$5"
-                  onPress={handleSubmit}
-                >
+                <Button butterVariant="primary" size="$5" onPress={handleSubmit}>
                   {editingAddress ? "Update Address" : "Save Address"}
                 </Button>
               </Column>
@@ -494,32 +445,22 @@ export default function AddressesPage() {
                   <Column gap="$sm" alignItems="center">
                     <Heading level={4}>No shipping addresses yet</Heading>
                     <Text color="$textSecondary" textAlign="center">
-                      Add a shipping address to start selling items on
-                      ButterGolf
+                      Add a shipping address to start selling items on ButterGolf
                     </Text>
                   </Column>
-                  <Button
-                    butterVariant="primary"
-                    size="$4"
-                    onPress={() => setShowForm(true)}
-                  >
+                  <Button butterVariant="primary" size="$4" onPress={() => setShowForm(true)}>
                     Add Your First Address
                   </Button>
                 </Column>
               </Card>
             ) : (
               addresses.map((address) => (
-                <Card
-                  key={address.id}
-                  variant="elevated"
-                  padding="$lg"
-                  width="100%"
-                >
+                <Card key={address.id} variant="elevated" padding="$lg" width="100%">
                   <Row justifyContent="space-between" alignItems="flex-start">
                     <Column gap="$sm" flex={1}>
                       <Row gap="$sm" alignItems="center">
                         <Text size="$6" weight="semibold">
-                          {address.firstName && address.lastName 
+                          {address.firstName && address.lastName
                             ? `${address.firstName} ${address.lastName}`
                             : address.name}
                         </Text>
@@ -538,34 +479,23 @@ export default function AddressesPage() {
                       </Row>
                       <Column gap="$xs">
                         <Text color="$textSecondary">{address.street1}</Text>
-                        {address.street2 && (
-                          <Text color="$textSecondary">{address.street2}</Text>
-                        )}
+                        {address.street2 && <Text color="$textSecondary">{address.street2}</Text>}
                         <Text color="$textSecondary">
                           {address.city}
-                          {(address.county || address.state) && `, ${address.county || address.state}`}{" "}
+                          {(address.county || address.state) &&
+                            `, ${address.county || address.state}`}{" "}
                           {address.postcode || address.zip}
                         </Text>
-                        {address.phone && (
-                          <Text color="$textSecondary">{address.phone}</Text>
-                        )}
+                        {address.phone && <Text color="$textSecondary">{address.phone}</Text>}
                       </Column>
                     </Column>
                     <Row gap="$sm">
                       {!address.isDefault && (
-                        <Button
-                          chromeless
-                          size="$3"
-                          onPress={() => handleSetDefault(address.id)}
-                        >
+                        <Button chromeless size="$3" onPress={() => handleSetDefault(address.id)}>
                           Set Default
                         </Button>
                       )}
-                      <Button
-                        chromeless
-                        size="$3"
-                        onPress={() => handleEdit(address)}
-                      >
+                      <Button chromeless size="$3" onPress={() => handleEdit(address)}>
                         Edit
                       </Button>
                       <Button

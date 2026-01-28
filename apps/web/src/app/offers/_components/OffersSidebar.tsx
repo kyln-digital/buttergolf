@@ -40,9 +40,7 @@ export function OffersSidebar({ offers, currentUserId }: OffersSidebarProps) {
 
   // Filter offers based on active tab
   const filteredOffers = offers.filter((offer) =>
-    activeTab === "buying"
-      ? offer.buyerId === currentUserId
-      : offer.sellerId === currentUserId,
+    activeTab === "buying" ? offer.buyerId === currentUserId : offer.sellerId === currentUserId
   );
 
   const getStatusBadgeVariant = (status: string) => {
@@ -116,8 +114,7 @@ export function OffersSidebar({ offers, currentUserId }: OffersSidebarProps) {
             padding: "12px",
             borderRadius: "100px",
             border: "none",
-            backgroundColor:
-              activeTab === "selling" ? "#F45314" : "transparent",
+            backgroundColor: activeTab === "selling" ? "#F45314" : "transparent",
             color: activeTab === "selling" ? "#FFFFFF" : "#323232",
             fontWeight: 600,
             fontSize: "14px",
@@ -143,9 +140,7 @@ export function OffersSidebar({ offers, currentUserId }: OffersSidebarProps) {
             const latestAmount = getLatestAmount(offer);
             const latestTimestamp = getLatestTimestamp(offer);
             const date =
-              typeof latestTimestamp === "string"
-                ? new Date(latestTimestamp)
-                : latestTimestamp;
+              typeof latestTimestamp === "string" ? new Date(latestTimestamp) : latestTimestamp;
 
             return (
               <Card
@@ -189,10 +184,7 @@ export function OffersSidebar({ offers, currentUserId }: OffersSidebarProps) {
                       £{latestAmount.toFixed(2)}
                     </Text>
                     <Row justifyContent="space-between" alignItems="center">
-                      <Badge
-                        variant={getStatusBadgeVariant(offer.status)}
-                        size="sm"
-                      >
+                      <Badge variant={getStatusBadgeVariant(offer.status)} size="sm">
                         {offer.status}
                       </Badge>
                       <Text size="$2" color="$textSecondary">

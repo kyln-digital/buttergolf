@@ -20,13 +20,7 @@ interface FadeUpTextProps {
  * SSR-SAFE: Always renders the same initial state on server and client (hidden).
  * Animation is triggered via useEffect after hydration completes.
  */
-function FadeUpTextWeb({
-  text,
-  delay = 0,
-  className,
-  style,
-  ariaLabel,
-}: FadeUpTextProps) {
+function FadeUpTextWeb({ text, delay = 0, className, style, ariaLabel }: FadeUpTextProps) {
   // Start hidden - same on server and client to prevent hydration mismatch
   const [isVisible, setIsVisible] = useState(false);
   // Check for reduced motion AFTER mount to avoid SSR mismatch
@@ -34,9 +28,7 @@ function FadeUpTextWeb({
 
   useEffect(() => {
     // Check reduced motion preference on client only
-    const prefersReducedMotion = globalThis.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
+    const prefersReducedMotion = globalThis.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const isDesktop = globalThis.innerWidth >= 1024;
 
     // If user prefers reduced motion or on mobile, show immediately without animation
@@ -63,9 +55,7 @@ function FadeUpTextWeb({
         ...style,
         opacity: isVisible ? 1 : 0,
         transform: isVisible ? "translateY(0)" : "translateY(20px)",
-        transition: shouldAnimate
-          ? "opacity 0.6s ease-out, transform 0.6s ease-out"
-          : "none",
+        transition: shouldAnimate ? "opacity 0.6s ease-out, transform 0.6s ease-out" : "none",
       }}
       aria-label={ariaLabel ?? text}
     >

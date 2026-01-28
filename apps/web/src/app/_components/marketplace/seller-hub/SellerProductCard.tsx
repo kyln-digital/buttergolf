@@ -61,11 +61,7 @@ export function SellerProductCard({
   const [showPromotionSheet, setShowPromotionSheet] = useState(false);
 
   const handleDelete = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this listing? This action cannot be undone.",
-      )
-    ) {
+    if (!confirm("Are you sure you want to delete this listing? This action cannot be undone.")) {
       return;
     }
 
@@ -80,9 +76,7 @@ export function SellerProductCard({
   const handleMarkSold = async () => {
     if (
       !confirm(
-        product.isSold
-          ? "Mark this listing as available again?"
-          : "Mark this listing as sold?",
+        product.isSold ? "Mark this listing as available again?" : "Mark this listing as sold?"
       )
     ) {
       return;
@@ -97,12 +91,7 @@ export function SellerProductCard({
   };
 
   return (
-    <Card
-      variant="elevated"
-      padding="$0"
-      overflow="hidden"
-      opacity={product.isSold ? 0.7 : 1}
-    >
+    <Card variant="elevated" padding="$0" overflow="hidden" opacity={product.isSold ? 0.7 : 1}>
       <Column gap="$0">
         {/* Image with status overlay */}
         <div style={{ position: "relative", width: "100%", aspectRatio: "1" }}>
@@ -222,7 +211,9 @@ export function SellerProductCard({
               >
                 <Row gap="$xs" alignItems="center">
                   <Zap size={14} color="#F45314" />
-                  <Text color="$primary" weight="semibold">Boost</Text>
+                  <Text color="$primary" weight="semibold">
+                    Boost
+                  </Text>
                 </Row>
               </Button>
             )}
@@ -241,13 +232,15 @@ export function SellerProductCard({
               shadowOpacity={0}
               shadowRadius={0}
               elevation={0}
-              style={{ boxShadow: 'none' }}
+              style={{ boxShadow: "none" }}
               onPress={() => onEdit(product)}
               disabled={isDeleting || isUpdating}
             >
               <Row gap="$xs" alignItems="center">
                 <Edit3 size={14} color="$primary" />
-                <Text color="$primary" weight="semibold">Edit</Text>
+                <Text color="$primary" weight="semibold">
+                  Edit
+                </Text>
               </Row>
             </Button>
             <Button

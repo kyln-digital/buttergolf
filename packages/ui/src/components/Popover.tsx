@@ -87,10 +87,7 @@
 import { Adapt } from "tamagui";
 
 // Re-export Popover and its components from @tamagui/popover
-export {
-  Popover,
-  type PopoverProps,
-} from "@tamagui/popover";
+export { Popover, type PopoverProps } from "@tamagui/popover";
 
 // Individual component exports for granular imports
 export {
@@ -119,4 +116,3 @@ export {
   Handle as PopoverSheetHandle,
   SheetScrollView as PopoverSheetScrollView,
 } from "@tamagui/sheet";
-

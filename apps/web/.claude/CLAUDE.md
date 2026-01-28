@@ -97,11 +97,7 @@ export function BookingForm() {
 
   return (
     <form>
-      <input
-        type="date"
-        value={date}
-        onChange={(e) => setDate(e.target.value)}
-      />
+      <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       <Button onPress={() => console.log(date)}>Book Tee Time</Button>
     </form>
   );
@@ -125,11 +121,7 @@ Add `"use client"` when you need:
 import { db } from "@buttergolf/db";
 import { CategoryScreen } from "@buttergolf/app/features/categories/category-screen";
 
-export default async function CategoryPage({
-  params,
-}: {
-  params: { slug: string };
-}) {
+export default async function CategoryPage({ params }: { params: { slug: string } }) {
   // Fetch data in Server Component
   const category = await db.category.findUnique({
     where: { slug: params.slug },
@@ -260,11 +252,7 @@ export function UserProfile() {
 // src/proxy.ts
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-const isProtectedRoute = createRouteMatcher([
-  "/dashboard(.*)",
-  "/bookings(.*)",
-  "/profile(.*)",
-]);
+const isProtectedRoute = createRouteMatcher(["/dashboard(.*)", "/bookings(.*)", "/profile(.*)"]);
 
 export default clerkMiddleware((auth, req) => {
   if (isProtectedRoute(req)) auth().protect();
@@ -420,13 +408,7 @@ export default function Loading() {
 
 import { Button } from "@buttergolf/ui";
 
-export default function Error({
-  error,
-  reset,
-}: {
-  error: Error;
-  reset: () => void;
-}) {
+export default function Error({ error, reset }: { error: Error; reset: () => void }) {
   return (
     <div>
       <h2>Something went wrong!</h2>
@@ -480,11 +462,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function CoursePage({
-  params,
-}: {
-  params: { slug: string };
-}) {
+export default async function CoursePage({ params }: { params: { slug: string } }) {
   // ... page content
 }
 ```
@@ -517,16 +495,7 @@ export function CourseCard({ course }) {
 import { CldImage } from "next-cloudinary";
 
 export function CourseImage({ publicId, alt }) {
-  return (
-    <CldImage
-      src={publicId}
-      alt={alt}
-      width={600}
-      height={400}
-      crop="fill"
-      gravity="auto"
-    />
-  );
+  return <CldImage src={publicId} alt={alt} width={600} height={400} crop="fill" gravity="auto" />;
 }
 ```
 

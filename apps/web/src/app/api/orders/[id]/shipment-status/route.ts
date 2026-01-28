@@ -8,19 +8,16 @@ import { getUserIdFromRequest } from "@/lib/auth";
  * PATCH /api/orders/[id]/shipment-status
  *
  * Update shipment status for an order.
- * 
+ *
  * Critical: When status changes to DELIVERED, we set autoReleaseAt to 14 days from now.
  * This starts the buyer's confirmation window - they can confirm receipt to release
  * payment immediately, or payment auto-releases after 14 days.
- * 
+ *
  * This endpoint can be called by:
  * - Seller manually updating status
  * - Shipping carrier webhook (future implementation)
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Support both web cookies and mobile Bearer tokens
     const clerkUserId = await getUserIdFromRequest(request);
@@ -46,10 +43,7 @@ export async function PATCH(
     ];
 
     if (!status || !validStatuses.includes(status)) {
-      return NextResponse.json(
-        { error: "Valid shipment status is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Valid shipment status is required" }, { status: 400 });
     }
 
     // Get user
@@ -153,9 +147,6 @@ export async function PATCH(
     });
   } catch (error) {
     console.error("Error updating shipment status:", error);
-    return NextResponse.json(
-      { error: "Failed to update shipment status" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update shipment status" }, { status: 500 });
   }
 }

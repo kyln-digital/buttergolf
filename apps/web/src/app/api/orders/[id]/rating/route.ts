@@ -8,10 +8,7 @@ import { getUserIdFromRequest } from "@/lib/auth";
  * GET /api/orders/[id]/rating
  * Get the rating for an order (if exists)
  */
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Support both web cookies and mobile Bearer tokens
     const clerkId = await getUserIdFromRequest(req);
@@ -61,10 +58,7 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error fetching rating:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch rating" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch rating" }, { status: 500 });
   }
 }
 
@@ -72,10 +66,7 @@ export async function GET(
  * POST /api/orders/[id]/rating
  * Submit a rating for an order (buyers only, after delivery)
  */
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Support both web cookies and mobile Bearer tokens
     const clerkId = await getUserIdFromRequest(req);
@@ -137,18 +128,12 @@ export async function POST(
 
     // Only buyer can rate
     if (order.buyerId !== user.id) {
-      return NextResponse.json(
-        { error: "Only the buyer can rate this order" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Only the buyer can rate this order" }, { status: 403 });
     }
 
     // Must be delivered
     if (order.status !== "DELIVERED") {
-      return NextResponse.json(
-        { error: "Can only rate after delivery" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Can only rate after delivery" }, { status: 400 });
     }
 
     // Check for existing rating
@@ -157,10 +142,7 @@ export async function POST(
     });
 
     if (existingRating) {
-      return NextResponse.json(
-        { error: "Order has already been rated" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Order has already been rated" }, { status: 400 });
     }
 
     // Create rating and update seller average in a transaction
@@ -201,9 +183,6 @@ export async function POST(
     });
   } catch (error) {
     console.error("Error submitting rating:", error);
-    return NextResponse.json(
-      { error: "Failed to submit rating" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to submit rating" }, { status: 500 });
   }
 }

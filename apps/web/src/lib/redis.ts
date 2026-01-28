@@ -1,4 +1,4 @@
-import { Redis } from 'ioredis';
+import { Redis } from "ioredis";
 
 let publisherClient: Redis | null = null;
 
@@ -15,7 +15,7 @@ let publisherClient: Redis | null = null;
 export function getRedisPublisher(): Redis {
   if (!publisherClient) {
     if (!process.env.REDIS_URL) {
-      throw new Error('REDIS_URL environment variable is not set');
+      throw new Error("REDIS_URL environment variable is not set");
     }
 
     publisherClient = new Redis(process.env.REDIS_URL, {
@@ -24,7 +24,7 @@ export function getRedisPublisher(): Redis {
       enableOfflineQueue: true,
       retryStrategy: (times) => {
         if (times > 3) {
-          console.error('Redis publisher connection failed after 3 retries');
+          console.error("Redis publisher connection failed after 3 retries");
           return null; // Stop retrying after 3 attempts
         }
         // Linear backoff with 3s cap: 100ms, 200ms, 300ms, ... capped at 3000ms
@@ -34,15 +34,15 @@ export function getRedisPublisher(): Redis {
       },
     });
 
-    publisherClient.on('error', (err) => {
-      console.error('Redis Publisher Error:', err);
+    publisherClient.on("error", (err) => {
+      console.error("Redis Publisher Error:", err);
     });
 
-    publisherClient.on('connect', () => {
-      console.log('Redis publisher connected');
+    publisherClient.on("connect", () => {
+      console.log("Redis publisher connected");
     });
 
-    publisherClient.on('reconnecting', (info) => {
+    publisherClient.on("reconnecting", (info) => {
       console.log(`Redis publisher reconnecting: ${JSON.stringify(info)}`);
     });
   }
@@ -62,7 +62,7 @@ export function getRedisPublisher(): Redis {
  */
 export function createRedisSubscriber(): Redis {
   if (!process.env.REDIS_URL) {
-    throw new Error('REDIS_URL environment variable is not set');
+    throw new Error("REDIS_URL environment variable is not set");
   }
 
   const subscriber = new Redis(process.env.REDIS_URL, {
@@ -76,12 +76,12 @@ export function createRedisSubscriber(): Redis {
     },
   });
 
-  subscriber.on('error', (err) => {
-    console.error('Redis Subscriber Error:', err);
+  subscriber.on("error", (err) => {
+    console.error("Redis Subscriber Error:", err);
   });
 
-  subscriber.on('connect', () => {
-    console.log('Redis subscriber connected');
+  subscriber.on("connect", () => {
+    console.log("Redis subscriber connected");
   });
 
   return subscriber;

@@ -92,8 +92,7 @@ export function Checkbox({
   name,
   value,
 }: CheckboxProps) {
-  const [uncontrolledChecked, setUncontrolledChecked] =
-    useState(defaultChecked);
+  const [uncontrolledChecked, setUncontrolledChecked] = useState(defaultChecked);
 
   const isControlled = controlledChecked !== undefined;
   const checked = isControlled ? controlledChecked : uncontrolledChecked;

@@ -170,7 +170,16 @@ export async function sendNewSaleEmail(params: {
     zip: string;
   };
 }): Promise<EmailResult> {
-  const { sellerEmail, sellerName, orderId, productTitle, buyerName, amountTotal, sellerPayout, shippingAddress } = params;
+  const {
+    sellerEmail,
+    sellerName,
+    orderId,
+    productTitle,
+    buyerName,
+    amountTotal,
+    sellerPayout,
+    shippingAddress,
+  } = params;
 
   try {
     const { data, error } = await getResendClient().emails.send({
@@ -262,7 +271,16 @@ export async function sendShippedEmail(params: {
   carrier: string;
   estimatedDelivery?: string;
 }): Promise<EmailResult> {
-  const { buyerEmail, buyerName, orderId, productTitle, trackingCode, trackingUrl, carrier, estimatedDelivery } = params;
+  const {
+    buyerEmail,
+    buyerName,
+    orderId,
+    productTitle,
+    trackingCode,
+    trackingUrl,
+    carrier,
+    estimatedDelivery,
+  } = params;
 
   try {
     const { data, error } = await getResendClient().emails.send({
@@ -344,7 +362,8 @@ export async function sendNewMessageEmail(params: {
   productTitle: string;
   messagePreview: string;
 }): Promise<EmailResult> {
-  const { recipientEmail, recipientName, senderName, orderId, productTitle, messagePreview } = params;
+  const { recipientEmail, recipientName, senderName, orderId, productTitle, messagePreview } =
+    params;
 
   try {
     const { data, error } = await getResendClient().emails.send({
@@ -457,17 +476,21 @@ export async function sendDeliveredEmail(params: {
               <p><strong>Product:</strong> ${productTitle}</p>
               <p><strong>Order ID:</strong> ${orderId.slice(0, 8).toUpperCase()}</p>
               
-              ${isBuyer ? `
+              ${
+                isBuyer
+                  ? `
                 <p>If you're happy with your purchase, please leave a review for the seller!</p>
                 <p style="text-align: center; margin-top: 30px;">
                   <a href="${BASE_URL}/orders/${orderId}" class="button">Leave a Review</a>
                 </p>
-              ` : `
+              `
+                  : `
                 <p>Your payout will be processed according to your Stripe payout schedule.</p>
                 <p style="text-align: center; margin-top: 30px;">
                   <a href="${BASE_URL}/seller/payouts" class="button">View Payouts</a>
                 </p>
-              `}
+              `
+              }
             </div>
             <div class="footer">
               <p>Thanks for using ButterGolf!</p>
@@ -587,7 +610,17 @@ export async function sendInTransitEmail(params: {
   currentLocation?: string;
   estimatedDelivery?: string;
 }): Promise<EmailResult> {
-  const { buyerEmail, buyerName, orderId, productTitle, trackingCode, trackingUrl, carrier, currentLocation, estimatedDelivery } = params;
+  const {
+    buyerEmail,
+    buyerName,
+    orderId,
+    productTitle,
+    trackingCode,
+    trackingUrl,
+    carrier,
+    currentLocation,
+    estimatedDelivery,
+  } = params;
 
   try {
     const { data, error } = await getResendClient().emails.send({
@@ -619,12 +652,16 @@ export async function sendInTransitEmail(params: {
               <p>Hi ${buyerName},</p>
               <p>Your package is on the move and heading your way!</p>
 
-              ${currentLocation ? `
+              ${
+                currentLocation
+                  ? `
               <div class="location-box">
                 <p style="margin: 0; font-size: 14px; color: #545454;">Current Location</p>
                 <p style="margin: 5px 0 0 0; font-size: 18px; font-weight: bold; color: #323232;">${currentLocation}</p>
               </div>
-              ` : ""}
+              `
+                  : ""
+              }
 
               <div class="tracking-box">
                 <p style="margin: 0; font-size: 14px;">Tracking Number</p>
@@ -636,15 +673,19 @@ export async function sendInTransitEmail(params: {
               <p><strong>Product:</strong> ${productTitle}</p>
               <p><strong>Order ID:</strong> ${orderId.slice(0, 8).toUpperCase()}</p>
 
-              ${trackingUrl ? `
+              ${
+                trackingUrl
+                  ? `
               <p style="text-align: center; margin-top: 30px;">
                 <a href="${trackingUrl}" class="button">Track Your Package</a>
               </p>
-              ` : `
+              `
+                  : `
               <p style="text-align: center; margin-top: 30px;">
                 <a href="${BASE_URL}/orders/${orderId}" class="button">View Order Details</a>
               </p>
-              `}
+              `
+              }
             </div>
             <div class="footer">
               <p>Tracking updates will continue as your package moves!</p>
@@ -729,15 +770,19 @@ export async function sendOutForDeliveryEmail(params: {
                 </ul>
               </div>
 
-              ${trackingUrl ? `
+              ${
+                trackingUrl
+                  ? `
               <p style="text-align: center; margin-top: 30px;">
                 <a href="${trackingUrl}" class="button">Track in Real-Time</a>
               </p>
-              ` : `
+              `
+                  : `
               <p style="text-align: center; margin-top: 30px;">
                 <a href="${BASE_URL}/orders/${orderId}" class="button">View Order Details</a>
               </p>
-              `}
+              `
+              }
             </div>
             <div class="footer">
               <p>Almost there! Enjoy your new golf gear!</p>
@@ -774,7 +819,15 @@ export async function sendAutoReleaseReminderEmail(params: {
   autoReleaseDate: Date;
   sellerPayout: number;
 }): Promise<EmailResult> {
-  const { buyerEmail, buyerName, orderId, productTitle, daysUntilRelease, autoReleaseDate, sellerPayout } = params;
+  const {
+    buyerEmail,
+    buyerName,
+    orderId,
+    productTitle,
+    daysUntilRelease,
+    autoReleaseDate,
+    sellerPayout,
+  } = params;
 
   try {
     const { data, error } = await getResendClient().emails.send({
@@ -866,9 +919,10 @@ export async function sendPaymentReleasedEmail(params: {
 }): Promise<EmailResult> {
   const { sellerEmail, sellerName, orderId, productTitle, payoutAmount, releaseReason } = params;
 
-  const reasonText = releaseReason === "buyer_confirmed"
-    ? "The buyer confirmed they received their item."
-    : "The payment was automatically released after 14 days.";
+  const reasonText =
+    releaseReason === "buyer_confirmed"
+      ? "The buyer confirmed they received their item."
+      : "The payment was automatically released after 14 days.";
 
   try {
     const { data, error } = await getResendClient().emails.send({

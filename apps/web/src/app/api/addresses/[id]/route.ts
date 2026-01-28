@@ -35,19 +35,13 @@ export async function PUT(request: NextRequest, context: Params) {
 
     // Validate required fields (state/county is optional for UK)
     if (!street1 || !city || !zip) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     // Validate name - either combined name or first+last required
     const fullName = name || `${firstName || ""} ${lastName || ""}`.trim();
     if (!fullName) {
-      return NextResponse.json(
-        { error: "Name is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
     // Get user from database
@@ -103,10 +97,7 @@ export async function PUT(request: NextRequest, context: Params) {
     return NextResponse.json(address);
   } catch (error) {
     console.error("Error updating address:", error);
-    return NextResponse.json(
-      { error: "Failed to update address" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to update address" }, { status: 500 });
   }
 }
 
@@ -151,7 +142,7 @@ export async function DELETE(request: NextRequest, context: Params) {
     if (ordersCount > 0) {
       return NextResponse.json(
         { error: "Cannot delete address that is used in orders" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -163,9 +154,6 @@ export async function DELETE(request: NextRequest, context: Params) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting address:", error);
-    return NextResponse.json(
-      { error: "Failed to delete address" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to delete address" }, { status: 500 });
   }
 }
