@@ -1,6 +1,6 @@
 // Type-only import to avoid bundling @prisma/client in React Native.
 // Import from the custom output location configured in schema.prisma
- 
+
 import type { PrismaClient } from "../generated/client";
 
 // Determine if we're running in a React Native environment.
@@ -51,7 +51,7 @@ const prisma: PrismaClient = (() => {
 export { prisma };
 // Re-export Prisma types for type-safe database queries
 // Import from custom output location
- 
+
 export type {
   Prisma,
   ClubKind,
