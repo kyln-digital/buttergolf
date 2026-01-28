@@ -57,7 +57,7 @@ export function VerifyEmailScreen({
   const isAutoSubmittingRef = useRef(false);
 
   // Ref to store handleVerify function for use in handleDigitChange (avoids circular dependency)
-  const handleVerifyRef = useRef<(code: string) => Promise<void>>();
+  const handleVerifyRef = useRef<((code: string) => Promise<void>) | null>(null);
 
   const handleDigitChange = useCallback(
     (index: number, value: string) => {
