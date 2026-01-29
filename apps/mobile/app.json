@@ -25,7 +25,9 @@
       },
       "associatedDomains": [
         "applinks:buttergolf.com",
-        "applinks:www.buttergolf.com"
+        "applinks:www.buttergolf.com",
+        "webcredentials:buttergolf.com",
+        "webcredentials:www.buttergolf.com"
       ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -55,10 +57,7 @@
               "pathPrefix": "/"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ]
     },

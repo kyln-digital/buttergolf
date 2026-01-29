@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@buttergolf/db";
-import { getUserIdFromRequest } from "@/lib/auth";
+import { getUserIdFromRequest, getClerkUserFromRequest } from "@/lib/auth";
 
 /**
  * POST /api/stripe/connect/account
@@ -16,10 +16,13 @@ import { getUserIdFromRequest } from "@/lib/auth";
 export async function POST(request: Request) {
   try {
     // 1. Authenticate user - supports both web cookies and mobile Bearer tokens
-    const userId = await getUserIdFromRequest(request);
-    if (!userId) {
+    // Use getClerkUserFromRequest to get full profile data for prefilling
+    const userData = await getClerkUserFromRequest(request);
+    if (!userData) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const userId = userData.userId;
 
     // 2. Get user from database (or create if webhook hasn't fired yet)
     let user = await prisma.user.findUnique({
@@ -27,18 +30,47 @@ export async function POST(request: Request) {
     });
 
     // If user doesn't exist, the Clerk webhook hasn't fired yet
-    // Create a minimal user record so they can proceed with onboarding
-    if (!user) {
-      console.log(`[Stripe Connect] User not found for clerkId ${userId}, creating minimal record`);
-      user = await prisma.user.create({
-        data: {
+    // Create a user record with data from Clerk so onboarding is prefilled
+    // Use upsert to handle race conditions where concurrent requests try to create the same user
+    if (!user && userData.email) {
+      console.log(
+        `[Stripe Connect] User not found for clerkId ${userId}, upserting from Clerk data`
+      );
+      user = await prisma.user.upsert({
+        where: { clerkId: userId },
+        create: {
           clerkId: userId,
-          email: "", // Will be updated by webhook when it fires
-          firstName: "",
-          lastName: "",
+          email: userData.email,
+          firstName: userData.firstName || "",
+          lastName: userData.lastName || "",
+        },
+        update: {}, // Don't update if user was created by another concurrent request
+      });
+      console.log(
+        `[Stripe Connect] Upserted user record ${user.id} for clerkId ${userId} with Clerk data`
+      );
+    } else if (!user) {
+      // No email available from Clerk - cannot create user record safely
+      // This is rare (Clerk usually provides email) but we handle it gracefully
+      console.warn(
+        `[Stripe Connect] Cannot create user for clerkId ${userId}: no email available from Clerk`
+      );
+      return NextResponse.json(
+        { error: "User profile incomplete - please ensure your account has an email address" },
+        { status: 400 }
+      );
+    } else if ((!user.email || user.email === "") && userData.email) {
+      // User exists but with empty data (created before we had Clerk data)
+      // Update with Clerk data now that we have it
+      console.log(`[Stripe Connect] Updating user ${user.id} with Clerk data`);
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          email: userData.email,
+          firstName: userData.firstName || user.firstName || "",
+          lastName: userData.lastName || user.lastName || "",
         },
       });
-      console.log(`[Stripe Connect] Created user record ${user.id} for clerkId ${userId}`);
     }
 
     let stripeAccountId = user.stripeConnectId;
@@ -48,12 +80,16 @@ export async function POST(request: Request) {
       try {
         // Verify the account exists in Stripe
         const existingAccount = await stripe.accounts.retrieve(stripeAccountId);
-        console.log(`[Stripe Connect] Verified existing account ${stripeAccountId} for user ${user.id}`);
-        
+        console.log(
+          `[Stripe Connect] Verified existing account ${stripeAccountId} for user ${user.id}`
+        );
+
         // Check if account was deleted from Stripe
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((existingAccount as any).deleted) {
-          console.log(`[Stripe Connect] Account ${stripeAccountId} was deleted in Stripe, clearing from database`);
+          console.log(
+            `[Stripe Connect] Account ${stripeAccountId} was deleted in Stripe, clearing from database`
+          );
           stripeAccountId = null;
           await prisma.user.update({
             where: { id: user.id },
@@ -67,7 +103,9 @@ export async function POST(request: Request) {
       } catch (error) {
         // Account doesn't exist in Stripe (404) or other error
         console.error(`[Stripe Connect] Error retrieving account ${stripeAccountId}:`, error);
-        console.log(`[Stripe Connect] Clearing invalid stripeConnectId from database for user ${user.id}`);
+        console.log(
+          `[Stripe Connect] Clearing invalid stripeConnectId from database for user ${user.id}`
+        );
         stripeAccountId = null;
         await prisma.user.update({
           where: { id: user.id },
@@ -178,7 +216,7 @@ export async function POST(request: Request) {
         error: "Failed to create Connect account",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -273,7 +311,7 @@ export async function GET(request: Request) {
         error: "Failed to fetch account status",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
