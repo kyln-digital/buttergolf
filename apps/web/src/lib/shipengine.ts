@@ -6,7 +6,6 @@ import { cacheGetOrSet } from "./redis";
 import {
   validateUKAddress,
   validateSellerCanShip,
-  validatePostcodeOnly,
   normalizeUKPostcode,
   AddressErrorCode,
   type AddressValidationError,
