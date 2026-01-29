@@ -31,21 +31,23 @@ export async function POST(request: Request) {
 
     // If user doesn't exist, the Clerk webhook hasn't fired yet
     // Create a user record with data from Clerk so onboarding is prefilled
-    // Only create if we have an email to avoid unique constraint violations (email: "" would conflict)
+    // Use upsert to handle race conditions where concurrent requests try to create the same user
     if (!user && userData.email) {
       console.log(
-        `[Stripe Connect] User not found for clerkId ${userId}, creating record from Clerk data`
+        `[Stripe Connect] User not found for clerkId ${userId}, upserting from Clerk data`
       );
-      user = await prisma.user.create({
-        data: {
+      user = await prisma.user.upsert({
+        where: { clerkId: userId },
+        create: {
           clerkId: userId,
           email: userData.email,
           firstName: userData.firstName || "",
           lastName: userData.lastName || "",
         },
+        update: {}, // Don't update if user was created by another concurrent request
       });
       console.log(
-        `[Stripe Connect] Created user record ${user.id} for clerkId ${userId} with Clerk data`
+        `[Stripe Connect] Upserted user record ${user.id} for clerkId ${userId} with Clerk data`
       );
     } else if (!user) {
       // No email available from Clerk - cannot create user record safely

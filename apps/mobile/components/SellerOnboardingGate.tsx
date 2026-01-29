@@ -424,6 +424,9 @@ export function SellerOnboardingGate({
           // Prevent bouncing/scroll issues that can cause reloads
           bounces={false}
           scrollEnabled={true}
+          // Cross-platform URL filtering - works with onShouldStartLoadWithRequest on iOS
+          // and provides baseline filtering on Android
+          originWhitelist={["https://*", "http://*", "about:*"]}
           // Handle external links (open in system browser if needed)
           onShouldStartLoadWithRequest={(request) => {
             // Allow about:blank - Stripe uses this for internal iframe handling

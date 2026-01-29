@@ -62,7 +62,7 @@ export enum AddressErrorCode {
 export interface AddressValidationResult {
   isValid: boolean;
   errors: AddressValidationError[];
-  normalized?: {
+  normalised?: {
     postcode: string;
     city: string;
     street1: string;
@@ -181,8 +181,17 @@ export function validateUKAddress(
 ): AddressValidationResult {
   const errors: AddressValidationError[] = [];
 
-  // Check for incomplete/pending address (common for sellers)
-  if (isIncompleteAddress(address.street1)) {
+  // Validate required fields first - check for missing street before incomplete check
+  // to avoid duplicate errors (empty street would trigger both missing and incomplete)
+  if (!address.street1?.trim()) {
+    errors.push({
+      field: "street1",
+      code: AddressErrorCode.MISSING_STREET,
+      message: "Street address is required",
+    });
+  } else if (isIncompleteAddress(address.street1)) {
+    // Only check for incomplete/pending address markers if street is provided
+    // Common for sellers who haven't set up their address yet
     errors.push({
       field: "street1",
       code: options.isSeller
@@ -191,15 +200,6 @@ export function validateUKAddress(
       message: options.isSeller
         ? "Please update your shipping address in Settings before selling"
         : "Please provide a complete street address",
-    });
-  }
-
-  // Validate required fields
-  if (!address.street1?.trim()) {
-    errors.push({
-      field: "street1",
-      code: AddressErrorCode.MISSING_STREET,
-      message: "Street address is required",
     });
   }
 
@@ -249,7 +249,7 @@ export function validateUKAddress(
   return {
     isValid: true,
     errors: [],
-    normalized: {
+    normalised: {
       postcode: normalizeUKPostcode(address.zip),
       city: normalizeCity(address.city),
       street1: normalizeStreet(address.street1),
@@ -267,7 +267,7 @@ export function validateUKAddress(
 export function validatePostcodeOnly(postcode: string): {
   isValid: boolean;
   error?: AddressValidationError;
-  normalized?: string;
+  normalised?: string;
 } {
   if (!postcode?.trim()) {
     return {
@@ -293,7 +293,7 @@ export function validatePostcodeOnly(postcode: string): {
 
   return {
     isValid: true,
-    normalized: normalizeUKPostcode(postcode),
+    normalised: normalizeUKPostcode(postcode),
   };
 }
 

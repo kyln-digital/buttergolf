@@ -7,25 +7,14 @@
  */
 
 import { Redis } from "ioredis";
-import * as fs from "fs";
 import * as path from "path";
+import * as dotenv from "dotenv";
 
-// Load .env.local from apps/web
+// Load .env.local from apps/web using dotenv for proper parsing
+// Handles inline comments, quoted values, and escapes correctly
 const envPath = path.resolve(__dirname, "../apps/web/.env.local");
-if (fs.existsSync(envPath)) {
-  const envContent = fs.readFileSync(envPath, "utf-8");
-  for (const line of envContent.split("\n")) {
-    const match = line.match(/^([^#=]+)=(.*)$/);
-    if (match) {
-      const key = match[1].trim();
-      const value = match[2].trim().replace(/^["']|["']$/g, ""); // Remove quotes
-      if (!process.env[key]) {
-        process.env[key] = value;
-      }
-    }
-  }
-  console.log(`📁 Loaded env from ${envPath}`);
-}
+dotenv.config({ path: envPath });
+console.log(`📁 Loaded env from ${envPath}`);
 
 async function keepalive() {
   const redisUrl = process.env.REDIS_URL;

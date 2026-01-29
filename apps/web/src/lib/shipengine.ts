@@ -154,12 +154,22 @@ async function shipEngineRequest<T>(
 
 /**
  * Build a cache key for shipping rates.
- * Format: shipping:rates:{fromPostcode}:{toPostcode}:{productId}
+ * Format: shipping:rates:{fromPostcode}:{toPostcode}:{dimensionsHash}
+ *
+ * Uses dimensions hash instead of productId so:
+ * - Cache is reusable across products with similar dimensions
+ * - Dimension updates invalidate stale cached rates automatically
  */
-function buildRateCacheKey(fromPostcode: string, toPostcode: string, productId: string): string {
-  const normalizedFrom = normalizeUKPostcode(fromPostcode).replace(/\s/g, "");
-  const normalizedTo = normalizeUKPostcode(toPostcode).replace(/\s/g, "");
-  return `shipping:rates:${normalizedFrom}:${normalizedTo}:${productId}`;
+function buildRateCacheKey(
+  fromPostcode: string,
+  toPostcode: string,
+  dimensions: { length: number; width: number; height: number; weight: number }
+): string {
+  const normalisedFrom = normalizeUKPostcode(fromPostcode).replace(/\s/g, "");
+  const normalisedTo = normalizeUKPostcode(toPostcode).replace(/\s/g, "");
+  // Create a simple hash from dimensions (L x W x H @ Weight)
+  const dimensionsHash = `${dimensions.length}x${dimensions.width}x${dimensions.height}@${dimensions.weight}`;
+  return `shipping:rates:${normalisedFrom}:${normalisedTo}:${dimensionsHash}`;
 }
 
 /**
@@ -249,8 +259,8 @@ export async function calculateShippingRates(
     weight: product.weight || 500, // grams
   };
 
-  // Build cache key for rate lookup
-  const cacheKey = buildRateCacheKey(fromAddress.zip, toAddress.zip, productId);
+  // Build cache key for rate lookup (uses dimensions for better cache reuse)
+  const cacheKey = buildRateCacheKey(fromAddress.zip, toAddress.zip, dimensions);
 
   // Try to get cached or fresh shipping rates from ShipEngine
   if (SHIPENGINE_API_KEY) {
