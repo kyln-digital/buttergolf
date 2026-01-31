@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from "react";
-import { Alert, StyleSheet, SafeAreaView, View, ActivityIndicator } from "react-native";
+import { Alert, StyleSheet, View, ActivityIndicator } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView, WebViewMessageEvent } from "react-native-webview";
 import { useAuth } from "@clerk/clerk-expo";
 import { useSellerStatusContext } from "../context";
@@ -409,22 +410,45 @@ export function SellerOnboardingGate({
           domStorageEnabled={true}
           sharedCookiesEnabled={false}
           thirdPartyCookiesEnabled={false}
-          // iOS specific
+          // iOS specific: navigation gestures, content insets, and inline media
           allowsBackForwardNavigationGestures={false}
-          // Android specific
+          allowsInlineMediaPlayback={true}
+          automaticallyAdjustContentInsets={false}
+          contentInsetAdjustmentBehavior="never"
+          // iOS specific - CRITICAL for keyboard/input handling in Stripe forms
+          // Without this, tapping inputs won't bring up the keyboard
+          keyboardDisplayRequiresUserAction={false}
+          // Android specific: window handling
           setSupportMultipleWindows={false}
+          overScrollMode="never"
+          // Prevent bouncing/scroll issues that can cause reloads
+          bounces={false}
+          scrollEnabled={true}
+          // Cross-platform URL filtering - works with onShouldStartLoadWithRequest on iOS
+          // and provides baseline filtering on Android
+          originWhitelist={["https://*", "http://*", "about:*"]}
           // Handle external links (open in system browser if needed)
           onShouldStartLoadWithRequest={(request) => {
+            // Allow about:blank - Stripe uses this for internal iframe handling
+            // Blocking it causes the WebView to crash/reload
+            if (request.url === "about:blank" || request.url.startsWith("about:")) {
+              return true;
+            }
             // Allow same-origin requests
             if (request.url.startsWith(apiUrl)) {
               return true;
             }
-            // Allow Stripe domains for iframes
-            if (request.url.includes("stripe.com") || request.url.includes("js.stripe.com")) {
+            // Allow ALL Stripe-related domains for Connect embedded components
+            // Stripe uses multiple subdomains for their embedded forms:
+            // - *.stripe.com (main, connect, js, api, etc.)
+            // - *.stripe.network (telemetry/analytics)
+            // - *.stripecdn.com (static assets)
+            const stripeDomainsRegex = /stripe\.com|stripe\.network|stripecdn\.com/i;
+            if (stripeDomainsRegex.test(request.url)) {
               return true;
             }
             // Block other external links (or could open in system browser)
-            console.log("[SellerOnboardingGate] Blocked external URL:", request.url);
+            console.warn("[SellerOnboardingGate] Blocked external URL:", request.url);
             return false;
           }}
         />
