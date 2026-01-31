@@ -100,5 +100,4 @@ export const Badge = styled(View, {
 
 // Export type that includes BOTH our custom variants AND all base View props
 // Note: Badge uses 'color' in variants but View doesn't have native color prop - variants override
-export type BadgeProps = GetProps<typeof Badge> &
-  Omit<ViewProps, keyof GetProps<typeof Badge>>;
+export type BadgeProps = GetProps<typeof Badge> & Omit<ViewProps, keyof GetProps<typeof Badge>>;

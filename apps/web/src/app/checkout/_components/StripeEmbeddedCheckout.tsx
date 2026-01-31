@@ -2,16 +2,11 @@
 
 import { useCallback, useState } from "react";
 import { loadStripe } from "@stripe/stripe-js";
-import {
-  EmbeddedCheckoutProvider,
-  EmbeddedCheckout,
-} from "@stripe/react-stripe-js";
+import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
 import { Column, Text, Spinner, Card, Button, Heading } from "@buttergolf/ui";
 
 // Initialize Stripe outside component to avoid re-creating on every render
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
-);
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 interface StripeEmbeddedCheckoutProps {
   productId: string;
@@ -23,10 +18,7 @@ interface StripeEmbeddedCheckoutProps {
  * Renders the full Stripe-hosted checkout experience embedded in our page
  * Handles address collection, shipping selection, and payment in one flow
  */
-export function StripeEmbeddedCheckout({
-  productId,
-  onError,
-}: StripeEmbeddedCheckoutProps) {
+export function StripeEmbeddedCheckout({ productId, onError }: StripeEmbeddedCheckoutProps) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -51,8 +43,7 @@ export function StripeEmbeddedCheckout({
       setIsLoading(false);
       return data.clientSecret;
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to initialize checkout";
+      const errorMessage = err instanceof Error ? err.message : "Failed to initialize checkout";
       setError(errorMessage);
       onError?.(errorMessage);
       setIsLoading(false);
@@ -89,12 +80,7 @@ export function StripeEmbeddedCheckout({
             <Heading level={4} textAlign="center">
               Unable to Load Checkout
             </Heading>
-            <Text
-              color="$textSecondary"
-              textAlign="center"
-              flexShrink={1}
-              flexWrap="wrap"
-            >
+            <Text color="$textSecondary" textAlign="center" flexShrink={1} flexWrap="wrap">
               {error}
             </Text>
           </Column>

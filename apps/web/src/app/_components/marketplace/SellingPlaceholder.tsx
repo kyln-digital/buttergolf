@@ -35,8 +35,8 @@ export function SellingPlaceholder() {
         </Heading>
 
         <Text size="$6" align="center" color="$textSecondary">
-          List your clubs, bags, shoes, and accessories in minutes. Reach
-          thousands of golfers looking for quality equipment.
+          List your clubs, bags, shoes, and accessories in minutes. Reach thousands of golfers
+          looking for quality equipment.
         </Text>
 
         <Row gap="$md" flexWrap="wrap" justifyContent="center" marginTop="$md">

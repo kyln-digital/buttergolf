@@ -37,9 +37,7 @@ export function WaitlistForm() {
       setEmail("");
     } catch (err) {
       setStatus("error");
-      setErrorMessage(
-        err instanceof Error ? err.message : "Something went wrong"
-      );
+      setErrorMessage(err instanceof Error ? err.message : "Something went wrong");
     }
   };
 
@@ -101,8 +99,7 @@ export function WaitlistForm() {
     >
       <p
         style={{
-          fontFamily:
-            'Urbanist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: 'Urbanist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
           fontSize: "16px",
           fontWeight: 500,
           color: "#FFFAD2",

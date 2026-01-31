@@ -11,11 +11,7 @@ This directory contains centralized category definitions for the ButterGolf plat
 ### Importing Categories
 
 ```typescript
-import {
-  CATEGORIES,
-  getCategoryBySlug,
-  isValidCategorySlug,
-} from "@buttergolf/db";
+import { CATEGORIES, getCategoryBySlug, isValidCategorySlug } from "@buttergolf/db";
 
 // Get all categories
 const allCategories = CATEGORIES;

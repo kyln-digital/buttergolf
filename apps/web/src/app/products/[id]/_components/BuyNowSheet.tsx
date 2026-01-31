@@ -3,14 +3,7 @@
 import { useState, useCallback, memo } from "react";
 import { useRouter } from "next/navigation";
 import { Sheet } from "@tamagui/sheet";
-import {
-  Column,
-  Row,
-  Text,
-  Button,
-  Heading,
-  Image,
-} from "@buttergolf/ui";
+import { Column, Row, Text, Button, Heading, Image } from "@buttergolf/ui";
 import { StripePaymentForm } from "@/app/checkout/_components/StripePaymentForm";
 import type { Product } from "../ProductDetailClient";
 
@@ -27,11 +20,7 @@ interface BuyNowSheetProps {
  * Uses compound component pattern (Sheet.Overlay, Sheet.Frame) for
  * proper event handling and z-index management.
  */
-export function BuyNowSheet({
-  product,
-  isOpen,
-  onOpenChange,
-}: BuyNowSheetProps) {
+export function BuyNowSheet({ product, isOpen, onOpenChange }: BuyNowSheetProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [position, setPosition] = useState(0);
@@ -130,12 +119,7 @@ const SheetContents = memo(function SheetContents({
           <Heading level={4} color="$text">
             Checkout
           </Heading>
-          <Button
-            size="$4"
-            circular
-            chromeless
-            onPress={onClose}
-          >
+          <Button size="$4" circular chromeless onPress={onClose}>
             <Text size="$5" fontWeight="bold" color="$text">
               ✕
             </Text>
@@ -143,12 +127,7 @@ const SheetContents = memo(function SheetContents({
         </Row>
 
         {/* Order Summary */}
-        <Column
-          gap="$md"
-          pb="$md"
-          borderBottomWidth={1}
-          borderBottomColor="$border"
-        >
+        <Column gap="$md" pb="$md" borderBottomWidth={1} borderBottomColor="$border">
           <Row gap="$md" alignItems="flex-start">
             {productImageUrl && (
               <Image
@@ -228,11 +207,7 @@ const SheetContents = memo(function SheetContents({
                 {error}
               </Text>
             </Column>
-            <Button
-              butterVariant="primary"
-              size="$4"
-              onPress={onRetry}
-            >
+            <Button butterVariant="primary" size="$4" onPress={onRetry}>
               Try Again
             </Button>
           </Column>

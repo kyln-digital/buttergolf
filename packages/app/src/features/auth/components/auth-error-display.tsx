@@ -14,11 +14,7 @@ interface AuthErrorDisplayProps {
 /**
  * Displays authentication errors with consistent styling
  */
-export function AuthErrorDisplay({
-  error,
-  onDismiss,
-  testID,
-}: Readonly<AuthErrorDisplayProps>) {
+export function AuthErrorDisplay({ error, onDismiss, testID }: Readonly<AuthErrorDisplayProps>) {
   if (!error) return null;
 
   return (

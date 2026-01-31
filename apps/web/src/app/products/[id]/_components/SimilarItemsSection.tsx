@@ -9,10 +9,7 @@ interface SimilarItemsSectionProps {
   category: string;
 }
 
-export function SimilarItemsSection({
-  products,
-  category,
-}: SimilarItemsSectionProps) {
+export function SimilarItemsSection({ products, category }: SimilarItemsSectionProps) {
   if (products.length === 0) {
     return null;
   }
@@ -28,31 +25,16 @@ export function SimilarItemsSection({
       >
         {/* Header */}
         <Column alignItems="center" gap="$md" width="100%">
-          <Heading
-            level={2}
-            size="$9"
-            $gtMd={{ size: "$10" }}
-            color="$text"
-            textAlign="center"
-          >
+          <Heading level={2} size="$9" $gtMd={{ size: "$10" }} color="$text" textAlign="center">
             Similar Items
           </Heading>
-          <Text
-            size="$6"
-            $gtMd={{ size: "$7" }}
-            color="$textSecondary"
-            textAlign="center"
-          >
+          <Text size="$6" $gtMd={{ size: "$7" }} color="$textSecondary" textAlign="center">
             Other {category.toLowerCase()} items you might like
           </Text>
         </Column>
 
         {/* Products Carousel */}
-        <ProductCarousel
-          products={products}
-          autoplay={true}
-          autoplayDelay={5000}
-        />
+        <ProductCarousel products={products} autoplay={true} autoplayDelay={5000} />
       </Column>
     </Column>
   );

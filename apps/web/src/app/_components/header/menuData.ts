@@ -16,18 +16,14 @@ export const menuData: MenuItem[] = [
     path: "/listings",
   },
   // Add top-level featured categories
-  ...CATEGORIES.filter((cat) => TOP_LEVEL_CATEGORIES.has(cat.slug)).map(
-    (cat) => ({
-      title: cat.name,
-      path: `/category/${cat.slug}`,
-    }),
-  ),
+  ...CATEGORIES.filter((cat) => TOP_LEVEL_CATEGORIES.has(cat.slug)).map((cat) => ({
+    title: cat.name,
+    path: `/category/${cat.slug}`,
+  })),
   // Group remaining categories under "More Categories"
   {
     title: "More Categories",
-    submenu: CATEGORIES.filter(
-      (cat) => !TOP_LEVEL_CATEGORIES.has(cat.slug),
-    ).map((cat) => ({
+    submenu: CATEGORIES.filter((cat) => !TOP_LEVEL_CATEGORIES.has(cat.slug)).map((cat) => ({
       title: cat.name,
       path: `/category/${cat.slug}`,
     })),

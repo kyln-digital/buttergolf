@@ -2,11 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import {
-  Column,
-  Text,
-  Row,
-} from "@buttergolf/ui";
+import { Column, Text, Row } from "@buttergolf/ui";
 import {
   LayoutDashboard,
   Package,
@@ -98,16 +94,10 @@ export function SellerDashboardNav() {
       {navItems.map((item) => {
         // Check if this is the active route
         const isActive =
-          item.href === "/seller"
-            ? pathname === "/seller"
-            : pathname?.startsWith(item.href);
+          item.href === "/seller" ? pathname === "/seller" : pathname?.startsWith(item.href);
 
         return (
-          <Link
-            key={item.href}
-            href={item.href}
-            style={{ textDecoration: "none" }}
-          >
+          <Link key={item.href} href={item.href} style={{ textDecoration: "none" }}>
             <Row
               gap="$sm"
               paddingHorizontal="$md"
@@ -119,9 +109,7 @@ export function SellerDashboardNav() {
                 backgroundColor: isActive ? "$primaryLight" : "$cloudMist",
               }}
             >
-              <Text color={isActive ? "$primary" : "$textSecondary"}>
-                {item.icon}
-              </Text>
+              <Text color={isActive ? "$primary" : "$textSecondary"}>{item.icon}</Text>
               <Text
                 size="$4"
                 color={isActive ? "$primary" : "$text"}

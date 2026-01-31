@@ -8,11 +8,7 @@ export interface CategoryButtonProps {
   onPress?: () => void;
 }
 
-export function CategoryButton({
-  label,
-  active = false,
-  onPress,
-}: Readonly<CategoryButtonProps>) {
+export function CategoryButton({ label, active = false, onPress }: Readonly<CategoryButtonProps>) {
   return (
     <Button
       size="$3"

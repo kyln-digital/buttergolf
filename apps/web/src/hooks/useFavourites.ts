@@ -44,15 +44,13 @@ export function useFavourites() {
 
         const data = await response.json();
         const favouriteIds = new Set<string>(
-          (data.products ?? []).map((p: { id: string }) => p.id),
+          (data.products ?? []).map((p: { id: string }) => p.id)
         );
 
         setFavourites(favouriteIds);
       } catch (err) {
         console.error("Error fetching favourites:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to load favourites",
-        );
+        setError(err instanceof Error ? err.message : "Failed to load favourites");
         setFavourites(new Set());
       } finally {
         setLoading(false);
@@ -105,9 +103,7 @@ export function useFavourites() {
       if (!response.ok) throw new Error("Failed to refresh favourites");
 
       const data = await response.json();
-      const favouriteIds = new Set<string>(
-        (data.products ?? []).map((p: { id: string }) => p.id),
-      );
+      const favouriteIds = new Set<string>((data.products ?? []).map((p: { id: string }) => p.id));
 
       setFavourites(favouriteIds);
     } catch (err) {

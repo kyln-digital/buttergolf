@@ -34,9 +34,7 @@ function CheckoutPageContent() {
   const productId = searchParams.get("productId");
 
   const [loading, setLoading] = useState(!!productId);
-  const [error, setError] = useState<string | null>(
-    !productId ? "No product selected" : null,
-  );
+  const [error, setError] = useState<string | null>(!productId ? "No product selected" : null);
   const [product, setProduct] = useState<ProductInfo | null>(null);
 
   useEffect(() => {
@@ -137,99 +135,91 @@ function CheckoutPageContent() {
               minWidth={0}
               $gtMd={{ minWidth: 500 }}
             >
-              <StripeEmbeddedCheckout
-                productId={product.id}
-                onError={(err) => setError(err)}
-              />
+              <StripeEmbeddedCheckout productId={product.id} onError={(err) => setError(err)} />
             </Column>
 
-          {/* Right Column - Product Summary (narrower on desktop) */}
-          <Column
-            flexBasis={0}
-            flexGrow={1}
-            flexShrink={1}
-            minWidth={0}
-            $gtMd={{ maxWidth: 350 }}
-          >
-            <Card variant="elevated" padding="$lg">
-              <Column gap="$md">
-                <Heading level={4}>Order Summary</Heading>
+            {/* Right Column - Product Summary (narrower on desktop) */}
+            <Column
+              flexBasis={0}
+              flexGrow={1}
+              flexShrink={1}
+              minWidth={0}
+              $gtMd={{ maxWidth: 350 }}
+            >
+              <Card variant="elevated" padding="$lg">
+                <Column gap="$md">
+                  <Heading level={4}>Order Summary</Heading>
 
-                {/* Product Preview */}
-                <Row gap="$md" alignItems="flex-start">
-                  {product.imageUrl && (
-                    <Image
-                      source={{ uri: product.imageUrl }}
-                      width={80}
-                      height={80}
-                      borderRadius="$md"
-                      alt={product.title}
-                    />
-                  )}
-                  <Column gap="$xs" flex={1}>
-                    <Text size="$5" weight="semibold" numberOfLines={2}>
-                      {product.title}
-                    </Text>
-                    {product.brand && (
-                      <Text size="$3" color="$textSecondary">
-                        {product.brand}
-                      </Text>
+                  {/* Product Preview */}
+                  <Row gap="$md" alignItems="flex-start">
+                    {product.imageUrl && (
+                      <Image
+                        source={{ uri: product.imageUrl }}
+                        width={80}
+                        height={80}
+                        borderRadius="$md"
+                        alt={product.title}
+                      />
                     )}
-                    <Text size="$3" color="$textSecondary">
-                      Condition: {product.condition.replace("_", " ")}
-                    </Text>
-                  </Column>
-                </Row>
+                    <Column gap="$xs" flex={1}>
+                      <Text size="$5" weight="semibold" numberOfLines={2}>
+                        {product.title}
+                      </Text>
+                      {product.brand && (
+                        <Text size="$3" color="$textSecondary">
+                          {product.brand}
+                        </Text>
+                      )}
+                      <Text size="$3" color="$textSecondary">
+                        Condition: {product.condition.replace("_", " ")}
+                      </Text>
+                    </Column>
+                  </Row>
 
-                {/* Price */}
-                <Row
-                  justifyContent="space-between"
-                  alignItems="center"
-                  paddingTop="$md"
-                  borderTopWidth={1}
-                  borderTopColor="$border"
-                >
-                  <Text color="$textSecondary">Subtotal</Text>
-                  <Text weight="bold" size="$6" color="$primary">
-                    £{product.price.toFixed(2)}
+                  {/* Price */}
+                  <Row
+                    justifyContent="space-between"
+                    alignItems="center"
+                    paddingTop="$md"
+                    borderTopWidth={1}
+                    borderTopColor="$border"
+                  >
+                    <Text color="$textSecondary">Subtotal</Text>
+                    <Text weight="bold" size="$6" color="$primary">
+                      £{product.price.toFixed(2)}
+                    </Text>
+                  </Row>
+
+                  <Text size="$2" color="$textSecondary">
+                    Shipping calculated at checkout
                   </Text>
-                </Row>
 
-                <Text size="$2" color="$textSecondary">
-                  Shipping calculated at checkout
-                </Text>
-
-                {/* Trust Badges */}
-                <Column
-                  gap="$sm"
-                  paddingTop="$md"
-                  borderTopWidth={1}
-                  borderTopColor="$border"
-                >
-                  <Row gap="$sm" alignItems="center">
-                    <Text size="$4">🔒</Text>
-                    <Text size="$3" color="$textSecondary">
-                      Secure checkout powered by Stripe
-                    </Text>
-                  </Row>
-                  <Row gap="$sm" alignItems="center">
-                    <Text size="$4">📦</Text>
-                    <Text size="$3" color="$textSecondary">
-                      Tracked shipping included
-                    </Text>
-                  </Row>
-                  <Row gap="$sm" alignItems="center">
-                    <Text size="$4">✅</Text>
-                    <Text size="$3" color="$textSecondary">
-                      Buyer protection guarantee
-                    </Text>
-                  </Row>
+                  {/* Trust Badges */}
+                  <Column gap="$sm" paddingTop="$md" borderTopWidth={1} borderTopColor="$border">
+                    <Row gap="$sm" alignItems="center">
+                      <Text size="$4">🔒</Text>
+                      <Text size="$3" color="$textSecondary">
+                        Secure checkout powered by Stripe
+                      </Text>
+                    </Row>
+                    <Row gap="$sm" alignItems="center">
+                      <Text size="$4">📦</Text>
+                      <Text size="$3" color="$textSecondary">
+                        Tracked shipping included
+                      </Text>
+                    </Row>
+                    <Row gap="$sm" alignItems="center">
+                      <Text size="$4">✅</Text>
+                      <Text size="$3" color="$textSecondary">
+                        Buyer protection guarantee
+                      </Text>
+                    </Row>
+                  </Column>
                 </Column>
-              </Column>
-            </Card>
-          </Column>
-        </Row>
-      </Container>
+              </Card>
+            </Column>
+          </Row>
+        </Container>
       </div>
 
       {/* Trust Section */}

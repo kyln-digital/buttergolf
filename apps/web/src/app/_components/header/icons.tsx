@@ -1,11 +1,5 @@
 export const SearchIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="25"
-    height="25"
-    viewBox="0 0 25 25"
-    fill="none"
-  >
+  <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 25 25" fill="none">
     <path
       fillRule="evenodd"
       clipRule="evenodd"
@@ -18,13 +12,7 @@ export const SearchIcon = () => (
 );
 
 export const UserIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="25"
-    height="25"
-    viewBox="0 0 25 25"
-    fill="none"
-  >
+  <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 25 25" fill="none">
     <path
       fillRule="evenodd"
       clipRule="evenodd"
@@ -35,13 +23,7 @@ export const UserIcon = () => (
 );
 
 export const HeartIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="25"
-    height="25"
-    viewBox="0 0 25 25"
-    fill="none"
-  >
+  <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 25 25" fill="none">
     <path
       d="M4.72345 5.8023C2.76927 7.75648 2.76927 10.9248 4.72345 12.879L11.4471 19.6028C12.0329 20.1886 12.9827 20.1886 13.5685 19.6028L20.2922 12.8791C22.2463 10.9249 22.2463 7.75659 20.2922 5.80241C18.338 3.84823 15.1696 3.84823 13.2155 5.80241L12.5079 6.51001L11.8002 5.8023C9.84597 3.84813 6.67762 3.84813 4.72345 5.8023Z"
       stroke="currentColor"
@@ -53,13 +35,7 @@ export const HeartIcon = () => (
 );
 
 export const CartIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="25"
-    height="25"
-    viewBox="0 0 25 25"
-    fill="none"
-  >
+  <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 25 25" fill="none">
     <path
       d="M15.5078 7.50012V8.50012C15.5078 10.157 14.1647 11.5001 12.5078 11.5001C10.851 11.5001 9.50781 10.157 9.50781 8.50012V7.50012M6.00781 20.5001H19.0078C19.8362 20.5001 20.5078 19.8285 20.5078 19.0001V6.00012C20.5078 5.17169 19.8362 4.50012 19.0078 4.50012H6.00781C5.17939 4.50012 4.50781 5.17169 4.50781 6.00012V19.0001C4.50781 19.8285 5.17939 20.5001 6.00781 20.5001Z"
       stroke="currentColor"
@@ -71,13 +47,7 @@ export const CartIcon = () => (
 );
 
 export const PackageIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="25"
-    height="25"
-    viewBox="0 0 25 25"
-    fill="none"
-  >
+  <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 25 25" fill="none">
     <path
       d="M12.5 8.5L17.5 11.5M12.5 8.5L7.5 11.5M12.5 8.5V13.5M17.5 11.5V16.5L12.5 19.5M17.5 11.5L12.5 13.5M7.5 11.5L12.5 13.5M7.5 11.5V16.5L12.5 19.5M12.5 19.5V13.5M20.5 7.5L12.5 3.5L4.5 7.5L12.5 11.5L20.5 7.5Z"
       stroke="currentColor"

@@ -95,10 +95,12 @@ export function MessageThreadScreen({
         if (onFetchMessages) {
           const data = await onFetchMessages(orderId);
           if (!cancelled) {
-            setMessages(data.messages.map((msg) => ({
-              ...msg,
-              isOwnMessage: msg.senderId === currentUserId,
-            })));
+            setMessages(
+              data.messages.map((msg) => ({
+                ...msg,
+                isOwnMessage: msg.senderId === currentUserId,
+              }))
+            );
           }
         }
 
@@ -123,44 +125,47 @@ export function MessageThreadScreen({
     fetchAndSetupSSE();
 
     // Setup SSE stream for real-time messages (web-only)
-    if (typeof window !== 'undefined' && window.EventSource) {
+    if (typeof window !== "undefined" && window.EventSource) {
       const eventSource = new EventSource(`/api/orders/${orderId}/messages/stream`);
       eventSourceRef.current = eventSource;
 
-      eventSource.addEventListener('open', () => {
-        console.log('[SSE] Connected to message stream');
+      eventSource.addEventListener("open", () => {
+        console.log("[SSE] Connected to message stream");
         setIsConnected(true);
         setSSEError(null);
       });
 
-      eventSource.addEventListener('message', (event) => {
+      eventSource.addEventListener("message", (event) => {
         try {
           const data = JSON.parse(event.data);
 
-          if (data.type === 'new_message' && data.message) {
+          if (data.type === "new_message" && data.message) {
             if (!cancelled) {
               setMessages((prev) => {
                 // Avoid duplicates
                 if (prev.some((m) => m.id === data.message.id)) {
                   return prev;
                 }
-                return [...prev, {
-                  ...data.message,
-                  isOwnMessage: data.message.senderId === currentUserId,
-                }];
+                return [
+                  ...prev,
+                  {
+                    ...data.message,
+                    isOwnMessage: data.message.senderId === currentUserId,
+                  },
+                ];
               });
             }
           }
         } catch (err) {
-          console.error('[SSE] Failed to parse message:', err);
+          console.error("[SSE] Failed to parse message:", err);
         }
       });
 
-      eventSource.addEventListener('error', () => {
+      eventSource.addEventListener("error", () => {
         if (!cancelled) {
           setIsConnected(false);
-          setSSEError('Connection lost. Reconnecting...');
-          console.error('[SSE] Connection error');
+          setSSEError("Connection lost. Reconnecting...");
+          console.error("[SSE] Connection error");
         }
       });
     }
@@ -251,7 +256,7 @@ export function MessageThreadScreen({
               {productTitle}
             </Text>
             {/* Real-time connection indicator (web only) */}
-            {typeof window !== 'undefined' && window.EventSource && (
+            {typeof window !== "undefined" && window.EventSource && (
               <Row alignItems="center" gap="$xs">
                 <Column
                   width={8}

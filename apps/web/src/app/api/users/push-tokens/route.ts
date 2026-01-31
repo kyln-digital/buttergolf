@@ -34,10 +34,7 @@ export async function POST(req: Request) {
     const { token } = await req.json();
 
     if (!token || typeof token !== "string") {
-      return NextResponse.json(
-        { error: "Invalid push token" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid push token" }, { status: 400 });
     }
 
     // Add token if not already present
@@ -50,18 +47,13 @@ export async function POST(req: Request) {
         data: { pushTokens },
       });
 
-      console.log(
-        `[Push] Registered token for user ${clerkId}: ${token.substring(0, 20)}...`
-      );
+      console.log(`[Push] Registered token for user ${clerkId}: ${token.substring(0, 20)}...`);
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[Push] Error registering token:", error);
-    return NextResponse.json(
-      { error: "Failed to register push token" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to register push token" }, { status: 500 });
   }
 }
 
@@ -91,10 +83,7 @@ export async function DELETE(req: Request) {
     const { token } = await req.json();
 
     if (!token || typeof token !== "string") {
-      return NextResponse.json(
-        { error: "Invalid push token" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid push token" }, { status: 400 });
     }
 
     // Remove token if present
@@ -105,16 +94,11 @@ export async function DELETE(req: Request) {
       data: { pushTokens },
     });
 
-    console.log(
-      `[Push] Unregistered token for user ${clerkId}: ${token.substring(0, 20)}...`
-    );
+    console.log(`[Push] Unregistered token for user ${clerkId}: ${token.substring(0, 20)}...`);
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[Push] Error unregistering token:", error);
-    return NextResponse.json(
-      { error: "Failed to unregister push token" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to unregister push token" }, { status: 500 });
   }
 }

@@ -27,9 +27,7 @@ async function checkBlobImages() {
       console.log(`${index + 1}. ${blob.pathname}`);
       console.log(`   URL: ${blob.url}`);
       console.log(`   Size: ${(blob.size / 1024).toFixed(2)} KB`);
-      console.log(
-        `   Uploaded: ${new Date(blob.uploadedAt).toLocaleString()}\n`,
-      );
+      console.log(`   Uploaded: ${new Date(blob.uploadedAt).toLocaleString()}\n`);
     });
 
     console.log("\n📋 Copy these URLs to update your seed file!");

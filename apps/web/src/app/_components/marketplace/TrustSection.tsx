@@ -1,12 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import {
-  Row,
-  Column,
-  Text,
-  Heading,
-} from "@buttergolf/ui";
+import { Row, Column, Text, Heading } from "@buttergolf/ui";
 
 const TRUST_ITEMS = [
   {
@@ -34,12 +29,7 @@ const TRUST_ITEMS = [
 export function TrustSection() {
   return (
     <Column backgroundColor="$surface" paddingVertical="$10" width="100%">
-      <Column
-        maxWidth={1280}
-        marginHorizontal="auto"
-        paddingHorizontal="$12"
-        width="100%"
-      >
+      <Column maxWidth={1280} marginHorizontal="auto" paddingHorizontal="$12" width="100%">
         {/* Main Heading */}
         <Heading
           level={2}

@@ -4,10 +4,7 @@ import type { ProductCardData } from "@buttergolf/app";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
 
@@ -102,9 +99,6 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error fetching similar products:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch similar products" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to fetch similar products" }, { status: 500 });
   }
 }

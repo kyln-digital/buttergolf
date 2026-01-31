@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef } from "react";
 
 interface Message {
   id: string;
@@ -40,7 +40,7 @@ export function useMessageStream(
 
   useEffect(() => {
     // Don't connect if missing required parameters
-    if (!orderId || !token || typeof window === 'undefined') {
+    if (!orderId || !token || typeof window === "undefined") {
       return;
     }
 
@@ -48,8 +48,8 @@ export function useMessageStream(
     // For now, this hook is web-only
     if (!window.EventSource) {
       console.warn(
-        '[useMessageStream] EventSource not available on this platform. ' +
-        'Real-time updates require web browser. Mobile uses polling fallback via useMessagePolling hook.'
+        "[useMessageStream] EventSource not available on this platform. " +
+          "Real-time updates require web browser. Mobile uses polling fallback via useMessagePolling hook."
       );
       return;
     }
@@ -64,19 +64,19 @@ export function useMessageStream(
       eventSourceRef.current = eventSource;
 
       // Handle connection open
-      eventSource.addEventListener('open', () => {
-        console.log('[useMessageStream] Connected');
+      eventSource.addEventListener("open", () => {
+        console.log("[useMessageStream] Connected");
         setIsConnected(true);
         setError(null);
       });
 
       // Handle message events
-      eventSource.addEventListener('message', (event: MessageEvent) => {
+      eventSource.addEventListener("message", (event: MessageEvent) => {
         try {
           const data = JSON.parse(event.data);
 
           // Handle new message events
-          if (data.type === 'new_message' && data.message) {
+          if (data.type === "new_message" && data.message) {
             onMessageRef.current({
               id: data.message.id,
               orderId: data.message.orderId,
@@ -89,27 +89,27 @@ export function useMessageStream(
             });
           }
         } catch (err) {
-          console.error('[useMessageStream] Failed to parse message:', err);
+          console.error("[useMessageStream] Failed to parse message:", err);
         }
       });
 
       // Handle connection errors
-      eventSource.addEventListener('error', (err: Event) => {
-        console.error('[useMessageStream] Connection error:', err);
+      eventSource.addEventListener("error", (err: Event) => {
+        console.error("[useMessageStream] Connection error:", err);
         setIsConnected(false);
-        setError('Connection lost. Reconnecting...');
+        setError("Connection lost. Reconnecting...");
         // EventSource automatically attempts to reconnect
       });
 
       return () => {
-        console.log('[useMessageStream] Closing connection');
+        console.log("[useMessageStream] Closing connection");
         eventSource.close();
         eventSourceRef.current = null;
         setIsConnected(false);
       };
     } catch (err) {
-      console.error('[useMessageStream] Error setting up SSE:', err);
-      setError(err instanceof Error ? err.message : 'Failed to setup message stream');
+      console.error("[useMessageStream] Error setting up SSE:", err);
+      setError(err instanceof Error ? err.message : "Failed to setup message stream");
       return;
     }
   }, [orderId, token]);
@@ -141,20 +141,20 @@ export function useMessagePolling(
       const response = await fetch(`/api/orders/${orderId}/messages`, {
         headers: {
           Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
+          Accept: "application/json",
         },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch messages');
+        throw new Error("Failed to fetch messages");
       }
 
       const data = await response.json();
       onMessagesUpdate(data.messages);
       setError(null);
     } catch (err) {
-      console.error('[useMessagePolling] Error fetching messages:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch messages');
+      console.error("[useMessagePolling] Error fetching messages:", err);
+      setError(err instanceof Error ? err.message : "Failed to fetch messages");
     } finally {
       setIsLoading(false);
     }

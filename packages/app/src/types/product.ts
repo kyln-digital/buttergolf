@@ -21,13 +21,7 @@ export interface ProductBrand {
   name: string;
 }
 
-export type ProductCondition =
-  | "NEW"
-  | "LIKE_NEW"
-  | "EXCELLENT"
-  | "GOOD"
-  | "FAIR"
-  | "POOR";
+export type ProductCondition = "NEW" | "LIKE_NEW" | "EXCELLENT" | "GOOD" | "FAIR" | "POOR";
 
 export interface Product {
   id: string;

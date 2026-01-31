@@ -174,10 +174,7 @@ interface CourseListScreenProps {
   onRefresh?: () => void;
 }
 
-export function CourseListScreen({
-  courses,
-  onRefresh,
-}: CourseListScreenProps) {
+export function CourseListScreen({ courses, onRefresh }: CourseListScreenProps) {
   return (
     <Column gap="$md" padding="$lg">
       <Text size="$10" fontWeight="bold">
@@ -279,11 +276,7 @@ export function CourseDetailScreen({
 import { db } from "@buttergolf/db";
 import { CourseDetailScreen } from "@buttergolf/app/features/courses/course-detail-screen";
 
-export default async function CoursePage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function CoursePage({ params }: { params: { id: string } }) {
   // Fetch data in Server Component
   const course = await db.course.findUnique({
     where: { id: params.id },
@@ -330,15 +323,7 @@ function CourseDetailWrapper({ route }) {
 ### Using Tamagui Components
 
 ```tsx
-import {
-  Column,
-  Row,
-  Text,
-  Button,
-  Card,
-  Input,
-  Spinner,
-} from "@buttergolf/ui";
+import { Column, Row, Text, Button, Card, Input, Spinner } from "@buttergolf/ui";
 
 export function Component() {
   return (
@@ -546,8 +531,7 @@ export function Component() {
 }
 
 // Conditional imports
-const ImagePicker =
-  Platform.OS !== "web" ? require("expo-image-picker").ImagePicker : null;
+const ImagePicker = Platform.OS !== "web" ? require("expo-image-picker").ImagePicker : null;
 ```
 
 ## Testing
@@ -568,7 +552,7 @@ describe("CourseListScreen", () => {
     const { getByText } = render(
       <TamaguiProvider config={config}>
         <CourseListScreen courses={mockCourses} />
-      </TamaguiProvider>,
+      </TamaguiProvider>
     );
 
     expect(getByText("Pebble Beach")).toBeTruthy();

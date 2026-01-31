@@ -18,13 +18,7 @@ export function HeroSection() {
         <Heading level={1} size="$10" align="center" fontWeight="700">
           Ready to declutter your golf bag?
         </Heading>
-        <Heading
-          level={3}
-          size="$6"
-          align="center"
-          color="$textSecondary"
-          fontWeight="400"
-        >
+        <Heading level={3} size="$6" align="center" color="$textSecondary" fontWeight="400">
           Buy and sell pre-owned golf equipment with ease
         </Heading>
       </Column>

@@ -17,11 +17,7 @@ export function CategoriesSection() {
       <Row gap="$xs">
         <CategoryButton key="all" label="All" active={true} />
         {CATEGORIES.map((category) => (
-          <CategoryButton
-            key={category.slug}
-            label={category.name}
-            active={false}
-          />
+          <CategoryButton key={category.slug} label={category.name} active={false} />
         ))}
       </Row>
     </ScrollView>

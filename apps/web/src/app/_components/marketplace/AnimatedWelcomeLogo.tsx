@@ -90,9 +90,7 @@ export function AnimatedWelcomeLogo() {
         strokeLinecap="round"
         strokeLinejoin="round"
         initial={{ pathLength: 0, opacity: 0 }}
-        animate={
-          isVisible ? { pathLength: 1, opacity: 1, fill: strokeColor } : {}
-        }
+        animate={isVisible ? { pathLength: 1, opacity: 1, fill: strokeColor } : {}}
         transition={{
           pathLength: { duration, delay, ease: "easeInOut" },
           opacity: { duration: 0.2, delay },
@@ -125,13 +123,9 @@ export function AnimatedWelcomeLogo() {
         {/* Top line */}
         <g>{top.map(renderPath)}</g>
         {/* Middle line (shifted up slightly) */}
-        <g transform={`translate(0, ${middleOffset})`}>
-          {middle.map(renderPath)}
-        </g>
+        <g transform={`translate(0, ${middleOffset})`}>{middle.map(renderPath)}</g>
         {/* Bottom line (shifted up more) */}
-        <g transform={`translate(0, ${bottomOffset})`}>
-          {bottom.map(renderPath)}
-        </g>
+        <g transform={`translate(0, ${bottomOffset})`}>{bottom.map(renderPath)}</g>
       </svg>
     </div>
   );

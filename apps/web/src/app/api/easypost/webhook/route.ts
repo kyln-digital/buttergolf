@@ -53,10 +53,7 @@ function mapEasyPostStatus(status: string): string {
   if (statusLower === "cancelled") return "CANCELLED";
 
   // Default to IN_TRANSIT for unknown statuses that aren't errors
-  if (
-    statusLower === "available_for_pickup" ||
-    statusLower === "return_to_sender"
-  ) {
+  if (statusLower === "available_for_pickup" || statusLower === "return_to_sender") {
     return "IN_TRANSIT";
   }
 
@@ -66,18 +63,13 @@ function mapEasyPostStatus(status: string): string {
 // Map shipment status to order status
 function mapToOrderStatus(shipmentStatus: string): string {
   if (shipmentStatus === "DELIVERED") return "DELIVERED";
-  if (shipmentStatus === "PRE_TRANSIT" || shipmentStatus === "IN_TRANSIT")
-    return "SHIPPED";
+  if (shipmentStatus === "PRE_TRANSIT" || shipmentStatus === "IN_TRANSIT") return "SHIPPED";
   return "LABEL_GENERATED";
 }
 
 // Verify EasyPost webhook signature
 // EasyPost uses HMAC-SHA256, typically without prefixes
-function verifyWebhookSignature(
-  payload: string,
-  signature: string,
-  secret: string,
-): boolean {
+function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
   try {
     const hmac = crypto.createHmac("sha256", secret);
     hmac.update(payload);
@@ -85,14 +77,9 @@ function verifyWebhookSignature(
 
     // Handle potential format variations
     // Some webhooks send "sha256=<hash>", others just "<hash>"
-    const signatureToVerify = signature.startsWith("sha256=")
-      ? signature.substring(7)
-      : signature;
+    const signatureToVerify = signature.startsWith("sha256=") ? signature.substring(7) : signature;
 
-    return crypto.timingSafeEqual(
-      Buffer.from(signatureToVerify),
-      Buffer.from(computedSignature),
-    );
+    return crypto.timingSafeEqual(Buffer.from(signatureToVerify), Buffer.from(computedSignature));
   } catch (error) {
     console.error("Error verifying webhook signature:", error);
     return false;
@@ -114,10 +101,7 @@ export async function POST(req: Request) {
       const isValid = verifyWebhookSignature(body, signature, WEBHOOK_SECRET);
       if (!isValid) {
         console.error("EasyPost webhook signature verification failed");
-        return NextResponse.json(
-          { error: "Invalid signature" },
-          { status: 401 },
-        );
+        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
       }
     } else if (WEBHOOK_SECRET && !signature) {
       console.error("Missing EasyPost webhook signature");
@@ -142,10 +126,7 @@ export async function POST(req: Request) {
 
       if (!trackingCode) {
         console.error("Missing tracking code in webhook payload");
-        return NextResponse.json(
-          { error: "Missing tracking code" },
-          { status: 400 },
-        );
+        return NextResponse.json({ error: "Missing tracking code" }, { status: 400 });
       }
 
       // Find order by tracking code
@@ -160,9 +141,7 @@ export async function POST(req: Request) {
       }
 
       // Map EasyPost status to our enum
-      const shipmentStatus = mapEasyPostStatus(
-        tracker.status,
-      ) as ShipmentStatus;
+      const shipmentStatus = mapEasyPostStatus(tracker.status) as ShipmentStatus;
       const orderStatus = mapToOrderStatus(shipmentStatus) as OrderStatus;
 
       // Prepare update data
@@ -183,7 +162,7 @@ export async function POST(req: Request) {
 
         // Find the latest tracking detail with delivered status
         const deliveredDetail = tracker.tracking_details?.find(
-          (detail) => detail.status.toLowerCase() === "delivered",
+          (detail) => detail.status.toLowerCase() === "delivered"
         );
         if (deliveredDetail?.datetime) {
           updateData.deliveredAt = new Date(deliveredDetail.datetime);
@@ -197,10 +176,7 @@ export async function POST(req: Request) {
         // Find the earliest in_transit tracking detail
         const inTransitDetail = tracker.tracking_details
           ?.filter((detail) => detail.status.toLowerCase() === "in_transit")
-          ?.sort(
-            (a, b) =>
-              new Date(a.datetime).getTime() - new Date(b.datetime).getTime(),
-          )[0];
+          ?.sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime())[0];
 
         if (inTransitDetail?.datetime) {
           updateData.shippedAt = new Date(inTransitDetail.datetime);
@@ -240,9 +216,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error("Error processing EasyPost webhook:", error);
-    return NextResponse.json(
-      { error: "Webhook processing failed" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
   }
 }

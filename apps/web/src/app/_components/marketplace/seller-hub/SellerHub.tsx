@@ -3,16 +3,7 @@
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import {
-  Column,
-  Row,
-  Heading,
-  Text,
-  Button,
-  Card,
-  Spinner,
-  Theme,
-} from "@buttergolf/ui";
+import { Column, Row, Heading, Text, Button, Card, Spinner, Theme } from "@buttergolf/ui";
 import { Plus, Package, Eye, Heart, Tag } from "@tamagui/lucide-icons";
 import Link from "next/link";
 import { SellerProductCard, type SellerProduct } from "./SellerProductCard";
@@ -54,18 +45,14 @@ export function SellerHub() {
   const [error, setError] = useState<string | null>(null);
 
   // Filters
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "sold">(
-    "all",
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "sold">("all");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "price-asc" | "price-desc" | "views">(
+    "newest"
   );
-  const [sortBy, setSortBy] = useState<
-    "newest" | "oldest" | "price-asc" | "price-desc" | "views"
-  >("newest");
   const [currentPage, setCurrentPage] = useState(1);
 
   // Edit modal state
-  const [editingProduct, setEditingProduct] = useState<SellerProduct | null>(
-    null,
-  );
+  const [editingProduct, setEditingProduct] = useState<SellerProduct | null>(null);
 
   // Redirect to sign-in if not authenticated
   useEffect(() => {
@@ -150,10 +137,7 @@ export function SellerHub() {
     }
   };
 
-  const handleSaveEdit = async (
-    productId: string,
-    updates: Partial<SellerProduct>,
-  ) => {
+  const handleSaveEdit = async (productId: string, updates: Partial<SellerProduct>) => {
     const response = await fetch(`/api/seller/products/${productId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -236,8 +220,7 @@ export function SellerHub() {
             No listings yet
           </Heading>
           <Text size="$5" align="center" color="$textSecondary">
-            Start selling your golf equipment today! Create your first listing
-            in under 60 seconds.
+            Start selling your golf equipment today! Create your first listing in under 60 seconds.
           </Text>
           <Link href="/sell" style={{ textDecoration: "none" }}>
             <Button butterVariant="primary" size="$5">
@@ -262,23 +245,18 @@ export function SellerHub() {
         gap="$xl"
       >
         {/* Header */}
-        <Row
-          alignItems="center"
-          justifyContent="space-between"
-          flexWrap="wrap"
-          gap="$md"
-        >
+        <Row alignItems="center" justifyContent="space-between" flexWrap="wrap" gap="$md">
           <Column gap="$xs">
             <Heading level={2}>Seller Dashboard</Heading>
-            <Text color="$textSecondary">
-              Manage your active listings and track performance
-            </Text>
+            <Text color="$textSecondary">Manage your active listings and track performance</Text>
           </Column>
           <Link href="/sell" style={{ textDecoration: "none" }}>
             <Button butterVariant="primary" size="$5">
               <Row gap="$sm" alignItems="center">
                 <Plus size={20} color="white" />
-                <Text color="$textInverse" weight="semibold">New Listing</Text>
+                <Text color="$textInverse" weight="semibold">
+                  New Listing
+                </Text>
               </Row>
             </Button>
           </Link>
@@ -297,8 +275,7 @@ export function SellerHub() {
                   {data.stats.totalListings}
                 </Text>
                 <Text size="$3" color="$textSecondary">
-                  {data.stats.activeListings} active • {data.stats.soldListings}{" "}
-                  sold
+                  {data.stats.activeListings} active • {data.stats.soldListings} sold
                 </Text>
               </Column>
             </Card>
@@ -352,12 +329,7 @@ export function SellerHub() {
 
         {/* Filters */}
         <Card variant="outlined" padding="$md">
-          <Row
-            gap="$md"
-            alignItems="center"
-            flexWrap="wrap"
-            justifyContent="space-between"
-          >
+          <Row gap="$md" alignItems="center" flexWrap="wrap" justifyContent="space-between">
             {/* Status Filter */}
             <Row gap="$sm" alignItems="center" flexWrap="wrap">
               <Text weight="medium">Status:</Text>
@@ -378,7 +350,7 @@ export function SellerHub() {
                       shadowOpacity={0}
                       shadowRadius={0}
                       elevation={0}
-                      style={{ boxShadow: 'none' }}
+                      style={{ boxShadow: "none" }}
                       onPress={() => setStatusFilter(status)}
                     >
                       {status.charAt(0).toUpperCase() + status.slice(1)}

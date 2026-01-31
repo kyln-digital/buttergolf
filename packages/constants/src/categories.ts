@@ -104,21 +104,15 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
 /**
  * Get category by slug
  */
-export function getCategoryBySlug(
-  slug: string,
-): CategoryDefinition | undefined {
+export function getCategoryBySlug(slug: string): CategoryDefinition | undefined {
   return CATEGORIES.find((cat) => cat.slug === slug);
 }
 
 /**
  * Get category by name (case-insensitive)
  */
-export function getCategoryByName(
-  name: string,
-): CategoryDefinition | undefined {
-  return CATEGORIES.find(
-    (cat) => cat.name.toLowerCase() === name.toLowerCase(),
-  );
+export function getCategoryByName(name: string): CategoryDefinition | undefined {
+  return CATEGORIES.find((cat) => cat.name.toLowerCase() === name.toLowerCase());
 }
 
 /**

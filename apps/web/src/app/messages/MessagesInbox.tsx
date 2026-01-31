@@ -1,16 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Column,
-  Row,
-  Text,
-  Heading,
-  Card,
-  Badge,
-  Image,
-  Container,
-} from "@buttergolf/ui";
+import { Column, Row, Text, Heading, Card, Badge, Image, Container } from "@buttergolf/ui";
 import { formatDistanceToNow } from "date-fns";
 
 interface Conversation {
@@ -50,7 +41,11 @@ export function MessagesInbox({ conversations }: MessagesInboxProps) {
             When you buy or sell items, your conversations with buyers and sellers will appear here.
           </Text>
           <Link href="/listings" style={{ textDecoration: "none" }}>
-            <Text color="$primary" weight="semibold" hoverStyle={{ textDecorationLine: "underline" }}>
+            <Text
+              color="$primary"
+              weight="semibold"
+              hoverStyle={{ textDecorationLine: "underline" }}
+            >
               Start shopping →
             </Text>
           </Link>

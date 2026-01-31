@@ -2,16 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Column,
-  Row,
-  Heading,
-  Text,
-  Button,
-  Card,
-  Badge,
-  Container,
-} from "@buttergolf/ui";
+import { Column, Row, Heading, Text, Button, Card, Badge, Container } from "@buttergolf/ui";
 import { SellerOnboarding } from "../../_components/SellerOnboarding";
 
 interface AccountSettingsClientProps {
@@ -66,23 +57,15 @@ export function AccountSettingsClient({ user }: AccountSettingsClientProps) {
   };
 
   const renderContent = () => {
-    if (
-      user.hasConnectAccount &&
-      user.onboardingComplete &&
-      user.accountStatus === "active"
-    ) {
+    if (user.hasConnectAccount && user.onboardingComplete && user.accountStatus === "active") {
       return (
         <>
           <Text color="$textSecondary">
-            Your seller account is active and ready to receive payments. You can
-            now list products and manage your sales.
+            Your seller account is active and ready to receive payments. You can now list products
+            and manage your sales.
           </Text>
           <Row gap="$md">
-            <Button
-              butterVariant="primary"
-              size="$4"
-              onPress={() => router.push("/seller")}
-            >
+            <Button butterVariant="primary" size="$4" onPress={() => router.push("/seller")}>
               View Seller Dashboard
             </Button>
             <Button
@@ -99,16 +82,12 @@ export function AccountSettingsClient({ user }: AccountSettingsClientProps) {
       );
     }
 
-    if (
-      user.hasConnectAccount &&
-      user.onboardingComplete &&
-      user.accountStatus === "restricted"
-    ) {
+    if (user.hasConnectAccount && user.onboardingComplete && user.accountStatus === "restricted") {
       return (
         <>
           <Text color="$textSecondary">
-            Your seller account has some restrictions. Please update your
-            account information to enable full functionality.
+            Your seller account has some restrictions. Please update your account information to
+            enable full functionality.
           </Text>
           <Row gap="$md">
             <Button
@@ -136,15 +115,10 @@ export function AccountSettingsClient({ user }: AccountSettingsClientProps) {
       return (
         <>
           <Text color="$textSecondary">
-            Your seller account is being reviewed. This usually takes 1-2
-            business days.
+            Your seller account is being reviewed. This usually takes 1-2 business days.
           </Text>
           <Row gap="$md">
-            <Button
-              butterVariant="primary"
-              size="$4"
-              onPress={() => router.push("/seller")}
-            >
+            <Button butterVariant="primary" size="$4" onPress={() => router.push("/seller")}>
               View Dashboard
             </Button>
             <Button
@@ -165,8 +139,8 @@ export function AccountSettingsClient({ user }: AccountSettingsClientProps) {
       return (
         <>
           <Text color="$textSecondary">
-            Your seller account setup is incomplete. Please complete the
-            onboarding process to start selling.
+            Your seller account setup is incomplete. Please complete the onboarding process to start
+            selling.
           </Text>
           <Row gap="$md">
             <Button size="$4" onPress={() => setShowOnboarding(true)}>
@@ -180,9 +154,8 @@ export function AccountSettingsClient({ user }: AccountSettingsClientProps) {
     return (
       <>
         <Text color="$textSecondary">
-          Start selling golf equipment on ButterGolf. Complete the quick
-          onboarding process to set up your seller account and begin listing
-          products.
+          Start selling golf equipment on ButterGolf. Complete the quick onboarding process to set
+          up your seller account and begin listing products.
         </Text>
         <Row>
           <Button size="$5" onPress={() => setShowOnboarding(true)}>
@@ -211,9 +184,7 @@ export function AccountSettingsClient({ user }: AccountSettingsClientProps) {
       <Column gap="$xl" fullWidth>
         <Column gap="$sm">
           <Heading level={1}>Account Settings</Heading>
-          <Text color="$textSecondary">
-            Manage your account and seller settings
-          </Text>
+          <Text color="$textSecondary">Manage your account and seller settings</Text>
         </Column>
 
         {/* Account Info Card */}
@@ -227,7 +198,9 @@ export function AccountSettingsClient({ user }: AccountSettingsClientProps) {
             {(user.firstName || user.lastName) && (
               <Column gap="$xs">
                 <Text weight="medium">Name</Text>
-                <Text color="$textSecondary">{`${user.firstName || ''} ${user.lastName || ''}`.trim()}</Text>
+                <Text color="$textSecondary">
+                  {`${user.firstName || ""} ${user.lastName || ""}`.trim()}
+                </Text>
               </Column>
             )}
           </Column>

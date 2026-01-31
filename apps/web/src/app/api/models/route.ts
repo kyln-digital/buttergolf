@@ -16,10 +16,7 @@ export async function GET(request: Request) {
     const kind = searchParams.get("kind") as ClubKind | null;
 
     if (!brandId) {
-      return NextResponse.json(
-        { error: "brandId is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "brandId is required" }, { status: 400 });
     }
 
     // Build where clause
@@ -87,11 +84,7 @@ export async function GET(request: Request) {
       })),
       ...productModels
         .filter(
-          (p) =>
-            p.model &&
-            !models.some(
-              (m) => m.name.toLowerCase() === p.model?.toLowerCase(),
-            ),
+          (p) => p.model && !models.some((m) => m.name.toLowerCase() === p.model?.toLowerCase())
         )
         .map((p) => ({
           id: null,
@@ -105,9 +98,6 @@ export async function GET(request: Request) {
     return NextResponse.json(allSuggestions);
   } catch (error) {
     console.error("Error fetching models:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch models" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to fetch models" }, { status: 500 });
   }
 }

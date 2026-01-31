@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
  */
 export async function DELETE(
   req: NextRequest,
-  context: { params: Promise<{ productId: string }> },
+  context: { params: Promise<{ productId: string }> }
 ) {
   let clerkId: string | null = null;
   let productId: string | undefined;
@@ -34,10 +34,7 @@ export async function DELETE(
     productId = params.productId;
 
     if (!productId) {
-      return NextResponse.json(
-        { error: "Product ID is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Product ID is required" }, { status: 400 });
     }
 
     // Get user from database
@@ -58,7 +55,7 @@ export async function DELETE(
           error: "User not found",
           message: "Your account is not synced. Please try again later.",
         },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
@@ -78,21 +75,13 @@ export async function DELETE(
           success: true,
           message: "Product removed from favourites",
         },
-        { status: 200 },
+        { status: 200 }
       );
     } catch (error: unknown) {
       // Handle case where favourite doesn't exist (P2025 = record not found)
-      if (
-        error &&
-        typeof error === "object" &&
-        "code" in error &&
-        error.code === "P2025"
-      ) {
+      if (error && typeof error === "object" && "code" in error && error.code === "P2025") {
         // This is expected if user tries to unfavourite something that's not favourited
-        return NextResponse.json(
-          { error: "Favourite not found" },
-          { status: 404 },
-        );
+        return NextResponse.json({ error: "Favourite not found" }, { status: 404 });
       }
 
       // Log unexpected database errors
@@ -116,10 +105,9 @@ export async function DELETE(
     return NextResponse.json(
       {
         error: "Failed to remove favourite",
-        message:
-          "Unable to remove product from favourites. Please try again later.",
+        message: "Unable to remove product from favourites. Please try again later.",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

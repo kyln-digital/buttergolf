@@ -94,7 +94,7 @@ export async function GET(req: Request) {
       const isBuyer = user.id === order.buyerId;
       const otherUser = isBuyer ? order.seller : order.buyer;
       const lastMessage = order.messages[0];
-      
+
       // Count unread messages (messages not from current user that are unread)
       const unreadCount = order.messages.filter(
         (msg) => !msg.isRead && msg.senderId !== user.id
@@ -107,8 +107,8 @@ export async function GET(req: Request) {
         otherUserName: `${otherUser.firstName} ${otherUser.lastName}`.trim() || "User",
         otherUserImage: otherUser.imageUrl,
         lastMessagePreview: lastMessage?.content || null,
-        lastMessageAt: lastMessage?.createdAt 
-          ? lastMessage.createdAt.toISOString() 
+        lastMessageAt: lastMessage?.createdAt
+          ? lastMessage.createdAt.toISOString()
           : order.updatedAt.toISOString(),
         unreadCount,
         userRole: isBuyer ? "buyer" : "seller",
@@ -125,9 +125,6 @@ export async function GET(req: Request) {
       console.error("Error message:", error.message);
       console.error("Error stack:", error.stack);
     }
-    return NextResponse.json(
-      { error: "Failed to fetch messages" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch messages" }, { status: 500 });
   }
 }

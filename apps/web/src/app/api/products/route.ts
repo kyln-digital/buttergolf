@@ -4,11 +4,7 @@ import { prisma, ProductCondition } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
 
 // Map slider values to ProductCondition enum for backwards compatibility
-function mapSlidersToConditionEnum(
-  grip: number,
-  head: number,
-  shaft: number,
-): ProductCondition {
+function mapSlidersToConditionEnum(grip: number, head: number, shaft: number): ProductCondition {
   const avg = (grip + head + shaft) / 3;
   if (avg >= 9.5) return ProductCondition.LIKE_NEW;
   if (avg >= 8) return ProductCondition.EXCELLENT;
@@ -73,9 +69,7 @@ export async function POST(request: Request) {
       const createdUser = await prisma.user.create({
         data: {
           clerkId,
-          email:
-            clerkUser.emailAddresses?.[0]?.emailAddress ||
-            `user-${clerkId}@temp.local`,
+          email: clerkUser.emailAddresses?.[0]?.emailAddress || `user-${clerkId}@temp.local`,
           firstName: userFirstName,
           lastName: userLastName,
           imageUrl: clerkUser.imageUrl || null,
@@ -104,7 +98,7 @@ export async function POST(request: Request) {
           message:
             "Please complete your seller setup before listing products. Visit /sell to get started.",
         },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
@@ -116,7 +110,7 @@ export async function POST(request: Request) {
           message:
             "Please complete your seller onboarding before listing products. Visit /sell to continue setup.",
         },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
@@ -127,7 +121,7 @@ export async function POST(request: Request) {
           code: "ACCOUNT_NOT_ACTIVE",
           message: `Your seller account is currently ${user.stripeAccountStatus || "pending"}. Please complete any outstanding requirements.`,
         },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
@@ -178,7 +172,7 @@ export async function POST(request: Request) {
 
       if (existingProduct) {
         console.log(
-          `[Products API] Duplicate request detected: ${requestId} - returning existing product ${existingProduct.id}`,
+          `[Products API] Duplicate request detected: ${requestId} - returning existing product ${existingProduct.id}`
         );
         // Return the existing product instead of creating a duplicate
         const product = await prisma.product.findUnique({
@@ -203,36 +197,30 @@ export async function POST(request: Request) {
 
     // Validate required fields
     if (!title || !description || !price || !categoryId) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     if (!images || images.length === 0) {
-      return NextResponse.json(
-        { error: "At least one image is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "At least one image is required" }, { status: 400 });
     }
 
     // Validate slider ranges if provided
     if (gripCondition && (gripCondition < 1 || gripCondition > 10)) {
       return NextResponse.json(
         { error: "Grip condition must be between 1 and 10" },
-        { status: 400 },
+        { status: 400 }
       );
     }
     if (headCondition && (headCondition < 1 || headCondition > 10)) {
       return NextResponse.json(
         { error: "Head condition must be between 1 and 10" },
-        { status: 400 },
+        { status: 400 }
       );
     }
     if (shaftCondition && (shaftCondition < 1 || shaftCondition > 10)) {
       return NextResponse.json(
         { error: "Shaft condition must be between 1 and 10" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -265,8 +253,7 @@ export async function POST(request: Request) {
           data: {
             usageCount: { increment: 1 },
             // Auto-verify after 3+ uses
-            isVerified:
-              existingModel.usageCount >= 2 ? true : existingModel.isVerified,
+            isVerified: existingModel.usageCount >= 2 ? true : existingModel.isVerified,
           },
         });
       } else {
@@ -292,7 +279,7 @@ export async function POST(request: Request) {
         condition: mapSlidersToConditionEnum(
           gripCondition || 7,
           headCondition || 7,
-          shaftCondition || 7,
+          shaftCondition || 7
         ),
         brandId: brandId || null,
         model: model || null,
@@ -340,9 +327,6 @@ export async function POST(request: Request) {
     return NextResponse.json(product, { status: 201 });
   } catch (error) {
     console.error("Failed to create product:", error);
-    return NextResponse.json(
-      { error: "Failed to create product" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to create product" }, { status: 500 });
   }
 }

@@ -50,8 +50,7 @@ export function validatePassword(password: string): {
   if (strength === "weak" || strength === "fair") {
     return {
       isValid: false,
-      error:
-        "Password must contain uppercase, lowercase, number, and special character",
+      error: "Password must contain uppercase, lowercase, number, and special character",
       strength,
     };
   }
@@ -93,10 +92,7 @@ export function getPasswordStrength(password: string): PasswordStrength {
 /**
  * Validates password confirmation matches
  */
-export function validatePasswordMatch(
-  password: string,
-  confirmPassword: string,
-): string | null {
+export function validatePasswordMatch(password: string, confirmPassword: string): string | null {
   if (!confirmPassword) {
     return "Please confirm your password";
   }
@@ -172,26 +168,19 @@ export function mapClerkErrorToMessage(errorCode: string): string {
 
     // Verification errors
     verification_code_invalid: "Invalid verification code",
-    verification_code_expired:
-      "Verification code has expired. Please request a new one.",
+    verification_code_expired: "Verification code has expired. Please request a new one.",
 
     // Network/General errors
     form_error: "An error occurred. Please try again.",
   };
 
-  return (
-    errorMap[errorCode] ||
-    "An error occurred. Please try again or contact support."
-  );
+  return errorMap[errorCode] || "An error occurred. Please try again or contact support.";
 }
 
 /**
  * Validates sign-in form
  */
-export function validateSignInForm(
-  email: string,
-  password: string,
-): ValidationResult {
+export function validateSignInForm(email: string, password: string): ValidationResult {
   const errors: Record<string, string> = {};
 
   const emailError = validateEmail(email);
@@ -213,7 +202,7 @@ export function validateSignUpForm(
   lastName: string,
   email: string,
   password: string,
-  confirmPassword: string,
+  confirmPassword: string
 ): ValidationResult {
   const errors: Record<string, string> = {};
 

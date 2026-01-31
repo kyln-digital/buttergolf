@@ -58,9 +58,7 @@ export function MobileCategoryPills({
           borderRadius="$full"
           backgroundColor="$background"
           borderWidth={1}
-          borderColor={
-            selectedCategory === category.name ? "$primary" : "$border"
-          }
+          borderColor={selectedCategory === category.name ? "$primary" : "$border"}
           color={selectedCategory === category.name ? "$primary" : "$text"}
           onPress={() => onCategorySelect(category.name)}
           pressStyle={{ scale: 0.95 }}

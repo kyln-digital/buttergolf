@@ -16,10 +16,10 @@ export const runtime = "nodejs";
 
 /**
  * POST /api/stripe/webhook
- * 
+ *
  * Handles Stripe webhooks for the checkout/payment flow.
  * This is SEPARATE from the Connect webhook (/api/stripe/connect/webhook).
- * 
+ *
  * Events handled:
  * - checkout.session.completed: Primary event - creates order, sends emails
  * - checkout.session.expired: Logs expired checkouts (inventory release if needed)
@@ -33,10 +33,7 @@ export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
   if (!WEBHOOK_SECRET) {
     console.error("Missing STRIPE_WEBHOOK_SECRET");
-    return NextResponse.json(
-      { error: "Missing webhook secret" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Missing webhook secret" }, { status: 500 });
   }
 
   try {
@@ -59,7 +56,7 @@ export async function POST(req: Request) {
         {
           error: `Webhook signature verification failed: ${err instanceof Error ? err.message : "Unknown error"}`,
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -115,10 +112,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error("Error processing webhook:", error);
-    return NextResponse.json(
-      { error: "Webhook processing failed" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
   }
 }
 
@@ -143,32 +137,24 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   if (!productId || !sellerId || !buyerId) {
     console.error("Missing required metadata in checkout session:", session.metadata);
-    return NextResponse.json(
-      { error: "Missing metadata" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Missing metadata" }, { status: 400 });
   }
 
   // Get payment intent ID
-  const paymentIntentId = typeof session.payment_intent === "string" 
-    ? session.payment_intent 
-    : session.payment_intent?.id;
+  const paymentIntentId =
+    typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : session.payment_intent?.id;
 
   if (!paymentIntentId) {
     console.error("Missing payment intent ID in session");
-    return NextResponse.json(
-      { error: "Missing payment intent" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Missing payment intent" }, { status: 400 });
   }
 
   // Idempotency check - don't process twice
   const existingOrder = await prisma.order.findFirst({
     where: {
-      OR: [
-        { stripePaymentId: paymentIntentId },
-        { stripeCheckoutId: session.id },
-      ],
+      OR: [{ stripePaymentId: paymentIntentId }, { stripeCheckoutId: session.id }],
     },
   });
 
@@ -202,10 +188,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   if (!product) {
     console.error("Product not found:", productId);
-    return NextResponse.json(
-      { error: "Product not found" },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: "Product not found" }, { status: 404 });
   }
 
   // Get buyer information
@@ -222,20 +205,20 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // Note: Stripe API 2025-11-17+ puts shipping under collected_information.shipping_details
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sessionAny = session as any;
-  const shippingDetails = (
-    sessionAny.collected_information?.shipping_details ||  // New API location
-    sessionAny.shipping_details                            // Legacy fallback
-  ) as {
-    address?: {
-      line1?: string;
-      line2?: string;
-      city?: string;
-      state?: string;
-      postal_code?: string;
-      country?: string;
-    };
-    name?: string;
-  } | undefined;
+  const shippingDetails = (sessionAny.collected_information?.shipping_details || // New API location
+    sessionAny.shipping_details) as  // Legacy fallback
+    | {
+        address?: {
+          line1?: string;
+          line2?: string;
+          city?: string;
+          state?: string;
+          postal_code?: string;
+          country?: string;
+        };
+        name?: string;
+      }
+    | undefined;
   const customerDetails = session.customer_details;
 
   if (!shippingDetails?.address) {
@@ -244,10 +227,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       hasShippingDetails: !!sessionAny.shipping_details,
       collectedInfoKeys: Object.keys(sessionAny.collected_information || {}),
     });
-    return NextResponse.json(
-      { error: "Missing shipping details" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Missing shipping details" }, { status: 400 });
   }
 
   // Create buyer's shipping address (To Address)
@@ -272,11 +252,14 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   if (!fromAddress) {
     // CRITICAL: Seller has no address - this should not happen if Stripe Connect onboarding is complete
     // Create minimal placeholder so order can be created, but flag for manual intervention
-    console.error("⚠️ Seller has no address - this indicates incomplete Stripe Connect onboarding:", {
-      sellerId,
-      sellerEmail: product.user.email,
-      productId,
-    });
+    console.error(
+      "⚠️ Seller has no address - this indicates incomplete Stripe Connect onboarding:",
+      {
+        sellerId,
+        sellerEmail: product.user.email,
+        productId,
+      }
+    );
 
     fromAddress = await prisma.address.create({
       data: {
@@ -304,10 +287,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     session.metadata?.buyerProtectionFeeInPence || "0",
     10
   );
-  const productPriceInPence = parseInt(
-    session.metadata?.productPriceInPence || "0",
-    10
-  );
+  const productPriceInPence = parseInt(session.metadata?.productPriceInPence || "0", 10);
   const buyerProtectionFee = buyerProtectionFeeInPence / 100;
 
   // Seller gets 100% of product + shipping
@@ -318,9 +298,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   try {
     const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
     stripeChargeId =
-      typeof pi.latest_charge === "string"
-        ? pi.latest_charge
-        : pi.latest_charge?.id || null;
+      typeof pi.latest_charge === "string" ? pi.latest_charge : pi.latest_charge?.id || null;
   } catch {
     console.warn("Could not retrieve charge ID from payment intent");
   }
@@ -396,7 +374,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
               </p>
             </div>
           </div>
-        `
+        `,
       });
       console.log("📧 Sent address required email to seller:", product.user.email);
     } catch (emailError) {
@@ -431,7 +409,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   // Send notification emails
-  await sendOrderEmails(order.id, amountTotal, buyer, product, shippingDetails, sellerPayout, autoReleaseAt);
+  await sendOrderEmails(
+    order.id,
+    amountTotal,
+    buyer,
+    product,
+    shippingDetails,
+    sellerPayout,
+    autoReleaseAt
+  );
 
   return NextResponse.json({
     received: true,
@@ -446,17 +432,18 @@ async function sendOrderEmails(
   orderId: string,
   amountTotal: number,
   buyer: { email: string; firstName: string | null; lastName: string | null },
-  product: { 
-    title: string; 
+  product: {
+    title: string;
     user: { email: string; firstName: string | null; lastName: string | null };
     images?: { url: string }[];
   },
   shippingDetails: { address?: { city?: string; postal_code?: string } },
   sellerPayout: number,
-  autoReleaseAt: Date | null,
+  autoReleaseAt: Date | null
 ) {
   const buyerName = `${buyer.firstName} ${buyer.lastName}`.trim() || buyer.email;
-  const sellerName = `${product.user.firstName} ${product.user.lastName}`.trim() || product.user.email;
+  const sellerName =
+    `${product.user.firstName} ${product.user.lastName}`.trim() || product.user.email;
 
   console.log("📧 Sending order notification emails...", {
     orderId,
@@ -777,10 +764,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
 
   // Calculate amounts from payment intent metadata (Vinted-style pricing)
   const amountTotal = paymentIntent.amount / 100;
-  const shippingAmountInPence = parseInt(
-    paymentIntent.metadata.shippingAmountInPence || "0",
-    10
-  );
+  const shippingAmountInPence = parseInt(paymentIntent.metadata.shippingAmountInPence || "0", 10);
   const shippingCost = shippingAmountInPence / 100;
 
   // Vinted-style pricing: extract buyer protection fee from metadata
@@ -788,10 +772,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     paymentIntent.metadata.buyerProtectionFeeInPence || "0",
     10
   );
-  const sellerPayoutInPence = parseInt(
-    paymentIntent.metadata.sellerPayoutInPence || "0",
-    10
-  );
+  const sellerPayoutInPence = parseInt(paymentIntent.metadata.sellerPayoutInPence || "0", 10);
   const buyerProtectionFee = buyerProtectionFeeInPence / 100;
   const sellerPayout = sellerPayoutInPence / 100;
 
@@ -869,7 +850,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
               </p>
             </div>
           </div>
-        `
+        `,
       });
       console.log("📧 Sent address required email to seller:", product.user.email);
     } catch (emailError) {
@@ -903,9 +884,14 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     amountTotal,
     buyer,
     product,
-    { address: { city: shippingDetails.address.city, postal_code: shippingDetails.address.postal_code } },
+    {
+      address: {
+        city: shippingDetails.address.city,
+        postal_code: shippingDetails.address.postal_code,
+      },
+    },
     sellerPayout,
-    autoReleaseAt,
+    autoReleaseAt
   );
 }
 
@@ -943,9 +929,8 @@ async function handleRefund(charge: Stripe.Charge) {
   });
 
   // Find the order by payment intent
-  const paymentIntentId = typeof charge.payment_intent === "string" 
-    ? charge.payment_intent 
-    : charge.payment_intent?.id;
+  const paymentIntentId =
+    typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
 
   if (!paymentIntentId) {
     console.warn("No payment intent ID on refunded charge");

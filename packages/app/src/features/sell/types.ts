@@ -134,11 +134,7 @@ export function getConditionLabel(value: number): string {
 }
 
 /** Average the 3 condition ratings to determine overall condition */
-export function calculateAverageCondition(
-  grip: number,
-  head: number,
-  shaft: number,
-): number {
+export function calculateAverageCondition(grip: number, head: number, shaft: number): number {
   return Math.round((grip + head + shaft) / 3);
 }
 

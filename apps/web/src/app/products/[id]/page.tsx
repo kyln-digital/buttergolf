@@ -141,11 +141,7 @@ async function getSimilarProducts(id: string): Promise<ProductCardData[]> {
   }
 }
 
-export default async function ProductDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const product = await getProduct(id);
 

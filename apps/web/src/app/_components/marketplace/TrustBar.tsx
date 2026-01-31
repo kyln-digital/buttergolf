@@ -25,12 +25,7 @@ export function TrustBar() {
         style: { position: "fixed", top: 0, left: 0, right: 0, zIndex: 100 },
       }}
     >
-      <Row
-        alignItems="center"
-        justifyContent="center"
-        flexWrap="wrap"
-        gap="$xs"
-      >
+      <Row alignItems="center" justifyContent="center" flexWrap="wrap" gap="$xs">
         <Text size="$3" weight="medium" color="$text">
           Give 10%, Get 10%.
         </Text>

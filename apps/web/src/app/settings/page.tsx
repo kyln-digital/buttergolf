@@ -28,12 +28,7 @@ export default function SettingsPage() {
   ];
 
   return (
-    <Column
-      backgroundColor="$background"
-      minHeight="100vh"
-      alignItems="center"
-      width="100%"
-    >
+    <Column backgroundColor="$background" minHeight="100vh" alignItems="center" width="100%">
       <Column
         maxWidth={800}
         paddingHorizontal="$6"
@@ -68,11 +63,7 @@ export default function SettingsPage() {
                   scale: 0.98,
                 }}
               >
-                <Row
-                  gap="$md"
-                  alignItems="center"
-                  justifyContent="space-between"
-                >
+                <Row gap="$md" alignItems="center" justifyContent="space-between">
                   <Row gap="$md" alignItems="center" flex={1}>
                     <Text size="$8">{item.icon}</Text>
                     <Column gap="$xs" flex={1}>

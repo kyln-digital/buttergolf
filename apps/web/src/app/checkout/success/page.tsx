@@ -2,17 +2,7 @@
 
 import { useEffect, useState, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  Column,
-  Text,
-  Heading,
-  Button,
-  Card,
-  Spinner,
-  Row,
-  Image,
-  Badge,
-} from "@buttergolf/ui";
+import { Column, Text, Heading, Button, Card, Spinner, Row, Image, Badge } from "@buttergolf/ui";
 import Link from "next/link";
 import confetti from "canvas-confetti";
 
@@ -110,7 +100,7 @@ function CheckoutSuccessContent() {
       const apiUrl = sessionId
         ? `/api/orders/by-session/${sessionId}`
         : `/api/orders/by-payment-intent/${paymentIntentId}`;
-      
+
       const response = await fetch(apiUrl);
       const data: ApiResponse = await response.json();
 
@@ -146,7 +136,7 @@ function CheckoutSuccessContent() {
 
     const startFetching = async () => {
       const done = await fetchOrder();
-      
+
       // If order is still processing, poll every 2 seconds (max 15 times = 30 seconds)
       if (!done && pollCount < 15) {
         pollInterval = setTimeout(() => {
@@ -233,8 +223,8 @@ function CheckoutSuccessContent() {
             <Column gap="$sm" alignItems="center">
               <Heading level={3}>Payment Successful!</Heading>
               <Text color="$textSecondary" textAlign="center" lineHeight="$5">
-                Your payment was processed successfully. You should receive an
-                order confirmation email shortly.
+                Your payment was processed successfully. You should receive an order confirmation
+                email shortly.
               </Text>
             </Column>
             {error && (
@@ -285,12 +275,16 @@ function CheckoutSuccessContent() {
             scale={1}
             opacity={1}
           >
-            <Text size="$11" color="$textInverse">✓</Text>
+            <Text size="$11" color="$textInverse">
+              ✓
+            </Text>
           </Column>
 
           {/* Success Message */}
           <Column gap="$sm" alignItems="center">
-            <Heading level={1} textAlign="center">Order Confirmed! 🎉</Heading>
+            <Heading level={1} textAlign="center">
+              Order Confirmed! 🎉
+            </Heading>
             <Text color="$textSecondary" textAlign="center" size="$5">
               Thank you for your purchase. Your order has been successfully placed.
             </Text>
@@ -341,7 +335,9 @@ function CheckoutSuccessContent() {
 
           {/* Order Progress Tracker */}
           <Column gap="$md" fullWidth paddingVertical="$md">
-            <Text weight="semibold" size="$5">Order Status</Text>
+            <Text weight="semibold" size="$5">
+              Order Status
+            </Text>
             <Row gap="$sm" alignItems="center" fullWidth>
               {/* Step 1: Payment Confirmed */}
               <Column alignItems="center" flex={1}>
@@ -353,16 +349,18 @@ function CheckoutSuccessContent() {
                   alignItems="center"
                   justifyContent="center"
                 >
-                  <Text color="$textInverse" size="$3">✓</Text>
+                  <Text color="$textInverse" size="$3">
+                    ✓
+                  </Text>
                 </Column>
                 <Text size="$2" color="$success" textAlign="center" marginTop="$xs">
                   Payment
                 </Text>
               </Column>
-              
+
               {/* Connector */}
               <Column flex={1} height={2} backgroundColor="$border" marginTop={-16} />
-              
+
               {/* Step 2: Preparing */}
               <Column alignItems="center" flex={1}>
                 <Column
@@ -373,16 +371,24 @@ function CheckoutSuccessContent() {
                   alignItems="center"
                   justifyContent="center"
                 >
-                  <Text color="$textInverse" size="$3">2</Text>
+                  <Text color="$textInverse" size="$3">
+                    2
+                  </Text>
                 </Column>
-                <Text size="$2" color="$primary" weight="semibold" textAlign="center" marginTop="$xs">
+                <Text
+                  size="$2"
+                  color="$primary"
+                  weight="semibold"
+                  textAlign="center"
+                  marginTop="$xs"
+                >
                   Preparing
                 </Text>
               </Column>
-              
+
               {/* Connector */}
               <Column flex={1} height={2} backgroundColor="$border" marginTop={-16} />
-              
+
               {/* Step 3: Shipped */}
               <Column alignItems="center" flex={1}>
                 <Column
@@ -393,16 +399,18 @@ function CheckoutSuccessContent() {
                   alignItems="center"
                   justifyContent="center"
                 >
-                  <Text color="$textSecondary" size="$3">3</Text>
+                  <Text color="$textSecondary" size="$3">
+                    3
+                  </Text>
                 </Column>
                 <Text size="$2" color="$textSecondary" textAlign="center" marginTop="$xs">
                   Shipped
                 </Text>
               </Column>
-              
+
               {/* Connector */}
               <Column flex={1} height={2} backgroundColor="$border" marginTop={-16} />
-              
+
               {/* Step 4: Delivered */}
               <Column alignItems="center" flex={1}>
                 <Column
@@ -413,7 +421,9 @@ function CheckoutSuccessContent() {
                   alignItems="center"
                   justifyContent="center"
                 >
-                  <Text color="$textSecondary" size="$3">4</Text>
+                  <Text color="$textSecondary" size="$3">
+                    4
+                  </Text>
                 </Column>
                 <Text size="$2" color="$textSecondary" textAlign="center" marginTop="$xs">
                   Delivered
@@ -435,7 +445,12 @@ function CheckoutSuccessContent() {
               <Row justifyContent="space-between" alignItems="center">
                 <Text color="$textSecondary">Item Price</Text>
                 <Text weight="medium">
-                  £{(order.amountTotal - order.shippingCost - (order.buyerProtectionFee || 0)).toFixed(2)}
+                  £
+                  {(
+                    order.amountTotal -
+                    order.shippingCost -
+                    (order.buyerProtectionFee || 0)
+                  ).toFixed(2)}
                 </Text>
               </Row>
 
@@ -461,7 +476,9 @@ function CheckoutSuccessContent() {
                 borderTopWidth={1}
                 borderTopColor="$border"
               >
-                <Text weight="bold" size="$5">Total Paid</Text>
+                <Text weight="bold" size="$5">
+                  Total Paid
+                </Text>
                 <Text weight="bold" size="$7" color="$primary">
                   £{order.amountTotal.toFixed(2)}
                 </Text>
@@ -481,7 +498,9 @@ function CheckoutSuccessContent() {
                     weekday: "short",
                     month: "short",
                     day: "numeric",
-                  })} - {new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString("en-GB", {
+                  })}{" "}
+                  -{" "}
+                  {new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString("en-GB", {
                     weekday: "short",
                     month: "short",
                     day: "numeric",
@@ -493,19 +512,34 @@ function CheckoutSuccessContent() {
 
           {/* Payment Hold Information */}
           {order.paymentHoldStatus === "HELD" && (
-            <Card variant="outlined" padding="$md" borderColor="$info" backgroundColor="$infoLight" fullWidth>
+            <Card
+              variant="outlined"
+              padding="$md"
+              borderColor="$info"
+              backgroundColor="$infoLight"
+              fullWidth
+            >
               <Column gap="$sm">
                 <Row gap="$sm" alignItems="center">
                   <Text size="$5">🔒</Text>
-                  <Text fontWeight="600" color="$info">Payment Held Securely</Text>
+                  <Text fontWeight="600" color="$info">
+                    Payment Held Securely
+                  </Text>
                 </Row>
                 <Text size="$4" color="$textSecondary">
-                  Your payment is being held safely until you confirm you&apos;ve received your item. 
-                  Once delivered, you&apos;ll have 14 days to confirm receipt or report any issues.
+                  Your payment is being held safely until you confirm you&apos;ve received your
+                  item. Once delivered, you&apos;ll have 14 days to confirm receipt or report any
+                  issues.
                 </Text>
                 {order.autoReleaseAt && (
                   <Text size="$3" color="$textMuted">
-                    Payment auto-releases to seller on {new Date(order.autoReleaseAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })} if no action taken.
+                    Payment auto-releases to seller on{" "}
+                    {new Date(order.autoReleaseAt).toLocaleDateString("en-GB", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}{" "}
+                    if no action taken.
                   </Text>
                 )}
               </Column>
@@ -519,9 +553,7 @@ function CheckoutSuccessContent() {
                 <Text size="$5">📍</Text>
                 <Text weight="semibold">Shipping To</Text>
               </Row>
-              <Text color="$textSecondary">
-                {order.shippingAddress.name}
-              </Text>
+              <Text color="$textSecondary">{order.shippingAddress.name}</Text>
               <Text color="$textSecondary">
                 {order.shippingAddress.street1}
                 {order.shippingAddress.street2 && `, ${order.shippingAddress.street2}`}

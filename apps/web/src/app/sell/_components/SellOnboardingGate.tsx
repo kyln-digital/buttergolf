@@ -2,20 +2,9 @@
 
 import { useState, useEffect, useRef, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Column,
-  Row,
-  Heading,
-  Text,
-  Button,
-  Card,
-  Spinner,
-} from "@buttergolf/ui";
+import { Column, Row, Heading, Text, Button, Card, Spinner } from "@buttergolf/ui";
 import { brandColors } from "@buttergolf/config";
-import {
-  ConnectAccountOnboarding,
-  ConnectComponentsProvider,
-} from "@stripe/react-connect-js";
+import { ConnectAccountOnboarding, ConnectComponentsProvider } from "@stripe/react-connect-js";
 import { loadConnectAndInitialize } from "@stripe/connect-js";
 import type { StepChange, StripeConnectInstance } from "@stripe/connect-js";
 
@@ -46,23 +35,19 @@ interface SellOnboardingGateProps {
  * - Individual/private seller type
  * - Incremental onboarding (collect what's needed, when it's needed)
  */
-export function SellOnboardingGate({
-  initialStatus,
-  children,
-}: SellOnboardingGateProps) {
+export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGateProps) {
   const router = useRouter();
   const [status, setStatus] = useState<SellerStatus>(initialStatus);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [stripeConnectInstance, setStripeConnectInstance] =
-    useState<StripeConnectInstance | null>(null);
+  const [stripeConnectInstance, setStripeConnectInstance] = useState<StripeConnectInstance | null>(
+    null
+  );
   const hasReachedSummaryRef = useRef(false);
 
   // If already onboarded with active account, show the sell form
   const isReadyToSell =
-    status.hasAccount &&
-    status.onboardingComplete &&
-    status.accountStatus === "active";
+    status.hasAccount && status.onboardingComplete && status.accountStatus === "active";
 
   // Auto-initialize onboarding when component mounts and user needs to onboard
   useEffect(() => {
@@ -118,9 +103,7 @@ export function SellOnboardingGate({
       setStripeConnectInstance(instance);
     } catch (err) {
       console.error("Error initializing Stripe Connect:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to initialize onboarding",
-      );
+      setError(err instanceof Error ? err.message : "Failed to initialize onboarding");
     } finally {
       setLoading(false);
     }
@@ -128,10 +111,7 @@ export function SellOnboardingGate({
 
   function handleStepChange(stepChange: StepChange) {
     // Track when user reaches summary step (considered "complete enough" to sell)
-    if (
-      stepChange.step === "summary" ||
-      stepChange.step.startsWith("summary_")
-    ) {
+    if (stepChange.step === "summary" || stepChange.step.startsWith("summary_")) {
       hasReachedSummaryRef.current = true;
     }
   }
@@ -180,8 +160,7 @@ export function SellOnboardingGate({
             <Spinner size="lg" color="$primary" />
             <Heading level={3}>Setting up your seller account...</Heading>
             <Text color="$textSecondary" textAlign="center">
-              This only takes a moment. You&apos;ll be able to list your first
-              item shortly.
+              This only takes a moment. You&apos;ll be able to list your first item shortly.
             </Text>
           </Column>
         </Card>
@@ -206,11 +185,7 @@ export function SellOnboardingGate({
             </Heading>
             <Text color="$textSecondary">{error}</Text>
             <Row gap="$md">
-              <Button
-                butterVariant="primary"
-                size="$4"
-                onPress={() => initializeOnboarding()}
-              >
+              <Button butterVariant="primary" size="$4" onPress={() => initializeOnboarding()}>
                 Try Again
               </Button>
               <Button
@@ -250,25 +225,14 @@ export function SellOnboardingGate({
   }
 
   return (
-    <Column
-      backgroundColor="$background"
-      minHeight="100vh"
-      alignItems="center"
-      width="100%"
-    >
-      <Column
-        maxWidth={960}
-        paddingHorizontal="$6"
-        paddingVertical="$8"
-        width="100%"
-        gap="$lg"
-      >
+    <Column backgroundColor="$background" minHeight="100vh" alignItems="center" width="100%">
+      <Column maxWidth={960} paddingHorizontal="$6" paddingVertical="$8" width="100%" gap="$lg">
         {/* Header */}
         <Column gap="$xl" alignItems="center">
           <Heading level={2}>Complete quick setup to start selling</Heading>
           <Text color="$textSecondary" textAlign="center" size="$5">
-            Before listing your first item, we need a few details for secure
-            payments. This only takes 2-3 minutes.
+            Before listing your first item, we need a few details for secure payments. This only
+            takes 2-3 minutes.
           </Text>
         </Column>
 

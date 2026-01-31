@@ -5,8 +5,7 @@ import { useCart } from "../../context/CartContext";
 import Link from "next/link";
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, totalPrice, clearCart } =
-    useCart();
+  const { items, removeItem, updateQuantity, totalPrice, clearCart } = useCart();
 
   if (items.length === 0) {
     return (
@@ -20,9 +19,7 @@ export default function CartPage() {
         <Text size="$7" weight="bold">
           Your cart is empty
         </Text>
-        <Text color="$textSecondary">
-          Browse our marketplace to find great deals
-        </Text>
+        <Text color="$textSecondary">Browse our marketplace to find great deals</Text>
         <Link href="/listings">
           <Button butterVariant="primary" size="$5">
             Browse Listings
@@ -75,9 +72,7 @@ export default function CartPage() {
                 <Row gap="$2" alignItems="center">
                   <Button
                     size="$3"
-                    onPress={() =>
-                      updateQuantity(item.productId, item.quantity - 1)
-                    }
+                    onPress={() => updateQuantity(item.productId, item.quantity - 1)}
                   >
                     -
                   </Button>
@@ -86,9 +81,7 @@ export default function CartPage() {
                   </Text>
                   <Button
                     size="$3"
-                    onPress={() =>
-                      updateQuantity(item.productId, item.quantity + 1)
-                    }
+                    onPress={() => updateQuantity(item.productId, item.quantity + 1)}
                   >
                     +
                   </Button>
@@ -102,30 +95,18 @@ export default function CartPage() {
         </Column>
 
         {/* Order Summary */}
-        <Card
-          variant="elevated"
-          padding="$lg"
-          minWidth={300}
-          width="100%"
-          maxWidth={400}
-        >
+        <Card variant="elevated" padding="$lg" minWidth={300} width="100%" maxWidth={400}>
           <Column gap="$4">
             <Text size="$6" weight="bold">
               Order Summary
             </Text>
             <Column gap="$2">
               {items.map((item) => (
-                <Row
-                  key={item.productId}
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
+                <Row key={item.productId} justifyContent="space-between" alignItems="center">
                   <Text size="$3" color="$textSecondary">
                     {item.title} × {item.quantity}
                   </Text>
-                  <Text size="$3">
-                    £{(item.price * item.quantity).toFixed(2)}
-                  </Text>
+                  <Text size="$3">£{(item.price * item.quantity).toFixed(2)}</Text>
                 </Row>
               ))}
             </Column>

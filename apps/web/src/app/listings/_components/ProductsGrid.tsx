@@ -67,12 +67,7 @@ function DotPagination({
   const visiblePages = getVisiblePages();
 
   return (
-    <Row
-      alignItems="center"
-      justifyContent="center"
-      gap="$sm"
-      paddingVertical="$xl"
-    >
+    <Row alignItems="center" justifyContent="center" gap="$sm" paddingVertical="$xl">
       {visiblePages.map((page) => {
         const isActive = page === currentPage;
 
@@ -89,10 +84,10 @@ function DotPagination({
               height: "10px",
               borderRadius: "5px",
               border: "none",
-              backgroundColor: isActive 
-                ? "#F45314" 
-                : disabled 
-                  ? "rgba(244, 83, 20, 0.3)" 
+              backgroundColor: isActive
+                ? "#F45314"
+                : disabled
+                  ? "rgba(244, 83, 20, 0.3)"
                   : "rgba(244, 83, 20, 0.5)",
               cursor: disabled ? "wait" : "pointer",
               transition: "all 0.3s ease",
@@ -132,7 +127,7 @@ function AnimatedGridContent({
     if (isPaginating && prevPageRef.current !== currentPage) {
       // Determine slide direction based on page change
       setSlideDirection(currentPage > prevPageRef.current ? "left" : "right"); // eslint-disable-line react-hooks/set-state-in-effect
-      setIsAnimating(true);  
+      setIsAnimating(true);
       prevPageRef.current = currentPage;
     }
   }, [isPaginating, currentPage]);
@@ -141,10 +136,13 @@ function AnimatedGridContent({
   useEffect(() => {
     if (!isPaginating && !isLoading && products !== displayProducts) {
       // Small delay to allow exit animation
-      const timer = setTimeout(() => {
-        setDisplayProducts(products);
-        setIsAnimating(false);
-      }, isAnimating ? 200 : 0);
+      const timer = setTimeout(
+        () => {
+          setDisplayProducts(products);
+          setIsAnimating(false);
+        },
+        isAnimating ? 200 : 0
+      );
       return () => clearTimeout(timer);
     }
   }, [products, isPaginating, isLoading, displayProducts, isAnimating]);
@@ -170,19 +168,16 @@ function AnimatedGridContent({
           key={product.id}
           style={{
             opacity: isPaginating || isAnimating ? 0.5 : 1,
-            transform: isPaginating 
-              ? slideDirection === "left" 
-                ? "translateX(-8px)" 
+            transform: isPaginating
+              ? slideDirection === "left"
+                ? "translateX(-8px)"
                 : "translateX(8px)"
               : "translateX(0)",
             transition: "opacity 200ms ease-out, transform 200ms ease-out",
             transitionDelay: `${Math.min(index * 8, 150)}ms`,
           }}
         >
-          <ProductCard
-            product={product}
-            onPress={() => router.push(`/products/${product.id}`)}
-          />
+          <ProductCard product={product} onPress={() => router.push(`/products/${product.id}`)} />
         </View>
       ))}
     </>
@@ -199,18 +194,11 @@ export function ProductsGrid({
 }: Readonly<ProductsGridProps>) {
   if (!isLoading && !isPaginating && products.length === 0) {
     return (
-      <Column
-        alignItems="center"
-        justifyContent="center"
-        paddingVertical="$10"
-        gap="$md"
-      >
+      <Column alignItems="center" justifyContent="center" paddingVertical="$10" gap="$md">
         <Text size="$7" weight="semibold" color="$textSecondary">
           No products found
         </Text>
-        <Text color="$textMuted">
-          Try adjusting your filters or search query
-        </Text>
+        <Text color="$textMuted">Try adjusting your filters or search query</Text>
       </Column>
     );
   }

@@ -2,10 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useUser } from "@clerk/nextjs";
-import {
-  loadConnectAndInitialize,
-  type StripeConnectInstance,
-} from "@stripe/connect-js";
+import { loadConnectAndInitialize, type StripeConnectInstance } from "@stripe/connect-js";
 
 interface UseStripeConnectReturn {
   stripeConnectInstance: StripeConnectInstance | null;
@@ -29,8 +26,9 @@ interface UseStripeConnectReturn {
  */
 export function useStripeConnect(): UseStripeConnectReturn {
   const { user, isLoaded } = useUser();
-  const [stripeConnectInstance, setStripeConnectInstance] =
-    useState<StripeConnectInstance | null>(null);
+  const [stripeConnectInstance, setStripeConnectInstance] = useState<StripeConnectInstance | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasAccount, setHasAccount] = useState(false);
@@ -113,9 +111,7 @@ export function useStripeConnect(): UseStripeConnectReturn {
       setStripeConnectInstance(instance);
     } catch (err) {
       console.error("Error initializing Stripe Connect:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to initialize Stripe Connect"
-      );
+      setError(err instanceof Error ? err.message : "Failed to initialize Stripe Connect");
     } finally {
       setLoading(false);
     }

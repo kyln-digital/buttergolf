@@ -24,30 +24,21 @@ export async function POST(req: Request) {
     const signature = (await headers()).get("stripe-signature");
 
     if (!signature) {
-      return NextResponse.json(
-        { error: "Missing stripe-signature header" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Missing stripe-signature header" }, { status: 400 });
     }
 
     // Use dedicated Connect webhook secret, fallback to main secret for backwards compatibility
-    const webhookSecret = process.env.STRIPE_CONNECT_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
+    const webhookSecret =
+      process.env.STRIPE_CONNECT_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
     if (!webhookSecret) {
       console.error("STRIPE_CONNECT_WEBHOOK_SECRET not configured");
-      return NextResponse.json(
-        { error: "Webhook secret not configured" },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
     }
 
     // Verify webhook signature
     let event: Stripe.Event;
     try {
-      event = stripe.webhooks.constructEvent(
-        body,
-        signature,
-        webhookSecret,
-      );
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err) {
       console.error("Webhook signature verification failed:", err);
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
@@ -115,9 +106,7 @@ export async function POST(req: Request) {
       case "person.updated": {
         // Handle person verification status changes
         const person = event.data.object as Stripe.Person;
-        console.log(
-          `Person ${person.id} updated for account ${person.account}`
-        );
+        console.log(`Person ${person.id} updated for account ${person.account}`);
 
         // Refresh account status when person verification changes
         if (typeof person.account === "string") {
@@ -150,7 +139,7 @@ export async function POST(req: Request) {
         error: "Webhook processing failed",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -179,7 +168,7 @@ async function handleAccountUpdated(account: Stripe.Account) {
           Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
           "Stripe-Version": "2025-04-30.preview",
         },
-      },
+      }
     );
 
     if (!response.ok) {
@@ -194,11 +183,9 @@ async function handleAccountUpdated(account: Stripe.Account) {
     const currentlyDue = v2Account.requirements?.currently_due || [];
     const hasNoDue = currentlyDue.length === 0;
     const cardPaymentsActive =
-      v2Account.configuration?.merchant?.capabilities?.card_payments?.status ===
-      "active";
+      v2Account.configuration?.merchant?.capabilities?.card_payments?.status === "active";
     const transfersActive =
-      v2Account.configuration?.merchant?.capabilities?.transfers?.status ===
-      "active";
+      v2Account.configuration?.merchant?.capabilities?.transfers?.status === "active";
 
     let status = "pending";
     if (hasNoDue && cardPaymentsActive && transfersActive) {
@@ -210,9 +197,7 @@ async function handleAccountUpdated(account: Stripe.Account) {
     // Extract requirements deadline if present
     let requirementsDeadline: Date | null = null;
     if (v2Account.requirements?.current_deadline) {
-      requirementsDeadline = new Date(
-        v2Account.requirements.current_deadline * 1000
-      );
+      requirementsDeadline = new Date(v2Account.requirements.current_deadline * 1000);
     }
 
     // Update user record with requirements data for notification banner
@@ -243,11 +228,7 @@ async function handleAccountUpdated(account: Stripe.Account) {
  */
 async function handleV1AccountUpdate(userId: string, account: Stripe.Account) {
   let status = "pending";
-  if (
-    account.details_submitted &&
-    account.charges_enabled &&
-    account.payouts_enabled
-  ) {
+  if (account.details_submitted && account.charges_enabled && account.payouts_enabled) {
     status = "active";
   } else if (account.details_submitted) {
     status = "restricted";
@@ -291,8 +272,8 @@ async function syncAddressFromStripe(userId: string, account: Stripe.Account) {
     const existingAddress = await prisma.address.findFirst({
       where: {
         userId,
-        isDefault: true
-      }
+        isDefault: true,
+      },
     });
 
     if (existingAddress) {
@@ -306,12 +287,14 @@ async function syncAddressFromStripe(userId: string, account: Stripe.Account) {
           state: stripeAddress.state || "",
           zip: stripeAddress.postal_code,
           country: stripeAddress.country || "GB",
-        }
+        },
       });
       console.log(`✅ Updated address for user ${userId} from Stripe Connect`);
     } else {
       // Create new address from Stripe data
-      const name = `${account.individual.first_name || ""} ${account.individual.last_name || ""}`.trim() || "Seller";
+      const name =
+        `${account.individual.first_name || ""} ${account.individual.last_name || ""}`.trim() ||
+        "Seller";
 
       await prisma.address.create({
         data: {
@@ -324,7 +307,7 @@ async function syncAddressFromStripe(userId: string, account: Stripe.Account) {
           zip: stripeAddress.postal_code,
           country: stripeAddress.country || "GB",
           isDefault: true,
-        }
+        },
       });
       console.log(`✅ Created address for user ${userId} from Stripe Connect`);
     }

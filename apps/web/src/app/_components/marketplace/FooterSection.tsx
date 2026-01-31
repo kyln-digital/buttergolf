@@ -151,12 +151,7 @@ export function FooterSection() {
         </Row>
 
         {/* Bottom Section: Copyright + TrustPilot */}
-        <Row
-          justifyContent="space-between"
-          alignItems="center"
-          flexWrap="wrap"
-          gap="$md"
-        >
+        <Row justifyContent="space-between" alignItems="center" flexWrap="wrap" gap="$md">
           {/* Copyright */}
           <Text color="$vanillaCream" size="$3" zIndex={1}>
             © 2025 Butter Golf. All rights reserved.

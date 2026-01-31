@@ -16,10 +16,7 @@ import { getUserIdFromRequest } from "@/lib/auth";
  * 3. Platform transfers funds to seller's Stripe Connect account
  * 4. Order status updated to RELEASED
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Support both web cookies and mobile Bearer tokens
     const clerkUserId = await getUserIdFromRequest(request);
@@ -96,26 +93,18 @@ export async function POST(
         orderId,
         sellerId: order.sellerId,
       });
-      return NextResponse.json(
-        { error: "Seller payment account not configured" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Seller payment account not configured" }, { status: 500 });
     }
 
     // Calculate transfer amount (seller receives 100% of product + shipping)
-    const transferAmountInPence = Math.round(
-      (order.stripeSellerPayout || 0) * 100
-    );
+    const transferAmountInPence = Math.round((order.stripeSellerPayout || 0) * 100);
 
     if (transferAmountInPence <= 0) {
       console.error("Invalid transfer amount:", {
         orderId,
         sellerPayout: order.stripeSellerPayout,
       });
-      return NextResponse.json(
-        { error: "Invalid payout amount" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Invalid payout amount" }, { status: 500 });
     }
 
     // Verify charge ID exists (required for transfer)
@@ -229,9 +218,6 @@ export async function POST(
       );
     }
 
-    return NextResponse.json(
-      { error: "Failed to confirm receipt" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to confirm receipt" }, { status: 500 });
   }
 }

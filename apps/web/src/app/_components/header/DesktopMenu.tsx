@@ -17,18 +17,10 @@ export function DesktopMenu({ menuData }: Readonly<DesktopMenuProps>) {
   const pathname = usePathname();
 
   return (
-    <Row
-      tag="nav"
-      gap="$6"
-      alignItems="center"
-      flexWrap="wrap"
-      justifyContent="center"
-    >
+    <Row tag="nav" gap="$6" alignItems="center" flexWrap="wrap" justifyContent="center">
       {menuData.map((menuItem) => {
         const hasSubmenu = Boolean(menuItem.submenu);
-        const isActive =
-          menuItem.path &&
-          pathname.split("?")[0] === menuItem.path.split("?")[0];
+        const isActive = menuItem.path && pathname.split("?")[0] === menuItem.path.split("?")[0];
         const menuIndex = menuData.indexOf(menuItem);
 
         return (
@@ -57,11 +49,7 @@ export function DesktopMenu({ menuData }: Readonly<DesktopMenuProps>) {
                       {menuItem.title}
                     </Text>
                     <Column
-                      transform={
-                        activeDropdown === menuIndex
-                          ? [{ rotate: "180deg" }]
-                          : undefined
-                      }
+                      transform={activeDropdown === menuIndex ? [{ rotate: "180deg" }] : undefined}
                       animation="quick"
                     >
                       <ChevronDownIcon />
@@ -91,8 +79,7 @@ export function DesktopMenu({ menuData }: Readonly<DesktopMenuProps>) {
                 >
                   {menuItem.submenu?.map((subItem) => {
                     const isSubItemActive =
-                      subItem.path &&
-                      pathname.split("?")[0] === subItem.path.split("?")[0];
+                      subItem.path && pathname.split("?")[0] === subItem.path.split("?")[0];
 
                     return (
                       <Link
@@ -119,10 +106,7 @@ export function DesktopMenu({ menuData }: Readonly<DesktopMenuProps>) {
               </>
             ) : (
               <Theme name={isActive ? "active" : null}>
-                <Link
-                  href={menuItem.path || "#"}
-                  style={{ textDecoration: "none" }}
-                >
+                <Link href={menuItem.path || "#"} style={{ textDecoration: "none" }}>
                   <Row
                     paddingVertical="$2"
                     paddingHorizontal="$3"

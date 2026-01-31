@@ -44,18 +44,8 @@ export function MobileFilterSheet({
   const headingId = useId();
 
   return (
-    <Sheet
-      modal
-      open={open}
-      onOpenChange={onOpenChange}
-      snapPoints={[85]}
-      dismissOnSnapToBottom
-    >
-      <Overlay
-        animation="lazy"
-        enterStyle={{ opacity: 0 }}
-        exitStyle={{ opacity: 0 }}
-      />
+    <Sheet modal open={open} onOpenChange={onOpenChange} snapPoints={[85]} dismissOnSnapToBottom>
+      <Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
       <Frame
         aria-modal={true}
         aria-labelledby={headingId}
@@ -76,12 +66,7 @@ export function MobileFilterSheet({
             <Text id={headingId} weight="bold" size="$6">
               Filters
             </Text>
-            <Text
-              color="$primary"
-              size="$3"
-              cursor="pointer"
-              onPress={onClearAll}
-            >
+            <Text color="$primary" size="$3" cursor="pointer" onPress={onClearAll}>
               Clear All
             </Text>
           </Row>
@@ -110,9 +95,7 @@ export function MobileFilterSheet({
                 maxPrice={priceRange.max}
                 selectedMin={filters.minPrice}
                 selectedMax={filters.maxPrice}
-                onChange={(minPrice, maxPrice) =>
-                  onChange({ minPrice, maxPrice })
-                }
+                onChange={(minPrice, maxPrice) => onChange({ minPrice, maxPrice })}
               />
             </FilterSection>
 
@@ -128,9 +111,7 @@ export function MobileFilterSheet({
               <SwitchWithLabel
                 label="Show favourites only"
                 checked={filters.showFavouritesOnly}
-                onCheckedChange={(checked) =>
-                  onChange({ showFavouritesOnly: checked })
-                }
+                onCheckedChange={(checked) => onChange({ showFavouritesOnly: checked })}
                 size="$3"
               />
             </FilterSection>
@@ -145,12 +126,7 @@ export function MobileFilterSheet({
           borderTopColor="$border"
         >
           <Row gap="$md">
-            <Button
-              size="$4"
-              flex={1}
-              chromeless
-              onPress={() => onOpenChange(false)}
-            >
+            <Button size="$4" flex={1} chromeless onPress={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button

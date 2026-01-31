@@ -34,7 +34,7 @@ export async function registerForPushNotificationsAsync(
       addBreadcrumb("turbomodule.notifications", "No EAS project ID found", {}, "warning");
       console.warn(
         "[Notifications] No EAS project ID found. " +
-        "Add 'extra.eas.projectId' to app.json or run 'eas build:configure' to set it up."
+          "Add 'extra.eas.projectId' to app.json or run 'eas build:configure' to set it up."
       );
       return null;
     }
@@ -51,7 +51,12 @@ export async function registerForPushNotificationsAsync(
     }
 
     if (finalStatus !== "granted") {
-      addBreadcrumb("turbomodule.notifications", "Permissions not granted", { finalStatus }, "warning");
+      addBreadcrumb(
+        "turbomodule.notifications",
+        "Permissions not granted",
+        { finalStatus },
+        "warning"
+      );
       console.log("[Notifications] Permission not granted");
       return null;
     }
@@ -61,8 +66,8 @@ export async function registerForPushNotificationsAsync(
     const pushToken = await Notifications.getExpoPushTokenAsync({
       projectId,
     });
-    addBreadcrumb("turbomodule.notifications", "Push token obtained", { 
-      tokenLength: pushToken.data?.length 
+    addBreadcrumb("turbomodule.notifications", "Push token obtained", {
+      tokenLength: pushToken.data?.length,
     });
 
     console.log("[Notifications] Got push token:", {
@@ -86,7 +91,12 @@ export async function registerForPushNotificationsAsync(
 
     return pushToken.data;
   } catch (error) {
-    addBreadcrumb("turbomodule.notifications", "Registration failed", { error: String(error) }, "error");
+    addBreadcrumb(
+      "turbomodule.notifications",
+      "Registration failed",
+      { error: String(error) },
+      "error"
+    );
     console.error("[Notifications] Error registering for push:", error);
     return null;
   }
@@ -101,7 +111,12 @@ export async function getStoredPushToken(): Promise<string | null> {
     const token = await deferredSecureStoreGet("expo_push_token");
     return token || null;
   } catch (error) {
-    addBreadcrumb("turbomodule.securestore", "Failed to get stored token", { error: String(error) }, "error");
+    addBreadcrumb(
+      "turbomodule.securestore",
+      "Failed to get stored token",
+      { error: String(error) },
+      "error"
+    );
     console.error("[Notifications] Error getting stored token:", error);
     return null;
   }
@@ -117,7 +132,12 @@ export async function clearStoredPushToken(): Promise<void> {
     addBreadcrumb("turbomodule.securestore", "Push token cleared");
     console.log("[Notifications] Cleared stored push token");
   } catch (error) {
-    addBreadcrumb("turbomodule.securestore", "Failed to clear token", { error: String(error) }, "error");
+    addBreadcrumb(
+      "turbomodule.securestore",
+      "Failed to clear token",
+      { error: String(error) },
+      "error"
+    );
     console.error("[Notifications] Error clearing token:", error);
   }
 }
@@ -153,16 +173,14 @@ export function setupNotificationHandlers(
   });
 
   // Handle user tapping on notification
-  const subscription = Notifications.addNotificationResponseReceivedListener(
-    (response) => {
-      console.log("[Notifications] Notification tapped:", {
-        data: response.notification.request.content.data,
-      });
+  const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+    console.log("[Notifications] Notification tapped:", {
+      data: response.notification.request.content.data,
+    });
 
-      // Call custom handler if provided
-      onNotificationResponseReceived?.(response);
-    }
-  );
+    // Call custom handler if provided
+    onNotificationResponseReceived?.(response);
+  });
 
   // Return cleanup function
   return () => {

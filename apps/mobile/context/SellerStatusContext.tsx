@@ -184,9 +184,7 @@ export function SellerStatusProvider({ children }: SellerStatusProviderProps) {
   }, [fetchStatus]);
 
   return (
-    <SellerStatusContext.Provider
-      value={{ status, isLoading, error, refresh: fetchStatus }}
-    >
+    <SellerStatusContext.Provider value={{ status, isLoading, error, refresh: fetchStatus }}>
       {children}
     </SellerStatusContext.Provider>
   );
@@ -204,7 +202,7 @@ export function useSellerStatusContext(): SellerStatusContextValue {
   if (!context) {
     throw new Error(
       "useSellerStatusContext must be used within SellerStatusProvider. " +
-      "Make sure the provider is placed inside <SignedIn> in App.tsx."
+        "Make sure the provider is placed inside <SignedIn> in App.tsx."
     );
   }
   return context;

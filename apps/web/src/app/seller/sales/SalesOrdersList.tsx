@@ -3,15 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  Column,
-  Row,
-  Text,
-  Heading,
-  Button,
-  Card,
-  Spinner,
-} from "@buttergolf/ui";
+import { Column, Row, Text, Heading, Button, Card, Spinner } from "@buttergolf/ui";
 import {
   Package,
   Truck,
@@ -206,7 +198,9 @@ function OrderCard({ order }: { order: Order }) {
 
   const statusConfig = STATUS_CONFIG[status];
   const needsAddressUpdate = order.fromAddress.street1 === "Address pending";
-  const paymentStatusConfig = order.paymentHoldStatus ? PAYMENT_STATUS_CONFIG[order.paymentHoldStatus] : null;
+  const paymentStatusConfig = order.paymentHoldStatus
+    ? PAYMENT_STATUS_CONFIG[order.paymentHoldStatus]
+    : null;
   const PaymentIcon = paymentStatusConfig?.icon || Clock;
 
   const getDaysUntilAutoRelease = () => {
@@ -293,9 +287,7 @@ function OrderCard({ order }: { order: Order }) {
               }}
             >
               {getStatusIcon(status)}
-              <span style={{ fontSize: "12px", fontWeight: 500 }}>
-                {statusConfig.label}
-              </span>
+              <span style={{ fontSize: "12px", fontWeight: 500 }}>{statusConfig.label}</span>
             </div>
           </Row>
 
@@ -328,7 +320,11 @@ function OrderCard({ order }: { order: Order }) {
               <Text size="$2" color="$textMuted">
                 Your Payout
               </Text>
-              <Text size="$3" fontWeight="600" color={order.paymentHoldStatus === "RELEASED" ? "$success" : "$text"}>
+              <Text
+                size="$3"
+                fontWeight="600"
+                color={order.paymentHoldStatus === "RELEASED" ? "$success" : "$text"}
+              >
                 £{(order.stripeSellerPayout || 0).toFixed(2)}
               </Text>
               {paymentStatusConfig && (
@@ -372,12 +368,7 @@ function OrderCard({ order }: { order: Order }) {
             <>
               {needsAddressUpdate ? (
                 <Link href="/seller/settings" style={{ width: "100%" }}>
-                  <Button
-                    size="$4"
-                    backgroundColor="$warning"
-                    color="$textInverse"
-                    width="100%"
-                  >
+                  <Button size="$4" backgroundColor="$warning" color="$textInverse" width="100%">
                     <AlertCircle size={16} />
                     <Text color="$textInverse" marginLeft="$xs">
                       Update Address
@@ -413,18 +404,8 @@ function OrderCard({ order }: { order: Order }) {
           )}
 
           {labelUrl && (
-            <a
-              href={labelUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ width: "100%" }}
-            >
-              <Button
-                size="$4"
-                backgroundColor="$success"
-                color="$textInverse"
-                width="100%"
-              >
+            <a href={labelUrl} target="_blank" rel="noopener noreferrer" style={{ width: "100%" }}>
+              <Button size="$4" backgroundColor="$success" color="$textInverse" width="100%">
                 <Download size={16} />
                 <Text color="$textInverse" marginLeft="$xs">
                   Download Label
@@ -453,15 +434,8 @@ function OrderCard({ order }: { order: Order }) {
             </a>
           )}
 
-          <Link
-            href={`/orders/${order.id}`}
-            style={{ width: "100%", textDecoration: "none" }}
-          >
-            <Button
-              size="$3"
-              chromeless
-              width="100%"
-            >
+          <Link href={`/orders/${order.id}`} style={{ width: "100%", textDecoration: "none" }}>
+            <Button size="$3" chromeless width="100%">
               View Details →
             </Button>
           </Link>
@@ -472,9 +446,7 @@ function OrderCard({ order }: { order: Order }) {
 }
 
 export function SalesOrdersList({ orders, stats }: SalesOrdersListProps) {
-  const [filter, setFilter] = useState<"all" | "awaiting" | "shipped" | "delivered">(
-    "all"
-  );
+  const [filter, setFilter] = useState<"all" | "awaiting" | "shipped" | "delivered">("all");
 
   const filteredOrders = orders.filter((order) => {
     switch (filter) {

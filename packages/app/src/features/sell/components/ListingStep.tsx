@@ -6,11 +6,7 @@ import { Column, Row, Text, View, Input, ScrollView, useTheme } from "@buttergol
 import { Sparkles, Type, FileText, PoundSterling } from "@tamagui/lucide-icons";
 
 import type { SellFormData } from "../types";
-import {
-  calculateAverageCondition,
-  mapConditionToEnum,
-  CONDITION_OPTIONS,
-} from "../types";
+import { calculateAverageCondition, mapConditionToEnum, CONDITION_OPTIONS } from "../types";
 
 interface ListingStepProps {
   formData: SellFormData;
@@ -29,16 +25,12 @@ function singularize(word: string): string {
   return word;
 }
 
-export function ListingStep({
-  formData,
-  onUpdate,
-  direction,
-}: Readonly<ListingStepProps>) {
+export function ListingStep({ formData, onUpdate, direction }: Readonly<ListingStepProps>) {
   const theme = useTheme();
   // Get theme-aware colors for TextInput
   const textColor = theme.text?.val ?? "#323232";
   const placeholderColor = theme.textSecondary?.val ?? "#545454";
-  
+
   const [titleFocused, setTitleFocused] = useState(false);
   const [descFocused, setDescFocused] = useState(false);
   const [priceFocused, setPriceFocused] = useState(false);
@@ -61,12 +53,10 @@ export function ListingStep({
     const avgCondition = calculateAverageCondition(
       formData.gripCondition,
       formData.headCondition,
-      formData.shaftCondition,
+      formData.shaftCondition
     );
     const conditionEnum = mapConditionToEnum(avgCondition);
-    const conditionLabel = CONDITION_OPTIONS.find(
-      (c) => c.value === conditionEnum,
-    )?.label;
+    const conditionLabel = CONDITION_OPTIONS.find((c) => c.value === conditionEnum)?.label;
     if (conditionLabel && conditionLabel !== "New") {
       parts.push(`(${conditionLabel})`);
     }
@@ -128,12 +118,7 @@ export function ListingStep({
       >
         {/* Header Section */}
         <Column gap="$2" marginBottom="$6">
-          <Text
-            fontFamily="$heading"
-            size="$10"
-            fontWeight="800"
-            color="$text"
-          >
+          <Text fontFamily="$heading" size="$10" fontWeight="800" color="$text">
             Create your listing
           </Text>
           <Text size="$5" fontWeight="400" color="$textSecondary">
@@ -206,11 +191,7 @@ export function ListingStep({
               overflow="hidden"
             >
               <Row paddingHorizontal="$4" paddingTop="$3" gap="$3">
-                <FileText
-                  size={20}
-                  color="$textSecondary"
-                  style={{ marginTop: 2 }}
-                />
+                <FileText size={20} color="$textSecondary" style={{ marginTop: 2 }} />
                 <View flex={1}>
                   <TextInput
                     value={formData.description}
@@ -235,19 +216,11 @@ export function ListingStep({
                   />
                 </View>
               </Row>
-              <Row
-                justifyContent="flex-end"
-                paddingHorizontal="$4"
-                paddingBottom="$3"
-              >
+              <Row justifyContent="flex-end" paddingHorizontal="$4" paddingBottom="$3">
                 <Text
                   size="$2"
                   fontWeight="500"
-                  color={
-                    descriptionLength > maxDescLength * 0.9
-                      ? "$error"
-                      : "$textSecondary"
-                  }
+                  color={descriptionLength > maxDescLength * 0.9 ? "$error" : "$textSecondary"}
                 >
                   {descriptionLength}/{maxDescLength}
                 </Text>
@@ -308,19 +281,8 @@ export function ListingStep({
         </Column>
 
         {/* Pricing Tips */}
-        <Column
-          marginTop="$6"
-          backgroundColor="$gray100"
-          borderRadius="$xl"
-          padding="$4"
-          gap="$3"
-        >
-          <Text
-            fontFamily="$heading"
-            size="$5"
-            fontWeight="700"
-            color="$text"
-          >
+        <Column marginTop="$6" backgroundColor="$gray100" borderRadius="$xl" padding="$4" gap="$3">
+          <Text fontFamily="$heading" size="$5" fontWeight="700" color="$text">
             Pricing tips
           </Text>
           <Column gap="$2">
