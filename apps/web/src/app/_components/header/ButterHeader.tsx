@@ -64,7 +64,7 @@ export function ButterHeader() {
       {/* Combined Header - Main + Category Nav */}
       <Column
         width="100%"
-        backgroundColor="$surface"
+        backgroundColor="$background"
         style={{ position: "sticky" } as React.CSSProperties}
         top={0}
         zIndex={999}
@@ -72,7 +72,7 @@ export function ButterHeader() {
       >
         {/* Main Header Row */}
         <Row
-          backgroundColor="$surface"
+          backgroundColor="$background"
           borderBottomWidth={1}
           borderBottomColor="$border"
           paddingHorizontal="$4"
@@ -294,7 +294,7 @@ export function ButterHeader() {
           left={0}
           right={0}
           bottom={0}
-          backgroundColor="$surface"
+          backgroundColor="$background"
           zIndex={45}
           paddingHorizontal="$6"
           paddingVertical="$8"

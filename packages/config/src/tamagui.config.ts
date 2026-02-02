@@ -221,6 +221,7 @@ const brandColors = {
   // Extended gray scale (for app compatibility)
   gray100: "#F5F5F5", // Very light gray
   gray200: "#E5E5E5", // Light gray
+  gray600: "#666666", // Card background in dark mode (lighter than surface for elevation)
   gray700: "#707070", // Medium gray (for neutral badge text)
   gray900: "#1A1A1A", // Very dark gray
 
@@ -587,7 +588,7 @@ const darkTheme = {
   // Surface colors - override for dark mode
   // Elevation hierarchy: background (#323232) < surface (#545454) < card (#666666)
   surface: brandColors.slateSmoke,
-  card: "#666666", // Lighter than surface for proper elevation in dark mode
+  card: brandColors.gray600, // Lighter than surface for proper elevation in dark mode
   cardHover: brandColors.gray700,
 
   // Border colors - override for dark mode

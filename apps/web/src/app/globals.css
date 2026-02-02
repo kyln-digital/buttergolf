@@ -15,6 +15,15 @@ html {
   background: #ffffff;
 }
 
+/* Dark mode support - matches Tamagui dark theme background (Ironstone) */
+@media (prefers-color-scheme: dark) {
+  html,
+  body {
+    background: #323232;
+    color: #ffffff;
+  }
+}
+
 :root {
   /* Light theme - Pure Butter Brand */
   --background: #ffffff;
@@ -29,8 +38,25 @@ html {
   --card: #ffffff;
   /* White for cards */
 
+  /* Text colors for non-Tamagui elements */
+  --text-primary: #323232;
+  /* Ironstone */
+  --text-secondary: #545454;
+  /* Slate Smoke */
+
   /* Urbanist font family */
   --font-urbanist: var(--font-urbanist);
+}
+
+/* Dark mode CSS variables */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #323232;
+    --foreground: #ffffff;
+    --card: #666666;
+    --text-primary: #ffffff;
+    --text-secondary: #ededed;
+  }
 }
 
 body {

@@ -20,7 +20,7 @@ export function BuySellToggle({ activeMode, onModeChange }: Readonly<BuySellTogg
       justifyContent="center"
       paddingVertical="$lg"
       paddingHorizontal="$md"
-      backgroundColor="$surface"
+      backgroundColor="$background"
     >
       <SharedBuySellToggle activeMode={activeMode} onModeChange={onModeChange} variant="desktop" />
     </Row>

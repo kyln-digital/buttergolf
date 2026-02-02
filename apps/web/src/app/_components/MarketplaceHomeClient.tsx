@@ -32,7 +32,7 @@ export default function MarketplaceHomeClient({ products }: Readonly<Marketplace
 
       {/* Buy/Sell Toggle - Immediate page load animation (delay removed to fix cascade) */}
       <AnimatedView delay={0}>
-        <Column paddingTop="$6" paddingBottom="$4" backgroundColor="$surface">
+        <Column paddingTop="$6" paddingBottom="$4" backgroundColor="$background">
           <BuySellToggle activeMode={activeMode} onModeChange={setActiveMode} />
         </Column>
       </AnimatedView>
