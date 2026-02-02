@@ -60,16 +60,17 @@ const StyledTab = styled(Tabs.Tab, {
   // Disable Tamagui's default tab unstyled prop
   unstyled: true,
 
-  // Default inactive state - use semantic tokens for dark mode support
-  backgroundColor: "$surface",
-  borderColor: "$border",
+  // Default inactive state - use cream/white for visibility in both themes
+  // The design spec calls for white/cream inactive state for contrast
+  backgroundColor: "$cream",
+  borderColor: "$lemonHaze",
 
   // Web shadows for inactive
   boxShadow: "0px 1px 5px 0px rgba(0, 0, 0, 0.1)",
 
   hoverStyle: {
     opacity: 0.9,
-    backgroundColor: "$backgroundHover",
+    backgroundColor: "$vanillaCreamHover",
   },
 
   pressStyle: {
@@ -101,11 +102,11 @@ const StyledTab = styled(Tabs.Tab, {
         },
       },
       false: {
-        backgroundColor: "$surface",
-        borderColor: "$border",
+        backgroundColor: "$cream",
+        borderColor: "$lemonHaze",
         boxShadow: "0px 1px 5px 0px rgba(0, 0, 0, 0.1)",
         hoverStyle: {
-          backgroundColor: "$backgroundHover",
+          backgroundColor: "$vanillaCreamHover",
           opacity: 0.95,
         },
       },
@@ -176,7 +177,7 @@ export function BuySellToggle({
           <SizableText
             size="$5"
             fontWeight={activeMode === "buying" ? "600" : "500"}
-            color={activeMode === "buying" ? "$textInverse" : "$text"}
+            color={activeMode === "buying" ? "$textInverse" : "$ironstone"}
           >
             Buying
           </SizableText>
@@ -191,7 +192,7 @@ export function BuySellToggle({
           <SizableText
             size="$5"
             fontWeight={activeMode === "selling" ? "600" : "500"}
-            color={activeMode === "selling" ? "$textInverse" : "$text"}
+            color={activeMode === "selling" ? "$textInverse" : "$ironstone"}
           >
             Selling
           </SizableText>
