@@ -11,6 +11,10 @@
   box-sizing: border-box;
 }
 
+html {
+  background: #ffffff;
+}
+
 :root {
   /* Light theme - Pure Butter Brand */
   --background: #ffffff;
