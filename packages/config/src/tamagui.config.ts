@@ -584,10 +584,11 @@ const darkTheme = {
   textMuted: brandColors.slateSmokeHover,
   textInverse: brandColors.ironstone,
 
-  // Surface colors - override for dark mode (Slate Smoke for elevated surfaces)
+  // Surface colors - override for dark mode
+  // Elevation hierarchy: background (#323232) < surface (#545454) < card (#666666)
   surface: brandColors.slateSmoke,
-  card: brandColors.slateSmoke,
-  cardHover: brandColors.slateSmokeHover,
+  card: "#666666", // Lighter than surface for proper elevation in dark mode
+  cardHover: brandColors.gray700,
 
   // Border colors - override for dark mode
   border: brandColors.slateSmoke,
