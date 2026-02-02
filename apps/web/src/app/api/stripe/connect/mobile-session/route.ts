@@ -62,8 +62,11 @@ export async function POST(request: Request) {
         });
         console.log("[Mobile Session] Synced user to database:", userData.userId);
       } catch (dbError) {
-        // Handle unique constraint violation (P2002) - another request may have created
-        // the user with a different clerkId but same email. This is recoverable.
+        // Handle unique constraint violation (P2002). This can happen in two scenarios:
+        // 1. Race condition: another concurrent request created the user first (benign)
+        // 2. Email conflict: email already exists for a different clerkId (data integrity issue)
+        // We continue in either case - the mobile session token will still work,
+        // but Stripe prefilling may be incomplete in case 2.
         const isUniqueConstraintError =
           dbError instanceof Error &&
           "code" in dbError &&
@@ -71,7 +74,7 @@ export async function POST(request: Request) {
 
         if (isUniqueConstraintError) {
           console.warn(
-            "[Mobile Session] Unique constraint violation during user sync, likely email conflict:",
+            "[Mobile Session] Unique constraint violation during user sync (race condition or email conflict):",
             userData.userId
           );
           // Continue - the token will still work, Stripe prefilling may just be incomplete
