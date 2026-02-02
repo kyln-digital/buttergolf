@@ -23,6 +23,7 @@ import {
   type Category,
   Button,
 } from "@buttergolf/ui";
+import { useThemeName } from "tamagui";
 import { CATEGORIES } from "@buttergolf/db";
 import { MenuIcon } from "./icons";
 
@@ -36,6 +37,8 @@ export function ButterHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const themeName = useThemeName();
+  const isDark = themeName?.startsWith("dark");
 
   // Determine active category from pathname
   const getActiveCategory = (): string => {
@@ -61,6 +64,7 @@ export function ButterHeader() {
       {/* Combined Header - Main + Category Nav */}
       <Column
         width="100%"
+        backgroundColor="transparent"
         style={{ position: "sticky" } as React.CSSProperties}
         top={0}
         zIndex={999}
@@ -68,7 +72,7 @@ export function ButterHeader() {
       >
         {/* Main Header Row */}
         <Row
-          backgroundColor="$surface"
+          backgroundColor="$background"
           borderBottomWidth={1}
           borderBottomColor="$border"
           paddingHorizontal="$4"
@@ -195,7 +199,7 @@ export function ButterHeader() {
                     Log-in
                   </Button>
                   <Button
-                    butterVariant="tertiary"
+                    butterVariant="secondary"
                     size="$4"
                     borderRadius="$full"
                     onPress={() => router.push("/sign-up")}
@@ -259,7 +263,7 @@ export function ButterHeader() {
           }}
         >
           <GlassmorphismCard
-            intensity="medium"
+            intensity={isDark ? "dark" : "medium"}
             blur="medium"
             maxWidth={1280}
             width="100%"
@@ -290,7 +294,7 @@ export function ButterHeader() {
           left={0}
           right={0}
           bottom={0}
-          backgroundColor="$surface"
+          backgroundColor="$background"
           zIndex={45}
           paddingHorizontal="$6"
           paddingVertical="$8"
@@ -415,7 +419,7 @@ export function ButterHeader() {
                   Log-in
                 </Button>
                 <Button
-                  butterVariant="tertiary"
+                  butterVariant="secondary"
                   size="$5"
                   width="100%"
                   borderRadius="$full"

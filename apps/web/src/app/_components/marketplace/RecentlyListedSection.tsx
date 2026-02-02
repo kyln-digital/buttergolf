@@ -14,7 +14,7 @@ export function RecentlyListedSectionClient({ products }: RecentlyListedSectionC
   const router = useRouter();
 
   return (
-    <Column backgroundColor="$surface" paddingVertical="$3xl" width="100%">
+    <Column backgroundColor="$background" paddingVertical="$3xl" width="100%">
       <Column
         maxWidth={1440}
         marginHorizontal="auto"
