@@ -70,10 +70,7 @@ export async function GET(request: NextRequest) {
     const total = await prisma.product.count({ where: whereClause });
 
     // Get unique categories from results
-    const categories = [...new Set(products.map((p) => p.category.name))].slice(
-      0,
-      5,
-    );
+    const categories = [...new Set(products.map((p) => p.category.name))].slice(0, 5);
 
     // Map to ProductCardData format
     const productCards: ProductCardData[] = products
@@ -101,9 +98,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Search API error:", error);
-    return NextResponse.json(
-      { error: "Failed to search products" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to search products" }, { status: 500 });
   }
 }

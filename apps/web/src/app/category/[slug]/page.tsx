@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
 
 async function getCategoryListings(
   categorySlug: string,
-  searchParams: Awaited<Props["searchParams"]>,
+  searchParams: Awaited<Props["searchParams"]>
 ) {
   // Validate category slug
   const category = getCategoryBySlug(categorySlug);
@@ -54,12 +54,8 @@ async function getCategoryListings(
   }
 
   // Price range
-  const minPrice = searchParams.minPrice
-    ? parseFloat(searchParams.minPrice)
-    : undefined;
-  const maxPrice = searchParams.maxPrice
-    ? parseFloat(searchParams.maxPrice)
-    : undefined;
+  const minPrice = searchParams.minPrice ? parseFloat(searchParams.minPrice) : undefined;
+  const maxPrice = searchParams.maxPrice ? parseFloat(searchParams.maxPrice) : undefined;
   if (minPrice || maxPrice) {
     where.price = {
       ...(minPrice && { gte: minPrice }),
@@ -196,10 +192,7 @@ async function getCategoryListings(
 export default async function CategoryPage({ params, searchParams }: Props) {
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
-  const data = await getCategoryListings(
-    resolvedParams.slug,
-    resolvedSearchParams,
-  );
+  const data = await getCategoryListings(resolvedParams.slug, resolvedSearchParams);
 
   return (
     <Suspense

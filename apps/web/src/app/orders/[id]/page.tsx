@@ -5,11 +5,7 @@ import { OrderDetail } from "./OrderDetail";
 
 export const dynamic = "force-dynamic";
 
-export default async function OrderDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { userId: clerkId } = await auth();
 
   if (!clerkId) {
@@ -75,8 +71,7 @@ export default async function OrderDetailPage({
   // Add role information
   const orderWithRole = {
     ...order,
-    userRole:
-      order.buyerId === user.id ? ("buyer" as const) : ("seller" as const),
+    userRole: order.buyerId === user.id ? ("buyer" as const) : ("seller" as const),
     currentUserId: user.id,
     product: {
       ...order.product,

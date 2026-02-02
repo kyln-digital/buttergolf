@@ -1,12 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import ReactCrop, {
-  Crop,
-  PixelCrop,
-  centerCrop,
-  makeAspectCrop,
-} from "react-image-crop";
+import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { Column, Row, Button, Text, Heading, Spinner, View } from "@buttergolf/ui";
 
@@ -20,10 +15,7 @@ interface ImageCropModalProps {
   open: boolean;
 }
 
-async function getCroppedImg(
-  image: HTMLImageElement,
-  crop: PixelCrop
-): Promise<Blob> {
+async function getCroppedImg(image: HTMLImageElement, crop: PixelCrop): Promise<Blob> {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
 
@@ -63,14 +55,14 @@ async function getCroppedImg(
   // Draw the cropped portion of the image onto the canvas
   ctx.drawImage(
     image,
-    sourceX,        // Source X (where to start cutting from original)
-    sourceY,        // Source Y
-    sourceWidth,    // Source width (how much to cut)
-    sourceHeight,   // Source height
-    0,              // Destination X (always 0 - top-left of canvas)
-    0,              // Destination Y
-    canvasWidth,    // Destination width (fill entire canvas)
-    canvasHeight    // Destination height
+    sourceX, // Source X (where to start cutting from original)
+    sourceY, // Source Y
+    sourceWidth, // Source width (how much to cut)
+    sourceHeight, // Source height
+    0, // Destination X (always 0 - top-left of canvas)
+    0, // Destination Y
+    canvasWidth, // Destination width (fill entire canvas)
+    canvasHeight // Destination height
   );
 
   // Convert canvas to blob
@@ -108,40 +100,37 @@ export function ImageCropModal({
   const imgRef = useRef<HTMLImageElement>(null);
 
   // Calculate a centered 4:3 aspect ratio crop when the image loads
-  const onImageLoad = useCallback(
-    (e: React.SyntheticEvent<HTMLImageElement>) => {
-      const { naturalWidth, naturalHeight, width, height } = e.currentTarget;
+  const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { naturalWidth, naturalHeight, width, height } = e.currentTarget;
 
-      // Create a 4:3 aspect ratio crop that takes up 90% of the available space
-      const initialCrop = centerCrop(
-        makeAspectCrop(
-          {
-            unit: "%",
-            width: 90,
-          },
-          CROP_ASPECT_RATIO, // 4:3 aspect ratio
-          naturalWidth,
-          naturalHeight
-        ),
+    // Create a 4:3 aspect ratio crop that takes up 90% of the available space
+    const initialCrop = centerCrop(
+      makeAspectCrop(
+        {
+          unit: "%",
+          width: 90,
+        },
+        CROP_ASPECT_RATIO, // 4:3 aspect ratio
         naturalWidth,
         naturalHeight
-      );
+      ),
+      naturalWidth,
+      naturalHeight
+    );
 
-      setCrop(initialCrop);
+    setCrop(initialCrop);
 
-      // Also calculate and set the pixel crop so the Apply button is enabled immediately
-      // Convert percentage crop to pixel crop based on displayed dimensions
-      const pixelCrop: PixelCrop = {
-        unit: "px",
-        x: (initialCrop.x / 100) * width,
-        y: (initialCrop.y / 100) * height,
-        width: (initialCrop.width / 100) * width,
-        height: (initialCrop.height / 100) * height,
-      };
-      setCompletedCrop(pixelCrop);
-    },
-    []
-  );
+    // Also calculate and set the pixel crop so the Apply button is enabled immediately
+    // Convert percentage crop to pixel crop based on displayed dimensions
+    const pixelCrop: PixelCrop = {
+      unit: "px",
+      x: (initialCrop.x / 100) * width,
+      y: (initialCrop.y / 100) * height,
+      width: (initialCrop.width / 100) * width,
+      height: (initialCrop.height / 100) * height,
+    };
+    setCompletedCrop(pixelCrop);
+  }, []);
 
   // Load file into memory as blob URL
   useEffect(() => {
@@ -231,7 +220,9 @@ export function ImageCropModal({
               aria-label="Close"
               paddingHorizontal="$2"
             >
-              <Text size="$8" color="$textSecondary">×</Text>
+              <Text size="$8" color="$textSecondary">
+                ×
+              </Text>
             </Button>
           </Row>
         </Column>
@@ -260,8 +251,8 @@ export function ImageCropModal({
                 ref={imgRef}
                 src={imageSrc}
                 alt="Crop preview"
-                style={{ 
-                  maxWidth: "100%", 
+                style={{
+                  maxWidth: "100%",
                   maxHeight: "50vh",
                   display: "block",
                 }}
@@ -307,7 +298,9 @@ export function ImageCropModal({
             {isProcessing ? (
               <Row gap="$sm" alignItems="center">
                 <Spinner size="sm" color="$textInverse" />
-                <Text color="$textInverse" size="$4">Cropping...</Text>
+                <Text color="$textInverse" size="$4">
+                  Cropping...
+                </Text>
               </Row>
             ) : (
               "Apply"

@@ -1,15 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import {
-  Column,
-  Row,
-  ScrollView,
-  Text,
-  Button,
-  Heading,
-  Spinner,
-} from "@buttergolf/ui";
+import { Column, Row, ScrollView, Text, Button, Heading, Spinner } from "@buttergolf/ui";
 import { Button as TamaguiButton, View } from "tamagui";
 import { ArrowLeft } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -61,7 +53,7 @@ export function SignInScreen({
         });
       }
     },
-    [fieldErrors],
+    [fieldErrors]
   );
 
   const handlePasswordChange = useCallback(
@@ -76,7 +68,7 @@ export function SignInScreen({
         });
       }
     },
-    [fieldErrors],
+    [fieldErrors]
   );
 
   const handleSubmit = useCallback(async () => {
@@ -106,10 +98,7 @@ export function SignInScreen({
 
       // Check status first - createdSessionId only exists when status is 'complete'
       if (signInAttempt.status === "complete") {
-        console.log(
-          "[SignIn] Session created:",
-          signInAttempt.createdSessionId,
-        );
+        console.log("[SignIn] Session created:", signInAttempt.createdSessionId);
         await setActive({ session: signInAttempt.createdSessionId });
         onSuccess?.();
       } else if (signInAttempt.status === "needs_second_factor") {
@@ -119,16 +108,14 @@ export function SignInScreen({
           onNavigateToTwoFactor();
         } else {
           setError(
-            "Two-factor authentication is required but not configured. Please contact support.",
+            "Two-factor authentication is required but not configured. Please contact support."
           );
         }
       } else if (signInAttempt.status === "needs_first_factor") {
         // Need to provide first factor (shouldn't happen with password flow)
         setError("Authentication requires additional verification.");
       } else if (signInAttempt.status === "needs_new_password") {
-        setError(
-          "You need to set a new password. Please use the forgot password flow.",
-        );
+        setError("You need to set a new password. Please use the forgot password flow.");
       } else {
         console.log("[SignIn] Unhandled status:", signInAttempt.status);
         setError(`Sign-in incomplete. Status: ${signInAttempt.status}`);
@@ -143,10 +130,7 @@ export function SignInScreen({
       } else if (errorMessage.includes("password_incorrect")) {
         setError(mapClerkErrorToMessage("password_incorrect"));
       } else {
-        setError(
-          errorMessage ||
-            "Sign-in failed. Please check your credentials and try again.",
-        );
+        setError(errorMessage || "Sign-in failed. Please check your credentials and try again.");
       }
     } finally {
       setIsSubmitting(false);
@@ -188,9 +172,7 @@ export function SignInScreen({
           </Column>
 
           {/* Error Display */}
-          {error && (
-            <AuthErrorDisplay error={error} onDismiss={() => setError(null)} />
-          )}
+          {error && <AuthErrorDisplay error={error} onDismiss={() => setError(null)} />}
 
           {/* Email/Password Form */}
           <Column gap="$4">
@@ -245,11 +227,7 @@ export function SignInScreen({
               disabled={isSubmitting || !isLoaded}
               opacity={isSubmitting ? 0.7 : 1}
             >
-              <Text
-                color="$textInverse"
-                fontWeight="600"
-                opacity={isSubmitting ? 0 : 1}
-              >
+              <Text color="$textInverse" fontWeight="600" opacity={isSubmitting ? 0 : 1}>
                 Sign In
               </Text>
             </Button>
@@ -270,12 +248,7 @@ export function SignInScreen({
           </View>
 
           {/* Sign Up Link */}
-          <Row
-            alignItems="center"
-            justifyContent="center"
-            gap="$2"
-            marginTop="$4"
-          >
+          <Row alignItems="center" justifyContent="center" gap="$2" marginTop="$4">
             <Text size="$4" color="$textSecondary">
               {"Don't have an account?"}
             </Text>

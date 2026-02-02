@@ -7,21 +7,21 @@ import type { UserButtonWithMenuProps } from "./UserButtonWithMenu";
 
 /**
  * Clerk auth components for the header.
- * 
+ *
  * Note: We previously tried lazy-loading SignedIn/SignedOut with ssr: false,
  * but this caused buttons to disappear because both components rendered null
  * during the dynamic import loading phase. Since ClerkProvider is already
  * loaded in the app layout, SignedIn/SignedOut are lightweight wrappers
  * that just check auth state - the heavy Clerk JS is loaded by ClerkProvider.
- * 
+ *
  * UserButton is still lazy-loaded since it's a more complex component.
  */
 
 // Placeholder for auth buttons while Clerk loads
 function AuthButtonsPlaceholder() {
   return (
-    <div 
-      style={{ 
+    <div
+      style={{
         display: "flex",
         gap: "12px",
         alignItems: "center",
@@ -29,22 +29,22 @@ function AuthButtonsPlaceholder() {
       aria-label="Loading authentication"
     >
       {/* Login button placeholder */}
-      <div 
-        style={{ 
-          width: 80, 
-          height: 40, 
-          borderRadius: 9999, 
+      <div
+        style={{
+          width: 80,
+          height: 40,
+          borderRadius: 9999,
           backgroundColor: "rgba(244, 83, 20, 0.3)",
-        }} 
+        }}
       />
       {/* Sign-up button placeholder */}
-      <div 
-        style={{ 
-          width: 90, 
-          height: 40, 
-          borderRadius: 9999, 
+      <div
+        style={{
+          width: 90,
+          height: 40,
+          borderRadius: 9999,
           backgroundColor: "rgba(237, 237, 237, 0.5)",
-        }} 
+        }}
       />
     </div>
   );
@@ -53,13 +53,13 @@ function AuthButtonsPlaceholder() {
 // Placeholder for UserButton while loading
 function UserButtonPlaceholder() {
   return (
-    <div 
-      style={{ 
-        width: 40, 
-        height: 40, 
-        borderRadius: "50%", 
+    <div
+      style={{
+        width: 40,
+        height: 40,
+        borderRadius: "50%",
         backgroundColor: "#e5e5e5",
-      }} 
+      }}
       aria-label="Loading user menu"
     />
   );
@@ -72,9 +72,9 @@ export { SignedIn as LazySignedIn, SignedOut as LazySignedOut };
 // We need to import the full component since UserButton uses compound components
 const LazyUserButtonInternal = dynamic<UserButtonWithMenuProps>(
   () => import("./UserButtonWithMenu"),
-  { 
+  {
     ssr: false, // UserButton requires client-side rendering
-    loading: () => <UserButtonPlaceholder />
+    loading: () => <UserButtonPlaceholder />,
   }
 );
 
@@ -89,7 +89,7 @@ export function LazyUserButton({ size = "default" }: UserButtonWithMenuProps) {
 /**
  * Wrapper component that shows auth buttons with a loading placeholder.
  * Uses useEffect to detect client-side mount and avoid hydration mismatches.
- * 
+ *
  * This solves the issue where Clerk's auth state is unknown during SSR,
  * so we show a placeholder on the server and swap to real buttons on the client.
  */
@@ -108,6 +108,6 @@ export function AuthButtonsSection({ children, placeholder }: AuthButtonsSection
   if (!isMounted) {
     return <>{placeholder || <AuthButtonsPlaceholder />}</>;
   }
-  
+
   return <>{children}</>;
 }

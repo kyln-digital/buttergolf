@@ -71,7 +71,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           apiKey: !process.env.CLOUDINARY_API_KEY,
           apiSecret: !process.env.CLOUDINARY_API_SECRET,
         },
-      },
+      }
     );
 
     return NextResponse.json(
@@ -81,7 +81,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         details:
           "Required: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET",
       },
-      { status: 500, headers: corsHeaders },
+      { status: 500, headers: corsHeaders }
     );
   }
 
@@ -90,10 +90,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     userId = await getUserIdFromRequest(request);
 
     if (!userId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401, headers: corsHeaders },
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
     }
   } catch (authError) {
     // Authentication system failure (not just "unauthorized")
@@ -107,7 +104,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         error: "Authentication error",
         message: "Unable to verify your identity. Please try again later.",
       },
-      { status: 500, headers: corsHeaders },
+      { status: 500, headers: corsHeaders }
     );
   }
 
@@ -119,24 +116,18 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (!filename) {
     return NextResponse.json(
       { error: "Filename is required" },
-      { status: 400, headers: corsHeaders },
+      { status: 400, headers: corsHeaders }
     );
   }
 
   // Validate file type (images only)
-  const allowedTypes = [
-    "image/jpeg",
-    "image/jpg",
-    "image/png",
-    "image/webp",
-    "image/gif",
-  ];
+  const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
   const contentType = request.headers.get("content-type");
 
   if (!contentType || !allowedTypes.includes(contentType)) {
     return NextResponse.json(
       { error: "Invalid file type. Only images are allowed." },
-      { status: 400, headers: corsHeaders },
+      { status: 400, headers: corsHeaders }
     );
   }
 
@@ -163,7 +154,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           error: "Failed to process image",
           message: "Unable to read image data. Please try again.",
         },
-        { status: 400, headers: corsHeaders },
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -238,11 +229,10 @@ export async function POST(request: Request): Promise<NextResponse> {
         height: result.height,
         format: result.format,
       },
-      { headers: corsHeaders },
+      { headers: corsHeaders }
     );
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Upload failed";
+    const errorMessage = error instanceof Error ? error.message : "Upload failed";
 
     // If background removal fails, provide helpful error
     if (errorMessage.includes("background_removal")) {
@@ -259,7 +249,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           message:
             "The image may not be suitable for automatic background removal. Please try a different image.",
         },
-        { status: 500, headers: corsHeaders },
+        { status: 500, headers: corsHeaders }
       );
     }
 
@@ -280,10 +270,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       return NextResponse.json(
         {
           error: "Upload service error",
-          message:
-            "The image upload service is experiencing issues. Please try again later.",
+          message: "The image upload service is experiencing issues. Please try again later.",
         },
-        { status: 503, headers: corsHeaders },
+        { status: 503, headers: corsHeaders }
       );
     }
 
@@ -301,7 +290,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         error: "Failed to upload image",
         message: "Unable to upload your image. Please try again.",
       },
-      { status: 500, headers: corsHeaders },
+      { status: 500, headers: corsHeaders }
     );
   }
 }

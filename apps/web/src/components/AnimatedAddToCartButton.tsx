@@ -64,9 +64,7 @@ export function AnimatedAddToCartButton({
       await onAddToCart();
 
       // Wait for all animations to complete
-      await Promise.all(
-        button.getAnimations({ subtree: true }).map((a) => a.finished),
-      );
+      await Promise.all(button.getAnimations({ subtree: true }).map((a) => a.finished));
 
       // Reset after brief delay
       setTimeout(() => {
@@ -93,11 +91,7 @@ export function AnimatedAddToCartButton({
     >
       <span className={`${styles.flex} ${styles.addToCartText}`}>
         <span className={`${styles.svgWrapper} ${styles.addToCartIcon}`}>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="none"
-          >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
             <path
               stroke="currentColor"
               strokeLinecap="round"
@@ -143,10 +137,7 @@ export function AnimatedAddToCartButton({
             </g>
             <g className={`${styles.burst} burst`}>
               {BURST_SEGMENTS.map((segment) => (
-                <g
-                  key={segment.id}
-                  style={{ "--index": segment.order } as CSSProperties}
-                >
+                <g key={segment.id} style={{ "--index": segment.order } as CSSProperties}>
                   <path
                     className={styles.wiggle}
                     pathLength={1}

@@ -103,9 +103,7 @@ export function ImageUpload({
           borderColor: "$primary",
           backgroundColor: "$primaryLight",
         }}
-        onPress={
-          currentImages.length < maxImages ? handleButtonClick : undefined
-        }
+        onPress={currentImages.length < maxImages ? handleButtonClick : undefined}
         {...{
           onDragEnter: handleDrag,
           onDragLeave: handleDrag,
@@ -133,22 +131,10 @@ export function ImageUpload({
               <Text fontSize={32}>+</Text>
             </Column>
             <Column gap="$xs" alignItems="center">
-              <Text
-                size="$6"
-                weight="semibold"
-                textAlign="center"
-                color="$text"
-              >
-                {currentImages.length === 0
-                  ? "Upload photos"
-                  : "Add more photos"}
+              <Text size="$6" weight="semibold" textAlign="center" color="$text">
+                {currentImages.length === 0 ? "Upload photos" : "Add more photos"}
               </Text>
-              <Text
-                size="$3"
-                color="$textSecondary"
-                textAlign="center"
-                lineHeight={20}
-              >
+              <Text size="$3" color="$textSecondary" textAlign="center" lineHeight={20}>
                 or drag and drop
               </Text>
             </Column>
@@ -200,12 +186,7 @@ export function ImageUpload({
                     backgroundColor="rgba(0, 0, 0, 0.7)"
                     padding="$xs"
                   >
-                    <Text
-                      size="$2"
-                      color="$textInverse"
-                      textAlign="center"
-                      fontWeight="600"
-                    >
+                    <Text size="$2" color="$textInverse" textAlign="center" fontWeight="600">
                       Cover photo
                     </Text>
                   </Column>
@@ -232,11 +213,9 @@ export function ImageUpload({
 
               // Convert blob to File for upload
               const isFirstImage = currentImages.length === 0;
-              const croppedFile = new File(
-                [croppedBlob],
-                fileToCrop.name,
-                { type: croppedBlob.type }
-              );
+              const croppedFile = new File([croppedBlob], fileToCrop.name, {
+                type: croppedBlob.type,
+              });
 
               console.log("📁 Created File object:", {
                 name: croppedFile.name,

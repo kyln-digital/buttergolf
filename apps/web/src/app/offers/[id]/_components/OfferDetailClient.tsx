@@ -48,10 +48,7 @@ interface OfferDetailClientProps {
   currentUserId: string;
 }
 
-export function OfferDetailClient({
-  offer: initialOffer,
-  currentUserId,
-}: OfferDetailClientProps) {
+export function OfferDetailClient({ offer: initialOffer, currentUserId }: OfferDetailClientProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allOffers, setAllOffers] = useState<OfferWithRelations[]>([]);
 
@@ -84,8 +81,7 @@ export function OfferDetailClient({
   const isUserSeller = offer.sellerId === currentUserId;
 
   // Offer status checks
-  const isOfferActive =
-    offer.status === "PENDING" || offer.status === "COUNTERED";
+  const isOfferActive = offer.status === "PENDING" || offer.status === "COUNTERED";
 
   // Get latest amount (from most recent counter-offer or initial offer)
   const latestAmount =

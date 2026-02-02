@@ -10,11 +10,7 @@ import {
 } from "@/lib/email";
 
 // ShipEngine webhook events we care about
-type ShipEngineEvent =
-  | "track"
-  | "shipment.created"
-  | "label.created"
-  | "label.voided";
+type ShipEngineEvent = "track" | "shipment.created" | "label.created" | "label.voided";
 
 interface ShipEngineTrackingWebhookPayload {
   resource_url: string;
@@ -87,20 +83,13 @@ function mapToOrderStatus(shipmentStatus: ShipmentStatus): OrderStatus {
 }
 
 // Verify ShipEngine webhook signature
-function verifyWebhookSignature(
-  payload: string,
-  signature: string,
-  secret: string,
-): boolean {
+function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
   try {
     const hmac = crypto.createHmac("sha256", secret);
     hmac.update(payload);
     const computedSignature = hmac.digest("base64");
 
-    return crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(computedSignature),
-    );
+    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(computedSignature));
   } catch (error) {
     console.error("Error verifying ShipEngine webhook signature:", error);
     return false;
@@ -122,10 +111,7 @@ export async function POST(req: Request) {
       const isValid = verifyWebhookSignature(body, signature, WEBHOOK_SECRET);
       if (!isValid) {
         console.error("ShipEngine webhook signature verification failed");
-        return NextResponse.json(
-          { error: "Invalid signature" },
-          { status: 401 },
-        );
+        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
       }
     } else if (WEBHOOK_SECRET && !signature) {
       console.error("Missing ShipEngine webhook signature");
@@ -147,10 +133,7 @@ export async function POST(req: Request) {
 
       if (!trackingCode) {
         console.error("Missing tracking code in webhook payload");
-        return NextResponse.json(
-          { error: "Missing tracking code" },
-          { status: 400 },
-        );
+        return NextResponse.json({ error: "Missing tracking code" }, { status: 400 });
       }
 
       // Find order by tracking code
@@ -182,13 +165,16 @@ export async function POST(req: Request) {
 
       // Update delivered timestamp if delivered
       if (shipmentStatus === "DELIVERED") {
-        updateData.deliveredAt = trackingData.actual_delivery_date 
+        updateData.deliveredAt = trackingData.actual_delivery_date
           ? new Date(trackingData.actual_delivery_date)
           : new Date();
       }
 
       // Update shipped timestamp if in transit for the first time
-      if ((shipmentStatus === "IN_TRANSIT" || shipmentStatus === "PRE_TRANSIT") && !order.shippedAt) {
+      if (
+        (shipmentStatus === "IN_TRANSIT" || shipmentStatus === "PRE_TRANSIT") &&
+        !order.shippedAt
+      ) {
         updateData.shippedAt = trackingData.ship_date
           ? new Date(trackingData.ship_date)
           : new Date();
@@ -221,7 +207,8 @@ export async function POST(req: Request) {
         if (!buyer || !product) {
           console.warn("Could not send email: missing buyer or product data");
         } else {
-          const buyerName = `${buyer.firstName || ""} ${buyer.lastName || ""}`.trim() || buyer.email;
+          const buyerName =
+            `${buyer.firstName || ""} ${buyer.lastName || ""}`.trim() || buyer.email;
 
           // PRE_TRANSIT: Label generated (only if this is first time)
           if (shipmentStatus === "PRE_TRANSIT" && !order.labelGeneratedAt) {
@@ -287,7 +274,8 @@ export async function POST(req: Request) {
               where: { id: order.sellerId },
             });
             if (seller) {
-              const sellerName = `${seller.firstName || ""} ${seller.lastName || ""}`.trim() || seller.email;
+              const sellerName =
+                `${seller.firstName || ""} ${seller.lastName || ""}`.trim() || seller.email;
               await sendDeliveredEmail({
                 email: seller.email,
                 name: sellerName,
@@ -314,9 +302,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error("Error processing ShipEngine webhook:", error);
-    return NextResponse.json(
-      { error: "Webhook processing failed" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
   }
 }

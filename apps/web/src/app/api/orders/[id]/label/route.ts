@@ -8,10 +8,7 @@ import { getUserIdFromRequest } from "@/lib/auth";
  * Generate a shipping label for an order
  * Only the seller can generate labels for their orders
  */
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Support both web cookies and mobile Bearer tokens
     const clerkId = await getUserIdFromRequest(req);
@@ -89,10 +86,7 @@ export async function POST(
  * GET /api/orders/[id]/label
  * Get label information for an order
  */
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Support both web cookies and mobile Bearer tokens
     const clerkId = await getUserIdFromRequest(req);
@@ -154,9 +148,6 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error fetching label info:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch label information" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch label information" }, { status: 500 });
   }
 }

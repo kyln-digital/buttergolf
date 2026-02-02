@@ -10,22 +10,12 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
-import {
-  Column,
-  Row,
-  Text,
-  Button,
-  Spinner,
-  Card,
-  Heading,
-} from "@buttergolf/ui";
+import { Column, Row, Text, Button, Spinner, Card, Heading } from "@buttergolf/ui";
 import { calculateBuyerProtectionFee, formatPrice } from "@/lib/pricing";
 import { Info } from "@tamagui/lucide-icons";
 
 // Initialize Stripe outside component to avoid re-creating on every render
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
-);
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 // Shipping options
 const SHIPPING_OPTIONS = [
@@ -34,7 +24,7 @@ const SHIPPING_OPTIONS = [
   { id: "nextDay", name: "DPD Next Day", price: 899, days: "Next business day" },
 ] as const;
 
-type ShippingOptionId = typeof SHIPPING_OPTIONS[number]["id"];
+type ShippingOptionId = (typeof SHIPPING_OPTIONS)[number]["id"];
 
 interface StripePaymentFormProps {
   productId: string;
@@ -46,13 +36,13 @@ interface StripePaymentFormProps {
 
 /**
  * StripePaymentForm component
- * 
+ *
  * A complete checkout form using Stripe PaymentElement with:
  * - Shipping option selection (shown first)
  * - LinkAuthenticationElement for email (enables Stripe Link)
  * - AddressElement for shipping address
  * - PaymentElement for payment details
- * 
+ *
  * This is designed to work inside a Sheet/Modal context (no iframes like EmbeddedCheckout)
  */
 export function StripePaymentForm({
@@ -65,7 +55,7 @@ export function StripePaymentForm({
   // Phase 1: Shipping selection (before creating payment intent)
   const [shippingOption, setShippingOption] = useState<ShippingOptionId>("standard");
   const [isCreatingIntent, setIsCreatingIntent] = useState(false);
-  
+
   // Phase 2: Payment form (after payment intent created)
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
@@ -202,7 +192,9 @@ export function StripePaymentForm({
           <Row gap="$sm" alignItems="center">
             <Text size="$4">🔒</Text>
             <Column gap="$xs" flex={1}>
-              <Text size="$3" color="$info" fontWeight="600">Payment held securely</Text>
+              <Text size="$3" color="$info" fontWeight="600">
+                Payment held securely
+              </Text>
               <Text size="$2" color="$textSecondary">
                 Your money is protected until you confirm you&apos;ve received your item.
               </Text>
@@ -296,7 +288,7 @@ export function StripePaymentForm({
 // Inner form component that has access to Stripe hooks
 interface CheckoutFormProps {
   productPrice: number;
-  shippingOption: typeof SHIPPING_OPTIONS[number];
+  shippingOption: (typeof SHIPPING_OPTIONS)[number];
   paymentIntentId: string;
   onSuccess: (paymentIntentId: string) => void;
   onError: (error: string) => void;
@@ -315,7 +307,7 @@ function CheckoutForm({
 }: CheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
-  
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [email, setEmail] = useState("");
   const [isEmailComplete, setIsEmailComplete] = useState(false);
@@ -324,7 +316,13 @@ function CheckoutForm({
 
   const buyerProtectionFee = calculateBuyerProtectionFee(productPrice);
   const totalPrice = productPrice + shippingOption.price / 100 + buyerProtectionFee;
-  const canSubmit = stripe && elements && isEmailComplete && isAddressComplete && isPaymentComplete && !isProcessing;
+  const canSubmit =
+    stripe &&
+    elements &&
+    isEmailComplete &&
+    isAddressComplete &&
+    isPaymentComplete &&
+    !isProcessing;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -384,13 +382,7 @@ function CheckoutForm({
     <form onSubmit={handleSubmit}>
       <Column gap="$lg" padding="$md">
         {/* Back button */}
-        <Button
-          chromeless
-          onPress={onBack}
-          alignSelf="flex-start"
-          padding={0}
-          marginBottom="$sm"
-        >
+        <Button chromeless onPress={onBack} alignSelf="flex-start" padding={0} marginBottom="$sm">
           <Row gap="$xs" alignItems="center">
             <Text color="$textSecondary">←</Text>
             <Text color="$textSecondary" size="$4">
@@ -473,9 +465,7 @@ function CheckoutForm({
               <Text fontWeight="500">£{productPrice.toFixed(2)}</Text>
             </Row>
             <Row justifyContent="space-between">
-              <Text color="$textSecondary">
-                Shipping ({shippingOption.name})
-              </Text>
+              <Text color="$textSecondary">Shipping ({shippingOption.name})</Text>
               <Text fontWeight="500">£{(shippingOption.price / 100).toFixed(2)}</Text>
             </Row>
             <Row justifyContent="space-between" alignItems="center">

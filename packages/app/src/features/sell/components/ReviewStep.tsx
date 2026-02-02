@@ -3,14 +3,7 @@
 import React from "react";
 import { TouchableOpacity } from "react-native";
 import { Column, Row, Text, View, Image, ScrollView } from "@buttergolf/ui";
-import {
-  Pencil,
-  Camera,
-  Tag,
-  FileText,
-  CheckCircle,
-  AlertCircle,
-} from "@tamagui/lucide-icons";
+import { Pencil, Camera, Tag, FileText, CheckCircle, AlertCircle } from "@tamagui/lucide-icons";
 
 import type { SellFormData, SellStep } from "../types";
 import {
@@ -35,13 +28,7 @@ interface ReviewSectionProps {
   children: React.ReactNode;
 }
 
-function ReviewSection({
-  title,
-  icon,
-  step,
-  onEdit,
-  children,
-}: Readonly<ReviewSectionProps>) {
+function ReviewSection({ title, icon, step, onEdit, children }: Readonly<ReviewSectionProps>) {
   return (
     <Column
       backgroundColor="$pureWhite"
@@ -61,12 +48,7 @@ function ReviewSection({
       >
         <Row alignItems="center" gap="$2">
           {icon}
-          <Text
-            fontFamily="$heading"
-            size="$5"
-            fontWeight="700"
-            color="$text"
-          >
+          <Text fontFamily="$heading" size="$5" fontWeight="700" color="$text">
             {title}
           </Text>
         </Row>
@@ -97,20 +79,15 @@ function ReviewSection({
   );
 }
 
-export function ReviewStep({
-  formData,
-  onEdit,
-  direction,
-}: Readonly<ReviewStepProps>) {
+export function ReviewStep({ formData, onEdit, direction }: Readonly<ReviewStepProps>) {
   // Calculate overall condition from the 3 component ratings
   const avgCondition = calculateAverageCondition(
     formData.gripCondition,
     formData.headCondition,
-    formData.shaftCondition,
+    formData.shaftCondition
   );
   const conditionEnum = mapConditionToEnum(avgCondition);
-  const conditionLabel =
-    CONDITION_OPTIONS.find((c) => c.value === conditionEnum)?.label ?? "Good";
+  const conditionLabel = CONDITION_OPTIONS.find((c) => c.value === conditionEnum)?.label ?? "Good";
 
   const formatPrice = (price: string) => {
     const num = Number.parseFloat(price);
@@ -145,12 +122,7 @@ export function ReviewStep({
         <Column gap="$2" marginBottom="$5">
           <Row alignItems="center" gap="$2">
             <CheckCircle size={28} color="$success" />
-            <Text
-              fontFamily="$heading"
-              size="$10"
-              fontWeight="800"
-              color="$text"
-            >
+            <Text fontFamily="$heading" size="$10" fontWeight="800" color="$text">
               Almost done!
             </Text>
           </Row>
@@ -269,8 +241,7 @@ export function ReviewStep({
                       Shaft Flex
                     </Text>
                     <Text size="$4" fontWeight="600" color="$text">
-                      {FLEX_OPTIONS.find((f) => f.value === formData.flex)
-                        ?.label ?? formData.flex}
+                      {FLEX_OPTIONS.find((f) => f.value === formData.flex)?.label ?? formData.flex}
                     </Text>
                   </Row>
                 </>
@@ -292,8 +263,7 @@ export function ReviewStep({
               )}
 
               {/* Head Cover - only show if relevant category */}
-              {(formData.categorySlug === "woods" ||
-                formData.categorySlug === "putters") && (
+              {(formData.categorySlug === "woods" || formData.categorySlug === "putters") && (
                 <>
                   <View height={1} backgroundColor="$cloudMist" />
                   <Row justifyContent="space-between" alignItems="center">
@@ -301,9 +271,7 @@ export function ReviewStep({
                       Head Cover
                     </Text>
                     <View
-                      backgroundColor={
-                        formData.headCoverIncluded ? "$success" : "$gray100"
-                      }
+                      backgroundColor={formData.headCoverIncluded ? "$success" : "$gray100"}
                       paddingHorizontal="$3"
                       paddingVertical="$1"
                       borderRadius="$full"
@@ -311,11 +279,7 @@ export function ReviewStep({
                       <Text
                         size="$3"
                         fontWeight="600"
-                        color={
-                          formData.headCoverIncluded
-                            ? "$pureWhite"
-                            : "$textSecondary"
-                        }
+                        color={formData.headCoverIncluded ? "$pureWhite" : "$textSecondary"}
                       >
                         {formData.headCoverIncluded ? "Included" : "Not included"}
                       </Text>
@@ -325,7 +289,7 @@ export function ReviewStep({
               )}
 
               <View height={1} backgroundColor="$cloudMist" />
-              
+
               {/* Overall Condition Badge */}
               <Row justifyContent="space-between" alignItems="center">
                 <Text size="$4" fontWeight="400" color="$textSecondary">
@@ -394,12 +358,7 @@ export function ReviewStep({
                 <Text size="$2" fontWeight="500" color="$textSecondary">
                   TITLE
                 </Text>
-                <Text
-                  size="$6"
-                  fontWeight="600"
-                  color="$text"
-                  numberOfLines={2}
-                >
+                <Text size="$6" fontWeight="600" color="$text" numberOfLines={2}>
                   {formData.title || "No title"}
                 </Text>
               </Column>
@@ -409,12 +368,7 @@ export function ReviewStep({
                   <Text size="$2" fontWeight="500" color="$textSecondary">
                     DESCRIPTION
                   </Text>
-                  <Text
-                    size="$4"
-                    fontWeight="400"
-                    color="$text"
-                    numberOfLines={3}
-                  >
+                  <Text size="$4" fontWeight="400" color="$text" numberOfLines={3}>
                     {formData.description}
                   </Text>
                 </Column>
@@ -424,12 +378,7 @@ export function ReviewStep({
                 <Text size="$2" fontWeight="500" color="$textSecondary">
                   PRICE
                 </Text>
-                <Text
-                  fontFamily="$heading"
-                  size="$11"
-                  fontWeight="800"
-                  color="$spicedClementine"
-                >
+                <Text fontFamily="$heading" size="$11" fontWeight="800" color="$spicedClementine">
                   {formatPrice(formData.price)}
                 </Text>
               </Column>
@@ -437,32 +386,17 @@ export function ReviewStep({
           </ReviewSection>
 
           {/* Terms Notice */}
-          <Column
-            backgroundColor="$lemonHaze"
-            borderRadius="$xl"
-            padding="$4"
-            gap="$2"
-          >
+          <Column backgroundColor="$lemonHaze" borderRadius="$xl" padding="$4" gap="$2">
             <Row alignItems="center" gap="$2">
               <AlertCircle size={18} color="$burntOlive" />
-              <Text
-                fontFamily="$heading"
-                size="$4"
-                fontWeight="700"
-                color="$burntOlive"
-              >
+              <Text fontFamily="$heading" size="$4" fontWeight="700" color="$burntOlive">
                 Before you submit
               </Text>
             </Row>
-            <Text
-              size="$3"
-              fontWeight="400"
-              color="$burntOlive"
-              lineHeight={20}
-            >
-              By submitting this listing, you confirm that you have the right to
-              sell this item and that all details are accurate. You agree to our
-              terms of service and community guidelines.
+            <Text size="$3" fontWeight="400" color="$burntOlive" lineHeight={20}>
+              By submitting this listing, you confirm that you have the right to sell this item and
+              that all details are accurate. You agree to our terms of service and community
+              guidelines.
             </Text>
           </Column>
         </Column>

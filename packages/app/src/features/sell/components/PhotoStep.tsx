@@ -59,7 +59,7 @@ export function PhotoStep({
         throw error;
       }
     },
-    [onUploadImage],
+    [onUploadImage]
   );
 
   const pickImage = useCallback(async () => {
@@ -70,21 +70,25 @@ export function PhotoStep({
 
     setUploadError(null);
     const newImages = await onPickImages();
-    
+
     if (newImages.length > 0) {
       setUploading(true);
-      
+
       try {
         // Upload each image, first image in the listing gets background removal.
         // Preserve successful uploads even if some uploads fail.
         const uploadedImages: ImageData[] = [];
         const currentImageCount = images.length;
         let failedUploads = 0;
-        
-        for (let i = 0; i < newImages.length && currentImageCount + uploadedImages.length < MAX_IMAGES; i++) {
+
+        for (
+          let i = 0;
+          i < newImages.length && currentImageCount + uploadedImages.length < MAX_IMAGES;
+          i++
+        ) {
           const image = newImages[i];
           if (!image) continue;
-          
+
           // First image in the entire listing (not just this batch) gets background removal
           const isFirstImage = currentImageCount === 0 && uploadedImages.length === 0;
 
@@ -100,7 +104,7 @@ export function PhotoStep({
             console.error("Failed to upload image", error);
           }
         }
-        
+
         if (uploadedImages.length > 0) {
           onImagesChange([...images, ...uploadedImages]);
         }
@@ -124,15 +128,15 @@ export function PhotoStep({
 
     setUploadError(null);
     const newImage = await onTakePhoto();
-    
+
     if (newImage) {
       setUploading(true);
-      
+
       try {
         // First image gets background removal
         const isFirstImage = images.length === 0;
         const uploaded = await uploadImage(newImage, isFirstImage);
-        
+
         if (uploaded) {
           onImagesChange([...images, uploaded].slice(0, MAX_IMAGES));
         }
@@ -149,7 +153,7 @@ export function PhotoStep({
       const updatedImages = images.filter((_, i) => i !== index);
       onImagesChange(updatedImages);
     },
-    [images, onImagesChange],
+    [images, onImagesChange]
   );
 
   const canAddMore = images.length < MAX_IMAGES;
@@ -176,17 +180,11 @@ export function PhotoStep({
       >
         {/* Header Section */}
         <Column gap="$2" marginBottom="$5">
-          <Text
-            fontFamily="$heading"
-            size="$10"
-            fontWeight="800"
-            color="$text"
-          >
+          <Text fontFamily="$heading" size="$10" fontWeight="800" color="$text">
             Add your photos
           </Text>
           <Text size="$5" fontWeight="400" color="$textSecondary">
-            Great photos help your item sell faster. Add up to {MAX_IMAGES}{" "}
-            photos.
+            Great photos help your item sell faster. Add up to {MAX_IMAGES} photos.
           </Text>
         </Column>
 
@@ -200,12 +198,7 @@ export function PhotoStep({
         >
           <Row alignItems="center" gap="$2">
             <Sparkles size={18} color="$secondary" />
-            <Text
-              fontFamily="$heading"
-              size="$5"
-              fontWeight="700"
-              color="$text"
-            >
+            <Text fontFamily="$heading" size="$5" fontWeight="700" color="$text">
               Tips for great photos
             </Text>
           </Row>
@@ -271,12 +264,7 @@ export function PhotoStep({
                 overflow="hidden"
                 position="relative"
               >
-                <Image
-                  source={{ uri: image.uri }}
-                  width="100%"
-                  height="100%"
-                  objectFit="cover"
-                />
+                <Image source={{ uri: image.uri }} width="100%" height="100%" objectFit="cover" />
                 {/* Cover badge for first image */}
                 {index === 0 && (
                   <View

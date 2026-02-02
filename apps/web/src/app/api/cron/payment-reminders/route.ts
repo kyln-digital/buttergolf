@@ -37,10 +37,7 @@ export async function GET(request: NextRequest) {
 
   if (!cronSecret) {
     console.error("CRON_SECRET not configured - refusing to send reminders");
-    return NextResponse.json(
-      { error: "Server misconfiguration" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
   }
 
   if (authHeader !== `Bearer ${cronSecret}`) {

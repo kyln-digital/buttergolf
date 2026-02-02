@@ -14,9 +14,7 @@ export default function SellerListingsPage() {
     <Column gap="$lg" fullWidth>
       <Column gap="$xs">
         <Heading level={2}>My Listings</Heading>
-        <Text color="$textSecondary">
-          Manage your active and sold listings
-        </Text>
+        <Text color="$textSecondary">Manage your active and sold listings</Text>
       </Column>
 
       <SellerHub />

@@ -6,18 +6,12 @@ import { stripe } from "@/lib/stripe";
  * Get order details by Stripe Checkout Session ID
  * Used by the success page to display order confirmation
  */
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ sessionId: string }> },
-) {
+export async function GET(req: Request, { params }: { params: Promise<{ sessionId: string }> }) {
   try {
     const { sessionId } = await params;
 
     if (!sessionId) {
-      return NextResponse.json(
-        { error: "Session ID is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Session ID is required" }, { status: 400 });
     }
 
     // First, try to find order by checkout session ID
@@ -61,28 +55,16 @@ export async function GET(
           });
         } else if (session.status === "open") {
           // Session is still open, checkout not completed
-          return NextResponse.json(
-            { error: "Checkout not completed" },
-            { status: 400 },
-          );
+          return NextResponse.json({ error: "Checkout not completed" }, { status: 400 });
         } else if (session.status === "expired") {
-          return NextResponse.json(
-            { error: "Checkout session expired" },
-            { status: 400 },
-          );
+          return NextResponse.json({ error: "Checkout session expired" }, { status: 400 });
         }
       } catch (stripeError) {
         console.error("Error fetching session from Stripe:", stripeError);
-        return NextResponse.json(
-          { error: "Invalid session ID" },
-          { status: 404 },
-        );
+        return NextResponse.json({ error: "Invalid session ID" }, { status: 404 });
       }
 
-      return NextResponse.json(
-        { error: "Order not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
     // Return order details
@@ -120,9 +102,6 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error fetching order by session:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch order" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to fetch order" }, { status: 500 });
   }
 }

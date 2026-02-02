@@ -1,14 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  Column,
-  Row,
-  ScrollView,
-  Text,
-  Heading,
-  Spinner,
-} from "@buttergolf/ui";
+import { Column, Row, ScrollView, Text, Heading, Spinner } from "@buttergolf/ui";
 import { ProductCard } from "../../components/ProductCard";
 import type { ProductCardData } from "../../types/product";
 import { useLink } from "solito/navigation";
@@ -18,9 +11,7 @@ interface ProductsScreenProps {
   onFetchProducts?: () => Promise<ProductCardData[]>;
 }
 
-export function ProductsScreen({
-  onFetchProducts,
-}: Readonly<ProductsScreenProps>) {
+export function ProductsScreen({ onFetchProducts }: Readonly<ProductsScreenProps>) {
   const [products, setProducts] = useState<ProductCardData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -79,9 +70,7 @@ export function ProductsScreen({
 }
 
 // Helper component to attach Solito link to ProductCard
-function ProductCardWithLink({
-  product,
-}: Readonly<{ product: ProductCardData }>) {
+function ProductCardWithLink({ product }: Readonly<{ product: ProductCardData }>) {
   const linkProps = useLink({
     href: routes.productDetail.replace("[id]", product.id),
   });

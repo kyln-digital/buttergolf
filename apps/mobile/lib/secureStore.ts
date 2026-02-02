@@ -42,7 +42,12 @@ export async function deferredSecureStoreGet(key: string): Promise<string | null
         addBreadcrumb("turbomodule.securestore", `getItem complete: ${key}`, { hasValue: !!value });
         resolve(value);
       } catch (error) {
-        addBreadcrumb("turbomodule.securestore", `getItem failed: ${key}`, { error: String(error) }, "error");
+        addBreadcrumb(
+          "turbomodule.securestore",
+          `getItem failed: ${key}`,
+          { error: String(error) },
+          "error"
+        );
         resolve(null);
       }
     });
@@ -64,7 +69,12 @@ export async function deferredSecureStoreSet(key: string, value: string): Promis
         addBreadcrumb("turbomodule.securestore", `setItem complete: ${key}`);
         resolve();
       } catch (error) {
-        addBreadcrumb("turbomodule.securestore", `setItem failed: ${key}`, { error: String(error) }, "error");
+        addBreadcrumb(
+          "turbomodule.securestore",
+          `setItem failed: ${key}`,
+          { error: String(error) },
+          "error"
+        );
         resolve();
       }
     });
@@ -85,7 +95,12 @@ export async function deferredSecureStoreDelete(key: string): Promise<void> {
         addBreadcrumb("turbomodule.securestore", `deleteItem complete: ${key}`);
         resolve();
       } catch (error) {
-        addBreadcrumb("turbomodule.securestore", `deleteItem failed: ${key}`, { error: String(error) }, "error");
+        addBreadcrumb(
+          "turbomodule.securestore",
+          `deleteItem failed: ${key}`,
+          { error: String(error) },
+          "error"
+        );
         resolve();
       }
     });

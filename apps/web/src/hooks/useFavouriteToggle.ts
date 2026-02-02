@@ -46,16 +46,12 @@ export function useFavouriteToggle(productId: string) {
 
       // API call
       const response = await fetch(
-        wasOptimisticUpdate
-          ? "/api/favourites"
-          : `/api/favourites/${productId}`,
+        wasOptimisticUpdate ? "/api/favourites" : `/api/favourites/${productId}`,
         {
           method: wasOptimisticUpdate ? "POST" : "DELETE",
-          headers: wasOptimisticUpdate
-            ? { "Content-Type": "application/json" }
-            : {},
+          headers: wasOptimisticUpdate ? { "Content-Type": "application/json" } : {},
           body: wasOptimisticUpdate ? JSON.stringify({ productId }) : undefined,
-        },
+        }
       );
 
       if (!response.ok) {

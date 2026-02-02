@@ -95,9 +95,7 @@ export function ThemeSwitcher({
 
   // Compact mode: single button that toggles light/dark
   if (compact) {
-    return (
-      <ThemeToggleButton onPress={toggle} onThemeChange={onThemeChange} />
-    );
+    return <ThemeToggleButton onPress={toggle} onThemeChange={onThemeChange} />;
   }
 
   // Full mode: segmented control
@@ -122,10 +120,7 @@ export function ThemeSwitcher({
             accessibilityState={{ selected: isActive }}
             accessibilityLabel={`Set theme to ${label}`}
           >
-            <Icon
-              size={18}
-              color={isActive ? "$textInverse" : "$text"}
-            />
+            <Icon size={18} color={isActive ? "$textInverse" : "$text"} />
             {showLabels && (
               <Text
                 size="$4"

@@ -62,8 +62,7 @@ export default async function OrdersPage() {
   // Add role information to each order
   const ordersWithRole = orders.map((order) => ({
     ...order,
-    userRole:
-      order.buyerId === user.id ? ("buyer" as const) : ("seller" as const),
+    userRole: order.buyerId === user.id ? ("buyer" as const) : ("seller" as const),
   }));
 
   // Client component handles all UI rendering including layout

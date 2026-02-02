@@ -12,14 +12,10 @@ import { ClerkProvider } from "@clerk/nextjs";
  * other components may render during React 19's concurrent hydration,
  * and they need Tamagui's theme context to be available.
  */
-export function NextTamaguiProvider({
-  children,
-}: Readonly<{ children: ReactNode }>) {
+export function NextTamaguiProvider({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <BaseProvider>
-      <ClerkProvider
-        publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-      >
+      <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
         {children}
       </ClerkProvider>
     </BaseProvider>

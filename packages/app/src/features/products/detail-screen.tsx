@@ -115,7 +115,13 @@ export function ProductDetailScreen({
 
   if (error || !product) {
     return (
-      <Column flex={1} backgroundColor="$background" padding="$4" paddingTop={insets.top + 16} gap="$4">
+      <Column
+        flex={1}
+        backgroundColor="$background"
+        padding="$4"
+        paddingTop={insets.top + 16}
+        gap="$4"
+      >
         <Button onPress={handleBack} size="$4" icon={ArrowLeft}>
           Back
         </Button>
@@ -130,16 +136,22 @@ export function ProductDetailScreen({
 
   const primaryImage = product.images?.[0]?.url || "";
   const formattedCondition = product.condition?.replace("_", " ") || "Unknown";
-  const sellerName = `${product.user.firstName || ""} ${product.user.lastName || ""}`.trim() || "Anonymous";
-  
+  const sellerName =
+    `${product.user.firstName || ""} ${product.user.lastName || ""}`.trim() || "Anonymous";
+
   // Calculate average condition from individual ratings
-  const hasConditionRatings = product.gripCondition && product.headCondition && product.shaftCondition;
+  const hasConditionRatings =
+    product.gripCondition && product.headCondition && product.shaftCondition;
   const avgCondition = hasConditionRatings
     ? Math.round((product.gripCondition! + product.headCondition! + product.shaftCondition!) / 3)
     : null;
 
   return (
-    <ScrollView flex={1} backgroundColor="$background" contentContainerStyle={{ paddingTop: insets.top }}>
+    <ScrollView
+      flex={1}
+      backgroundColor="$background"
+      contentContainerStyle={{ paddingTop: insets.top }}
+    >
       <Column>
         {/* Product Image */}
         {primaryImage && (
@@ -200,15 +212,19 @@ export function ProductDetailScreen({
               £{product.price.toFixed(2)}
             </Text>
             <Heading level={2}>{product.title}</Heading>
-            
+
             {/* Category, Brand, Model */}
             <Row gap="$2" alignItems="center" flexWrap="wrap">
               <Badge variant="neutral" size="sm">
-                <Text size="$2" fontWeight="500">{product.category.name}</Text>
+                <Text size="$2" fontWeight="500">
+                  {product.category.name}
+                </Text>
               </Badge>
               {product.brand && (
                 <Badge variant="primary" size="sm">
-                  <Text size="$2" fontWeight="500" color="$textInverse">{product.brand.name}</Text>
+                  <Text size="$2" fontWeight="500" color="$textInverse">
+                    {product.brand.name}
+                  </Text>
                 </Badge>
               )}
               {product.model && (
@@ -228,7 +244,10 @@ export function ProductDetailScreen({
           </Column>
 
           {/* Golf-Specific Details Card */}
-          {(product.flex || product.loft || product.woodsSubcategory || product.headCoverIncluded !== null) && (
+          {(product.flex ||
+            product.loft ||
+            product.woodsSubcategory ||
+            product.headCoverIncluded !== null) && (
             <Card variant="outlined" padding="$lg">
               <Column gap="$3">
                 <Text size="$5" fontWeight="700" color="$text">
@@ -237,25 +256,39 @@ export function ProductDetailScreen({
                 <Row flexWrap="wrap" gap="$4">
                   {product.woodsSubcategory && (
                     <Column gap="$1">
-                      <Text size="$3" color="$textSecondary">Type</Text>
-                      <Text size="$5" fontWeight="600">{product.woodsSubcategory}</Text>
+                      <Text size="$3" color="$textSecondary">
+                        Type
+                      </Text>
+                      <Text size="$5" fontWeight="600">
+                        {product.woodsSubcategory}
+                      </Text>
                     </Column>
                   )}
                   {product.flex && (
                     <Column gap="$1">
-                      <Text size="$3" color="$textSecondary">Shaft Flex</Text>
-                      <Text size="$5" fontWeight="600">{product.flex}</Text>
+                      <Text size="$3" color="$textSecondary">
+                        Shaft Flex
+                      </Text>
+                      <Text size="$5" fontWeight="600">
+                        {product.flex}
+                      </Text>
                     </Column>
                   )}
                   {product.loft && (
                     <Column gap="$1">
-                      <Text size="$3" color="$textSecondary">Loft</Text>
-                      <Text size="$5" fontWeight="600">{product.loft}</Text>
+                      <Text size="$3" color="$textSecondary">
+                        Loft
+                      </Text>
+                      <Text size="$5" fontWeight="600">
+                        {product.loft}
+                      </Text>
                     </Column>
                   )}
                   {product.headCoverIncluded !== null && (
                     <Column gap="$1">
-                      <Text size="$3" color="$textSecondary">Head Cover</Text>
+                      <Text size="$3" color="$textSecondary">
+                        Head Cover
+                      </Text>
                       <Text size="$5" fontWeight="600">
                         {product.headCoverIncluded ? "Included ✓" : "Not Included"}
                       </Text>
@@ -282,12 +315,14 @@ export function ProductDetailScreen({
                     </Badge>
                   )}
                 </Row>
-                
+
                 {/* Individual ratings */}
                 <Column gap="$3">
                   {/* Grip */}
                   <Row alignItems="center" gap="$3">
-                    <Text size="$4" color="$textSecondary" width={60}>Grip</Text>
+                    <Text size="$4" color="$textSecondary" width={60}>
+                      Grip
+                    </Text>
                     <View flex={1} height={8} backgroundColor="$cloudMist" borderRadius="$full">
                       <View
                         height={8}
@@ -300,10 +335,12 @@ export function ProductDetailScreen({
                       {product.gripCondition}/10
                     </Text>
                   </Row>
-                  
+
                   {/* Head */}
                   <Row alignItems="center" gap="$3">
-                    <Text size="$4" color="$textSecondary" width={60}>Head</Text>
+                    <Text size="$4" color="$textSecondary" width={60}>
+                      Head
+                    </Text>
                     <View flex={1} height={8} backgroundColor="$cloudMist" borderRadius="$full">
                       <View
                         height={8}
@@ -316,10 +353,12 @@ export function ProductDetailScreen({
                       {product.headCondition}/10
                     </Text>
                   </Row>
-                  
+
                   {/* Shaft */}
                   <Row alignItems="center" gap="$3">
-                    <Text size="$4" color="$textSecondary" width={60}>Shaft</Text>
+                    <Text size="$4" color="$textSecondary" width={60}>
+                      Shaft
+                    </Text>
                     <View flex={1} height={8} backgroundColor="$cloudMist" borderRadius="$full">
                       <View
                         height={8}
@@ -345,7 +384,9 @@ export function ProductDetailScreen({
                   Condition
                 </Text>
                 <Badge variant="neutral" size="md">
-                  <Text size="$4" fontWeight="500">{formattedCondition}</Text>
+                  <Text size="$4" fontWeight="500">
+                    {formattedCondition}
+                  </Text>
                 </Badge>
               </Row>
             </Card>
@@ -394,7 +435,9 @@ export function ProductDetailScreen({
                   </View>
                 )}
                 <Column gap="$1">
-                  <Text size="$5" fontWeight="600">{sellerName}</Text>
+                  <Text size="$5" fontWeight="600">
+                    {sellerName}
+                  </Text>
                   <Text size="$3" color="$textSecondary">
                     Member since {new Date(product.createdAt).getFullYear()}
                   </Text>
@@ -449,12 +492,7 @@ export function ProductDetailScreen({
                 </Button>
               </>
             ) : (
-              <Button
-                size="$5"
-                width="100%"
-                backgroundColor="$cloudMist"
-                disabled
-              >
+              <Button size="$5" width="100%" backgroundColor="$cloudMist" disabled>
                 <Text color="$textSecondary" fontWeight="600">
                   This item has been sold
                 </Text>

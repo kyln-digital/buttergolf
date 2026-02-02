@@ -1,16 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
-import {
-  Column,
-  Row,
-  ScrollView,
-  Text,
-  Button,
-  Heading,
-  Spinner,
-  useTheme,
-} from "@buttergolf/ui";
+import { Column, Row, ScrollView, Text, Button, Heading, Spinner, useTheme } from "@buttergolf/ui";
 import { Button as TamaguiButton } from "tamagui";
 import { Mail, ArrowLeft } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -62,14 +53,64 @@ export function VerifyEmailScreen({
     return () => clearTimeout(timer);
   }, [resendCountdown]);
 
+  // Ref to track if we're currently auto-submitting (prevents double-submit)
+  const isAutoSubmittingRef = useRef(false);
+
+  // Ref to store handleVerify function for use in handleDigitChange (avoids circular dependency)
+  const handleVerifyRef = useRef<((code: string) => Promise<void>) | null>(null);
+
   const handleDigitChange = useCallback(
     (index: number, value: string) => {
-      // Only allow single digit
-      const digit = value.replace(/[^0-9]/g, "").slice(-1);
+      // Handle autofill/paste of full code
+      const cleanValue = value.replace(/[^0-9]/g, "");
+
+      if (cleanValue.length > 1) {
+        // Full code pasted/autofilled - can happen on any input
+        const digits = cleanValue.slice(0, 6).split("");
+        const newCode = ["*", "*", "*", "*", "*", "*"].map((_, i) => digits[i] || "");
+        setCode(newCode);
+
+        // Auto-submit if we have 6 digits
+        if (
+          digits.length === 6 &&
+          isLoaded &&
+          signUp &&
+          !isSubmitting &&
+          !isAutoSubmittingRef.current
+        ) {
+          isAutoSubmittingRef.current = true;
+          // Use setTimeout to ensure state is settled before submitting
+          setTimeout(() => {
+            handleVerifyRef.current?.(newCode.join(""));
+            isAutoSubmittingRef.current = false;
+          }, 100);
+        }
+        return;
+      }
+
+      // Single digit entry
+      const digit = cleanValue.slice(-1);
 
       setCode((prev) => {
         const newCode = [...prev];
         newCode[index] = digit;
+
+        // Check if all 6 digits are now filled
+        const fullCodeValue = newCode.join("");
+        if (
+          fullCodeValue.length === 6 &&
+          isLoaded &&
+          signUp &&
+          !isSubmitting &&
+          !isAutoSubmittingRef.current
+        ) {
+          isAutoSubmittingRef.current = true;
+          setTimeout(() => {
+            handleVerifyRef.current?.(fullCodeValue);
+            isAutoSubmittingRef.current = false;
+          }, 100);
+        }
+
         return newCode;
       });
 
@@ -83,7 +124,7 @@ export function VerifyEmailScreen({
         setError(null);
       }
     },
-    [error],
+    [error, isLoaded, signUp, isSubmitting]
   );
 
   const handleKeyPress = useCallback(
@@ -93,89 +134,64 @@ export function VerifyEmailScreen({
         inputRefs.current[index - 1]?.focus();
       }
     },
-    [code],
+    [code]
   );
-
-  const handlePaste = useCallback((pastedText: string) => {
-    const digits = pastedText
-      .replace(/[^0-9]/g, "")
-      .slice(0, 6)
-      .split("");
-    if (digits.length > 0) {
-      const newCode = ["", "", "", "", "", ""];
-      digits.forEach((digit, i) => {
-        newCode[i] = digit;
-      });
-      setCode(newCode);
-      // Focus the next empty input or last input
-      const nextIndex = Math.min(digits.length, 5);
-      inputRefs.current[nextIndex]?.focus();
-    }
-  }, []);
 
   const fullCode = code.join("");
 
-  // Ref to store the latest handleVerify function for auto-submit
-  const handleVerifyRef = useRef<(() => Promise<void>) | null>(null);
+  const handleVerify = useCallback(
+    async (codeToVerify?: string) => {
+      const verificationCode = codeToVerify ?? fullCode;
 
-  const handleVerify = useCallback(async () => {
-    setError(null);
+      setError(null);
 
-    if (fullCode.length !== 6) {
-      setError("Please enter all 6 digits");
-      return;
-    }
-
-    if (!isLoaded || !signUp) {
-      setError("Authentication service not ready. Please try again.");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const result = await signUp.attemptEmailAddressVerification({
-        code: fullCode,
-      });
-
-      if (result.status === "complete") {
-        // User successfully verified
-        await setActive({ session: result.createdSessionId });
-        onSuccess?.();
-      } else {
-        setError("Verification incomplete. Please try again.");
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-
-      if (errorMessage.includes("verification_code_invalid")) {
-        setError(mapClerkErrorToMessage("verification_code_invalid"));
-      } else if (errorMessage.includes("verification_code_expired")) {
-        setError(mapClerkErrorToMessage("verification_code_expired"));
-      } else {
-        setError(
-          errorMessage ||
-            "Verification failed. Please check your code and try again.",
-        );
+      if (verificationCode.length !== 6) {
+        setError("Please enter all 6 digits");
+        return;
       }
 
-      // Clear code on error
-      setCode(["", "", "", "", "", ""]);
-      inputRefs.current[0]?.focus();
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [fullCode, isLoaded, signUp, setActive, onSuccess]);
+      if (!isLoaded || !signUp) {
+        setError("Authentication service not ready. Please try again.");
+        return;
+      }
 
-  // Keep ref updated with latest handleVerify function
+      setIsSubmitting(true);
+
+      try {
+        const result = await signUp.attemptEmailAddressVerification({
+          code: verificationCode,
+        });
+
+        if (result.status === "complete") {
+          // User successfully verified
+          await setActive({ session: result.createdSessionId });
+          onSuccess?.();
+        } else {
+          setError("Verification incomplete. Please try again.");
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+
+        if (errorMessage.includes("verification_code_invalid")) {
+          setError(mapClerkErrorToMessage("verification_code_invalid"));
+        } else if (errorMessage.includes("verification_code_expired")) {
+          setError(mapClerkErrorToMessage("verification_code_expired"));
+        } else {
+          setError(errorMessage || "Verification failed. Please check your code and try again.");
+        }
+
+        // Clear code on error
+        setCode(["", "", "", "", "", ""]);
+        inputRefs.current[0]?.focus();
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [fullCode, isLoaded, signUp, setActive, onSuccess]
+  );
+
+  // Keep ref updated with latest handleVerify
   handleVerifyRef.current = handleVerify;
-
-  // Auto-submit when all 6 digits are entered
-  useEffect(() => {
-    if (fullCode.length === 6 && !isSubmitting && isLoaded && signUp) {
-      handleVerifyRef.current?.();
-    }
-  }, [fullCode, isSubmitting, isLoaded, signUp]);
 
   const handleResendCode = useCallback(async () => {
     setError(null);
@@ -225,24 +241,14 @@ export function VerifyEmailScreen({
 
           {/* Email Icon */}
           <Column alignItems="center" paddingVertical="$4">
-            <Column
-              backgroundColor="$primaryLight"
-              padding="$5"
-              borderRadius="$full"
-            >
+            <Column backgroundColor="$primaryLight" padding="$5" borderRadius="$full">
               <Mail size={48} color="$primary" />
             </Column>
           </Column>
 
           {/* Header */}
           <Column gap="$2" alignItems="center">
-            <Heading
-              level={1}
-              size="$8"
-              fontWeight="700"
-              color="$text"
-              textAlign="center"
-            >
+            <Heading level={1} size="$8" fontWeight="700" color="$text" textAlign="center">
               Check Your Email
             </Heading>
             <Text size="$5" color="$textSecondary" textAlign="center">
@@ -253,9 +259,7 @@ export function VerifyEmailScreen({
           </Column>
 
           {/* Error Display */}
-          {error && (
-            <AuthErrorDisplay error={error} onDismiss={() => setError(null)} />
-          )}
+          {error && <AuthErrorDisplay error={error} onDismiss={() => setError(null)} />}
 
           {/* Code Input Grid */}
           <Column gap="$4" alignItems="center">
@@ -279,9 +283,7 @@ export function VerifyEmailScreen({
                     }}
                     value={digit}
                     onChangeText={(text) => handleDigitChange(index, text)}
-                    onKeyPress={({ nativeEvent }) =>
-                      handleKeyPress(index, nativeEvent.key)
-                    }
+                    onKeyPress={({ nativeEvent }) => handleKeyPress(index, nativeEvent.key)}
                     keyboardType="number-pad"
                     textContentType="oneTimeCode"
                     autoComplete="one-time-code"
@@ -297,11 +299,12 @@ export function VerifyEmailScreen({
                       height: "100%",
                       color: textColor,
                     }}
-                    // Handle paste on first input
+                    // Handle paste/autofill - onChange fires with full pasted text
                     onChange={(e) => {
                       const text = e.nativeEvent.text;
-                      if (text.length > 1 && index === 0) {
-                        handlePaste(text);
+                      if (text.length > 1) {
+                        // Delegate to handleDigitChange which now handles multi-digit input
+                        handleDigitChange(index, text);
                       }
                     }}
                   />
@@ -324,15 +327,11 @@ export function VerifyEmailScreen({
             size="$5"
             borderRadius="$full"
             fontWeight="600"
-            onPress={handleVerify}
+            onPress={() => handleVerify()}
             disabled={isSubmitting || fullCode.length !== 6}
             opacity={isSubmitting || fullCode.length !== 6 ? 0.7 : 1}
           >
-            {isSubmitting ? (
-              <Spinner size="sm" color="$textInverse" />
-            ) : (
-              "Verify Email"
-            )}
+            {isSubmitting ? <Spinner size="sm" color="$textInverse" /> : "Verify Email"}
           </Button>
 
           {/* Resend Code */}
@@ -370,15 +369,8 @@ export function VerifyEmailScreen({
 
           {/* Help Text */}
           <Column alignItems="center" gap="$3" marginTop="$4">
-            <Text
-              size="$3"
-              color="$textMuted"
-              textAlign="center"
-              paddingHorizontal="$4"
-            >
-              {
-                "Having trouble? Make sure to check your spam folder or try resending the code"
-              }
+            <Text size="$3" color="$textMuted" textAlign="center" paddingHorizontal="$4">
+              {"Having trouble? Make sure to check your spam folder or try resending the code"}
             </Text>
           </Column>
         </Column>

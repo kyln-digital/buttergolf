@@ -111,9 +111,7 @@ export default function App() {
 3. **Register in Stack Navigator**:
    ```tsx
    <Stack.Screen name="NewScreen">
-     {({ route }) => (
-       <NewScreen param={route.params?.param} onFetchData={fetchDataFunction} />
-     )}
+     {({ route }) => <NewScreen param={route.params?.param} onFetchData={fetchDataFunction} />}
    </Stack.Screen>
    ```
 
@@ -213,9 +211,7 @@ import { Platform } from "react-native";
 import { Text } from "@buttergolf/ui";
 
 export function Component() {
-  return (
-    <Text>{Platform.OS === "ios" ? "iOS Specific" : "Android Specific"}</Text>
-  );
+  return <Text>{Platform.OS === "ios" ? "iOS Specific" : "Android Specific"}</Text>;
 }
 ```
 
@@ -401,8 +397,7 @@ import * as Notifications from "expo-notifications";
 
 export function useNotifications() {
   const registerForPushNotifications = async () => {
-    const { status: existingStatus } =
-      await Notifications.getPermissionsAsync();
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
 
     if (existingStatus !== "granted") {
@@ -607,13 +602,7 @@ eas submit --platform android
 import { Image } from "@buttergolf/ui";
 
 export function OptimizedImage({ uri }) {
-  return (
-    <Image
-      source={{ uri }}
-      style={{ width: 300, height: 200 }}
-      resizeMode="cover"
-    />
-  );
+  return <Image source={{ uri }} style={{ width: 300, height: 200 }} resizeMode="cover" />;
 }
 ```
 

@@ -4,7 +4,7 @@ import { getUserIdFromRequest } from "@/lib/auth";
 
 /**
  * GET /api/messages/unread-count
- * 
+ *
  * Returns the total count of unread messages for the current user across all orders.
  * Used for displaying unread badge in header/navigation.
  */
@@ -34,10 +34,7 @@ export async function GET(request: Request) {
         isRead: false,
         senderId: { not: user.id },
         order: {
-          OR: [
-            { buyerId: user.id },
-            { sellerId: user.id },
-          ],
+          OR: [{ buyerId: user.id }, { sellerId: user.id }],
         },
       },
     });

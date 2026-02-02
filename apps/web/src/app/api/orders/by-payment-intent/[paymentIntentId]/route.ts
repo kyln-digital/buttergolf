@@ -4,14 +4,14 @@ import { getUserIdFromRequest } from "@/lib/auth";
 
 /**
  * GET /api/orders/by-payment-intent/[paymentIntentId]
- * 
+ *
  * Fetches order details by Stripe Payment Intent ID.
  * Used by the success page for PaymentElement flow.
  * Returns same format as by-session route for compatibility.
  */
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ paymentIntentId: string }> },
+  { params }: { params: Promise<{ paymentIntentId: string }> }
 ) {
   try {
     // Support both web cookies and mobile Bearer tokens
@@ -83,7 +83,9 @@ export async function GET(
         service: order.service,
         orderStatus: order.status,
         shipmentStatus: order.shipmentStatus,
-        sellerName: `${order.seller.firstName || ""} ${order.seller.lastName || ""}`.trim() || order.seller.email,
+        sellerName:
+          `${order.seller.firstName || ""} ${order.seller.lastName || ""}`.trim() ||
+          order.seller.email,
         sellerId: order.sellerId,
         shippingAddress: {
           name: order.toAddress.name,
@@ -99,9 +101,6 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error fetching order by payment intent:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch order" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to fetch order" }, { status: 500 });
   }
 }

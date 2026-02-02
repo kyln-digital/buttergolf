@@ -81,7 +81,7 @@ export function useSellerStatus({
   if (typeof __DEV__ !== "undefined" && __DEV__) {
     console.warn(
       "[useSellerStatus] DEPRECATED: This hook causes infinite API calls. " +
-      "Use useSellerStatusContext from apps/mobile/context instead."
+        "Use useSellerStatusContext from apps/mobile/context instead."
     );
   }
 
@@ -99,89 +99,91 @@ export function useSellerStatus({
     apiUrlRef.current = apiUrl;
   });
 
-  const fetchStatus = useCallback(async (force?: boolean) => {
-    const isDev =
-      typeof globalThis !== "undefined" &&
-      (globalThis as { __DEV__?: boolean }).__DEV__ === true;
+  const fetchStatus = useCallback(
+    async (force?: boolean) => {
+      const isDev =
+        typeof globalThis !== "undefined" && (globalThis as { __DEV__?: boolean }).__DEV__ === true;
 
-    const debugLog = (...args: unknown[]) => {
-      if (isDev) {
-        // eslint-disable-next-line no-console
-        console.log("[useSellerStatus]", ...args);
-      }
-    };
+      const debugLog = (...args: unknown[]) => {
+        if (isDev) {
+          // eslint-disable-next-line no-console
+          console.log("[useSellerStatus]", ...args);
+        }
+      };
 
-    debugLog("fetchStatus called, isAuthenticated:", isAuthenticated, "force:", force);
-    
-    // Handle unauthenticated case before setting the fetching guard
-    if (!isAuthenticated) {
-      debugLog("Not authenticated, returning default status");
-      setStatus(DEFAULT_STATUS);
-      setIsLoading(false);
-      return;
-    }
+      debugLog("fetchStatus called, isAuthenticated:", isAuthenticated, "force:", force);
 
-    // Throttle: skip if we fetched recently (prevents rapid polling)
-    // Uses module-level variable to persist across component remounts
-    // Can be bypassed with force=true (e.g., after completing onboarding)
-    const now = Date.now();
-    if (!force && now - lastFetchTime < FETCH_COOLDOWN_MS) {
-      debugLog("Skipping fetch - within cooldown period");
-      return;
-    }
-
-    // Prevent concurrent fetches - uses module-level variable
-    if (isFetching) {
-      debugLog("fetchStatus skipped - already fetching");
-      return;
-    }
-    isFetching = true;
-    lastFetchTime = now; // Set time at start to prevent races
-
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const token = await getTokenRef.current();
-      debugLog("Token obtained:", token ? "yes" : "no");
-      
-      if (!token) {
-        debugLog("No token, returning default status");
+      // Handle unauthenticated case before setting the fetching guard
+      if (!isAuthenticated) {
+        debugLog("Not authenticated, returning default status");
         setStatus(DEFAULT_STATUS);
-        // Reset guards before early return since we won't reach finally block
         setIsLoading(false);
-        isFetching = false;
         return;
       }
 
-      const url = `${apiUrlRef.current}/api/users/seller-status`;
-      debugLog("Fetching from:", url);
-      
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-      });
-
-  debugLog("Response status:", response.status);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch seller status: ${response.status}`);
+      // Throttle: skip if we fetched recently (prevents rapid polling)
+      // Uses module-level variable to persist across component remounts
+      // Can be bypassed with force=true (e.g., after completing onboarding)
+      const now = Date.now();
+      if (!force && now - lastFetchTime < FETCH_COOLDOWN_MS) {
+        debugLog("Skipping fetch - within cooldown period");
+        return;
       }
 
-      const data = await response.json();
-      debugLog("Response data:", data);
-      setStatus(data);
-    } catch (err) {
-      console.error("[useSellerStatus] Error:", err);
-      setError(err instanceof Error ? err.message : "Unknown error");
-      setStatus(DEFAULT_STATUS);
-    } finally {
-      setIsLoading(false);
-      isFetching = false;
-    }
-  }, [isAuthenticated]); // Only depend on isAuthenticated, use refs for apiUrl and getToken
+      // Prevent concurrent fetches - uses module-level variable
+      if (isFetching) {
+        debugLog("fetchStatus skipped - already fetching");
+        return;
+      }
+      isFetching = true;
+      lastFetchTime = now; // Set time at start to prevent races
+
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const token = await getTokenRef.current();
+        debugLog("Token obtained:", token ? "yes" : "no");
+
+        if (!token) {
+          debugLog("No token, returning default status");
+          setStatus(DEFAULT_STATUS);
+          // Reset guards before early return since we won't reach finally block
+          setIsLoading(false);
+          isFetching = false;
+          return;
+        }
+
+        const url = `${apiUrlRef.current}/api/users/seller-status`;
+        debugLog("Fetching from:", url);
+
+        const response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        });
+
+        debugLog("Response status:", response.status);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch seller status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        debugLog("Response data:", data);
+        setStatus(data);
+      } catch (err) {
+        console.error("[useSellerStatus] Error:", err);
+        setError(err instanceof Error ? err.message : "Unknown error");
+        setStatus(DEFAULT_STATUS);
+      } finally {
+        setIsLoading(false);
+        isFetching = false;
+      }
+    },
+    [isAuthenticated]
+  ); // Only depend on isAuthenticated, use refs for apiUrl and getToken
 
   // Fetch status on mount and when auth changes
   useEffect(() => {

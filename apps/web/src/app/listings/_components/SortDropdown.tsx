@@ -54,11 +54,7 @@ export function SortDropdown({ value, onChange }: Readonly<SortDropdownProps>) {
               <Adapt.Contents />
             </Sheet.ScrollView>
           </Sheet.Frame>
-          <Sheet.Overlay
-            animation="lazy"
-            enterStyle={{ opacity: 0 }}
-            exitStyle={{ opacity: 0 }}
-          />
+          <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
         </Sheet>
       </Adapt>
 
@@ -85,4 +81,3 @@ export function SortDropdown({ value, onChange }: Readonly<SortDropdownProps>) {
     </Select>
   );
 }
-

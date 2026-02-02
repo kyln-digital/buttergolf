@@ -54,9 +54,9 @@ export function HorizontalProductCard({
         height={120}
         borderRadius="$md"
         backgroundColor={product.imageUrl ? "transparent" : "$border"}
-        style={{ 
-          objectFit: product.imageUrl ? "cover" : "contain", 
-          cursor: "pointer" 
+        style={{
+          objectFit: product.imageUrl ? "cover" : "contain",
+          cursor: "pointer",
         }}
         onPress={() => onViewDetails(product.id)}
         $sm={{
@@ -85,12 +85,7 @@ export function HorizontalProductCard({
 
         {/* Description */}
         {product.description && (
-          <Text
-            size="$4"
-            color="$textSecondary"
-            numberOfLines={2}
-            ellipsizeMode="tail"
-          >
+          <Text size="$4" color="$textSecondary" numberOfLines={2} ellipsizeMode="tail">
             {product.description}
           </Text>
         )}
@@ -110,8 +105,7 @@ export function HorizontalProductCard({
                   ★
                 </Text>
                 <Text size="$3" color="$textSecondary">
-                  {product.seller.averageRating?.toFixed(1)} (
-                  {product.seller.ratingCount})
+                  {product.seller.averageRating?.toFixed(1)} ({product.seller.ratingCount})
                 </Text>
               </Row>
             </>

@@ -1,26 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Button,
-  Row,
-  Column,
-  Text,
-  Card,
-  Badge,
-  Heading,
-  Container,
-} from "@buttergolf/ui";
+import { Button, Row, Column, Text, Card, Badge, Heading, Container } from "@buttergolf/ui";
 import { View } from "tamagui";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  ShoppingBag,
-  Package,
-  Eye,
-  Download,
-  ExternalLink,
-} from "@tamagui/lucide-icons";
+import { ShoppingBag, Package, Eye, Download, ExternalLink } from "@tamagui/lucide-icons";
 
 type OrderStatus =
   | "PAYMENT_CONFIRMED"
@@ -140,87 +125,88 @@ export function OrdersList({ orders }: Readonly<OrdersListProps>) {
 
         {/* Filter Tabs */}
         <Row gap="$sm" borderBottomWidth={1} borderBottomColor="$border">
-        <Button
-          chromeless
-          onPress={() => setFilter("all")}
-          paddingHorizontal="$md"
-          paddingVertical="$sm"
-          borderBottomWidth={filter === "all" ? 2 : 0}
-          borderBottomColor="$primary"
-          borderRadius={0}
-        >
-          <Text
-            fontWeight="500"
-            color={filter === "all" ? "$primary" : "$textSecondary"}
+          <Button
+            chromeless
+            onPress={() => setFilter("all")}
+            paddingHorizontal="$md"
+            paddingVertical="$sm"
+            borderBottomWidth={filter === "all" ? 2 : 0}
+            borderBottomColor="$primary"
+            borderRadius={0}
           >
-            All Orders ({orders.length})
-          </Text>
-        </Button>
-        <Button
-          chromeless
-          onPress={() => setFilter("buyer")}
-          paddingHorizontal="$md"
-          paddingVertical="$sm"
-          borderBottomWidth={filter === "buyer" ? 2 : 0}
-          borderBottomColor="$primary"
-          borderRadius={0}
-          icon={<ShoppingBag size={16} color={filter === "buyer" ? "var(--color-primary)" : "var(--color-textSecondary)"} />}
-        >
-          <Text
-            fontWeight="500"
-            color={filter === "buyer" ? "$primary" : "$textSecondary"}
-          >
-            Purchases ({purchasesCount})
-          </Text>
-        </Button>
-        <Button
-          chromeless
-          onPress={() => setFilter("seller")}
-          paddingHorizontal="$md"
-          paddingVertical="$sm"
-          borderBottomWidth={filter === "seller" ? 2 : 0}
-          borderBottomColor="$primary"
-          borderRadius={0}
-          icon={<Package size={16} color={filter === "seller" ? "var(--color-primary)" : "var(--color-textSecondary)"} />}
-        >
-          <Text
-            fontWeight="500"
-            color={filter === "seller" ? "$primary" : "$textSecondary"}
-          >
-            Sales ({salesCount})
-          </Text>
-        </Button>
-      </Row>
-
-      {/* Orders List */}
-      {filteredOrders.length === 0 ? (
-        <Card variant="outlined" padding="$xl">
-          <Column alignItems="center" gap="$md" paddingVertical="$xl">
-            <Package size={48} color="var(--color-textMuted)" />
-            <Heading level={4} color="$textSecondary">
-              No orders found
-            </Heading>
-            <Text size="$4" color="$textMuted" textAlign="center">
-              {filter === "all"
-                ? "You haven't made any purchases or sales yet."
-                : filter === "buyer"
-                  ? "You haven't purchased anything yet."
-                  : "You haven't sold anything yet."}
+            <Text fontWeight="500" color={filter === "all" ? "$primary" : "$textSecondary"}>
+              All Orders ({orders.length})
             </Text>
-            <Link href="/shop" style={{ textDecoration: "none" }}>
-              <Button butterVariant="primary" size="$4">
-                Start Shopping
-              </Button>
-            </Link>
+          </Button>
+          <Button
+            chromeless
+            onPress={() => setFilter("buyer")}
+            paddingHorizontal="$md"
+            paddingVertical="$sm"
+            borderBottomWidth={filter === "buyer" ? 2 : 0}
+            borderBottomColor="$primary"
+            borderRadius={0}
+            icon={
+              <ShoppingBag
+                size={16}
+                color={filter === "buyer" ? "var(--color-primary)" : "var(--color-textSecondary)"}
+              />
+            }
+          >
+            <Text fontWeight="500" color={filter === "buyer" ? "$primary" : "$textSecondary"}>
+              Purchases ({purchasesCount})
+            </Text>
+          </Button>
+          <Button
+            chromeless
+            onPress={() => setFilter("seller")}
+            paddingHorizontal="$md"
+            paddingVertical="$sm"
+            borderBottomWidth={filter === "seller" ? 2 : 0}
+            borderBottomColor="$primary"
+            borderRadius={0}
+            icon={
+              <Package
+                size={16}
+                color={filter === "seller" ? "var(--color-primary)" : "var(--color-textSecondary)"}
+              />
+            }
+          >
+            <Text fontWeight="500" color={filter === "seller" ? "$primary" : "$textSecondary"}>
+              Sales ({salesCount})
+            </Text>
+          </Button>
+        </Row>
+
+        {/* Orders List */}
+        {filteredOrders.length === 0 ? (
+          <Card variant="outlined" padding="$xl">
+            <Column alignItems="center" gap="$md" paddingVertical="$xl">
+              <Package size={48} color="var(--color-textMuted)" />
+              <Heading level={4} color="$textSecondary">
+                No orders found
+              </Heading>
+              <Text size="$4" color="$textMuted" textAlign="center">
+                {filter === "all"
+                  ? "You haven't made any purchases or sales yet."
+                  : filter === "buyer"
+                    ? "You haven't purchased anything yet."
+                    : "You haven't sold anything yet."}
+              </Text>
+              <Link href="/shop" style={{ textDecoration: "none" }}>
+                <Button butterVariant="primary" size="$4">
+                  Start Shopping
+                </Button>
+              </Link>
+            </Column>
+          </Card>
+        ) : (
+          <Column gap="$md">
+            {filteredOrders.map((order) => (
+              <OrderCard key={order.id} order={order} />
+            ))}
           </Column>
-        </Card>
-      ) : (
-        <Column gap="$md">
-          {filteredOrders.map((order) => (
-            <OrderCard key={order.id} order={order} />
-          ))}
-        </Column>
-      )}
+        )}
       </Column>
     </Container>
   );
@@ -228,11 +214,9 @@ export function OrdersList({ orders }: Readonly<OrdersListProps>) {
 
 function OrderCard({ order }: { order: Order }) {
   const productImage = order.product.images[0]?.url;
-  const otherParty =
-    order.userRole === "buyer" ? order.seller : order.buyer;
+  const otherParty = order.userRole === "buyer" ? order.seller : order.buyer;
   const otherPartyName =
-    `${otherParty.firstName || ""} ${otherParty.lastName || ""}`.trim() ||
-    otherParty.email;
+    `${otherParty.firstName || ""} ${otherParty.lastName || ""}`.trim() || otherParty.email;
   const roleLabel = order.userRole === "buyer" ? "Sold by" : "Purchased by";
 
   return (
@@ -288,10 +272,7 @@ function OrderCard({ order }: { order: Order }) {
               <Text size="$6" fontWeight="700">
                 £{order.amountTotal.toFixed(2)}
               </Text>
-              <Badge
-                variant={STATUS_BADGE_VARIANT[order.shipmentStatus]}
-                size="sm"
-              >
+              <Badge variant={STATUS_BADGE_VARIANT[order.shipmentStatus]} size="sm">
                 {STATUS_LABELS[order.shipmentStatus]}
               </Badge>
             </Column>
@@ -324,15 +305,8 @@ function OrderCard({ order }: { order: Order }) {
 
           {/* Actions */}
           <Row gap="$sm" marginTop="$xs" flexWrap="wrap">
-            <Link
-              href={`/orders/${order.id}`}
-              style={{ textDecoration: "none" }}
-            >
-              <Button
-                butterVariant="primary"
-                size="$3"
-                icon={<Eye size={14} color="white" />}
-              >
+            <Link href={`/orders/${order.id}`} style={{ textDecoration: "none" }}>
+              <Button butterVariant="primary" size="$3" icon={<Eye size={14} color="white" />}>
                 View Details
               </Button>
             </Link>

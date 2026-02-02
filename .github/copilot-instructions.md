@@ -476,12 +476,7 @@ export type { ButtonProps } from "@tamagui/button";
 ```typescript
 // next.config.ts
 const config: NextConfig = {
-  transpilePackages: [
-    "@buttergolf/ui",
-    "react-native-web",
-    "@tamagui/core",
-    "tamagui",
-  ],
+  transpilePackages: ["@buttergolf/ui", "react-native-web", "@tamagui/core", "tamagui"],
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
@@ -1443,9 +1438,7 @@ Each app extends this base configuration.
 
 ```tsx
 <View group="card">
-  <Text $group-card-hover={{ color: "$blue10" }}>
-    Hover the parent to see me change
-  </Text>
+  <Text $group-card-hover={{ color: "$blue10" }}>Hover the parent to see me change</Text>
 </View>
 ```
 
@@ -2012,9 +2005,7 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
-);
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 export default function CheckoutPage() {
   return (
@@ -2035,9 +2026,7 @@ import { StripeProvider } from "@stripe/stripe-react-native";
 
 export default function App() {
   return (
-    <StripeProvider
-      publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!}
-    >
+    <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!}>
       {/* Your app components */}
     </StripeProvider>
   );
@@ -2237,17 +2226,14 @@ CLOUDINARY_API_SECRET=your_api_secret_here
 
 ```typescript
 // Pass isFirstImage flag for background removal
-const upload = async (
-  file: File,
-  isFirstImage = false,
-): Promise<UploadResult> => {
+const upload = async (file: File, isFirstImage = false): Promise<UploadResult> => {
   const response = await fetch(
     `/api/upload?filename=${encodeURIComponent(filename)}&isFirstImage=${isFirstImage}`,
     {
       method: "POST",
       headers: { "Content-Type": file.type },
       body: file,
-    },
+    }
   );
   // Returns Cloudinary CDN URL
 };
@@ -2273,10 +2259,7 @@ const uploadOptions = {
 };
 
 if (isFirstImage) {
-  uploadOptions.transformation = [
-    { effect: "background_removal" },
-    { background: "rgb:FFFAD2" },
-  ];
+  uploadOptions.transformation = [{ effect: "background_removal" }, { background: "rgb:FFFAD2" }];
 }
 
 const result = await cloudinary.uploader.upload(base64Image, uploadOptions);
@@ -2350,6 +2333,7 @@ For detailed setup instructions, see `docs/CLOUDINARY_SETUP.md`.
 - **Core Concepts**: https://tamagui.dev/docs/intro/introduction
 
 **Core Documentation:**
+
 - [Animations](https://tamagui.dev/docs/core/animations.md): Animation system and utilities
 - [Config V4](https://tamagui.dev/docs/core/config-v4.md): Version 4 configuration guide
 - [Configuration](https://tamagui.dev/docs/core/configuration.md): General configuration options
@@ -2361,6 +2345,7 @@ For detailed setup instructions, see `docs/CLOUDINARY_SETUP.md`.
 - [Variants](https://tamagui.dev/docs/core/variants.md): Component variants system
 
 **Component Documentation:**
+
 - All components at: https://tamagui.dev/ui/[component-name]
 - [Button](https://tamagui.dev/ui/button.md): Customizable button with variants and themes
 - [Text](https://tamagui.dev/ui/text.md): Text display component
@@ -2368,6 +2353,7 @@ For detailed setup instructions, see `docs/CLOUDINARY_SETUP.md`.
 - See full component list in the quick overview link above
 
 **Guides:**
+
 - [Next.js Guide](https://tamagui.dev/docs/guides/next-js): Next.js integration
 - [Theme Builder](https://tamagui.dev/docs/guides/theme-builder): Creating custom themes
 
@@ -2435,9 +2421,7 @@ When `resolve-library-id` returns multiple matches:
 ```typescript
 // ✅ CORRECT - Use Context7 automatically
 // Step 1: Resolve Stripe library
-(await mcp_upstash_conte_resolve) -
-  library -
-  id({ libraryName: "@stripe/stripe-react-native" });
+(await mcp_upstash_conte_resolve) - library - id({ libraryName: "@stripe/stripe-react-native" });
 // Step 2: Get payment integration docs
 (await mcp_upstash_conte_get) -
   library -
@@ -2456,9 +2440,7 @@ When `resolve-library-id` returns multiple matches:
 
 ```typescript
 // ✅ CORRECT - Check latest React Router patterns
-(await mcp_upstash_conte_resolve) -
-  library -
-  id({ libraryName: "react-router" });
+(await mcp_upstash_conte_resolve) - library - id({ libraryName: "react-router" });
 (await mcp_upstash_conte_get) -
   library -
   docs({
@@ -2890,12 +2872,7 @@ When generating new code:
     )}
   </Column>
 
-  <Button
-    size="$5"
-    backgroundColor="$primary"
-    color="$textInverse"
-    width="100%"
-  >
+  <Button size="$5" backgroundColor="$primary" color="$textInverse" width="100%">
     Submit
   </Button>
 </Column>
@@ -2993,9 +2970,7 @@ When generating new code:
     <Badge variant="error" size="sm" />
     <Column gap="$xs" flex={1}>
       <Text fontWeight="600">Error</Text>
-      <Text color="$textSecondary">
-        Something went wrong. Please try again.
-      </Text>
+      <Text color="$textSecondary">Something went wrong. Please try again.</Text>
     </Column>
     <Button size="$3" chromeless>
       Dismiss

@@ -46,7 +46,7 @@ export function TrackingTimeline({ order, events }: TrackingTimelineProps) {
       label: "Label Created",
       icon: Package,
       completed: ["PRE_TRANSIT", "IN_TRANSIT", "OUT_FOR_DELIVERY", "DELIVERED"].includes(
-        shipmentStatus,
+        shipmentStatus
       ),
     },
     {
@@ -188,11 +188,7 @@ export function TrackingTimeline({ order, events }: TrackingTimelineProps) {
                   <Row alignItems="center" gap="$xs">
                     <MapPin size={14} color="$textSecondary" />
                     <Text size="$3" color="$textSecondary">
-                      {[
-                        event.city_locality,
-                        event.state_province,
-                        event.postal_code,
-                      ]
+                      {[event.city_locality, event.state_province, event.postal_code]
                         .filter(Boolean)
                         .join(", ")}
                     </Text>

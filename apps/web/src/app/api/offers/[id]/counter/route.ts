@@ -6,10 +6,7 @@ import { getUserIdFromRequest } from "@/lib/auth";
  * POST /api/offers/[id]/counter
  * Submit a counter-offer
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Support both web cookies and mobile Bearer tokens
     const clerkId = await getUserIdFromRequest(request);
@@ -30,10 +27,7 @@ export async function POST(
 
     // Validate input
     if (!amount || amount <= 0) {
-      return NextResponse.json(
-        { error: "Invalid counter-offer amount" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid counter-offer amount" }, { status: 400 });
     }
 
     const offer = await prisma.offer.findUnique({
@@ -58,17 +52,14 @@ export async function POST(
     const isBuyer = user.id === offer.buyerId;
 
     if (!isSeller && !isBuyer) {
-      return NextResponse.json(
-        { error: "Unauthorized to counter this offer" },
-        { status: 403 },
-      );
+      return NextResponse.json({ error: "Unauthorized to counter this offer" }, { status: 403 });
     }
 
     // Check if offer is still active
     if (!["PENDING", "COUNTERED"].includes(offer.status)) {
       return NextResponse.json(
         { error: `Cannot counter offer with status ${offer.status}` },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -76,7 +67,7 @@ export async function POST(
     if (amount >= offer.product.price) {
       return NextResponse.json(
         { error: "Counter-offer must be less than listed price" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -84,15 +75,13 @@ export async function POST(
     if (amount < minimumOffer) {
       return NextResponse.json(
         { error: "Counter-offer too low (minimum 50% of listed price)" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     // Get the current offer amount (either original or last counter-offer)
     const currentAmount =
-      offer.counterOffers.length > 0
-        ? offer.counterOffers[0].amount
-        : offer.amount;
+      offer.counterOffers.length > 0 ? offer.counterOffers[0].amount : offer.amount;
 
     // Validate counter-offer logic:
     // - Seller must counter lower than current amount
@@ -100,14 +89,14 @@ export async function POST(
     if (isSeller && amount >= currentAmount) {
       return NextResponse.json(
         { error: "Seller counter-offer must be lower than current amount" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     if (isBuyer && amount <= currentAmount) {
       return NextResponse.json(
         { error: "Buyer counter-offer must be higher than current amount" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -154,9 +143,6 @@ export async function POST(
     return NextResponse.json(updatedOffer, { status: 201 });
   } catch (error) {
     console.error("Error creating counter-offer:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -45,17 +45,11 @@ export async function POST(req: Request) {
     console.log("[PaymentIntent API] productId:", productId, "shippingOptionId:", shippingOptionId);
 
     if (!productId) {
-      return NextResponse.json(
-        { error: "Product ID is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Product ID is required" }, { status: 400 });
     }
 
     if (!shippingOptionId || !SHIPPING_OPTIONS[shippingOptionId]) {
-      return NextResponse.json(
-        { error: "Valid shipping option is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Valid shipping option is required" }, { status: 400 });
     }
 
     // Get buyer from Clerk ID
@@ -84,18 +78,12 @@ export async function POST(req: Request) {
     }
 
     if (product.isSold) {
-      return NextResponse.json(
-        { error: "Product is already sold" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Product is already sold" }, { status: 400 });
     }
 
     // Prevent buying your own product
     if (product.userId === buyer.id) {
-      return NextResponse.json(
-        { error: "Cannot purchase your own product" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Cannot purchase your own product" }, { status: 400 });
     }
 
     // Get seller's Stripe Connect account
@@ -103,23 +91,18 @@ export async function POST(req: Request) {
     if (!seller.stripeConnectId || !seller.stripeOnboardingComplete) {
       return NextResponse.json(
         { error: "Seller is not set up to receive payments" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     // Calculate Vinted-style pricing (0% seller fee, buyer pays protection fee)
     const productPriceInPence = Math.round(product.price * 100);
     const shippingAmountInPence = SHIPPING_OPTIONS[shippingOptionId].price;
-    const pricing = calculatePricingBreakdownInPence(
-      productPriceInPence,
-      shippingAmountInPence
-    );
+    const pricing = calculatePricingBreakdownInPence(productPriceInPence, shippingAmountInPence);
 
     // Total includes product + shipping + buyer protection
     const totalAmountInPence =
-      productPriceInPence +
-      shippingAmountInPence +
-      pricing.buyerProtectionFeeInPence;
+      productPriceInPence + shippingAmountInPence + pricing.buyerProtectionFeeInPence;
 
     console.log("[PaymentIntent API] Amounts:", {
       productPriceInPence,
@@ -156,10 +139,7 @@ export async function POST(req: Request) {
       receipt_email: buyer.email,
     });
 
-    console.log(
-      "[PaymentIntent API] SUCCESS - PaymentIntent created:",
-      paymentIntent.id
-    );
+    console.log("[PaymentIntent API] SUCCESS - PaymentIntent created:", paymentIntent.id);
 
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
@@ -173,10 +153,9 @@ export async function POST(req: Request) {
     console.error("[PaymentIntent API] FATAL ERROR:", error);
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : "Failed to create payment intent",
+        error: error instanceof Error ? error.message : "Failed to create payment intent",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

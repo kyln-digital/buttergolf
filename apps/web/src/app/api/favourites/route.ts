@@ -143,10 +143,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         error: "Failed to fetch favourites",
-        message:
-          "Unable to retrieve your favourites. Please try again later.",
+        message: "Unable to retrieve your favourites. Please try again later.",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -172,10 +171,7 @@ export async function POST(req: NextRequest) {
     productId = body.productId;
 
     if (!productId || typeof productId !== "string") {
-      return NextResponse.json(
-        { error: "Product ID is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Product ID is required" }, { status: 400 });
     }
 
     // Check if product exists
@@ -219,7 +215,7 @@ export async function POST(req: NextRequest) {
           error: "Failed to create user record",
           message: "Please try again later.",
         },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
@@ -241,21 +237,13 @@ export async function POST(req: NextRequest) {
             createdAt: favourite.createdAt,
           },
         },
-        { status: 201 },
+        { status: 201 }
       );
     } catch (error: unknown) {
       // Handle duplicate favourite (unique constraint violation)
-      if (
-        error &&
-        typeof error === "object" &&
-        "code" in error &&
-        error.code === "P2002"
-      ) {
+      if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
         // This is expected behavior when user tries to favourite twice
-        return NextResponse.json(
-          { error: "Product already in favourites" },
-          { status: 409 },
-        );
+        return NextResponse.json({ error: "Product already in favourites" }, { status: 409 });
       }
 
       // Log unexpected database errors
@@ -281,7 +269,7 @@ export async function POST(req: NextRequest) {
         error: "Failed to add favourite",
         message: "Unable to add product to favourites. Please try again later.",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

@@ -256,12 +256,7 @@ Success (Teal)        Info (Blue)           Error (Red)
 ### Container Pattern
 
 ```tsx
-<YStack
-  maxWidth={1024}
-  width="100%"
-  marginHorizontal="auto"
-  paddingHorizontal="$4"
->
+<YStack maxWidth={1024} width="100%" marginHorizontal="auto" paddingHorizontal="$4">
   {/* Constrained width content */}
 </YStack>
 
@@ -319,13 +314,7 @@ Success (Teal)        Info (Blue)           Error (Red)
   {/* Password field */}
   <YStack gap="$2">
     <Label htmlFor="password">Password</Label>
-    <Input
-      id="password"
-      type="password"
-      size="md"
-      placeholder="••••••••"
-      fullWidth
-    />
+    <Input id="password" type="password" size="md" placeholder="••••••••" fullWidth />
   </YStack>
 
   {/* Submit button */}

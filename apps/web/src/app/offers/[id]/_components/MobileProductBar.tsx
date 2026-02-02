@@ -99,12 +99,7 @@ export function MobileProductBar({
           alt={product.title}
         />
         <Column gap="$xs" flex={1} minWidth={0}>
-          <Text
-            size="$4"
-            fontWeight="600"
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
+          <Text size="$4" fontWeight="600" numberOfLines={1} ellipsizeMode="tail">
             {product.title}
           </Text>
           <Row gap="$sm" alignItems="center">
@@ -169,12 +164,7 @@ export function MobileProductBar({
           >
             {/* Close button */}
             <Row justifyContent="flex-end" marginBottom="$md">
-              <Button
-                size="$4"
-                chromeless
-                onPress={() => setOpen(false)}
-                padding="$2"
-              >
+              <Button size="$4" chromeless onPress={() => setOpen(false)} padding="$2">
                 <X size={24} color="$text" />
               </Button>
             </Row>
@@ -190,11 +180,7 @@ export function MobileProductBar({
               />
 
               {/* Status */}
-              <Badge
-                variant={getStatusBadgeVariant()}
-                size="md"
-                alignSelf="flex-start"
-              >
+              <Badge variant={getStatusBadgeVariant()} size="md" alignSelf="flex-start">
                 {offer.status}
               </Badge>
 
@@ -224,9 +210,7 @@ export function MobileProductBar({
               </Column>
 
               {/* Divider */}
-              <div
-                style={{ height: 1, backgroundColor: "#EDEDED", width: "100%" }}
-              />
+              <div style={{ height: 1, backgroundColor: "#EDEDED", width: "100%" }} />
 
               {/* Seller */}
               <Column gap="$xs">
@@ -252,9 +236,7 @@ export function MobileProductBar({
               </Column>
 
               {/* Divider */}
-              <div
-                style={{ height: 1, backgroundColor: "#EDEDED", width: "100%" }}
-              />
+              <div style={{ height: 1, backgroundColor: "#EDEDED", width: "100%" }} />
 
               {/* Specifications */}
               <Column gap="$sm">

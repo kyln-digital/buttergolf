@@ -3,9 +3,7 @@
 import { prisma } from "@buttergolf/db";
 import type { ProductCardData } from "@buttergolf/app";
 
-export async function getRecentProducts(
-  limit: number = 12,
-): Promise<ProductCardData[]> {
+export async function getRecentProducts(limit: number = 12): Promise<ProductCardData[]> {
   try {
     const products = await prisma.product.findMany({
       take: limit,
@@ -86,10 +84,12 @@ export async function getRecentProducts(
             averageRating: product.user.averageRating,
             ratingCount: product.user.ratingCount,
           },
-          activePromotion: product.promotions[0] ? {
-            type: product.promotions[0].type,
-            expiresAt: product.promotions[0].expiresAt,
-          } : null,
+          activePromotion: product.promotions[0]
+            ? {
+                type: product.promotions[0].type,
+                expiresAt: product.promotions[0].expiresAt,
+              }
+            : null,
         };
       });
   } catch (error) {

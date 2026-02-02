@@ -9,9 +9,7 @@ import { FooterSection } from "../../_components/marketplace/FooterSection";
 import { HorizontalProductCard } from "./HorizontalProductCard";
 
 interface FavouritesResponse {
-  products: Array<
-    ProductCardData & { favouritedAt: string; description?: string }
-  >;
+  products: Array<ProductCardData & { favouritedAt: string; description?: string }>;
   pagination: {
     page: number;
     limit: number;
@@ -49,9 +47,7 @@ export function FavouritesClient() {
         setTotalPages(data.pagination.totalPages);
       } catch (err) {
         console.error("Error fetching favourites:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to load favourites",
-        );
+        setError(err instanceof Error ? err.message : "Failed to load favourites");
       } finally {
         setLoading(false);
       }
@@ -178,21 +174,12 @@ export function FavouritesClient() {
             <Heading level={2} color="$text" textAlign="center">
               No favourites yet
             </Heading>
-            <Text
-              size="$5"
-              color="$textSecondary"
-              textAlign="center"
-              maxWidth={500}
-            >
-              Browse our marketplace to discover amazing golf equipment and save
-              your favourites here for easy access.
+            <Text size="$5" color="$textSecondary" textAlign="center" maxWidth={500}>
+              Browse our marketplace to discover amazing golf equipment and save your favourites
+              here for easy access.
             </Text>
             <Link href="/listings">
-              <Button
-                butterVariant="primary"
-                size="$5"
-                marginTop="$md"
-              >
+              <Button butterVariant="primary" size="$5" marginTop="$md">
                 Browse Listings
               </Button>
             </Link>
@@ -204,9 +191,7 @@ export function FavouritesClient() {
           <>
             <Row alignItems="center" justifyContent="space-between">
               <Heading level={2} color="$text">
-                {products.length === 1
-                  ? "1 Favourite"
-                  : `${products.length} Favourites`}
+                {products.length === 1 ? "1 Favourite" : `${products.length} Favourites`}
               </Heading>
             </Row>
 
@@ -225,12 +210,7 @@ export function FavouritesClient() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <Row
-                gap="$md"
-                alignItems="center"
-                justifyContent="center"
-                marginTop="$xl"
-              >
+              <Row gap="$md" alignItems="center" justifyContent="center" marginTop="$xl">
                 <Button
                   size="$4"
                   backgroundColor={page === 1 ? "$backgroundPress" : "$surface"}
@@ -252,9 +232,7 @@ export function FavouritesClient() {
 
                 <Button
                   size="$4"
-                  backgroundColor={
-                    page === totalPages ? "$backgroundPress" : "$surface"
-                  }
+                  backgroundColor={page === totalPages ? "$backgroundPress" : "$surface"}
                   color={page === totalPages ? "$textMuted" : "$text"}
                   borderWidth={1}
                   borderColor="$border"

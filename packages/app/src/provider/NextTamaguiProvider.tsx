@@ -43,9 +43,7 @@ function TamaguiProviderInner({ children }: { children: ReactNode }) {
   );
 }
 
-export function NextTamaguiProvider({
-  children,
-}: Readonly<{ children: ReactNode }>) {
+export function NextTamaguiProvider({ children }: Readonly<{ children: ReactNode }>) {
   // Inject styles for SSR (react-native-web components)
   useServerInsertedHTML(() => {
     // @ts-ignore - RN doesn't have this type but it exists at runtime
@@ -58,10 +56,7 @@ export function NextTamaguiProvider({
             __html: `document.documentElement.classList.add('t_unmounted')`,
           }}
         />
-        <style
-          dangerouslySetInnerHTML={{ __html: rnwStyle.textContent }}
-          id={rnwStyle.id}
-        />
+        <style dangerouslySetInnerHTML={{ __html: rnwStyle.textContent }} id={rnwStyle.id} />
         <style
           dangerouslySetInnerHTML={{
             __html: config.getCSS({

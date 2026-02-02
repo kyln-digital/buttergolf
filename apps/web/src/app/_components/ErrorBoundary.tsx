@@ -27,10 +27,7 @@ interface ErrorBoundaryState {
  * </AnimationErrorBoundary>
  * ```
  */
-export class AnimationErrorBoundary extends Component<
-  ErrorBoundaryProps,
-  ErrorBoundaryState
-> {
+export class AnimationErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };

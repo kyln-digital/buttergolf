@@ -57,9 +57,6 @@ export async function PUT(request: NextRequest, context: Params) {
     return NextResponse.json(address);
   } catch (error) {
     console.error("Error setting default address:", error);
-    return NextResponse.json(
-      { error: "Failed to set default address" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to set default address" }, { status: 500 });
   }
 }

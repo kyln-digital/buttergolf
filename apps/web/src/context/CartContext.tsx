@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 
 export interface CartItem {
   productId: string;
@@ -36,16 +30,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     setItems((currentItems) => {
-      const existingItem = currentItems.find(
-        (i) => i.productId === item.productId,
-      );
+      const existingItem = currentItems.find((i) => i.productId === item.productId);
 
       if (existingItem) {
         // Increase quantity if item already exists
         return currentItems.map((i) =>
-          i.productId === item.productId
-            ? { ...i, quantity: i.quantity + 1 }
-            : i,
+          i.productId === item.productId ? { ...i, quantity: i.quantity + 1 } : i
         );
       }
 
@@ -55,23 +45,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const removeItem = useCallback((productId: string) => {
-    setItems((currentItems) =>
-      currentItems.filter((item) => item.productId !== productId),
-    );
+    setItems((currentItems) => currentItems.filter((item) => item.productId !== productId));
   }, []);
 
   const updateQuantity = useCallback((productId: string, quantity: number) => {
     if (quantity <= 0) {
-      setItems((currentItems) =>
-        currentItems.filter((item) => item.productId !== productId),
-      );
+      setItems((currentItems) => currentItems.filter((item) => item.productId !== productId));
       return;
     }
 
     setItems((currentItems) =>
-      currentItems.map((item) =>
-        item.productId === productId ? { ...item, quantity } : item,
-      ),
+      currentItems.map((item) => (item.productId === productId ? { ...item, quantity } : item))
     );
   }, []);
 
@@ -80,10 +64,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0,
-  );
+  const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
     <CartContext.Provider

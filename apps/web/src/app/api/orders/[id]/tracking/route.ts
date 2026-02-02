@@ -13,10 +13,7 @@ export const dynamic = "force-dynamic";
  * Authorization: Buyer or Seller only
  * Caching: Response cached for 5 minutes
  */
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Support both web cookies and mobile Bearer tokens
     const clerkId = await getUserIdFromRequest(req);
@@ -58,10 +55,7 @@ export async function GET(
 
     // Authorization check: buyer or seller only
     if (order.buyerId !== user.id && order.sellerId !== user.id) {
-      return NextResponse.json(
-        { error: "Not authorized to view this order" },
-        { status: 403 },
-      );
+      return NextResponse.json({ error: "Not authorized to view this order" }, { status: 403 });
     }
 
     // Return early if no tracking code
@@ -104,7 +98,7 @@ export async function GET(
           // Cache for 5 minutes
           "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
         },
-      },
+      }
     );
   } catch (error) {
     console.error("Error fetching tracking information:", error);
@@ -113,10 +107,9 @@ export async function GET(
     return NextResponse.json(
       {
         error: "Failed to fetch tracking information",
-        message:
-          error instanceof Error ? error.message : "Unknown error occurred",
+        message: error instanceof Error ? error.message : "Unknown error occurred",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
