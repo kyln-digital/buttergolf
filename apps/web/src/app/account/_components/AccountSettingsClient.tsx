@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Column, Row, Heading, Text, Button, Card, Badge, Container } from "@buttergolf/ui";
-import { SellerOnboarding } from "../../_components/SellerOnboarding";
+import { PayoutSetupWizard } from "./PayoutSetupWizard";
 
 interface AccountSettingsClientProps {
   readonly user: {
     readonly email: string;
     readonly firstName?: string;
     readonly lastName?: string;
+    readonly phone?: string | null;
     readonly hasConnectAccount: boolean;
     readonly onboardingComplete: boolean;
     readonly accountStatus: string;
@@ -18,11 +19,11 @@ interface AccountSettingsClientProps {
 
 /**
  * Client component for account settings page
- * Handles seller onboarding state and UI interactions
+ * Handles payout setup state and UI interactions
  */
 export function AccountSettingsClient({ user }: AccountSettingsClientProps) {
   const router = useRouter();
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showPayoutSetup, setShowPayoutSetup] = useState(false);
 
   // Determine badge variant based on account status
   const getStatusBadge = () => {
@@ -30,13 +31,13 @@ export function AccountSettingsClient({ user }: AccountSettingsClientProps) {
       case "active":
         return (
           <Badge variant="success" size="md">
-            Active Seller
+            Active
           </Badge>
         );
       case "restricted":
         return (
           <Badge variant="warning" size="md">
-            Restricted
+            Action Required
           </Badge>
         );
       case "pending":
@@ -46,27 +47,31 @@ export function AccountSettingsClient({ user }: AccountSettingsClientProps) {
           </Badge>
         );
       default:
-        return null;
+        return (
+          <Badge variant="neutral" size="md">
+            Not Set Up
+          </Badge>
+        );
     }
   };
 
-  const handleOnboardingComplete = () => {
-    setShowOnboarding(false);
+  const handlePayoutSetupComplete = () => {
+    setShowPayoutSetup(false);
     // Refresh the page to show updated status
     globalThis.location.reload();
   };
 
-  const renderContent = () => {
+  const renderPayoutContent = () => {
     if (user.hasConnectAccount && user.onboardingComplete && user.accountStatus === "active") {
       return (
         <>
           <Text color="$textSecondary">
-            Your seller account is active and ready to receive payments. You can now list products
-            and manage your sales.
+            Your payout account is active. When you make sales, funds will be transferred to your
+            bank account automatically.
           </Text>
           <Row gap="$md">
-            <Button butterVariant="primary" size="$4" onPress={() => router.push("/seller")}>
-              View Seller Dashboard
+            <Button butterVariant="primary" size="$4" onPress={() => router.push("/seller/sales")}>
+              View Sales
             </Button>
             <Button
               size="$4"
@@ -75,7 +80,7 @@ export function AccountSettingsClient({ user }: AccountSettingsClientProps) {
               borderColor="$border"
               onPress={() => router.push("/seller/settings")}
             >
-              Account Settings
+              Payout Settings
             </Button>
           </Row>
         </>
@@ -86,25 +91,12 @@ export function AccountSettingsClient({ user }: AccountSettingsClientProps) {
       return (
         <>
           <Text color="$textSecondary">
-            Your seller account has some restrictions. Please update your account information to
-            enable full functionality.
+            Your payout account needs attention. Please update your information to continue
+            receiving payments.
           </Text>
           <Row gap="$md">
-            <Button
-              butterVariant="primary"
-              size="$4"
-              onPress={() => router.push("/seller/settings")}
-            >
+            <Button butterVariant="primary" size="$4" onPress={() => setShowPayoutSetup(true)}>
               Resolve Issues
-            </Button>
-            <Button
-              size="$4"
-              backgroundColor="$surface"
-              borderWidth={1}
-              borderColor="$border"
-              onPress={() => router.push("/seller")}
-            >
-              View Dashboard
             </Button>
           </Row>
         </>
@@ -115,22 +107,8 @@ export function AccountSettingsClient({ user }: AccountSettingsClientProps) {
       return (
         <>
           <Text color="$textSecondary">
-            Your seller account is being reviewed. This usually takes 1-2 business days.
+            Your payout account is being verified. This usually takes 1-2 business days.
           </Text>
-          <Row gap="$md">
-            <Button butterVariant="primary" size="$4" onPress={() => router.push("/seller")}>
-              View Dashboard
-            </Button>
-            <Button
-              size="$4"
-              backgroundColor="$surface"
-              borderWidth={1}
-              borderColor="$border"
-              onPress={() => router.push("/seller/settings")}
-            >
-              View Status
-            </Button>
-          </Row>
         </>
       );
     }
@@ -139,12 +117,12 @@ export function AccountSettingsClient({ user }: AccountSettingsClientProps) {
       return (
         <>
           <Text color="$textSecondary">
-            Your seller account setup is incomplete. Please complete the onboarding process to start
-            selling.
+            Your payout setup is incomplete. Complete the setup to receive payments when you make
+            sales.
           </Text>
           <Row gap="$md">
-            <Button size="$4" onPress={() => setShowOnboarding(true)}>
-              Continue Onboarding
+            <Button butterVariant="primary" size="$4" onPress={() => setShowPayoutSetup(true)}>
+              Continue Setup
             </Button>
           </Row>
         </>
@@ -154,27 +132,33 @@ export function AccountSettingsClient({ user }: AccountSettingsClientProps) {
     return (
       <>
         <Text color="$textSecondary">
-          Start selling golf equipment on ButterGolf. Complete the quick onboarding process to set
-          up your seller account and begin listing products.
+          Set up payouts to receive money when you sell items. This is a one-time setup that takes
+          about 2-3 minutes.
         </Text>
         <Row>
-          <Button size="$5" onPress={() => setShowOnboarding(true)}>
-            Become a Seller
+          <Button butterVariant="primary" size="$5" onPress={() => setShowPayoutSetup(true)}>
+            Set Up Payouts
           </Button>
         </Row>
       </>
     );
   };
 
-  if (showOnboarding) {
+  // Show payout setup wizard
+  if (showPayoutSetup) {
     return (
-      <Container size="lg" paddingHorizontal="$md">
-        <Card variant="elevated" padding="$lg">
-          <SellerOnboarding
-            onComplete={handleOnboardingComplete}
-            onExit={() => setShowOnboarding(false)}
-          />
-        </Card>
+      <Container size="lg" paddingHorizontal="$md" paddingVertical="$xl">
+        <PayoutSetupWizard
+          initialStatus={{
+            hasAccount: user.hasConnectAccount,
+            onboardingComplete: user.onboardingComplete,
+            accountStatus: user.accountStatus,
+            requirementsCount: 0,
+            phone: user.phone ?? null,
+          }}
+          onComplete={handlePayoutSetupComplete}
+          onExit={() => setShowPayoutSetup(false)}
+        />
       </Container>
     );
   }
@@ -184,7 +168,7 @@ export function AccountSettingsClient({ user }: AccountSettingsClientProps) {
       <Column gap="$xl" fullWidth>
         <Column gap="$sm">
           <Heading level={1}>Account Settings</Heading>
-          <Text color="$textSecondary">Manage your account and seller settings</Text>
+          <Text color="$textSecondary">Manage your account and payment settings</Text>
         </Column>
 
         {/* Account Info Card */}
@@ -203,17 +187,23 @@ export function AccountSettingsClient({ user }: AccountSettingsClientProps) {
                 </Text>
               </Column>
             )}
+            {user.phone && (
+              <Column gap="$xs">
+                <Text weight="medium">Phone</Text>
+                <Text color="$textSecondary">{user.phone}</Text>
+              </Column>
+            )}
           </Column>
         </Card>
 
-        {/* Seller Status Card */}
+        {/* Payout Setup Card */}
         <Card variant="elevated" padding="$lg">
           <Column gap="$lg">
             <Row alignItems="center" justifyContent="space-between">
-              <Heading level={3}>Seller Account</Heading>
+              <Heading level={3}>Payout Setup</Heading>
               {getStatusBadge()}
             </Row>
-            {renderContent()}
+            {renderPayoutContent()}
           </Column>
         </Card>
       </Column>

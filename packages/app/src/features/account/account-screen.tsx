@@ -32,7 +32,11 @@ export interface AccountScreenProps {
   isLoading?: boolean;
   /** Whether user has completed Stripe seller onboarding */
   isSellerOnboarded?: boolean;
-  /** Number of pending orders */
+  /** Number of items user has listed for sale */
+  activeListingsCount?: number;
+  /** Number of pending payouts (sales waiting for payout setup) */
+  pendingPayoutsCount?: number;
+  /** Number of pending orders (purchases) */
   pendingOrdersCount?: number;
   /** Number of unread messages */
   unreadMessagesCount?: number;
@@ -66,6 +70,8 @@ export function AccountScreen({
   user,
   isLoading = false,
   isSellerOnboarded = false,
+  activeListingsCount,
+  pendingPayoutsCount,
   pendingOrdersCount,
   unreadMessagesCount,
   onSignOut,
@@ -202,19 +208,29 @@ export function AccountScreen({
             SELLING
           </Text>
 
-          {isSellerOnboarded ? (
+          {/* My Sales - always visible */}
+          <AccountMenuItem
+            icon={<Store size={22} color={isSellerOnboarded ? "$success" : "$textSecondary"} />}
+            label="My Sales"
+            description={
+              isSellerOnboarded ? "Manage your sales and listings" : "View your sales and listings"
+            }
+            badge={
+              !isSellerOnboarded && pendingPayoutsCount && pendingPayoutsCount > 0
+                ? pendingPayoutsCount
+                : undefined
+            }
+            badgeVariant={!isSellerOnboarded ? "warning" : "primary"}
+            onPress={onViewSellerDashboard}
+          />
+
+          {/* Payout Setup - shown if not onboarded */}
+          {!isSellerOnboarded && (
             <AccountMenuItem
-              icon={<Store size={22} color="$success" />}
-              label="Seller Dashboard"
-              description="Manage your sales and listings"
-              onPress={onViewSellerDashboard}
-            />
-          ) : (
-            <AccountMenuItem
-              icon={<Store size={22} color="$textSecondary" />}
-              label="Start Selling"
-              description="Set up your seller account"
-              badge="Setup"
+              icon={<CreditCard size={22} color="$warning" />}
+              label="Payout Setup"
+              description="Set up to receive payments"
+              badge={pendingPayoutsCount && pendingPayoutsCount > 0 ? "Required" : "Setup"}
               badgeVariant="warning"
               onPress={onStartSellerOnboarding}
             />
