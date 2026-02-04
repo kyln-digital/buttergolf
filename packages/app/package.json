@@ -22,6 +22,7 @@
     "@tamagui/toast": "catalog:",
     "react": "catalog:",
     "react-native": "catalog:",
+    "react-native-otp-entry": "^1.8.5",
     "solito": "catalog:",
     "tamagui": "catalog:"
   },

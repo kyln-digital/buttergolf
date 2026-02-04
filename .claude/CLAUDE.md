@@ -908,45 +908,6 @@ await prisma.course.delete({
 });
 ```
 
-### Testing and Test Dependencies
-
-**🚨 CRITICAL: NEVER import web-only test libraries in mobile code**
-
-```tsx
-// ❌ WRONG - Causes "SharedArrayBuffer doesn't exist" crash in React Native
-import { JSDOM } from "jsdom";
-import "@testing-library/jest-dom";
-import { configure } from "happy-dom";
-
-// ✅ CORRECT - Use React Native Testing Library for mobile
-import { render } from "@testing-library/react-native";
-```
-
-**Why:** React Native uses Hermes/JSC engines which don't support `SharedArrayBuffer`. Web testing libraries (jsdom, happy-dom) use SharedArrayBuffer and will crash mobile apps.
-
-**Protection Layers:**
-
-1. **Package Management:** jsdom removed from workspace catalog, nohoist configured in `.npmrc`
-2. **Metro Bundler:** Comprehensive blocklist in `apps/mobile/metro.config.js`
-3. **ESLint:** Restricted imports in `packages/eslint-config/react-internal.js` and `apps/mobile/eslint.config.mjs`
-4. **Vitest Config:** All configs use `environment: 'node'`, never 'jsdom'
-
-**Testing Strategy:**
-
-- **Mobile:** Use `@testing-library/react-native` (tests in shared packages)
-- **Web:** Can use jsdom locally if needed (install in `apps/web/` only)
-- **Shared:** MUST use `environment: 'node'` and universal test patterns
-
-See [TESTING_SETUP.md](./.claude/TESTING_SETUP.md) for complete guide.
-
-## Testing Approach
-
-- Unit tests for utilities and hooks
-- Integration tests for API routes
-- E2E tests for critical user flows
-- Visual regression tests for UI components
-- Test cross-platform compatibility
-
 ## Performance Considerations
 
 - Leverage Turborepo caching

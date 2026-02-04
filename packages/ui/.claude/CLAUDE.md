@@ -554,27 +554,6 @@ export type { CardProps } from "./components/card";
 // ... more exports
 ```
 
-## Testing Components
-
-```tsx
-import { render } from "@testing-library/react-native";
-import { TamaguiProvider } from "tamagui";
-import { config } from "@buttergolf/config";
-import { Button } from "./button";
-
-describe("Button", () => {
-  it("renders correctly", () => {
-    const { getByText } = render(
-      <TamaguiProvider config={config}>
-        <Button>Click me</Button>
-      </TamaguiProvider>
-    );
-
-    expect(getByText("Click me")).toBeTruthy();
-  });
-});
-```
-
 ## Platform Compatibility
 
 ### Cross-Platform Components

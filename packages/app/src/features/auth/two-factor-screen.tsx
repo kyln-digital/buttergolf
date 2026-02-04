@@ -6,7 +6,7 @@ import { Button as TamaguiButton } from "tamagui";
 import { ArrowLeft, ShieldCheck, Smartphone, Mail } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSignIn } from "@clerk/clerk-expo";
-import { TextInput } from "react-native";
+import { OtpInput, OtpInputRef } from "react-native-otp-entry";
 import { AuthErrorDisplay } from "./components";
 import { mapClerkErrorToMessage } from "./utils";
 
@@ -17,18 +17,19 @@ interface TwoFactorScreenProps {
   onNavigateBack?: () => void;
 }
 
+const CODE_LENGTH = 6;
+
 /**
  * Two-factor authentication screen
  * Supports TOTP (authenticator app) and email code strategies
+ *
+ * Uses react-native-otp-entry for proper iOS/Android autofill support.
  */
 export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFactorScreenProps>) {
   const insets = useSafeAreaInsets();
   const { signIn, setActive, isLoaded } = useSignIn();
   const theme = useTheme();
-  // Get theme-aware text color for TextInput
-  const textColor = theme.text?.val ?? "#323232";
 
-  const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,66 +37,10 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
   const [emailHint, setEmailHint] = useState<string | null>(null);
   const [codeSent, setCodeSent] = useState(false);
 
-  // Refs for each input to handle focus
-  const inputRefs = useRef<(TextInput | null)[]>([]);
+  // OTP input ref for programmatic control
+  const otpRef = useRef<OtpInputRef>(null);
   // Ref to prevent multiple code sends
   const hasInitialized = useRef(false);
-
-  const handleDigitChange = useCallback(
-    (index: number, value: string) => {
-      // Only allow single digit
-      const digit = value.replace(/[^0-9]/g, "").slice(-1);
-
-      setCode((prev) => {
-        const newCode = [...prev];
-        newCode[index] = digit;
-        return newCode;
-      });
-
-      // Auto-advance to next input
-      if (digit && index < 5) {
-        inputRefs.current[index + 1]?.focus();
-      }
-
-      // Clear error when typing
-      if (error) {
-        setError(null);
-      }
-    },
-    [error]
-  );
-
-  const handleKeyPress = useCallback(
-    (index: number, key: string) => {
-      // Handle backspace - go to previous input
-      if (key === "Backspace" && !code[index] && index > 0) {
-        inputRefs.current[index - 1]?.focus();
-      }
-    },
-    [code]
-  );
-
-  const handlePaste = useCallback((pastedText: string) => {
-    const digits = pastedText
-      .replace(/[^0-9]/g, "")
-      .slice(0, 6)
-      .split("");
-    if (digits.length > 0) {
-      const newCode = ["", "", "", "", "", ""];
-      digits.forEach((digit, i) => {
-        newCode[i] = digit;
-      });
-      setCode(newCode);
-      // Focus the next empty input or last input
-      const nextIndex = Math.min(digits.length, 5);
-      inputRefs.current[nextIndex]?.focus();
-    }
-  }, []);
-
-  const fullCode = code.join("");
-
-  // Ref to store the latest handleVerify function for auto-submit
-  const handleVerifyRef = useRef<(() => Promise<void>) | null>(null);
 
   // Detect available 2FA strategy and send email code if needed
   useEffect(() => {
@@ -181,6 +126,8 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
       });
       console.log("[TwoFactor] Email code sent successfully");
       setCodeSent(true);
+      // Clear any existing code
+      otpRef.current?.clear();
     } catch (err) {
       console.error("[TwoFactor] Error sending email code:", err);
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -190,83 +137,78 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
     }
   }, [isLoaded, signIn]);
 
-  const handleVerify = useCallback(async () => {
-    setError(null);
+  const handleVerify = useCallback(
+    async (code: string) => {
+      setError(null);
 
-    if (fullCode.length !== 6) {
-      setError("Please enter all 6 digits");
-      return;
-    }
-
-    if (!isLoaded || !signIn) {
-      setError("Authentication service not ready. Please try again.");
-      return;
-    }
-
-    if (!strategy) {
-      setError("Two-factor strategy not detected. Please go back and try again.");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      console.log("[TwoFactor] Attempting verification with strategy:", strategy);
-      const result = await signIn.attemptSecondFactor({
-        strategy: strategy,
-        code: fullCode,
-      });
-      console.log("[TwoFactor] Status:", result.status);
-
-      if (result.status === "complete") {
-        console.log("[TwoFactor] Session created:", result.createdSessionId);
-        await setActive({ session: result.createdSessionId });
-        onSuccess?.();
-      } else {
-        console.log("[TwoFactor] Unhandled status:", result.status);
-        setError("Verification incomplete. Please try again.");
-      }
-    } catch (err) {
-      console.error("[TwoFactor] Error:", err);
-      const errorMessage = err instanceof Error ? err.message : String(err);
-
-      if (
-        errorMessage.includes("verification_code_invalid") ||
-        errorMessage.includes("incorrect_code")
-      ) {
-        setError(mapClerkErrorToMessage("verification_code_invalid"));
-      } else if (errorMessage.includes("verification_code_expired")) {
-        setError(mapClerkErrorToMessage("verification_code_expired"));
-      } else {
-        setError(errorMessage || "Verification failed. Please try again.");
+      if (code.length !== CODE_LENGTH) {
+        setError("Please enter all 6 digits");
+        return;
       }
 
-      // Clear code on error
-      setCode(["", "", "", "", "", ""]);
-      inputRefs.current[0]?.focus();
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [fullCode, isLoaded, signIn, setActive, onSuccess, strategy]);
+      if (!isLoaded || !signIn) {
+        setError("Authentication service not ready. Please try again.");
+        return;
+      }
 
-  // Keep ref updated with latest handleVerify function
-  handleVerifyRef.current = handleVerify;
+      if (!strategy) {
+        setError("Two-factor strategy not detected. Please go back and try again.");
+        return;
+      }
 
-  // Auto-submit when all 6 digits are entered
-  useEffect(() => {
-    // For email_code strategy, wait until code has been sent
-    const canAutoSubmit =
-      fullCode.length === 6 &&
-      !isSubmitting &&
-      isLoaded &&
-      signIn &&
-      strategy &&
-      (strategy !== "email_code" || codeSent);
+      // For email_code strategy, wait until code has been sent
+      if (strategy === "email_code" && !codeSent) {
+        return;
+      }
 
-    if (canAutoSubmit) {
-      handleVerifyRef.current?.();
-    }
-  }, [fullCode, isSubmitting, isLoaded, signIn, strategy, codeSent]);
+      setIsSubmitting(true);
+
+      try {
+        console.log("[TwoFactor] Attempting verification with strategy:", strategy);
+        const result = await signIn.attemptSecondFactor({
+          strategy: strategy,
+          code: code,
+        });
+        console.log("[TwoFactor] Status:", result.status);
+
+        if (result.status === "complete") {
+          console.log("[TwoFactor] Session created:", result.createdSessionId);
+          await setActive({ session: result.createdSessionId });
+          onSuccess?.();
+        } else {
+          console.log("[TwoFactor] Unhandled status:", result.status);
+          setError("Verification incomplete. Please try again.");
+        }
+      } catch (err) {
+        console.error("[TwoFactor] Error:", err);
+        const errorMessage = err instanceof Error ? err.message : String(err);
+
+        if (
+          errorMessage.includes("verification_code_invalid") ||
+          errorMessage.includes("incorrect_code")
+        ) {
+          setError(mapClerkErrorToMessage("verification_code_invalid"));
+        } else if (errorMessage.includes("verification_code_expired")) {
+          setError(mapClerkErrorToMessage("verification_code_expired"));
+        } else {
+          setError(errorMessage || "Verification failed. Please try again.");
+        }
+
+        // Clear code on error
+        otpRef.current?.clear();
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [isLoaded, signIn, setActive, onSuccess, strategy, codeSent]
+  );
+
+  // Get theme colors for OTP input styling
+  const primaryColor = theme.primary?.val ?? "#F45314";
+  const borderColor = theme.border?.val ?? "#EDEDED";
+  const surfaceColor = theme.surface?.val ?? "#FFFFFF";
+  const primaryLightColor = theme.primaryLight?.val ?? "#FFFAD2";
+  const textColor = theme.text?.val ?? "#323232";
 
   return (
     <Column flex={1} backgroundColor="$background">
@@ -326,55 +268,53 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
           {/* Error Display */}
           {error && <AuthErrorDisplay error={error} onDismiss={() => setError(null)} />}
 
-          {/* Code Input Grid */}
+          {/* OTP Input */}
           <Column gap="$4" alignItems="center">
-            <Row gap="$2" justifyContent="center">
-              {code.map((digit, index) => (
-                <Column
-                  key={index}
-                  width={48}
-                  height={56}
-                  borderRadius="$4"
-                  borderWidth={2}
-                  borderColor={digit ? "$primary" : "$border"}
-                  backgroundColor={digit ? "$primaryLight" : "$surface"}
-                  alignItems="center"
-                  justifyContent="center"
-                  opacity={isSubmitting ? 0.6 : 1}
-                >
-                  <TextInput
-                    ref={(ref) => {
-                      inputRefs.current[index] = ref;
-                    }}
-                    value={digit}
-                    onChangeText={(text) => handleDigitChange(index, text)}
-                    onKeyPress={({ nativeEvent }) => handleKeyPress(index, nativeEvent.key)}
-                    keyboardType="number-pad"
-                    textContentType="oneTimeCode"
-                    autoComplete="one-time-code"
-                    inputMode="numeric"
-                    maxLength={1}
-                    editable={!isSubmitting}
-                    selectTextOnFocus
-                    style={{
-                      fontSize: 24,
-                      fontWeight: "700",
-                      textAlign: "center",
-                      width: "100%",
-                      height: "100%",
-                      color: textColor,
-                    }}
-                    // Handle paste on first input
-                    onChange={(e) => {
-                      const text = e.nativeEvent.text;
-                      if (text.length > 1 && index === 0) {
-                        handlePaste(text);
-                      }
-                    }}
-                  />
-                </Column>
-              ))}
-            </Row>
+            <OtpInput
+              ref={otpRef}
+              numberOfDigits={CODE_LENGTH}
+              onFilled={handleVerify}
+              focusColor={primaryColor}
+              disabled={isSubmitting || isSendingCode}
+              type="numeric"
+              textInputProps={{
+                accessibilityLabel: "Enter 6-digit verification code",
+                // Enable OTP autofill for email codes but not TOTP
+                textContentType: strategy !== "totp" ? "oneTimeCode" : undefined,
+                autoComplete: strategy !== "totp" ? "one-time-code" : undefined,
+              }}
+              theme={{
+                containerStyle: {
+                  width: "100%",
+                  justifyContent: "center",
+                  gap: 8,
+                },
+                pinCodeContainerStyle: {
+                  width: 48,
+                  height: 56,
+                  borderRadius: 12,
+                  borderWidth: 2,
+                  borderColor: borderColor,
+                  backgroundColor: surfaceColor,
+                },
+                pinCodeTextStyle: {
+                  fontSize: 24,
+                  fontWeight: "700",
+                  color: textColor,
+                },
+                focusedPinCodeContainerStyle: {
+                  borderColor: primaryColor,
+                  backgroundColor: primaryLightColor,
+                },
+                filledPinCodeContainerStyle: {
+                  borderColor: primaryColor,
+                  backgroundColor: primaryLightColor,
+                },
+                disabledPinCodeContainerStyle: {
+                  opacity: 0.6,
+                },
+              }}
+            />
 
             {/* Strategy-specific hint */}
             {strategy === "email_code" ? (
@@ -394,15 +334,17 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
             )}
           </Column>
 
-          {/* Verify Button */}
+          {/* Verify Button - hidden since auto-submit on fill, but kept for accessibility */}
           <Button
             butterVariant="primary"
             size="$5"
             borderRadius="$full"
             fontWeight="600"
-            onPress={handleVerify}
-            disabled={isSubmitting || fullCode.length !== 6 || isSendingCode}
-            opacity={isSubmitting || fullCode.length !== 6 || isSendingCode ? 0.7 : 1}
+            onPress={() => {
+              // Manual submit fallback
+            }}
+            disabled={isSubmitting || isSendingCode}
+            opacity={isSubmitting || isSendingCode ? 0.7 : 1}
           >
             {isSubmitting ? <Spinner size="sm" color="$textInverse" /> : "Verify Code"}
           </Button>
