@@ -390,6 +390,9 @@ importers:
       react-native:
         specifier: 0.81.5
         version: 0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10)
+      react-native-phone-entry:
+        specifier: ^0.2.4
+        version: 0.2.4(@types/react@19.1.17)(react-art@16.13.1(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
       react-native-reanimated:
         specifier: 4.1.1
         version: 4.1.1(@babel/core@7.29.0)(react-native-worklets@0.5.1(@babel/core@7.29.0)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
@@ -1736,6 +1739,14 @@ packages:
         optional: true
       commander:
         optional: true
+
+  "@callstack/react-theme-provider@3.0.3":
+    resolution:
+      {
+        integrity: sha512-B+9JBK7zsND/AdVkjwHvbb4cR05fJofLFG30hOeoXke8WkKAWN36yFljauAhI8qwlXlGFGZMYE1wQvsqBSccrA==,
+      }
+    peerDependencies:
+      react: 19.1.0
 
   "@clack/core@1.0.0-alpha.7":
     resolution:
@@ -7257,6 +7268,14 @@ packages:
         integrity: sha512-olP3sd1qOEe5dXTSaFvQG+02VdRXcdytWLAZsAq1PecU8uqQAhkrnbli7DagjtXKW/Bl7YJbUsa8MPcuc8LHEQ==,
       }
 
+  "@types/hoist-non-react-statics@3.3.7":
+    resolution:
+      {
+        integrity: sha512-PQTyIulDkIDro8P+IHbKCsw7U2xxBYflVzW/FgWdCAePD9xGSidgA76/GeJ6lBKoblyhf9pBY763gbrN+1dI8g==,
+      }
+    peerDependencies:
+      "@types/react": 19.1.17
+
   "@types/html-minifier-terser@6.1.0":
     resolution:
       {
@@ -8425,6 +8444,12 @@ packages:
         integrity: sha512-BNoCY6SXXPQ7gF2opIP4GBE+Xw7U+pHMYKuzjgCN3GwiaIR09UUeKfheyIry77QtrCBlC0KK0q5/TER/tYh3PQ==,
       }
     engines: { node: ">= 0.4" }
+
+  art@0.10.3:
+    resolution:
+      {
+        integrity: sha512-HXwbdofRTiJT6qZX/FnchtldzJjS3vkLJxQilc3Xj+ma2MXjY4UAyQ0ls1XZYVnDvVIBiFZbC6QsvtW86TD6tQ==,
+      }
 
   asap@2.0.6:
     resolution:
@@ -9607,6 +9632,12 @@ packages:
       }
     engines: { node: ">= 14" }
 
+  create-react-class@15.7.0:
+    resolution:
+      {
+        integrity: sha512-QZv4sFWG9S5RUvkTYWbflxeZX+JG7Cz0Tn33rQBJ+WFQTqTfUTjMjiv9tnfXazjsO5r0KhPs+AqCjyrQX6h2ng==,
+      }
+
   croner@9.1.0:
     resolution:
       {
@@ -9921,6 +9952,13 @@ packages:
         integrity: sha512-HOJkrhaYsweh+W+e74Yn7YStZOilkoPb6fycpwNLKzSPtruFs48nYis0zy5yJz1+ktUhHxoRDJ27RQAWLIJVJw==,
       }
     engines: { node: ">=16.0.0" }
+
+  deepmerge@3.3.0:
+    resolution:
+      {
+        integrity: sha512-GRQOafGHwMHpjPx9iCvTgpu9NojZ49q794EEL94JVEw6VaeA8XTUyBKvAkOOjBX9oJNiV6G3P+T+tihFjo2TqA==,
+      }
+    engines: { node: ">=0.10.0" }
 
   deepmerge@4.3.1:
     resolution:
@@ -11497,6 +11535,13 @@ packages:
         integrity: sha512-xckBUXyTIqT97tq2x2AMb+g163b5JFysYk0x4qxNFwbfQkmNZoiRHb6sPzI9/QV33WeuvVYBUIiD4NzNIyqaRQ==,
       }
 
+  fuse.js@3.4.5:
+    resolution:
+      {
+        integrity: sha512-s9PGTaQIkT69HaeoTVjwGsLfb8V8ScJLx5XGFcKHg0MqLUH/UZ4EKOtqtXX9k7AFqCGxD1aJmYb8Q5VYDibVRQ==,
+      }
+    engines: { node: ">=6" }
+
   fuse.js@7.1.0:
     resolution:
       {
@@ -11731,6 +11776,13 @@ packages:
         integrity: sha512-+A4Hq7m7Ze592k9gZRy4gJ27DrXRNnC1vPjxTt1qQxEY8RxagBkBxivkCwg7FxSTG0iLLEMaUx13oOr0R2/qcQ==,
       }
     engines: { node: ">=20" }
+
+  google-libphonenumber@3.2.44:
+    resolution:
+      {
+        integrity: sha512-9p2TghluF2LTChFMLWsDRD5N78SZDsILdUk4gyqYxBXluCyxoPiOq+Fqt7DKM+LUd33+OgRkdrc+cPR93AypCQ==,
+      }
+    engines: { node: ">=0.10" }
 
   gopd@1.2.0:
     resolution:
@@ -13127,6 +13179,12 @@ packages:
         integrity: sha512-wIkUCfVKpVsWo3JSZlc+8MB5it+2AN5W8J7YVMST30UrvcQNZ1Okbj+rbVniijTWE6FGYy4XJq/rHkas8qJMLQ==,
       }
 
+  lodash.toarray@4.4.0:
+    resolution:
+      {
+        integrity: sha512-QyffEA3i5dma5q2490+SgCvDN0pXLmRGSyAANuVi0HQ01Pkfr9fuoKQW8wm1wGBnJITs/mS7wQvS6VshUEBFCw==,
+      }
+
   lodash.truncate@4.4.2:
     resolution:
       {
@@ -13630,6 +13688,17 @@ packages:
         integrity: sha512-aF7yRQr/Q0O2/4pIXm6PZ5G+jAd7QS4Yu8m+WEeEHGnbo+7mE36CbLSDQiXYV8bVL3NfmdeqPJct0tUlnjVSnA==,
       }
 
+  modal-react-native-web@0.2.0:
+    resolution:
+      {
+        integrity: sha512-sC0/jL3ZL4bGtv1VS43TnrH7/FHUqgb7IU3VYWNDzuR223fYlpG5Gc974GsTP172Vi+lnnBL/G70xONmaggxeQ==,
+      }
+    peerDependencies:
+      react: 19.1.0
+      react-art: 16.x.x
+      react-dom: 19.1.0
+      react-native-web: 0.9.x
+
   module-details-from-path@1.0.4:
     resolution:
       {
@@ -13831,6 +13900,12 @@ packages:
     resolution:
       {
         integrity: sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==,
+      }
+
+  node-emoji@1.10.0:
+    resolution:
+      {
+        integrity: sha512-Yt3384If5H6BYGVHiHwTL+99OzJKHhgp82S8/dktEK73T26BazdgZ4JZh92xSVtGNJvz9UbXdNAc5hcrXV42vw==,
       }
 
   node-emoji@1.11.0:
@@ -15074,6 +15149,12 @@ packages:
       }
     engines: { node: ">= 6" }
 
+  prop-types@15.7.2:
+    resolution:
+      {
+        integrity: sha512-8QQikdH7//R2vurIJSutZ1smHYTcLpRWEOlHnzcWHmBYrOGUysKwSsrC89BCiFj3CbrfJ/nXFdJepOVrY1GCHQ==,
+      }
+
   prop-types@15.8.1:
     resolution:
       {
@@ -15235,6 +15316,23 @@ packages:
       }
     hasBin: true
 
+  react-art@16.13.1:
+    resolution:
+      {
+        integrity: sha512-IDXRZCUlyl3AkQ6Xf3qg0C6MSDxKhOhf7amYzWNMaelH5K2W9KqUOUHL8mGwC0k/1BXFhhusSgsE1Bekz3aHEQ==,
+      }
+    peerDependencies:
+      react: 19.1.0
+
+  react-async-hook@3.6.1:
+    resolution:
+      {
+        integrity: sha512-YWBB2feVQF79t5u2raMPHlZ8975Jds+guCvkWVC4kRLDlSCouLsYpQm4DGSqPeHvoHYVVcDfqNayLZAXQmnxnw==,
+      }
+    engines: { node: ">=8", npm: ">=5" }
+    peerDependencies:
+      react: 19.1.0
+
   react-devtools-core@6.1.5:
     resolution:
       {
@@ -15272,6 +15370,17 @@ packages:
         integrity: sha512-Oe56aUPnkHyyDxxkvqtd7KkdQP5uIUfHxd5XTb3wE9d/kRnZLmKbDB0GWk919tdQ+mxxPtG6EAs6RMT6i1qtHg==,
       }
 
+  react-native-country-picker-modal@2.0.0:
+    resolution:
+      {
+        integrity: sha512-p0wfkKx1mOCEkn3Qm2/FA8TrxSdUw/nqaCcT6KYvIGmPtPdia1Ce+iWh5G0j2hZcDs6yJSkYAx+7lrZ0HwixAw==,
+      }
+    peerDependencies:
+      react: 19.1.0
+      react-dom: 19.1.0
+      react-native: 0.81.5
+      react-native-web: "*"
+
   react-native-is-edge-to-edge@1.2.1:
     resolution:
       {
@@ -15281,10 +15390,28 @@ packages:
       react: 19.1.0
       react-native: 0.81.5
 
+  react-native-mask-input@1.2.3:
+    resolution:
+      {
+        integrity: sha512-RWx+gc1EaBslJWR6dsvGdILJ5XvnvZuyEsgJaH9uAMukB3Z9eOlxra1E7Ovck8NSMVcYWpBB/lzojO4LwqqXgA==,
+      }
+    peerDependencies:
+      react: 19.1.0
+      react-native: 0.81.5
+
   react-native-otp-entry@1.8.5:
     resolution:
       {
         integrity: sha512-TZNkIuUzZKAAWrC8X/A22ZHJdycLysxUNysrGf0yTmDLRUyf4zLXwVFcDYUcRNe763Hjaf5qvtKGILb6lDGzoA==,
+      }
+    peerDependencies:
+      react: 19.1.0
+      react-native: 0.81.5
+
+  react-native-phone-entry@0.2.4:
+    resolution:
+      {
+        integrity: sha512-IIolw1uuRjWX1YZS/u+/edkDNsy3ITIBNXolt8qt92L265HHjqnCQRSsSxJNTtNUfTFmQvLAEPFdJC3cbZ7iFw==,
       }
     peerDependencies:
       react: 19.1.0
@@ -15805,6 +15932,12 @@ packages:
         integrity: sha512-1n3r/tGXO6b6VXMdFT54SHzT9ytu9yr7TaELowdYpMqY/Ao7EnlQGmAQ1+RatX7Tkkdm6hONI2owqNx2aZj5Sw==,
       }
     engines: { node: ">=11.0.0" }
+
+  scheduler@0.19.1:
+    resolution:
+      {
+        integrity: sha512-n/zwRWRYSUj0/3g/otKDRPMh6qv2SYMWNq85IEa8iZyAv8od9zDYpGSnpBEjNgcMNq6Scbu5KfIPxNF72R/2EA==,
+      }
 
   scheduler@0.26.0:
     resolution:
@@ -17793,6 +17926,12 @@ packages:
         integrity: sha512-VkQZJbO8zVImzYFteBXvBOZEl1qL175WH8VmZcxF2fZAoudNhNDvHi+doCaAEdU2l2vtcIwa2zn0QK5+I1HQ3Q==,
       }
 
+  warning@4.0.3:
+    resolution:
+      {
+        integrity: sha512-rpJyN222KWIvHJ/F53XSZv0Zl/accqHR8et1kpaMTD/fLCRxtV8iX8czMzY7sVZupTI3zcUTg8eycS2kNF9l6w==,
+      }
+
   watchpack@2.5.1:
     resolution:
       {
@@ -18924,6 +19063,15 @@ snapshots:
       cac: 6.7.14
       citty: 0.1.6
       commander: 13.1.0
+
+  "@callstack/react-theme-provider@3.0.3(@types/react@19.1.17)(react@19.1.0)":
+    dependencies:
+      "@types/hoist-non-react-statics": 3.3.7(@types/react@19.1.17)
+      deepmerge: 3.3.0
+      hoist-non-react-statics: 3.3.2
+      react: 19.1.0
+    transitivePeerDependencies:
+      - "@types/react"
 
   "@clack/core@1.0.0-alpha.7":
     dependencies:
@@ -23567,6 +23715,11 @@ snapshots:
     dependencies:
       "@types/node": 25.0.8
 
+  "@types/hoist-non-react-statics@3.3.7(@types/react@19.1.17)":
+    dependencies:
+      "@types/react": 19.1.17
+      hoist-non-react-statics: 3.3.2
+
   "@types/html-minifier-terser@6.1.0": {}
 
   "@types/istanbul-lib-coverage@2.0.6": {}
@@ -24347,6 +24500,8 @@ snapshots:
       es-errors: 1.3.0
       get-intrinsic: 1.3.0
       is-array-buffer: 3.0.5
+
+  art@0.10.3: {}
 
   asap@2.0.6: {}
 
@@ -25163,6 +25318,11 @@ snapshots:
       crc-32: 1.2.2
       readable-stream: 4.7.0
 
+  create-react-class@15.7.0:
+    dependencies:
+      loose-envify: 1.4.0
+      object-assign: 4.1.1
+
   croner@9.1.0: {}
 
   cross-fetch@3.2.0:
@@ -25349,6 +25509,8 @@ snapshots:
   deep-is@0.1.4: {}
 
   deepmerge-ts@7.1.5: {}
+
+  deepmerge@3.3.0: {}
 
   deepmerge@4.3.1: {}
 
@@ -26706,6 +26868,8 @@ snapshots:
 
   functions-have-names@1.2.3: {}
 
+  fuse.js@3.4.5: {}
+
   fuse.js@7.1.0: {}
 
   generator-function@2.0.1: {}
@@ -26863,6 +27027,8 @@ snapshots:
       is-path-inside: 4.0.0
       slash: 5.1.0
       unicorn-magic: 0.4.0
+
+  google-libphonenumber@3.2.44: {}
 
   gopd@1.2.0: {}
 
@@ -27694,6 +27860,8 @@ snapshots:
 
   lodash.throttle@4.1.1: {}
 
+  lodash.toarray@4.4.0: {}
+
   lodash.truncate@4.4.2: {}
 
   lodash.uniq@4.5.0: {}
@@ -28062,6 +28230,14 @@ snapshots:
 
   mocked-exports@0.1.1: {}
 
+  modal-react-native-web@0.2.0(react-art@16.13.1(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0):
+    dependencies:
+      react: 19.1.0
+      react-art: 16.13.1(react@19.1.0)
+      react-dom: 19.1.0(react@19.1.0)
+      react-native-web: 0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      warning: 4.0.3
+
   module-details-from-path@1.0.4: {}
 
   moti@0.30.0(react-dom@19.1.0(react@19.1.0))(react-native-reanimated@4.1.1(@babel/core@7.29.0)(react-native-worklets@0.5.1(@babel/core@7.29.0)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0))(react@19.1.0):
@@ -28267,6 +28443,10 @@ snapshots:
       tslib: 2.8.1
 
   node-addon-api@7.1.1: {}
+
+  node-emoji@1.10.0:
+    dependencies:
+      lodash.toarray: 4.4.0
 
   node-emoji@1.11.0:
     dependencies:
@@ -29151,6 +29331,12 @@ snapshots:
       kleur: 3.0.3
       sisteransi: 1.0.5
 
+  prop-types@15.7.2:
+    dependencies:
+      loose-envify: 1.4.0
+      object-assign: 4.1.1
+      react-is: 19.1.0
+
   prop-types@15.8.1:
     dependencies:
       loose-envify: 1.4.0
@@ -29238,6 +29424,20 @@ snapshots:
       minimist: 1.2.8
       strip-json-comments: 2.0.1
 
+  react-art@16.13.1(react@19.1.0):
+    dependencies:
+      art: 0.10.3
+      create-react-class: 15.7.0
+      loose-envify: 1.4.0
+      object-assign: 4.1.1
+      prop-types: 15.8.1
+      react: 19.1.0
+      scheduler: 0.19.1
+
+  react-async-hook@3.6.1(react@19.1.0):
+    dependencies:
+      react: 19.1.0
+
   react-devtools-core@6.1.5(bufferutil@4.1.0)(utf-8-validate@5.0.10):
     dependencies:
       shell-quote: 1.8.3
@@ -29261,7 +29461,28 @@ snapshots:
 
   react-is@19.1.0: {}
 
+  react-native-country-picker-modal@2.0.0(@types/react@19.1.17)(react-art@16.13.1(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0):
+    dependencies:
+      "@callstack/react-theme-provider": 3.0.3(@types/react@19.1.17)(react@19.1.0)
+      fuse.js: 3.4.5
+      modal-react-native-web: 0.2.0(react-art@16.13.1(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
+      node-emoji: 1.10.0
+      prop-types: 15.7.2
+      react: 19.1.0
+      react-async-hook: 3.6.1(react@19.1.0)
+      react-dom: 19.1.0(react@19.1.0)
+      react-native: 0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10)
+      react-native-web: 0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+    transitivePeerDependencies:
+      - "@types/react"
+      - react-art
+
   react-native-is-edge-to-edge@1.2.1(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0):
+    dependencies:
+      react: 19.1.0
+      react-native: 0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10)
+
+  react-native-mask-input@1.2.3(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0):
     dependencies:
       react: 19.1.0
       react-native: 0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10)
@@ -29270,6 +29491,19 @@ snapshots:
     dependencies:
       react: 19.1.0
       react-native: 0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10)
+
+  react-native-phone-entry@0.2.4(@types/react@19.1.17)(react-art@16.13.1(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0):
+    dependencies:
+      google-libphonenumber: 3.2.44
+      react: 19.1.0
+      react-native: 0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10)
+      react-native-country-picker-modal: 2.0.0(@types/react@19.1.17)(react-art@16.13.1(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
+      react-native-mask-input: 1.2.3(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
+    transitivePeerDependencies:
+      - "@types/react"
+      - react-art
+      - react-dom
+      - react-native-web
 
   react-native-reanimated@4.1.1(@babel/core@7.29.0)(react-native-worklets@0.5.1(@babel/core@7.29.0)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0):
     dependencies:
@@ -29717,6 +29951,11 @@ snapshots:
   safer-buffer@2.1.2: {}
 
   sax@1.4.4: {}
+
+  scheduler@0.19.1:
+    dependencies:
+      loose-envify: 1.4.0
+      object-assign: 4.1.1
 
   scheduler@0.26.0: {}
 
@@ -31133,6 +31372,10 @@ snapshots:
       makeerror: 1.0.12
 
   warn-once@0.1.1: {}
+
+  warning@4.0.3:
+    dependencies:
+      loose-envify: 1.4.0
 
   watchpack@2.5.1:
     dependencies:
