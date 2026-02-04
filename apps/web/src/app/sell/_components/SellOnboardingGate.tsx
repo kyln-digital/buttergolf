@@ -94,6 +94,7 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
       const response = await fetch("/api/user/phone", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ phone }),
       });
 
@@ -138,6 +139,7 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
             headers: {
               "Content-Type": "application/json",
             },
+            credentials: "include",
             // Note: phone is pre-filled on the Stripe account at creation time
             // via the server reading user.phone from database
             body: JSON.stringify({}),
@@ -183,7 +185,9 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
   async function handleOnboardingExit() {
     // Refresh status from server to check if onboarding is complete
     try {
-      const response = await fetch("/api/stripe/connect/account");
+      const response = await fetch("/api/stripe/connect/account", {
+        credentials: "include",
+      });
       if (response.ok) {
         const data = await response.json();
         setStatus((prev) => ({
