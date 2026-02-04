@@ -534,33 +534,6 @@ export function Component() {
 const ImagePicker = Platform.OS !== "web" ? require("expo-image-picker").ImagePicker : null;
 ```
 
-## Testing
-
-```tsx
-import { render } from "@testing-library/react-native";
-import { TamaguiProvider } from "tamagui";
-import { config } from "@buttergolf/config";
-import { CourseListScreen } from "./course-list-screen";
-
-describe("CourseListScreen", () => {
-  const mockCourses = [
-    { id: "1", name: "Pebble Beach", location: "CA" },
-    { id: "2", name: "Augusta", location: "GA" },
-  ];
-
-  it("renders courses", () => {
-    const { getByText } = render(
-      <TamaguiProvider config={config}>
-        <CourseListScreen courses={mockCourses} />
-      </TamaguiProvider>
-    );
-
-    expect(getByText("Pebble Beach")).toBeTruthy();
-    expect(getByText("Augusta")).toBeTruthy();
-  });
-});
-```
-
 ## Common Patterns
 
 ### List Screen

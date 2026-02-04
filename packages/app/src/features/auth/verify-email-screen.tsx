@@ -6,7 +6,7 @@ import { Button as TamaguiButton } from "tamagui";
 import { Mail, ArrowLeft } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSignUp } from "@clerk/clerk-expo";
-import { TextInput } from "react-native";
+import { OtpInput, OtpInputRef } from "react-native-otp-entry";
 import { AuthErrorDisplay } from "./components";
 import { mapClerkErrorToMessage } from "./utils";
 
@@ -16,10 +16,14 @@ interface VerifyEmailScreenProps {
   onNavigateBack?: () => void;
 }
 
+const CODE_LENGTH = 6;
+
 /**
  * Email verification screen
  * User enters 6-digit code sent to their email
  * Includes resend code with countdown timer
+ *
+ * Uses react-native-otp-entry for proper iOS/Android autofill support.
  */
 export function VerifyEmailScreen({
   email,
@@ -29,18 +33,17 @@ export function VerifyEmailScreen({
   const insets = useSafeAreaInsets();
   const { signUp, setActive, isLoaded } = useSignUp();
   const theme = useTheme();
-  // Get theme-aware text color for TextInput
-  const textColor = theme.text?.val ?? "#323232";
 
-  const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isResending, setIsResending] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
   const [resendAttempts, setResendAttempts] = useState(0);
+  // Track current OTP value for manual submit button
+  const [currentOtp, setCurrentOtp] = useState("");
 
-  // Refs for each input to handle focus
-  const inputRefs = useRef<(TextInput | null)[]>([]);
+  // OTP input ref for programmatic control
+  const otpRef = useRef<OtpInputRef>(null);
 
   // Handle countdown timer for resend button
   useEffect(() => {
@@ -53,99 +56,11 @@ export function VerifyEmailScreen({
     return () => clearTimeout(timer);
   }, [resendCountdown]);
 
-  // Ref to track if we're currently auto-submitting (prevents double-submit)
-  const isAutoSubmittingRef = useRef(false);
-
-  // Ref to store handleVerify function for use in handleDigitChange (avoids circular dependency)
-  const handleVerifyRef = useRef<((code: string) => Promise<void>) | null>(null);
-
-  const handleDigitChange = useCallback(
-    (index: number, value: string) => {
-      // Handle autofill/paste of full code
-      const cleanValue = value.replace(/[^0-9]/g, "");
-
-      if (cleanValue.length > 1) {
-        // Full code pasted/autofilled - can happen on any input
-        const digits = cleanValue.slice(0, 6).split("");
-        const newCode = ["*", "*", "*", "*", "*", "*"].map((_, i) => digits[i] || "");
-        setCode(newCode);
-
-        // Auto-submit if we have 6 digits
-        if (
-          digits.length === 6 &&
-          isLoaded &&
-          signUp &&
-          !isSubmitting &&
-          !isAutoSubmittingRef.current
-        ) {
-          isAutoSubmittingRef.current = true;
-          // Use setTimeout to ensure state is settled before submitting
-          setTimeout(() => {
-            handleVerifyRef.current?.(newCode.join(""));
-            isAutoSubmittingRef.current = false;
-          }, 100);
-        }
-        return;
-      }
-
-      // Single digit entry
-      const digit = cleanValue.slice(-1);
-
-      setCode((prev) => {
-        const newCode = [...prev];
-        newCode[index] = digit;
-
-        // Check if all 6 digits are now filled
-        const fullCodeValue = newCode.join("");
-        if (
-          fullCodeValue.length === 6 &&
-          isLoaded &&
-          signUp &&
-          !isSubmitting &&
-          !isAutoSubmittingRef.current
-        ) {
-          isAutoSubmittingRef.current = true;
-          setTimeout(() => {
-            handleVerifyRef.current?.(fullCodeValue);
-            isAutoSubmittingRef.current = false;
-          }, 100);
-        }
-
-        return newCode;
-      });
-
-      // Auto-advance to next input
-      if (digit && index < 5) {
-        inputRefs.current[index + 1]?.focus();
-      }
-
-      // Clear error when typing
-      if (error) {
-        setError(null);
-      }
-    },
-    [error, isLoaded, signUp, isSubmitting]
-  );
-
-  const handleKeyPress = useCallback(
-    (index: number, key: string) => {
-      // Handle backspace - go to previous input
-      if (key === "Backspace" && !code[index] && index > 0) {
-        inputRefs.current[index - 1]?.focus();
-      }
-    },
-    [code]
-  );
-
-  const fullCode = code.join("");
-
   const handleVerify = useCallback(
-    async (codeToVerify?: string) => {
-      const verificationCode = codeToVerify ?? fullCode;
-
+    async (code: string) => {
       setError(null);
 
-      if (verificationCode.length !== 6) {
+      if (code.length !== CODE_LENGTH) {
         setError("Please enter all 6 digits");
         return;
       }
@@ -159,7 +74,7 @@ export function VerifyEmailScreen({
 
       try {
         const result = await signUp.attemptEmailAddressVerification({
-          code: verificationCode,
+          code,
         });
 
         if (result.status === "complete") {
@@ -181,17 +96,13 @@ export function VerifyEmailScreen({
         }
 
         // Clear code on error
-        setCode(["", "", "", "", "", ""]);
-        inputRefs.current[0]?.focus();
+        otpRef.current?.clear();
       } finally {
         setIsSubmitting(false);
       }
     },
-    [fullCode, isLoaded, signUp, setActive, onSuccess]
+    [isLoaded, signUp, setActive, onSuccess]
   );
-
-  // Keep ref updated with latest handleVerify
-  handleVerifyRef.current = handleVerify;
 
   const handleResendCode = useCallback(async () => {
     setError(null);
@@ -207,6 +118,8 @@ export function VerifyEmailScreen({
       await signUp.prepareEmailAddressVerification();
       setResendCountdown(60);
       setResendAttempts((prev) => prev + 1);
+      // Clear any existing code
+      otpRef.current?.clear();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(errorMessage || "Failed to resend code. Please try again.");
@@ -214,6 +127,13 @@ export function VerifyEmailScreen({
       setIsResending(false);
     }
   }, [isLoaded, signUp]);
+
+  // Get theme colors for OTP input styling
+  const primaryColor = theme.primary?.val ?? "#F45314";
+  const borderColor = theme.border?.val ?? "#EDEDED";
+  const surfaceColor = theme.surface?.val ?? "#FFFFFF";
+  const primaryLightColor = theme.primaryLight?.val ?? "#FFFAD2";
+  const textColor = theme.text?.val ?? "#323232";
 
   return (
     <Column flex={1} backgroundColor="$background">
@@ -253,7 +173,7 @@ export function VerifyEmailScreen({
             </Heading>
             <Text size="$5" color="$textSecondary" textAlign="center">
               {email
-                ? `We sent a verification code to ${email}`
+                ? `Enter the 6-digit code we sent to ${email}`
                 : "Enter the 6-digit code we sent to your email"}
             </Text>
           </Column>
@@ -261,56 +181,51 @@ export function VerifyEmailScreen({
           {/* Error Display */}
           {error && <AuthErrorDisplay error={error} onDismiss={() => setError(null)} />}
 
-          {/* Code Input Grid */}
+          {/* OTP Input */}
           <Column gap="$4" alignItems="center">
-            <Row gap="$2" justifyContent="center">
-              {code.map((digit, index) => (
-                <Column
-                  key={index}
-                  width={48}
-                  height={56}
-                  borderRadius="$4"
-                  borderWidth={2}
-                  borderColor={digit ? "$primary" : "$border"}
-                  backgroundColor={digit ? "$primaryLight" : "$surface"}
-                  alignItems="center"
-                  justifyContent="center"
-                  opacity={isSubmitting ? 0.6 : 1}
-                >
-                  <TextInput
-                    ref={(ref) => {
-                      inputRefs.current[index] = ref;
-                    }}
-                    value={digit}
-                    onChangeText={(text) => handleDigitChange(index, text)}
-                    onKeyPress={({ nativeEvent }) => handleKeyPress(index, nativeEvent.key)}
-                    keyboardType="number-pad"
-                    textContentType="oneTimeCode"
-                    autoComplete="one-time-code"
-                    inputMode="numeric"
-                    maxLength={1}
-                    editable={!isSubmitting}
-                    selectTextOnFocus
-                    style={{
-                      fontSize: 24,
-                      fontWeight: "700",
-                      textAlign: "center",
-                      width: "100%",
-                      height: "100%",
-                      color: textColor,
-                    }}
-                    // Handle paste/autofill - onChange fires with full pasted text
-                    onChange={(e) => {
-                      const text = e.nativeEvent.text;
-                      if (text.length > 1) {
-                        // Delegate to handleDigitChange which now handles multi-digit input
-                        handleDigitChange(index, text);
-                      }
-                    }}
-                  />
-                </Column>
-              ))}
-            </Row>
+            <OtpInput
+              ref={otpRef}
+              numberOfDigits={CODE_LENGTH}
+              onFilled={handleVerify}
+              onTextChange={setCurrentOtp}
+              focusColor={primaryColor}
+              disabled={isSubmitting}
+              type="numeric"
+              textInputProps={{
+                accessibilityLabel: "Enter 6-digit verification code",
+              }}
+              theme={{
+                containerStyle: {
+                  width: "100%",
+                  justifyContent: "center",
+                  gap: 8,
+                },
+                pinCodeContainerStyle: {
+                  width: 48,
+                  height: 56,
+                  borderRadius: 12,
+                  borderWidth: 2,
+                  borderColor: borderColor,
+                  backgroundColor: surfaceColor,
+                },
+                pinCodeTextStyle: {
+                  fontSize: 24,
+                  fontWeight: "700",
+                  color: textColor,
+                },
+                focusedPinCodeContainerStyle: {
+                  borderColor: primaryColor,
+                  backgroundColor: primaryLightColor,
+                },
+                filledPinCodeContainerStyle: {
+                  borderColor: primaryColor,
+                  backgroundColor: primaryLightColor,
+                },
+                disabledPinCodeContainerStyle: {
+                  opacity: 0.6,
+                },
+              }}
+            />
 
             {/* Email Hint */}
             <Row gap="$2" alignItems="center" opacity={0.7}>
@@ -321,15 +236,21 @@ export function VerifyEmailScreen({
             </Row>
           </Column>
 
-          {/* Verify Button */}
+          {/* Verify Button - provides manual submit fallback for accessibility */}
           <Button
             butterVariant="primary"
             size="$5"
             borderRadius="$full"
             fontWeight="600"
-            onPress={() => handleVerify()}
-            disabled={isSubmitting || fullCode.length !== 6}
-            opacity={isSubmitting || fullCode.length !== 6 ? 0.7 : 1}
+            onPress={() => {
+              if (currentOtp.length === CODE_LENGTH) {
+                handleVerify(currentOtp);
+              } else {
+                setError("Please enter all 6 digits");
+              }
+            }}
+            disabled={isSubmitting || currentOtp.length !== CODE_LENGTH}
+            opacity={isSubmitting || currentOtp.length !== CODE_LENGTH ? 0.7 : 1}
           >
             {isSubmitting ? <Spinner size="sm" color="$textInverse" /> : "Verify Email"}
           </Button>
