@@ -216,7 +216,8 @@ async function handleAccountUpdated(account: Stripe.Account) {
     );
 
     // If seller just became fully onboarded, process any pending transfers
-    if (status === "active" && hasNoDue) {
+    // Check capabilities directly rather than relying on derived status
+    if (cardPaymentsActive && transfersActive) {
       await processPendingTransfersForSeller(user.id, account.id);
     }
 
@@ -330,16 +331,38 @@ async function syncAddressFromStripe(userId: string, account: Stripe.Account) {
  */
 async function processPendingTransfersForSeller(userId: string, stripeConnectId: string) {
   try {
-    // Find all orders pending seller onboarding for this seller
-    const pendingOrders = await prisma.order.findMany({
-      where: {
-        sellerId: userId,
-        paymentHoldStatus: "PENDING_SELLER_ONBOARDING",
-      },
-      include: {
-        product: true,
-        seller: true,
-      },
+    // Use transaction to prevent race conditions:
+    // Query + update atomically so concurrent webhook events don't double-process
+    const pendingOrders = await prisma.$transaction(async (tx) => {
+      // Find all orders pending seller onboarding for this seller
+      const orders = await tx.order.findMany({
+        where: {
+          sellerId: userId,
+          paymentHoldStatus: "PENDING_SELLER_ONBOARDING",
+        },
+        include: {
+          product: true,
+          seller: true,
+        },
+      });
+
+      // Mark them as being processed to prevent double-processing
+      // This happens atomically within the transaction
+      if (orders.length > 0) {
+        await tx.order.updateMany({
+          where: {
+            id: { in: orders.map((o) => o.id) },
+            paymentHoldStatus: "PENDING_SELLER_ONBOARDING", // Double-check status
+          },
+          data: {
+            // Use a temporary status to indicate processing
+            // We'll update to RELEASED after successful transfer
+            stripePayoutStatus: "processing",
+          },
+        });
+      }
+
+      return orders;
     });
 
     if (pendingOrders.length === 0) {
@@ -361,6 +384,35 @@ async function processPendingTransfersForSeller(userId: string, stripeConnectId:
           continue;
         }
 
+        // Validate charge before transfer (same pattern as confirm-receipt)
+        if (!order.stripePaymentId) {
+          console.error(`Order ${order.id} missing payment intent ID`);
+          continue;
+        }
+
+        // Retrieve the payment intent to get the charge ID
+        const paymentIntent = await stripe.paymentIntents.retrieve(order.stripePaymentId);
+        const chargeId =
+          typeof paymentIntent.latest_charge === "string"
+            ? paymentIntent.latest_charge
+            : paymentIntent.latest_charge?.id;
+
+        if (!chargeId) {
+          console.error(`Order ${order.id} has no charge associated with payment intent`);
+          continue;
+        }
+
+        // Validate the charge is captured and not refunded
+        const charge = await stripe.charges.retrieve(chargeId);
+        if (!charge.captured) {
+          console.error(`Order ${order.id} charge ${chargeId} is not captured`);
+          continue;
+        }
+        if (charge.refunded) {
+          console.error(`Order ${order.id} charge ${chargeId} has been refunded`);
+          continue;
+        }
+
         // Calculate transfer amount
         const transferAmountInPence = Math.round((order.stripeSellerPayout || 0) * 100);
         if (transferAmountInPence <= 0) {
@@ -374,6 +426,7 @@ async function processPendingTransfersForSeller(userId: string, stripeConnectId:
           currency: "gbp",
           destination: stripeConnectId,
           transfer_group: order.id,
+          source_transaction: chargeId, // Link to the original charge
           metadata: {
             orderId: order.id,
             productId: order.productId,
@@ -400,6 +453,13 @@ async function processPendingTransfersForSeller(userId: string, stripeConnectId:
         // TODO: Send payment released email to seller
       } catch (transferError) {
         console.error(`Failed to process transfer for order ${order.id}:`, transferError);
+        // Reset the order status so it can be retried
+        await prisma.order.update({
+          where: { id: order.id },
+          data: {
+            stripePayoutStatus: null,
+          },
+        });
         // Continue with other orders - don't let one failure stop the rest
       }
     }

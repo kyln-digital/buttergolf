@@ -70,6 +70,14 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
 
   const [wizardStep, setWizardStep] = useState<WizardStep>(getCurrentStep);
 
+  // Sync wizardStep when status changes (e.g., from server refresh)
+  useEffect(() => {
+    const newStep = getCurrentStep();
+    if (newStep !== wizardStep) {
+      setWizardStep(newStep);
+    }
+  }, [status.hasAccount, status.onboardingComplete, status.accountStatus, status.phone]);
+
   // Auto-initialize Stripe onboarding when in stripe step
   useEffect(() => {
     if (wizardStep === "stripe" && !stripeConnectInstance && !loading) {
@@ -125,15 +133,14 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
         publishableKey,
         fetchClientSecret: async () => {
           // Call our API which creates account if needed and returns client secret
-          // Include phone for pre-filling if we collected it
           const response = await fetch("/api/stripe/connect/account", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              phone: status.phone,
-            }),
+            // Note: phone is pre-filled on the Stripe account at creation time
+            // via the server reading user.phone from database
+            body: JSON.stringify({}),
           });
 
           if (!response.ok) {

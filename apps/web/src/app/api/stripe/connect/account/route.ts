@@ -24,23 +24,7 @@ export async function POST(request: Request) {
 
     const userId = userData.userId;
 
-    // 2. Get user from database (or create if webhook hasn't fired yet)
-    let user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        phone: true,
-        stripeConnectId: true,
-        stripeOnboardingComplete: true,
-        stripeAccountStatus: true,
-        stripeAccountType: true,
-      },
-    });
-
-    // Define consistent select fields for user queries
+    // Define consistent select fields for user queries (used throughout this endpoint)
     const userSelectFields = {
       id: true,
       email: true,
@@ -52,6 +36,12 @@ export async function POST(request: Request) {
       stripeAccountStatus: true,
       stripeAccountType: true,
     };
+
+    // 2. Get user from database (or create if webhook hasn't fired yet)
+    let user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: userSelectFields,
+    });
 
     // If user doesn't exist, the Clerk webhook hasn't fired yet
     // Create a user record with data from Clerk so onboarding is prefilled

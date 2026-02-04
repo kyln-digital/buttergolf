@@ -122,8 +122,8 @@ export async function POST(req: Request) {
         productId: product.id,
         sellerId: seller.id,
         buyerId: buyer.id,
-        // Store seller Connect ID for later transfer (may be null if seller not yet onboarded)
-        sellerStripeConnectId: seller.stripeConnectId || "",
+        // Store seller Connect ID for later transfer (omit if seller not yet onboarded)
+        ...(seller.stripeConnectId && { sellerStripeConnectId: seller.stripeConnectId }),
         sellerOnboarded: seller.stripeOnboardingComplete ? "true" : "false",
         // Store amounts for order creation
         productPriceInPence: productPriceInPence.toString(),

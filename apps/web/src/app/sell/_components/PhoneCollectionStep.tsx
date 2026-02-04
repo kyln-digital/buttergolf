@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Column, Row, Heading, Text, Button, Card, Input } from "@buttergolf/ui";
 
-// UK mobile phone number regex (07xxx or +447xxx)
-const UK_MOBILE_REGEX = /^(?:\+44\s?7|07)\d{3}\s?\d{3}\s?\d{3}$/;
+// UK mobile phone number regex (07xxx or +447xxx, no spaces - we strip spaces before validation)
+const UK_MOBILE_REGEX = /^(?:\+44|0)7\d{9}$/;
 
 /**
  * Format a phone number for display (07XXX XXX XXX)
