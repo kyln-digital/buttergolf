@@ -69,12 +69,6 @@ updates:
         patterns:
           - "solito"
           - "@react-navigation/*"
-      # Group testing tools
-      testing:
-        patterns:
-          - "vitest"
-          - "@vitest/*"
-          - "@testing-library/*"
       # Group build/dev tools
       dev-dependencies:
         patterns:

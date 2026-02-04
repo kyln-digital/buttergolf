@@ -9,13 +9,9 @@
     "./*": "./src/*.tsx"
   },
   "scripts": {
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage",
     "lint": "eslint . --fix --max-warnings 0",
     "generate:component": "turbo gen react-component",
-    "check-types": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json"
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@buttergolf/config": "workspace:*",

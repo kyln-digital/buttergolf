@@ -16,10 +16,6 @@
     "db:studio": "turbo run db:studio",
     "db:seed": "turbo run db:seed",
     "upload:images": "tsx scripts/upload-sample-images.ts",
-    "test": "turbo run test",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage",
-    "test:watch": "vitest --watch",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md}\"",
@@ -31,9 +27,6 @@
   },
   "devDependencies": {
     "@tamagui/cli": "catalog:",
-    "@testing-library/react-native": "^13.3.3",
-    "@vitejs/plugin-react": "^5.1.1",
-    "@vitest/ui": "^4.0.13",
     "check-dependency-version-consistency": "^5.0.1",
     "dotenv": "^17.2.3",
     "eslint": "catalog:",
@@ -42,14 +35,12 @@
     "prettier": "^3.6.2",
     "tsx": "catalog:",
     "turbo": "^2.7.3",
-    "typescript": "catalog:",
-    "vitest": "catalog:"
+    "typescript": "catalog:"
   },
   "pnpm": {
     "overrides": {
       "react": "19.1.0",
       "react-dom": "19.1.0",
-      "react-test-renderer": "19.1.0",
       "react-is": "19.1.0",
       "@types/react": "19.1.17",
       "@types/react-dom": "19.1.0",

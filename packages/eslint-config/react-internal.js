@@ -106,22 +106,12 @@ export const config = [
             {
               name: "jsdom",
               message:
-                "jsdom is web-only and contains SharedArrayBuffer which React Native doesn't support. Use React Native Testing Library instead.",
-            },
-            {
-              name: "@testing-library/jest-dom",
-              message:
-                "@testing-library/jest-dom is web-only. Use @testing-library/react-native for mobile testing.",
+                "jsdom is web-only and contains SharedArrayBuffer which React Native doesn't support.",
             },
             {
               name: "happy-dom",
               message:
-                "happy-dom is web-only and contains SharedArrayBuffer which React Native doesn't support. Use React Native Testing Library instead.",
-            },
-            {
-              name: "@vitest/browser",
-              message:
-                "@vitest/browser is web-only. Use vitest with environment: 'node' for cross-platform testing.",
+                "happy-dom is web-only and contains SharedArrayBuffer which React Native doesn't support.",
             },
           ],
         },
