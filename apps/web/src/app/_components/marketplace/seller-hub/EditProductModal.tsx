@@ -1,15 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Column,
-  Row,
-  Heading,
-  Text,
-  Button,
-  Input,
-  Card,
-} from "@buttergolf/ui";
+import { Column, Row, Heading, Text, Button, Input, Card } from "@buttergolf/ui";
 import type { SellerProduct } from "./SellerProductCard";
 
 interface EditProductModalProps {
@@ -44,11 +36,7 @@ const CONDITIONS = [
  *
  * Inline modal for editing product details
  */
-export function EditProductModal({
-  product,
-  onClose,
-  onSave,
-}: EditProductModalProps) {
+export function EditProductModal({ product, onClose, onSave }: EditProductModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -93,11 +81,7 @@ export function EditProductModal({
         setCategories(categoriesData);
         setBrands(brandsData);
       } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to load categories or brands",
-        );
+        setError(err instanceof Error ? err.message : "Failed to load categories or brands");
         setCategories([]);
         setBrands([]);
       }
@@ -164,12 +148,7 @@ export function EditProductModal({
         <form onSubmit={handleSubmit} style={{ width: "100%" }}>
           <Column gap="$0" width="100%">
             {/* Header */}
-            <Column
-              gap="$sm"
-              padding="$lg"
-              borderBottomWidth={1}
-              borderBottomColor="$border"
-            >
+            <Column gap="$sm" padding="$lg" borderBottomWidth={1} borderBottomColor="$border">
               <Row alignItems="center" justifyContent="space-between">
                 <Heading level={3}>Edit Listing</Heading>
                 <Button size="$3" chromeless onPress={onClose}>
@@ -185,9 +164,7 @@ export function EditProductModal({
                 <Text weight="medium">Title *</Text>
                 <Input
                   value={formData.title}
-                  onChangeText={(value) =>
-                    setFormData({ ...formData, title: value })
-                  }
+                  onChangeText={(value) => setFormData({ ...formData, title: value })}
                   placeholder="e.g., TaylorMade Stealth 2 Driver"
                   size="$4"
                   required
@@ -199,9 +176,7 @@ export function EditProductModal({
                 <Text weight="medium">Description *</Text>
                 <textarea
                   value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Describe the condition, any wear, included accessories..."
                   required
                   rows={4}
@@ -224,9 +199,7 @@ export function EditProductModal({
                   <Text weight="medium">Price (£) *</Text>
                   <Input
                     value={formData.price}
-                    onChangeText={(value) =>
-                      setFormData({ ...formData, price: value })
-                    }
+                    onChangeText={(value) => setFormData({ ...formData, price: value })}
                     placeholder="0.00"
                     size="$4"
                     inputMode="decimal"
@@ -238,9 +211,7 @@ export function EditProductModal({
                   <Text weight="medium">Condition *</Text>
                   <select
                     value={formData.condition}
-                    onChange={(e) =>
-                      setFormData({ ...formData, condition: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
                     style={{
                       height: 40,
                       paddingLeft: 16,
@@ -262,7 +233,9 @@ export function EditProductModal({
                       backgroundPosition: "right 16px center",
                     }}
                   >
-                    <option value="" disabled selected>Select condition</option>
+                    <option value="" disabled selected>
+                      Select condition
+                    </option>
                     {CONDITIONS.map((cond) => (
                       <option key={cond.value} value={cond.value}>
                         {cond.label}
@@ -277,9 +250,7 @@ export function EditProductModal({
                 <Text weight="medium">Brand *</Text>
                 <select
                   value={formData.brandId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, brandId: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, brandId: e.target.value })}
                   style={{
                     height: 40,
                     paddingLeft: 16,
@@ -301,7 +272,9 @@ export function EditProductModal({
                     backgroundPosition: "right 16px center",
                   }}
                 >
-                  <option value="" disabled selected>Select a brand</option>
+                  <option value="" disabled selected>
+                    Select a brand
+                  </option>
                   {brands.map((brand) => (
                     <option key={brand.id} value={brand.id}>
                       {brand.name}
@@ -315,9 +288,7 @@ export function EditProductModal({
                 <Text weight="medium">Model</Text>
                 <Input
                   value={formData.model}
-                  onChangeText={(value) =>
-                    setFormData({ ...formData, model: value })
-                  }
+                  onChangeText={(value) => setFormData({ ...formData, model: value })}
                   placeholder="e.g., Stealth 2, Apex 21"
                   size="$4"
                 />
@@ -328,9 +299,7 @@ export function EditProductModal({
                 <Text weight="medium">Category *</Text>
                 <select
                   value={formData.categoryId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, categoryId: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                   style={{
                     height: 40,
                     paddingLeft: 16,
@@ -352,7 +321,9 @@ export function EditProductModal({
                     backgroundPosition: "right 16px center",
                   }}
                 >
-                  <option value="" disabled selected>Select a category</option>
+                  <option value="" disabled selected>
+                    Select a category
+                  </option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -363,11 +334,7 @@ export function EditProductModal({
 
               {/* Error Message */}
               {error && (
-                <Card
-                  variant="filled"
-                  padding="$sm"
-                  backgroundColor="$errorLight"
-                >
+                <Card variant="filled" padding="$sm" backgroundColor="$errorLight">
                   <Text color="$error" size="$3">
                     {error}
                   </Text>
@@ -376,26 +343,12 @@ export function EditProductModal({
             </Column>
 
             {/* Footer Actions */}
-            <Column
-              gap="$sm"
-              padding="$lg"
-              borderTopWidth={1}
-              borderTopColor="$border"
-            >
+            <Column gap="$sm" padding="$lg" borderTopWidth={1} borderTopColor="$border">
               <Row gap="$sm" justifyContent="flex-end">
-                <Button
-                  size="$4"
-                  chromeless
-                  onPress={onClose}
-                  disabled={loading}
-                >
+                <Button size="$4" chromeless onPress={onClose} disabled={loading}>
                   Cancel
                 </Button>
-                <Button
-                  butterVariant="primary"
-                  size="$4"
-                  disabled={loading}
-                >
+                <Button butterVariant="primary" size="$4" disabled={loading}>
                   {loading ? "Saving..." : "Save Changes"}
                 </Button>
               </Row>

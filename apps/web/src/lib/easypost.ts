@@ -33,7 +33,7 @@ export interface ParcelDimensions {
 export async function createShippingLabel(
   fromAddress: ShippingAddress,
   toAddress: ShippingAddress,
-  parcel: ParcelDimensions,
+  parcel: ParcelDimensions
 ) {
   try {
     const client = getEasyPostClient();
@@ -83,7 +83,7 @@ export async function createShippingLabel(
 
     // Sort rates by price and select the cheapest
     const sortedRates = [...shipment.rates].sort(
-      (a, b) => Number.parseFloat(a.rate) - Number.parseFloat(b.rate),
+      (a, b) => Number.parseFloat(a.rate) - Number.parseFloat(b.rate)
     );
     const cheapestRate = sortedRates[0];
 
@@ -95,10 +95,7 @@ export async function createShippingLabel(
     });
 
     // Purchase the label
-    const purchasedShipment = await client.Shipment.buy(
-      shipment.id,
-      cheapestRate.id,
-    );
+    const purchasedShipment = await client.Shipment.buy(shipment.id, cheapestRate.id);
 
     console.log("Label purchased:", {
       id: purchasedShipment.id,
@@ -126,7 +123,7 @@ export async function createShippingLabel(
     }
 
     throw new Error(
-      `Failed to create shipping label: ${error instanceof Error ? error.message : "Unknown error"}`,
+      `Failed to create shipping label: ${error instanceof Error ? error.message : "Unknown error"}`
     );
   }
 }
@@ -140,7 +137,7 @@ export async function getShipment(shipmentId: string) {
   } catch (error) {
     console.error("Error retrieving shipment:", error);
     throw new Error(
-      `Failed to retrieve shipment: ${error instanceof Error ? error.message : "Unknown error"}`,
+      `Failed to retrieve shipment: ${error instanceof Error ? error.message : "Unknown error"}`
     );
   }
 }
@@ -154,7 +151,7 @@ export async function getTracker(trackingCode: string) {
   } catch (error) {
     console.error("Error retrieving tracker:", error);
     throw new Error(
-      `Failed to retrieve tracker: ${error instanceof Error ? error.message : "Unknown error"}`,
+      `Failed to retrieve tracker: ${error instanceof Error ? error.message : "Unknown error"}`
     );
   }
 }

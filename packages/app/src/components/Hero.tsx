@@ -2,16 +2,7 @@
 
 import React from "react";
 import { Platform, Image as RNImage, Dimensions } from "react-native";
-import {
-  Column,
-  Row,
-  Heading,
-  Text,
-  Button,
-  View,
-  Image,
-  useMedia,
-} from "@buttergolf/ui";
+import { Column, Row, Heading, Text, Button, View, Image, useMedia } from "@buttergolf/ui";
 import { images } from "@buttergolf/assets";
 import { useLink } from "solito/navigation";
 import { FadeUpText } from "./FadeUpText";
@@ -55,28 +46,24 @@ export interface HeroProps {
 
 // Helper to get heading text
 function getHeadingText(
-  heading: string | { line1: string; line2?: string; line3?: string },
+  heading: string | { line1: string; line2?: string; line3?: string }
 ): string {
   if (typeof heading === "string") return heading;
-  return [heading.line1, heading.line2, heading.line3]
-    .filter(Boolean)
-    .join(" ");
+  return [heading.line1, heading.line2, heading.line3].filter(Boolean).join(" ");
 }
 
 // Helper to get heading lines as array
 function getHeadingLines(
-  heading: string | { line1: string; line2?: string; line3?: string },
+  heading: string | { line1: string; line2?: string; line3?: string }
 ): string[] {
   if (typeof heading === "string") return [heading];
-  return [heading.line1, heading.line2, heading.line3].filter(
-    (line): line is string => Boolean(line),
+  return [heading.line1, heading.line2, heading.line3].filter((line): line is string =>
+    Boolean(line)
   );
 }
 
 // Helper to check if image is an SVG component
-function isSvgComponent(
-  image: ImageSource,
-): image is React.ComponentType<{
+function isSvgComponent(image: ImageSource): image is React.ComponentType<{
   width?: number | string;
   height?: number | string;
 }> {
@@ -88,9 +75,7 @@ function isSvgComponent(
 }
 
 // Helper to get SVG component from import
-function getSvgComponent(
-  image: ImageSource,
-): React.ComponentType<{
+function getSvgComponent(image: ImageSource): React.ComponentType<{
   width?: number | string;
   height?: number | string;
 }> | null {
@@ -150,14 +135,12 @@ function HeroHeading({
   const text = getHeadingText(heading);
   const lines = getHeadingLines(heading);
   const media = useMedia();
-  
+
   // On mobile (below $gtSm breakpoint), skip animation and use responsive Tamagui Heading
   const isMobile = !media.gtSm;
 
   if (animationVariant === "fade-up" && !isMobile) {
-    return (
-      <FadeUpText text={text} delay={animationDelay} style={headingStyle} />
-    );
+    return <FadeUpText text={text} delay={animationDelay} style={headingStyle} />;
   }
 
   // Multi-line rendering for mobile
@@ -225,12 +208,7 @@ export function Hero({
   // Mobile-specific layout
   if (isMobile) {
     return (
-      <Column
-        width="100%"
-        paddingHorizontal="$4"
-        paddingTop="$2"
-        backgroundColor="$surface"
-      >
+      <Column width="100%" paddingHorizontal="$4" paddingTop="$2" backgroundColor="$background">
         <View
           width="100%"
           height={minHeight}
@@ -253,21 +231,9 @@ export function Hero({
           />
 
           {/* Content Container - Side by side layout */}
-          <Row
-            width="100%"
-            height="100%"
-            position="absolute"
-            top={0}
-            left={0}
-            zIndex={1}
-          >
+          <Row width="100%" height="100%" position="absolute" top={0} left={0} zIndex={1}>
             {/* Left Side - Text Content (55%) */}
-            <Column
-              width="55%"
-              height="100%"
-              justifyContent="center"
-              paddingLeft="$4"
-            >
+            <Column width="55%" height="100%" justifyContent="center" paddingLeft="$4">
               <HeroHeading
                 heading={heading}
                 animationVariant="none"
@@ -309,12 +275,7 @@ export function Hero({
 
   // Web/Desktop layout
   return (
-    <Column
-      width="100%"
-      paddingHorizontal="$md"
-      paddingTop="$md"
-      backgroundColor="$surface"
-    >
+    <Column width="100%" paddingHorizontal="$md" paddingTop="$md" backgroundColor="$background">
       <View
         width="100%"
         height={320}
@@ -354,12 +315,7 @@ export function Hero({
         </View>
 
         {/* Content Container - NOT clipped, allows image overflow */}
-        <Row
-          width="100%"
-          height="100%"
-          position="relative"
-          zIndex={1}
-        >
+        <Row width="100%" height="100%" position="relative" zIndex={1}>
           {/* Left Side - Text Content */}
           <Column
             width="100%"
@@ -367,10 +323,20 @@ export function Hero({
             alignItems="center"
             paddingLeft="$6"
             paddingRight="$6"
-            $gtSm={{ width: "55%", paddingLeft: "$8", paddingRight: "$2", alignItems: "flex-start" }}
+            $gtSm={{
+              width: "55%",
+              paddingLeft: "$8",
+              paddingRight: "$2",
+              alignItems: "flex-start",
+            }}
             $gtMd={{ width: "60%", paddingLeft: "$12", paddingRight: "$4" }}
           >
-            <Column gap="$4" $gtSm={{ gap: "$5", maxWidth: 700 }} $gtMd={{ gap: "$6" }} width="100%">
+            <Column
+              gap="$4"
+              $gtSm={{ gap: "$5", maxWidth: 700 }}
+              $gtMd={{ gap: "$6" }}
+              width="100%"
+            >
               {/* Heading */}
               <HeroHeading
                 heading={heading}
@@ -394,17 +360,12 @@ export function Hero({
               )}
 
               {/* CTA Buttons */}
-              <HeroCTAButtons
-                primaryCta={primaryCta}
-                secondaryCta={secondaryCta}
-              />
+              <HeroCTAButtons primaryCta={primaryCta} secondaryCta={secondaryCta} />
             </Column>
           </Column>
 
           {/* Right Side - Hero Image */}
-          {showHeroImage && heroImageSource && (
-            <HeroImage source={heroImageSource} />
-          )}
+          {showHeroImage && heroImageSource && <HeroImage source={heroImageSource} />}
         </Row>
       </View>
     </Column>
@@ -424,7 +385,13 @@ function HeroCTAButtons({ primaryCta, secondaryCta }: HeroCTAButtonsProps) {
   if (!primaryCta && !secondaryCta) return null;
 
   return (
-    <Row gap="$md" flexWrap="wrap" marginTop="$4" justifyContent="center" $gtSm={{ justifyContent: "flex-start" }}>
+    <Row
+      gap="$md"
+      flexWrap="wrap"
+      marginTop="$4"
+      justifyContent="center"
+      $gtSm={{ justifyContent: "flex-start" }}
+    >
       {primaryCta && (
         <Button
           butterVariant="primary"

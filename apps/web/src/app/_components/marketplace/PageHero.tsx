@@ -12,12 +12,7 @@ import { Column, Text as TamaguiText } from "@buttergolf/ui";
  */
 export function PageHero() {
   return (
-    <Column
-      width="100%"
-      paddingHorizontal="$md"
-      paddingTop="$md"
-      backgroundColor="$surface"
-    >
+    <Column width="100%" paddingHorizontal="$md" paddingTop="$md" backgroundColor="$surface">
       <Column
         width="100%"
         height={105}

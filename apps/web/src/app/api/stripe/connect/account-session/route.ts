@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     if (!user?.stripeConnectId) {
       return NextResponse.json(
         { error: "No Connect account found. Create an account first." },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -108,7 +108,7 @@ export async function POST(request: Request) {
         error: "Failed to create AccountSession",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

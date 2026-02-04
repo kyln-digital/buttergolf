@@ -1,14 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import {
-  Column,
-  ScrollView,
-  Text,
-  Button,
-  Heading,
-  Spinner,
-} from "@buttergolf/ui";
+import { Column, ScrollView, Text, Button, Heading, Spinner } from "@buttergolf/ui";
 import { Button as TamaguiButton } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSignIn } from "@clerk/clerk-expo";
@@ -43,7 +36,7 @@ export function ForgotPasswordScreen({
         setEmailError(null);
       }
     },
-    [emailError],
+    [emailError]
   );
 
   const handleSubmit = useCallback(async () => {
@@ -80,8 +73,7 @@ export function ForgotPasswordScreen({
         setError(mapClerkErrorToMessage("identifier_not_found"));
       } else {
         setError(
-          errorMessage ||
-            "Failed to process request. Please check your email and try again.",
+          errorMessage || "Failed to process request. Please check your email and try again."
         );
       }
     } finally {
@@ -111,9 +103,7 @@ export function ForgotPasswordScreen({
           </Column>
 
           {/* Error Display */}
-          {error && (
-            <AuthErrorDisplay error={error} onDismiss={() => setError(null)} />
-          )}
+          {error && <AuthErrorDisplay error={error} onDismiss={() => setError(null)} />}
 
           {/* Email Input */}
           <Column gap="$4">
@@ -142,11 +132,7 @@ export function ForgotPasswordScreen({
             disabled={isSubmitting || !isLoaded}
             opacity={isSubmitting ? 0.7 : 1}
           >
-            {isSubmitting ? (
-              <Spinner size="sm" color="$textInverse" />
-            ) : (
-              "Send Reset Code"
-            )}
+            {isSubmitting ? <Spinner size="sm" color="$textInverse" /> : "Send Reset Code"}
           </Button>
 
           {/* Back Button */}

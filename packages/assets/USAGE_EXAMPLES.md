@@ -76,11 +76,7 @@ const image = images.clubs[imageKey];
 
 // Works with arrays
 const allClubImages = Object.values(images.clubs);
-const featuredImages = [
-  images.clubs.club1,
-  images.clubs.club4,
-  images.clubs.club6,
-];
+const featuredImages = [images.clubs.club1, images.clubs.club4, images.clubs.club6];
 ```
 
 ## Carousel/Slider Example

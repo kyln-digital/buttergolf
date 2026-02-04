@@ -35,10 +35,7 @@ export async function GET(request: NextRequest) {
 
   if (!cronSecret) {
     console.error("CRON_SECRET not configured - refusing to process payments");
-    return NextResponse.json(
-      { error: "Server misconfiguration" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
   }
 
   if (authHeader !== `Bearer ${cronSecret}`) {
@@ -104,9 +101,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Calculate and verify transfer amount
-        const transferAmountInPence = Math.round(
-          (order.stripeSellerPayout || 0) * 100
-        );
+        const transferAmountInPence = Math.round((order.stripeSellerPayout || 0) * 100);
 
         if (transferAmountInPence <= 0) {
           console.error("Invalid transfer amount:", {
@@ -152,7 +147,7 @@ export async function GET(request: NextRequest) {
           where: {
             id: order.id,
             paymentHoldStatus: "HELD", // Must still be HELD
-            stripeTransferId: null,     // Must not have existing transfer
+            stripeTransferId: null, // Must not have existing transfer
           },
           data: {
             paymentHoldStatus: "RELEASED", // Claim it
@@ -244,8 +239,7 @@ export async function GET(request: NextRequest) {
       } catch (orderError) {
         console.error("Error processing order:", {
           orderId: order.id,
-          error:
-            orderError instanceof Error ? orderError.message : "Unknown error",
+          error: orderError instanceof Error ? orderError.message : "Unknown error",
         });
 
         // Rollback the status if transfer failed (we set RELEASED early for locking)
@@ -261,10 +255,7 @@ export async function GET(request: NextRequest) {
         results.push({
           orderId: order.id,
           status: "failed",
-          error:
-            orderError instanceof Error
-              ? orderError.message
-              : "Unknown error",
+          error: orderError instanceof Error ? orderError.message : "Unknown error",
         });
       }
     }

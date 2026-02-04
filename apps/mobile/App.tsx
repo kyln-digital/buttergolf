@@ -1974,16 +1974,18 @@ const LightNavigationTheme: NavigationTheme = {
 /**
  * Dark navigation theme
  * Uses shared brand colors from @buttergolf/constants.
+ * background: #323232 (ironstone) - main app background
+ * card: #545454 (slateSmoke) - elevated surfaces
  */
 const DarkNavigationTheme: NavigationTheme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
     primary: brandColors.spicedClementine,
-    background: brandColors.burntOlive,
-    card: brandColors.burntOliveLight,
+    background: brandColors.ironstone,
+    card: brandColors.slateSmoke,
     text: brandColors.pureWhite,
-    border: brandColors.darkBorder,
+    border: brandColors.slateSmoke,
     notification: brandColors.spicedClementine,
   },
 };

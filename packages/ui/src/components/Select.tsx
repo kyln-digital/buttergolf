@@ -33,10 +33,7 @@
  */
 
 import { styled, GetProps } from "tamagui";
-import {
-  Select as TamaguiSelect,
-  type SelectProps as TamaguiSelectProps,
-} from "tamagui";
+import { Select as TamaguiSelect, type SelectProps as TamaguiSelectProps } from "tamagui";
 
 /**
  * Base Select component with Input-matching styles

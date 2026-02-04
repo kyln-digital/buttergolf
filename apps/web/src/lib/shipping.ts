@@ -54,7 +54,7 @@ export interface ShippingCalculationResult {
  * Calculate shipping rates for a product using EasyPost API with fallback
  */
 export async function calculateShippingRates(
-  request: ShippingCalculationRequest,
+  request: ShippingCalculationRequest
 ): Promise<ShippingCalculationResult> {
   const { productId, toAddress, fromAddressId } = request;
 
@@ -176,10 +176,7 @@ export async function calculateShippingRates(
         dimensions,
       };
     } catch (easyPostError: unknown) {
-      console.warn(
-        "EasyPost API error, falling back to estimation:",
-        easyPostError,
-      );
+      console.warn("EasyPost API error, falling back to estimation:", easyPostError);
       // Fall through to fallback calculation
     }
   }
@@ -221,7 +218,7 @@ export async function calculateShippingRates(
 export async function estimateShippingRate(
   productId: string,
   zip: string,
-  state: string = "CA",
+  state: string = "CA"
 ): Promise<{
   estimatedRate: number;
   estimatedDisplay: string;

@@ -46,8 +46,9 @@ export const GlassmorphismCard = styled(View, {
         borderColor: "rgba(217, 217, 217, 0.55)",
       },
       dark: {
-        backgroundColor: "rgba(0, 0, 0, 0.35)",
-        borderColor: "rgba(217, 217, 217, 0.15)",
+        // Subtle light overlay to match dark theme surfaces
+        backgroundColor: "rgba(255, 255, 255, 0.08)",
+        borderColor: "rgba(255, 255, 255, 0.12)",
       },
     },
     blur: {
@@ -73,9 +74,7 @@ export const GlassmorphismCard = styled(View, {
  * - Multiple layered shadows for depth and "liquid" edge appearance
  * - Inner highlight for dimensional glass effect
  */
-export const getGlassmorphismStyles = (
-  blur: "light" | "medium" | "strong" = "medium",
-) => {
+export const getGlassmorphismStyles = (blur: "light" | "medium" | "strong" = "medium") => {
   const blurAmount = {
     light: "8px",
     medium: "16px",
@@ -102,6 +101,4 @@ export const getGlassmorphismStyles = (
   };
 };
 
-export type GlassmorphismCardProps = React.ComponentProps<
-  typeof GlassmorphismCard
->;
+export type GlassmorphismCardProps = React.ComponentProps<typeof GlassmorphismCard>;

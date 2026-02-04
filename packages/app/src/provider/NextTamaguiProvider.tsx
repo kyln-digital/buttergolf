@@ -29,13 +29,16 @@ import { config } from "@buttergolf/config";
  */
 function TamaguiProviderInner({ children }: { children: ReactNode }) {
   // useRootTheme MUST be inside NextThemeProvider's children
+  // IMPORTANT: useRootTheme() can return undefined during SSR or before
+  // the theme context is fully initialized (especially on slow devices/networks).
+  // We MUST provide a fallback to prevent "Missing theme" errors.
   const [theme] = useRootTheme();
 
   return (
     <TamaguiProvider
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       config={config as any}
-      defaultTheme={theme}
+      defaultTheme={theme ?? "light"}
       disableRootThemeClass // NextThemeProvider handles the class
     >
       {children}
@@ -43,9 +46,7 @@ function TamaguiProviderInner({ children }: { children: ReactNode }) {
   );
 }
 
-export function NextTamaguiProvider({
-  children,
-}: Readonly<{ children: ReactNode }>) {
+export function NextTamaguiProvider({ children }: Readonly<{ children: ReactNode }>) {
   // Inject styles for SSR (react-native-web components)
   useServerInsertedHTML(() => {
     // @ts-ignore - RN doesn't have this type but it exists at runtime
@@ -58,10 +59,7 @@ export function NextTamaguiProvider({
             __html: `document.documentElement.classList.add('t_unmounted')`,
           }}
         />
-        <style
-          dangerouslySetInnerHTML={{ __html: rnwStyle.textContent }}
-          id={rnwStyle.id}
-        />
+        <style dangerouslySetInnerHTML={{ __html: rnwStyle.textContent }} id={rnwStyle.id} />
         <style
           dangerouslySetInnerHTML={{
             __html: config.getCSS({

@@ -1,14 +1,23 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import { Dimensions, Animated, Easing, Text as RNText, TouchableOpacity } from "react-native";
+import {
+  Dimensions,
+  Animated,
+  Easing,
+  Text as RNText,
+  TouchableOpacity,
+  useColorScheme,
+} from "react-native";
 import { Text, YStack, View, Image, Button, useTheme } from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-// Logo - Using SVG
-const LogoSvg =
+// Logo variants for light/dark mode
+const LogoOrangeSvg =
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   require("../../../../../apps/mobile/assets/logo-orange-on-white.svg").default;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const LogoCreamPng = require("../../../../../apps/mobile/assets/logo-cream.png");
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
@@ -91,8 +100,16 @@ export function OnboardingScreen({
 }: Readonly<OnboardingScreenProps>) {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   // Get theme-aware text color for RNText
-  const textSecondaryColor = theme.textSecondary?.val ?? "#545454";
+  const textSecondaryColor = isDark ? "#FFFAD2" : (theme.textSecondary?.val ?? "#545454");
+
+  // Theme-aware colors
+  const backgroundColor = isDark ? "$primary" : "$vanillaCream";
+  const cardBackgroundColor = isDark ? "#D9450F" : "#FFFAD2"; // primaryHover for dark, vanillaCream for light
+  const textColor = isDark ? "$vanillaCream" : "$text";
 
   // Animation for two-row horizontal scroll
   // Top row scrolls left, bottom row scrolls right for staggered effect
@@ -139,7 +156,7 @@ export function OnboardingScreen({
   return (
     <YStack
       flex={1}
-      backgroundColor="$vanillaCream" // Vanilla Cream background
+      backgroundColor={backgroundColor}
       paddingTop={insets.top}
       paddingBottom={insets.bottom}
     >
@@ -153,20 +170,31 @@ export function OnboardingScreen({
       >
         {/* Logo - Scaled to ~50% screen width */}
         <View width={SCREEN_W * 0.5} height={Math.round(SCREEN_W * 0.5 * (79 / 209))}>
-          <LogoSvg
-            width="100%"
-            height="100%"
-            accessible={true}
-            accessibilityLabel="Butter Golf Logo"
-          />
+          {isDark ? (
+            <Image
+              source={LogoCreamPng}
+              width="100%"
+              height="100%"
+              resizeMode="contain"
+              accessible={true}
+              accessibilityLabel="Butter Golf Logo"
+            />
+          ) : (
+            <LogoOrangeSvg
+              width="100%"
+              height="100%"
+              accessible={true}
+              accessibilityLabel="Butter Golf Logo"
+            />
+          )}
         </View>
 
         {/* Tagline */}
         <YStack gap={4} alignItems="center">
-          <Text fontSize={25} fontWeight="500" align="center" color="$text" lineHeight={32}>
+          <Text fontSize={25} fontWeight="500" align="center" color={textColor} lineHeight={32}>
             The Marketplace to
           </Text>
-          <Text fontSize={25} fontWeight="500" align="center" color="$text" lineHeight={32}>
+          <Text fontSize={25} fontWeight="500" align="center" color={textColor} lineHeight={32}>
             Buy, Sell & Upgrade
           </Text>
         </YStack>
@@ -191,8 +219,8 @@ export function OnboardingScreen({
               marginRight={GAP}
               borderRadius={20}
               overflow="hidden"
-              backgroundColor="$vanillaCream"
               style={{
+                backgroundColor: cardBackgroundColor,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.15,
@@ -228,8 +256,8 @@ export function OnboardingScreen({
               marginLeft={GAP}
               borderRadius={20}
               overflow="hidden"
-              backgroundColor="$vanillaCream"
               style={{
+                backgroundColor: cardBackgroundColor,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.15,
@@ -261,9 +289,11 @@ export function OnboardingScreen({
       >
         {/* CTAs - Design System Buttons */}
         <YStack gap={12} width="100%" paddingHorizontal={24}>
-          {/* Primary Button - Pill-shaped with Spiced Clementine */}
+          {/* Primary Button - Pill-shaped, theme-aware */}
+          {/* In light mode: use butterVariant="primary" (orange bg, white text) */}
+          {/* In dark mode: override with cream bg, orange text */}
           <Button
-            butterVariant="primary"
+            butterVariant={isDark ? undefined : "primary"}
             size="$4"
             borderRadius="$full"
             paddingHorizontal="$6"
@@ -274,17 +304,21 @@ export function OnboardingScreen({
               scale: 0.98,
               opacity: 0.9,
             }}
+            {...(isDark && {
+              backgroundColor: "$vanillaCream",
+              color: "$primary",
+            })}
           >
             Create account
           </Button>
 
-          {/* Secondary Button - Pill-shaped with Vanilla Cream background */}
+          {/* Secondary Button - Pill-shaped, theme-aware colors */}
           <Button
             size="$4"
-            backgroundColor="$vanillaCream"
-            color="$primary"
+            backgroundColor={isDark ? "transparent" : "$vanillaCream"}
+            color={isDark ? "$vanillaCream" : "$primary"}
             borderWidth={2}
-            borderColor="$primary"
+            borderColor={isDark ? "$vanillaCream" : "$primary"}
             borderRadius="$full"
             paddingHorizontal="$6"
             paddingVertical="$2"
@@ -292,7 +326,7 @@ export function OnboardingScreen({
             onPress={onSignIn}
             pressStyle={{
               scale: 0.98,
-              backgroundColor: "$vanillaCreamHover",
+              backgroundColor: isDark ? "rgba(255, 250, 210, 0.1)" : "$vanillaCreamHover",
             }}
           >
             I already have an account

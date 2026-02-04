@@ -1,25 +1,13 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import {
-  Column,
-  Row,
-  ScrollView,
-  Text,
-  Button,
-  Heading,
-  Spinner,
-} from "@buttergolf/ui";
+import { Column, Row, ScrollView, Text, Button, Heading, Spinner } from "@buttergolf/ui";
 import { Button as TamaguiButton } from "tamagui";
 import { ArrowLeft } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSignUp } from "@clerk/clerk-expo";
 import { AuthFormInput, AuthErrorDisplay } from "./components";
-import {
-  validateSignUpForm,
-  getPasswordStrength,
-  mapClerkErrorToMessage,
-} from "./utils";
+import { validateSignUpForm, getPasswordStrength, mapClerkErrorToMessage } from "./utils";
 import { SignUpFormData, PasswordStrength } from "./types";
 
 interface SignUpScreenProps {
@@ -51,8 +39,7 @@ export function SignUpScreen({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [passwordStrength, setPasswordStrength] =
-    useState<PasswordStrength>("weak");
+  const [passwordStrength, setPasswordStrength] = useState<PasswordStrength>("weak");
 
   // Update password strength when password changes
   const handlePasswordChange = useCallback(
@@ -69,7 +56,7 @@ export function SignUpScreen({
         });
       }
     },
-    [fieldErrors],
+    [fieldErrors]
   );
 
   const handleFirstNameChange = useCallback(
@@ -83,7 +70,7 @@ export function SignUpScreen({
         });
       }
     },
-    [fieldErrors],
+    [fieldErrors]
   );
 
   const handleLastNameChange = useCallback(
@@ -97,7 +84,7 @@ export function SignUpScreen({
         });
       }
     },
-    [fieldErrors],
+    [fieldErrors]
   );
 
   const handleEmailChange = useCallback(
@@ -111,7 +98,7 @@ export function SignUpScreen({
         });
       }
     },
-    [fieldErrors],
+    [fieldErrors]
   );
 
   const handleConfirmPasswordChange = useCallback(
@@ -125,7 +112,7 @@ export function SignUpScreen({
         });
       }
     },
-    [fieldErrors],
+    [fieldErrors]
   );
 
   const handleSubmit = useCallback(async () => {
@@ -137,7 +124,7 @@ export function SignUpScreen({
       formData.lastName,
       formData.email,
       formData.password,
-      formData.confirmPassword,
+      formData.confirmPassword
     );
 
     if (!validation.isValid) {
@@ -244,9 +231,7 @@ export function SignUpScreen({
           </Column>
 
           {/* Error Display */}
-          {error && (
-            <AuthErrorDisplay error={error} onDismiss={() => setError(null)} />
-          )}
+          {error && <AuthErrorDisplay error={error} onDismiss={() => setError(null)} />}
 
           {/* Form Fields */}
           <Column gap="$4">
@@ -311,9 +296,7 @@ export function SignUpScreen({
                   >
                     <Column
                       height="100%"
-                      backgroundColor={getPasswordStrengthColor(
-                        passwordStrength,
-                      )}
+                      backgroundColor={getPasswordStrengthColor(passwordStrength)}
                       width={
                         passwordStrength === "weak"
                           ? "25%"
@@ -364,18 +347,10 @@ export function SignUpScreen({
               disabled={isSubmitting || !isLoaded}
               opacity={isSubmitting ? 0.7 : 1}
             >
-              {isSubmitting ? (
-                <Spinner size="sm" color="$textInverse" />
-              ) : (
-                "Create Account"
-              )}
+              {isSubmitting ? <Spinner size="sm" color="$textInverse" /> : "Create Account"}
             </Button>
 
-            <Row
-              alignItems="center"
-              justifyContent="center"
-              gap="$2"
-            >
+            <Row alignItems="center" justifyContent="center" gap="$2">
               <Text size="$4" color="$textSecondary">
                 Already have an account?
               </Text>

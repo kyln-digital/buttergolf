@@ -6,10 +6,10 @@ import { Column, Text, Spinner } from "@buttergolf/ui";
 
 /**
  * /seller/onboarding/complete
- * 
+ *
  * Web redirect page for Stripe Connect onboarding completion.
  * Stripe redirects here after onboarding, then we redirect to the mobile app via deep link.
- * 
+ *
  * This page exists because Stripe requires HTTPS URLs for return_url/refresh_url,
  * but mobile apps need deep links to return to the app.
  */
@@ -20,9 +20,9 @@ export default function SellerOnboardingCompletePage() {
     // Build deep link with any query params Stripe passed
     const params = searchParams.toString();
     const deepLink = `buttergolf://seller/onboarding/complete${params ? `?${params}` : ""}`;
-    
+
     console.log("[SellerOnboardingComplete] Redirecting to deep link:", deepLink);
-    
+
     // Redirect to the mobile app
     window.location.href = deepLink;
   }, [searchParams]);

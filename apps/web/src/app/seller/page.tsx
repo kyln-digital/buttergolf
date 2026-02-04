@@ -1,15 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Column,
-  Row,
-  Heading,
-  Text,
-  Card,
-  Spinner,
-  Button,
-} from "@buttergolf/ui";
+import { Column, Row, Heading, Text, Card, Spinner, Button } from "@buttergolf/ui";
 import { Package, Eye, Heart, DollarSign, TrendingUp, AlertCircle } from "lucide-react";
 import Link from "next/link";
 
@@ -85,9 +77,7 @@ export default function SellerDashboardPage() {
       <Row alignItems="center" justifyContent="space-between" fullWidth>
         <Column gap="$xs">
           <Heading level={1}>Seller Dashboard</Heading>
-          <Text color="$textSecondary">
-            Manage your listings, payments, and payouts
-          </Text>
+          <Text color="$textSecondary">Manage your listings, payments, and payouts</Text>
         </Column>
         <Link href="/sell">
           <Button butterVariant="primary" size="$4">
@@ -216,7 +206,11 @@ function StatCard({ title, value, icon, href }: StatCardProps) {
   );
 
   if (href) {
-    return <Link href={href} style={{ flex: 1, minWidth: 200, textDecoration: "none" }}>{content}</Link>;
+    return (
+      <Link href={href} style={{ flex: 1, minWidth: 200, textDecoration: "none" }}>
+        {content}
+      </Link>
+    );
   }
 
   return content;

@@ -26,7 +26,7 @@ export async function getOrCreateUser(clerkUserId: string) {
 
   // User not found - webhook may not have fired yet or failed
   console.warn(
-    `User ${clerkUserId} not found in database - creating from Clerk API (webhook fallback)`,
+    `User ${clerkUserId} not found in database - creating from Clerk API (webhook fallback)`
   );
 
   // Fetch user details from Clerk
@@ -46,9 +46,7 @@ export async function getOrCreateUser(clerkUserId: string) {
     },
   });
 
-  console.log(
-    `Created user ${user.id} for Clerk ID ${clerkUserId} via fallback`,
-  );
+  console.log(`Created user ${user.id} for Clerk ID ${clerkUserId} via fallback`);
 
   return user;
 }

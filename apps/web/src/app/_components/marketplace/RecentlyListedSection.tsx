@@ -3,26 +3,18 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ProductCardData } from "@buttergolf/app";
-import {
-  Button,
-  Column,
-  Row,
-  Text,
-  Heading,
-} from "@buttergolf/ui";
+import { Button, Column, Row, Text, Heading } from "@buttergolf/ui";
 import { ProductCard } from "@/components/ProductCard";
 
 interface RecentlyListedSectionClientProps {
   readonly products: ProductCardData[];
 }
 
-export function RecentlyListedSectionClient({
-  products,
-}: RecentlyListedSectionClientProps) {
+export function RecentlyListedSectionClient({ products }: RecentlyListedSectionClientProps) {
   const router = useRouter();
 
   return (
-    <Column backgroundColor="$surface" paddingVertical="$3xl" width="100%">
+    <Column backgroundColor="$background" paddingVertical="$3xl" width="100%">
       <Column
         maxWidth={1440}
         marginHorizontal="auto"
@@ -32,21 +24,10 @@ export function RecentlyListedSectionClient({
       >
         {/* Header - Centered */}
         <Column alignItems="center" gap="$md" width="100%">
-          <Heading
-            level={2}
-            size="$9"
-            $gtMd={{ size: "$10" }}
-            color="$text"
-            textAlign="center"
-          >
+          <Heading level={2} size="$9" $gtMd={{ size: "$10" }} color="$text" textAlign="center">
             Recently listed
           </Heading>
-          <Text
-            size="$6"
-            $gtMd={{ size: "$7" }}
-            color="$textSecondary"
-            textAlign="center"
-          >
+          <Text size="$6" $gtMd={{ size: "$7" }} color="$textSecondary" textAlign="center">
             Latest drops, hottest deals - upgrade your game today.
           </Text>
         </Column>
@@ -78,12 +59,7 @@ export function RecentlyListedSectionClient({
         </Column>
 
         {/* View All Button - Centered Below Carousel */}
-        <Row
-          alignItems="center"
-          justifyContent="center"
-          width="100%"
-          paddingTop="$sm"
-        >
+        <Row alignItems="center" justifyContent="center" width="100%" paddingTop="$sm">
           <Link href="/listings" passHref style={{ textDecoration: "none" }}>
             <Button butterVariant="primary" size="$5">
               View all listings

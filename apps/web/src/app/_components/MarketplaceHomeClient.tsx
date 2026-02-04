@@ -19,9 +19,7 @@ interface MarketplaceHomeClientProps {
   readonly products: ProductCardData[];
 }
 
-export default function MarketplaceHomeClient({
-  products,
-}: Readonly<MarketplaceHomeClientProps>) {
+export default function MarketplaceHomeClient({ products }: Readonly<MarketplaceHomeClientProps>) {
   const [activeMode, setActiveMode] = useState<"buying" | "selling">("buying");
   const { isSignedIn } = useUser();
 
@@ -34,7 +32,7 @@ export default function MarketplaceHomeClient({
 
       {/* Buy/Sell Toggle - Immediate page load animation (delay removed to fix cascade) */}
       <AnimatedView delay={0}>
-        <Column paddingTop="$6" paddingBottom="$4" backgroundColor="$surface">
+        <Column paddingTop="$6" paddingBottom="$4" backgroundColor="$background">
           <BuySellToggle activeMode={activeMode} onModeChange={setActiveMode} />
         </Column>
       </AnimatedView>
@@ -56,9 +54,7 @@ export default function MarketplaceHomeClient({
           </AnimatedView>
         </>
       ) : (
-        <AnimatedView delay={0}>
-          {isSignedIn ? <SellerHub /> : <SellingPlaceholder />}
-        </AnimatedView>
+        <AnimatedView delay={0}>{isSignedIn ? <SellerHub /> : <SellingPlaceholder />}</AnimatedView>
       )}
 
       <AnimatedView delay={0}>

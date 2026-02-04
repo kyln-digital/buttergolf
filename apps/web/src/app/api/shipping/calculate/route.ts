@@ -13,16 +13,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error calculating shipping rates:", error);
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Failed to calculate shipping rates";
+    const message = error instanceof Error ? error.message : "Failed to calculate shipping rates";
     const status =
-      message === "Product not found"
-        ? 404
-        : message.includes("Missing required")
-          ? 400
-          : 500;
+      message === "Product not found" ? 404 : message.includes("Missing required") ? 400 : 500;
     return NextResponse.json({ error: message }, { status });
   }
 }
@@ -36,20 +29,14 @@ export async function GET(request: NextRequest) {
     const county = searchParams.get("county") || searchParams.get("state") || ""; // Support both UK and legacy param
 
     if (!productId || !postcode) {
-      return NextResponse.json(
-        { error: "productId and postcode are required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "productId and postcode are required" }, { status: 400 });
     }
 
     const result = await estimateShippingRate(productId, postcode, county);
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error estimating shipping rate:", error);
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Failed to estimate shipping rate";
+    const message = error instanceof Error ? error.message : "Failed to estimate shipping rate";
     const status = message === "Product not found" ? 404 : 500;
     return NextResponse.json({ error: message }, { status });
   }

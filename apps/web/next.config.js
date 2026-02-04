@@ -1,6 +1,6 @@
-const {withTamagui} = require("@tamagui/next-plugin");
-const {join, resolve} = require("node:path");
-const {PrismaPlugin} = require("@prisma/nextjs-monorepo-workaround-plugin");
+const { withTamagui } = require("@tamagui/next-plugin");
+const { join, resolve } = require("node:path");
+const { PrismaPlugin } = require("@prisma/nextjs-monorepo-workaround-plugin");
 
 // Bundle analyzer for debugging bundle sizes
 // Run with: ANALYZE=true pnpm build
@@ -15,16 +15,14 @@ const boolVals = {
 
 // Keep style extraction enabled in all environments unless explicitly disabled
 // Set DISABLE_EXTRACTION=true to opt out (useful when debugging compiler output)
-const disableExtraction =
-  boolVals[process.env.DISABLE_EXTRACTION] ?? false;
+const disableExtraction = boolVals[process.env.DISABLE_EXTRACTION] ?? false;
 
 const plugins = [
   withTamagui({
     config: "../../packages/config/src/tamagui.config.ts",
     components: ["tamagui", "@buttergolf/ui"],
     appDir: true,
-    outputCSS:
-      process.env.NODE_ENV === "production" ? "./public/tamagui.css" : null,
+    outputCSS: process.env.NODE_ENV === "production" ? "./public/tamagui.css" : null,
     logTimings: true,
     disableExtraction,
     // Disable debug attributes to prevent hydration warnings
@@ -36,13 +34,7 @@ const plugins = [
         return true;
       }
     },
-    excludeReactNativeWebExports: [
-      "Switch",
-      "ProgressBar",
-      "Picker",
-      "CheckBox",
-      "Touchable",
-    ],
+    excludeReactNativeWebExports: ["Switch", "ProgressBar", "Picker", "CheckBox", "Touchable"],
   }),
 ];
 
@@ -76,21 +68,16 @@ module.exports = () => {
     // Required for Vercel deployment with custom Prisma output path
     // Paths are relative to outputFileTracingRoot (monorepo root)
     outputFileTracingIncludes: {
-      '/api/**': [
-        './packages/db/generated/client/**/*',
-        './packages/db/prisma/schema.prisma',
-      ],
+      "/api/**": ["./packages/db/generated/client/**/*", "./packages/db/prisma/schema.prisma"],
       // Include for all server-side code
-      '/**': [
-        './packages/db/generated/client/**/*',
-      ],
+      "/**": ["./packages/db/generated/client/**/*"],
     },
     // Set tracing root to monorepo root for proper workspace resolution
     // (moved out of `experimental.outputFileTracingRoot` — Next.js expects this at top-level)
-    outputFileTracingRoot: join(__dirname, '../../'),
+    outputFileTracingRoot: join(__dirname, "../../"),
     // Prevent Next.js from bundling Prisma Client (breaks native binaries)
     // Essential for monorepo setups with custom Prisma output paths
-    serverExternalPackages: ['@buttergolf/db', '@prisma/client'],
+    serverExternalPackages: ["@buttergolf/db", "@prisma/client"],
     // Security and caching headers
     headers: async () => [
       {
@@ -100,9 +87,18 @@ module.exports = () => {
           ...securityHeaders,
           // Disable caching in development
           ...(process.env.NODE_ENV === "development"
-            ? [{key: "Cache-Control", value: "no-store, must-revalidate"}]
+            ? [{ key: "Cache-Control", value: "no-store, must-revalidate" }]
             : []),
         ],
+      },
+    ],
+    // Proxy Clerk Frontend API requests through our domain
+    // This allows clerk.buttergolf.com custom domain to work properly
+    // See: https://clerk.com/docs/deployments/clerk-cname-proxy
+    rewrites: async () => [
+      {
+        source: "/__clerk/:path*",
+        destination: "https://clerk.buttergolf.com/:path*",
       },
     ],
     transpilePackages: [
@@ -132,10 +128,7 @@ module.exports = () => {
       scrollRestoration: true,
       // Allow Server Actions to work with dev tunnels and port forwarding
       serverActions: {
-        allowedOrigins: [
-          "localhost:3000",
-          "ttdr3bz5-3000.uks1.devtunnels.ms",
-        ],
+        allowedOrigins: ["localhost:3000", "ttdr3bz5-3000.uks1.devtunnels.ms"],
       },
     },
     // Allow dev server access from local network devices (mobile testing, etc.)
@@ -154,7 +147,7 @@ module.exports = () => {
         },
       ],
     },
-    webpack: (webpackConfig, {isServer}) => {
+    webpack: (webpackConfig, { isServer }) => {
       // Add PrismaPlugin to copy Prisma binaries into serverless bundle
       // Required for monorepo deployments on Vercel with custom Prisma output path
       if (isServer) {
@@ -201,7 +194,6 @@ module.exports = () => {
   // Apply bundle analyzer last (wrap the entire config)
   return withBundleAnalyzer(config);
 };
-
 
 // Injected content via Sentry wizard below
 

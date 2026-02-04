@@ -8,10 +8,7 @@ import { getUserIdFromRequest } from "@/lib/auth";
  * Updates a product owned by the authenticated user
  * Only allows updating: title, description, price, condition, brandId, model, categoryId, isSold
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Support both web cookies and mobile Bearer tokens
     const clerkId = await getUserIdFromRequest(request);
@@ -44,7 +41,7 @@ export async function PATCH(
     if (existingProduct.userId !== user.id) {
       return NextResponse.json(
         { error: "Forbidden - you can only edit your own products" },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
@@ -81,10 +78,7 @@ export async function PATCH(
         "POOR",
       ];
       if (!validConditions.includes(updateData.condition as ProductCondition)) {
-        return NextResponse.json(
-          { error: "Invalid condition" },
-          { status: 400 },
-        );
+        return NextResponse.json({ error: "Invalid condition" }, { status: 400 });
       }
     }
 
@@ -113,10 +107,7 @@ export async function PATCH(
     return NextResponse.json(updatedProduct);
   } catch (error) {
     console.error("Error updating product:", error);
-    return NextResponse.json(
-      { error: "Failed to update product" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to update product" }, { status: 500 });
   }
 }
 
@@ -128,7 +119,7 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Support both web cookies and mobile Bearer tokens
@@ -165,7 +156,7 @@ export async function DELETE(
     if (existingProduct.userId !== user.id) {
       return NextResponse.json(
         { error: "Forbidden - you can only delete your own products" },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
@@ -173,7 +164,7 @@ export async function DELETE(
     if (existingProduct.orders.length > 0) {
       return NextResponse.json(
         { error: "Cannot delete product with existing orders" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -185,9 +176,6 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting product:", error);
-    return NextResponse.json(
-      { error: "Failed to delete product" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to delete product" }, { status: 500 });
   }
 }

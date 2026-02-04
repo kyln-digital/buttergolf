@@ -63,7 +63,7 @@ export function ListingsClient({
     // If we have an initialCategory from the route (e.g., /category/woods), use it
     // This takes precedence over localStorage and URL params for category
     const categoryFromRoute = initialCategory;
-    
+
     // Try to load from localStorage first
     if (globalThis.window !== undefined) {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -73,8 +73,7 @@ export function ListingsClient({
           // Merge URL params (they take precedence), but route category wins for category
           return {
             category: categoryFromRoute || searchParams.get("category") || parsed.category || null,
-            conditions:
-              searchParams.getAll("condition") || parsed.conditions || [],
+            conditions: searchParams.getAll("condition") || parsed.conditions || [],
             minPrice:
               Number.parseFloat(searchParams.get("minPrice") || "") ||
               parsed.minPrice ||
@@ -85,9 +84,7 @@ export function ListingsClient({
               initialFilters.priceRange.max,
             brands: searchParams.getAll("brand") || parsed.brands || [],
             showFavouritesOnly:
-              searchParams.get("favourites") === "true" ||
-              parsed.showFavouritesOnly ||
-              false,
+              searchParams.get("favourites") === "true" || parsed.showFavouritesOnly || false,
           };
         } catch {
           // Fall through to URL parsing
@@ -100,11 +97,9 @@ export function ListingsClient({
       category: categoryFromRoute || searchParams.get("category") || null,
       conditions: searchParams.getAll("condition") || [],
       minPrice:
-        Number.parseFloat(searchParams.get("minPrice") || "") ||
-        initialFilters.priceRange.min,
+        Number.parseFloat(searchParams.get("minPrice") || "") || initialFilters.priceRange.min,
       maxPrice:
-        Number.parseFloat(searchParams.get("maxPrice") || "") ||
-        initialFilters.priceRange.max,
+        Number.parseFloat(searchParams.get("maxPrice") || "") || initialFilters.priceRange.max,
       brands: searchParams.getAll("brand") || [],
       showFavouritesOnly: searchParams.get("favourites") === "true" || false,
     };
@@ -162,18 +157,18 @@ export function ListingsClient({
       if (newPage > 1) params.set("page", newPage.toString());
 
       const queryString = params.toString();
-      
+
       // Use clean category URL if a category is selected
       if (newFilters.category) {
-        return queryString 
-          ? `/category/${newFilters.category}?${queryString}` 
+        return queryString
+          ? `/category/${newFilters.category}?${queryString}`
           : `/category/${newFilters.category}`;
       }
-      
+
       // No category = /listings
       return queryString ? `/listings?${queryString}` : "/listings";
     },
-    [initialFilters.priceRange],
+    [initialFilters.priceRange]
   );
 
   // Calculate total pages
@@ -197,10 +192,8 @@ export function ListingsClient({
         for (const c of filters.conditions) {
           params.append("condition", c);
         }
-        if (filters.minPrice)
-          params.set("minPrice", filters.minPrice.toString());
-        if (filters.maxPrice)
-          params.set("maxPrice", filters.maxPrice.toString());
+        if (filters.minPrice) params.set("minPrice", filters.minPrice.toString());
+        if (filters.maxPrice) params.set("maxPrice", filters.maxPrice.toString());
         for (const b of filters.brands) {
           params.append("brand", b);
         }
@@ -238,7 +231,7 @@ export function ListingsClient({
         setIsPaginating(false);
       }
     },
-    [filters, sort, router, buildURL],
+    [filters, sort, router, buildURL]
   );
 
   // Debounced fetch on filter change
@@ -337,12 +330,7 @@ export function ListingsClient({
           gap="$lg"
         >
           {/* Header */}
-          <Row
-            alignItems="center"
-            justifyContent="space-between"
-            flexWrap="wrap"
-            gap="$md"
-          >
+          <Row alignItems="center" justifyContent="space-between" flexWrap="wrap" gap="$md">
             <Column gap="$xs">
               <Text size="$9" weight="bold">
                 Shop All Products
@@ -355,11 +343,7 @@ export function ListingsClient({
             <Row gap="$md" alignItems="center">
               {/* Mobile filter button */}
               <Row display="flex" $gtLg={{ display: "none" }}>
-                <Button
-                  size="$4"
-                  chromeless
-                  onPress={() => setMobileFilterOpen(true)}
-                >
+                <Button size="$4" chromeless onPress={() => setMobileFilterOpen(true)}>
                   <Row gap="$sm" alignItems="center">
                     <Text>Filters</Text>
                     {activeFilterCount > 0 && (
@@ -401,7 +385,9 @@ export function ListingsClient({
                     aria-label="Remove category filter"
                     hoverStyle={{ opacity: 0.7 }}
                   >
-                    <Text color="$textSecondary" size="$4">×</Text>
+                    <Text color="$textSecondary" size="$4">
+                      ×
+                    </Text>
                   </View>
                 </Row>
               )}
@@ -423,15 +409,15 @@ export function ListingsClient({
                     cursor="pointer"
                     onPress={() =>
                       handleFilterChange({
-                        conditions: filters.conditions.filter(
-                          (c) => c !== condition,
-                        ),
+                        conditions: filters.conditions.filter((c) => c !== condition),
                       })
                     }
                     aria-label={`Remove ${condition} filter`}
                     hoverStyle={{ opacity: 0.7 }}
                   >
-                    <Text color="$textSecondary" size="$4">×</Text>
+                    <Text color="$textSecondary" size="$4">
+                      ×
+                    </Text>
                   </View>
                 </Row>
               ))}
@@ -459,7 +445,9 @@ export function ListingsClient({
                     aria-label={`Remove ${brand} filter`}
                     hoverStyle={{ opacity: 0.7 }}
                   >
-                    <Text color="$textSecondary" size="$4">×</Text>
+                    <Text color="$textSecondary" size="$4">
+                      ×
+                    </Text>
                   </View>
                 </Row>
               ))}
@@ -483,9 +471,7 @@ export function ListingsClient({
             <FilterSidebar
               filters={filters}
               availableBrands={availableFilters?.availableBrands || []}
-              priceRange={
-                availableFilters?.priceRange || { min: 0, max: 10000 }
-              }
+              priceRange={availableFilters?.priceRange || { min: 0, max: 10000 }}
               onChange={handleFilterChange}
               onClearAll={handleClearAll}
             />

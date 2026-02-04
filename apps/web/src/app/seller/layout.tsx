@@ -3,15 +3,7 @@
 import { ConnectComponentsProvider } from "@stripe/react-connect-js";
 import { ConnectNotificationBanner } from "@stripe/react-connect-js";
 import { useStripeConnect } from "@/hooks/useStripeConnect";
-import {
-  Column,
-  Row,
-  Text,
-  Heading,
-  Spinner,
-  Button,
-  Card,
-} from "@buttergolf/ui";
+import { Column, Row, Text, Heading, Spinner, Button, Card } from "@buttergolf/ui";
 import { SellerDashboardNav } from "./_components/SellerDashboardNav";
 import Link from "next/link";
 
@@ -28,24 +20,13 @@ import Link from "next/link";
  * - No Account: Prompts user to complete onboarding
  * - Has Account: Shows full dashboard with navigation
  */
-export default function SellerLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const { stripeConnectInstance, loading, error, hasAccount } =
-    useStripeConnect();
+export default function SellerLayout({ children }: { children: React.ReactNode }) {
+  const { stripeConnectInstance, loading, error, hasAccount } = useStripeConnect();
 
   // Loading state
   if (loading) {
     return (
-      <Column
-        fullWidth
-        minHeight="60vh"
-        alignItems="center"
-        justifyContent="center"
-        gap="$md"
-      >
+      <Column fullWidth minHeight="60vh" alignItems="center" justifyContent="center" gap="$md">
         <Spinner size="lg" color="$primary" />
         <Text color="$textSecondary">Loading seller dashboard...</Text>
       </Column>
@@ -55,13 +36,7 @@ export default function SellerLayout({
   // Error state
   if (error) {
     return (
-      <Column
-        fullWidth
-        minHeight="60vh"
-        alignItems="center"
-        justifyContent="center"
-        padding="$xl"
-      >
+      <Column fullWidth minHeight="60vh" alignItems="center" justifyContent="center" padding="$xl">
         <Card variant="elevated" padding="$xl" maxWidth={500}>
           <Column gap="$lg" alignItems="center">
             <Heading level={3} color="$error">
@@ -84,19 +59,13 @@ export default function SellerLayout({
   // No account state - prompt to complete onboarding
   if (!hasAccount) {
     return (
-      <Column
-        fullWidth
-        minHeight="60vh"
-        alignItems="center"
-        justifyContent="center"
-        padding="$xl"
-      >
+      <Column fullWidth minHeight="60vh" alignItems="center" justifyContent="center" padding="$xl">
         <Card variant="elevated" padding="$xl" maxWidth={500}>
           <Column gap="$lg" alignItems="center">
             <Heading level={2}>Start Selling on ButterGolf</Heading>
             <Text color="$textSecondary" textAlign="center">
-              Complete your seller onboarding to access your dashboard and start
-              listing golf equipment.
+              Complete your seller onboarding to access your dashboard and start listing golf
+              equipment.
             </Text>
             <Link href="/account">
               <Button butterVariant="primary" size="$5">
@@ -112,16 +81,8 @@ export default function SellerLayout({
   // No Connect instance (shouldn't happen if hasAccount is true, but safety check)
   if (!stripeConnectInstance) {
     return (
-      <Column
-        fullWidth
-        minHeight="60vh"
-        alignItems="center"
-        justifyContent="center"
-        gap="$md"
-      >
-        <Text color="$textSecondary">
-          Unable to initialize seller dashboard. Please try again.
-        </Text>
+      <Column fullWidth minHeight="60vh" alignItems="center" justifyContent="center" gap="$md">
+        <Text color="$textSecondary">Unable to initialize seller dashboard. Please try again.</Text>
         <Link href="/account">
           <Button butterVariant="primary" size="$4">
             Go to Account Settings

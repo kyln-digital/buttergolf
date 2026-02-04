@@ -1,16 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import {
-  Column,
-  Row,
-  ScrollView,
-  Text,
-  Heading,
-  Spinner,
-  Button,
-  Image,
-} from "@buttergolf/ui";
+import { Column, Row, ScrollView, Text, Heading, Spinner, Button, Image } from "@buttergolf/ui";
 import { PLACEHOLDER_IMAGE_URL } from "@buttergolf/constants";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Heart, Trash2, ArrowLeft } from "@tamagui/lucide-icons";
@@ -114,7 +105,7 @@ export function FavouritesScreen({
 
       // Store the product before removal for potential rollback
       const productToRemove = products.find((p) => p.id === productId);
-      
+
       try {
         setRemovingId(productId);
         // Optimistically remove from UI first
@@ -131,7 +122,7 @@ export function FavouritesScreen({
         setRemovingId(null);
       }
     },
-    [onRemoveFavourite, products],
+    [onRemoveFavourite, products]
   );
 
   // Not authenticated state
@@ -173,12 +164,7 @@ export function FavouritesScreen({
           <Text size="$5" color="$textSecondary" textAlign="center">
             Save your favourite golf equipment and access them from any device.
           </Text>
-          <Button
-            butterVariant="primary"
-            size="$5"
-            marginTop="$4"
-            onPress={onLoginPress}
-          >
+          <Button butterVariant="primary" size="$5" marginTop="$4" onPress={onLoginPress}>
             Sign In
           </Button>
         </Column>
@@ -267,24 +253,16 @@ export function FavouritesScreen({
 
         {/* Empty State */}
         {!loading && !error && products.length === 0 && (
-          <Column
-            alignItems="center"
-            paddingVertical="$8"
-            gap="$4"
-          >
+          <Column alignItems="center" paddingVertical="$8" gap="$4">
             <Heart size={80} color="$border" />
             <Heading level={3} color="$text" textAlign="center">
               No favourites yet
             </Heading>
             <Text size="$5" color="$textSecondary" textAlign="center" paddingHorizontal="$4">
-              Browse our marketplace to discover amazing golf equipment and save your favourites here.
+              Browse our marketplace to discover amazing golf equipment and save your favourites
+              here.
             </Text>
-            <Button
-              butterVariant="primary"
-              size="$5"
-              marginTop="$4"
-              onPress={onBrowseListings}
-            >
+            <Button butterVariant="primary" size="$5" marginTop="$4" onPress={onBrowseListings}>
               Browse Listings
             </Button>
           </Column>
@@ -390,12 +368,7 @@ function FavouriteProductCard({
             accessibilityRole="button"
             accessibilityLabel={`View ${product.title}`}
           >
-            <Text
-              size="$5"
-              fontWeight="600"
-              color="$text"
-              numberOfLines={2}
-            >
+            <Text size="$5" fontWeight="600" color="$text" numberOfLines={2}>
               {product.title}
             </Text>
           </Column>
@@ -443,20 +416,10 @@ function FavouriteProductCard({
 
       {/* Action Buttons */}
       <Row gap="$3">
-        <Button
-          flex={1}
-          butterVariant="primary"
-          size="$4"
-          onPress={onBuyNow}
-        >
+        <Button flex={1} butterVariant="primary" size="$4" onPress={onBuyNow}>
           Buy Now
         </Button>
-        <Button
-          flex={1}
-          butterVariant="secondary"
-          size="$4"
-          onPress={onMakeOffer}
-        >
+        <Button flex={1} butterVariant="secondary" size="$4" onPress={onMakeOffer}>
           Make Offer
         </Button>
       </Row>

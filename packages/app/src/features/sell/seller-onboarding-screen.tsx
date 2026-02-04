@@ -51,9 +51,7 @@ export function SellerOnboardingScreen({
       await onStartOnboarding();
     } catch (err) {
       console.error("[SellerOnboarding] Error starting onboarding:", err);
-      setLocalError(
-        err instanceof Error ? err.message : "Failed to start onboarding"
-      );
+      setLocalError(err instanceof Error ? err.message : "Failed to start onboarding");
     } finally {
       setIsStarting(false);
     }
@@ -67,9 +65,7 @@ export function SellerOnboardingScreen({
       await onContinueOnboarding();
     } catch (err) {
       console.error("[SellerOnboarding] Error continuing onboarding:", err);
-      setLocalError(
-        err instanceof Error ? err.message : "Failed to continue onboarding"
-      );
+      setLocalError(err instanceof Error ? err.message : "Failed to continue onboarding");
     } finally {
       setIsStarting(false);
     }
@@ -108,13 +104,7 @@ export function SellerOnboardingScreen({
 
   return (
     <View flex={1} backgroundColor="$background">
-      <YStack
-        flex={1}
-        padding="$xl"
-        alignItems="center"
-        justifyContent="center"
-        gap="$lg"
-      >
+      <YStack flex={1} padding="$xl" alignItems="center" justifyContent="center" gap="$lg">
         {/* Icon/Illustration placeholder */}
         <View
           width={120}
@@ -129,12 +119,7 @@ export function SellerOnboardingScreen({
         </View>
 
         {/* Title */}
-        <Text
-          size="$9"
-          fontWeight="700"
-          color="$text"
-          textAlign="center"
-        >
+        <Text size="$9" fontWeight="700" color="$text" textAlign="center">
           {showContinue
             ? "Complete Your Seller Setup"
             : showRestricted
@@ -143,13 +128,7 @@ export function SellerOnboardingScreen({
         </Text>
 
         {/* Description */}
-        <Text
-          size="$5"
-          color="$textSecondary"
-          textAlign="center"
-          maxWidth={320}
-          lineHeight={22}
-        >
+        <Text size="$5" color="$textSecondary" textAlign="center" maxWidth={320} lineHeight={22}>
           {showContinue
             ? "You're almost there! Complete a few more steps to start selling your golf equipment on ButterGolf."
             : showRestricted
@@ -199,11 +178,7 @@ export function SellerOnboardingScreen({
         {/* Action buttons */}
         <YStack gap="$md" width="100%" maxWidth={320} marginTop="$lg">
           {isStarting ? (
-            <View
-              height={56}
-              alignItems="center"
-              justifyContent="center"
-            >
+            <View height={56} alignItems="center" justifyContent="center">
               <Spinner size="sm" color="$primary" />
               <Text size="$4" color="$textSecondary" marginTop="$sm">
                 Opening Stripe...
@@ -215,37 +190,25 @@ export function SellerOnboardingScreen({
                 butterVariant="primary"
                 size="$5"
                 onPress={
-                  showContinue || showRestricted
-                    ? handleContinueOnboarding
-                    : handleStartOnboarding
+                  showContinue || showRestricted ? handleContinueOnboarding : handleStartOnboarding
                 }
                 disabled={isStarting}
               >
                 <Text color="$textInverse" fontWeight="600">
-                  {showContinue || showRestricted
-                    ? "Continue Setup"
-                    : "Get Started"}
+                  {showContinue || showRestricted ? "Continue Setup" : "Get Started"}
                 </Text>
               </Button>
 
               {onCancel && (
-                <Button
-                  butterVariant="tertiary"
-                  size="$4"
-                  onPress={onCancel}
-                  disabled={isStarting}
-                >
-                  <Text color="$text" fontWeight="500">Not Now</Text>
+                <Button butterVariant="tertiary" size="$4" onPress={onCancel} disabled={isStarting}>
+                  <Text color="$text" fontWeight="500">
+                    Not Now
+                  </Text>
                 </Button>
               )}
 
               {displayError && (
-                <Button
-                  chromeless
-                  size="$4"
-                  onPress={onRefresh}
-                  disabled={isStarting}
-                >
+                <Button chromeless size="$4" onPress={onRefresh} disabled={isStarting}>
                   <Text color="$primary">Refresh Status</Text>
                 </Button>
               )}
@@ -254,15 +217,9 @@ export function SellerOnboardingScreen({
         </YStack>
 
         {/* Footer note */}
-        <Text
-          size="$3"
-          color="$textSecondary"
-          textAlign="center"
-          maxWidth={280}
-          marginTop="$lg"
-        >
-          You'll be redirected to Stripe to verify your identity and set up
-          payouts. This usually takes 2-3 minutes.
+        <Text size="$3" color="$textSecondary" textAlign="center" maxWidth={280} marginTop="$lg">
+          You'll be redirected to Stripe to verify your identity and set up payouts. This usually
+          takes 2-3 minutes.
         </Text>
       </YStack>
     </View>

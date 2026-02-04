@@ -1,15 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import {
-  Column,
-  ScrollView,
-  Text,
-  Button,
-  Heading,
-  Row,
-  Spinner,
-} from "@buttergolf/ui";
+import { Column, ScrollView, Text, Button, Heading, Row, Spinner } from "@buttergolf/ui";
 import { Button as TamaguiButton } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSignIn } from "@clerk/clerk-expo";
@@ -48,11 +40,8 @@ export function ResetPasswordScreen({
   const [error, setError] = useState<string | null>(null);
   const [codeError, setCodeError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [confirmPasswordError, setConfirmPasswordError] = useState<
-    string | null
-  >(null);
-  const [passwordStrength, setPasswordStrength] =
-    useState<PasswordStrength>("weak");
+  const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
+  const [passwordStrength, setPasswordStrength] = useState<PasswordStrength>("weak");
 
   const handleCodeChange = useCallback(
     (newCode: string) => {
@@ -60,7 +49,7 @@ export function ResetPasswordScreen({
       setCode(sanitized);
       if (codeError) setCodeError(null);
     },
-    [codeError],
+    [codeError]
   );
 
   const handlePasswordChange = useCallback(
@@ -69,7 +58,7 @@ export function ResetPasswordScreen({
       setPasswordStrength(getPasswordStrength(pwd));
       if (passwordError) setPasswordError(null);
     },
-    [passwordError],
+    [passwordError]
   );
 
   const handleConfirmPasswordChange = useCallback(
@@ -77,7 +66,7 @@ export function ResetPasswordScreen({
       setConfirmPassword(pwd);
       if (confirmPasswordError) setConfirmPasswordError(null);
     },
-    [confirmPasswordError],
+    [confirmPasswordError]
   );
 
   const handleSubmit = useCallback(async () => {
@@ -138,15 +127,7 @@ export function ResetPasswordScreen({
     } finally {
       setIsSubmitting(false);
     }
-  }, [
-    code,
-    newPassword,
-    confirmPassword,
-    isLoaded,
-    signIn,
-    setActive,
-    onSuccess,
-  ]);
+  }, [code, newPassword, confirmPassword, isLoaded, signIn, setActive, onSuccess]);
 
   const getPasswordStrengthColor = (strength: PasswordStrength) => {
     switch (strength) {
@@ -191,16 +172,12 @@ export function ResetPasswordScreen({
               Create New Password
             </Heading>
             <Text size="$5" color="$textSecondary">
-              {email
-                ? `Reset password for ${email}`
-                : "Enter the code and your new password"}
+              {email ? `Reset password for ${email}` : "Enter the code and your new password"}
             </Text>
           </Column>
 
           {/* Error Display */}
-          {error && (
-            <AuthErrorDisplay error={error} onDismiss={() => setError(null)} />
-          )}
+          {error && <AuthErrorDisplay error={error} onDismiss={() => setError(null)} />}
 
           {/* Form Fields */}
           <Column gap="$4">
@@ -239,9 +216,7 @@ export function ResetPasswordScreen({
                   >
                     <Column
                       height="100%"
-                      backgroundColor={getPasswordStrengthColor(
-                        passwordStrength,
-                      )}
+                      backgroundColor={getPasswordStrengthColor(passwordStrength)}
                       width={
                         passwordStrength === "weak"
                           ? "25%"
@@ -290,11 +265,7 @@ export function ResetPasswordScreen({
             disabled={isSubmitting || !isLoaded || code.length !== 6}
             opacity={isSubmitting || code.length !== 6 ? 0.7 : 1}
           >
-            {isSubmitting ? (
-              <Spinner size="sm" color="$textInverse" />
-            ) : (
-              "Reset Password"
-            )}
+            {isSubmitting ? <Spinner size="sm" color="$textInverse" /> : "Reset Password"}
           </Button>
 
           {/* Back Button */}

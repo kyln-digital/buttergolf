@@ -14,7 +14,7 @@ const ADMIN_USER_IDS = [
   "user_37r3HD53QdkciIGzZ6JyEM6MLci",
   "user_37r3JnUd2cuKXNimgzIp3LAJfnh",
   "user_37r3MdfJ7DSPwUSNjxZhl2XRoD0",
-  "user_38ZEyOQHac106JmegFO17Jo8eDx"
+  "user_38ZEyOQHac106JmegFO17Jo8eDx",
 ];
 
 // Define protected routes that require authentication
@@ -38,17 +38,17 @@ const isComingSoonAllowedRoute = createRouteMatcher([
 
 export default clerkMiddleware(async (auth, req) => {
   // DEBUG: Log incoming request headers for API routes to diagnose mobile auth
-  if (req.url.includes('/api/')) {
-    const authHeader = req.headers.get('Authorization');
-    console.log('[Proxy] API request headers:', {
+  if (req.url.includes("/api/")) {
+    const authHeader = req.headers.get("Authorization");
+    console.log("[Proxy] API request headers:", {
       url: req.url,
       method: req.method,
       hasAuthHeader: !!authHeader,
       authHeaderPrefix: authHeader?.substring(0, 30),
       authHeaderLength: authHeader?.length,
-      userAgent: req.headers.get('User-Agent')?.substring(0, 80),
-      origin: req.headers.get('Origin'),
-      host: req.headers.get('Host'),
+      userAgent: req.headers.get("User-Agent")?.substring(0, 80),
+      origin: req.headers.get("Origin"),
+      host: req.headers.get("Host"),
     });
   }
 
@@ -72,8 +72,7 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   // Coming soon mode - redirect all traffic to coming soon page (unless admin)
-  const isComingSoonEnabled =
-    process.env.NEXT_PUBLIC_COMING_SOON_ENABLED === "true";
+  const isComingSoonEnabled = process.env.NEXT_PUBLIC_COMING_SOON_ENABLED === "true";
 
   if (isComingSoonEnabled && !isComingSoonAllowedRoute(req)) {
     // Check if user is the admin (by userId)

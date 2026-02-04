@@ -11,9 +11,6 @@ export async function GET(request: Request) {
     return NextResponse.json(products);
   } catch (error) {
     console.error("API Error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch products" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });
   }
 }

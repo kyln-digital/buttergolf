@@ -20,19 +20,15 @@ export const brandColors = {
 
   // Secondary - Burnt Olive (dark accent)
   burntOlive: "#3E3B2C",
-  burntOliveLight: "#4A473A", // Slightly lighter for cards in dark mode
 
   // Tertiary - Lemon Haze (subtle accent)
   lemonHaze: "#EDECC3",
 
   // Neutrals
   pureWhite: "#FFFFFF",
-  ironstone: "#323232", // Primary text
-  slateSmoke: "#545454", // Secondary text
+  ironstone: "#323232", // Primary text / dark mode background
+  slateSmoke: "#545454", // Secondary text / dark mode elevated surfaces
   cloudMist: "#EDEDED", // Borders/dividers
-
-  // Dark mode specific
-  darkBorder: "#5A5749", // Lighter border for dark mode
 } as const;
 
 export type BrandColor = keyof typeof brandColors;

@@ -65,7 +65,9 @@ interface OffersListScreenProps {
   onBrowseListings?: () => void;
 }
 
-function getStatusBadgeVariant(status: OfferStatus): "success" | "error" | "warning" | "info" | "neutral" {
+function getStatusBadgeVariant(
+  status: OfferStatus
+): "success" | "error" | "warning" | "info" | "neutral" {
   switch (status) {
     case "ACCEPTED":
       return "success";
@@ -154,13 +156,12 @@ export function OffersListScreen({
       const isBuyer = offer.buyer.id === currentUserId;
       const otherParty = isBuyer ? offer.seller : offer.buyer;
       const otherPartyName =
-        `${otherParty.firstName || ""} ${otherParty.lastName || ""}`.trim() ||
-        "Unknown";
+        `${otherParty.firstName || ""} ${otherParty.lastName || ""}`.trim() || "Unknown";
       const productImage = offer.product.images[0]?.url;
-      
+
       // Get latest amount (either original or last counter)
       const latestAmount = offer.counterOffers?.length
-        ? offer.counterOffers[offer.counterOffers.length - 1]?.amount ?? offer.amount
+        ? (offer.counterOffers[offer.counterOffers.length - 1]?.amount ?? offer.amount)
         : offer.amount;
 
       return (
@@ -311,9 +312,7 @@ export function OffersListScreen({
             padding: 16,
             paddingBottom: insets.bottom + 16,
           }}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-          }
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
         />
       )}
     </Column>

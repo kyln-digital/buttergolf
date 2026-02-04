@@ -65,12 +65,8 @@ export interface PricingBreakdownInPence {
  *
  * Formula: (productPrice × 5%) + £0.70, minimum £0.70
  */
-export function calculateBuyerProtectionFeeInPence(
-  productPriceInPence: number
-): number {
-  const percentFee = Math.round(
-    productPriceInPence * (PROTECTION_FEE_PERCENT / 100)
-  );
+export function calculateBuyerProtectionFeeInPence(productPriceInPence: number): number {
+  const percentFee = Math.round(productPriceInPence * (PROTECTION_FEE_PERCENT / 100));
   const totalFee = percentFee + PROTECTION_FEE_FIXED_PENCE;
   return Math.max(totalFee, PROTECTION_FEE_MINIMUM_PENCE);
 }
@@ -109,15 +105,13 @@ export function calculatePricingBreakdownInPence(
   productPriceInPence: number,
   shippingCostInPence: number
 ): PricingBreakdownInPence {
-  const buyerProtectionFeeInPence =
-    calculateBuyerProtectionFeeInPence(productPriceInPence);
+  const buyerProtectionFeeInPence = calculateBuyerProtectionFeeInPence(productPriceInPence);
 
   return {
     productPriceInPence,
     shippingCostInPence,
     buyerProtectionFeeInPence,
-    totalBuyerPaysInPence:
-      productPriceInPence + shippingCostInPence + buyerProtectionFeeInPence,
+    totalBuyerPaysInPence: productPriceInPence + shippingCostInPence + buyerProtectionFeeInPence,
     sellerReceivesInPence: productPriceInPence + shippingCostInPence, // 100%
   };
 }

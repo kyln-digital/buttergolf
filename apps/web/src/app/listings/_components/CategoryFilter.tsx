@@ -9,10 +9,7 @@ interface CategoryFilterProps {
   onChange: (category: string | null) => void;
 }
 
-export function CategoryFilter({
-  selectedCategory,
-  onChange,
-}: Readonly<CategoryFilterProps>) {
+export function CategoryFilter({ selectedCategory, onChange }: Readonly<CategoryFilterProps>) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -43,11 +40,7 @@ export function CategoryFilter({
   };
 
   return (
-    <RadioGroup
-      value={selectedCategory ?? "all"}
-      onValueChange={handleCategoryChange}
-      gap="$xs"
-    >
+    <RadioGroup value={selectedCategory ?? "all"} onValueChange={handleCategoryChange} gap="$xs">
       <Row alignItems="center" gap="$sm" paddingVertical="$xs">
         <Radio value="all" size="$3">
           <RadioIndicator />
@@ -63,12 +56,7 @@ export function CategoryFilter({
         </Label>
       </Row>
       {CATEGORIES.map((category) => (
-        <Row
-          key={category.slug}
-          alignItems="center"
-          gap="$sm"
-          paddingVertical="$xs"
-        >
+        <Row key={category.slug} alignItems="center" gap="$sm" paddingVertical="$xs">
           <Radio value={category.slug} size="$3">
             <RadioIndicator />
           </Radio>

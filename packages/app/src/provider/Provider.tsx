@@ -28,11 +28,10 @@ export function Provider({ defaultTheme, children, ...rest }: ProviderProps) {
   //
   // Theme switching on web should be handled via NextThemeProvider when enabled,
   // which properly handles SSR hydration via useRootTheme().
-  
+
   // Validate theme - must be deterministic for SSR (no device preference reading)
   const isValidTheme =
-    defaultTheme &&
-    VALID_THEMES.includes(defaultTheme as (typeof VALID_THEMES)[number]);
+    defaultTheme && VALID_THEMES.includes(defaultTheme as (typeof VALID_THEMES)[number]);
   const theme = isValidTheme ? defaultTheme : "light";
 
   return (

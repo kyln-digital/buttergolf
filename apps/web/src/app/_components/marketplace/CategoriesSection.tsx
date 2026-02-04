@@ -31,18 +31,8 @@ export function CategoriesSection() {
   const animationDuration = CATEGORIES.length * 4; // 4 seconds per category
 
   return (
-    <Column
-      width="100%"
-      paddingVertical="$2xl"
-      backgroundColor="$surface"
-      overflow="hidden"
-    >
-      <Column
-        maxWidth={1200}
-        marginHorizontal="auto"
-        paddingHorizontal="$md"
-        marginBottom="$2xl"
-      >
+    <Column width="100%" paddingVertical="$2xl" backgroundColor="$background" overflow="hidden">
+      <Column maxWidth={1200} marginHorizontal="auto" paddingHorizontal="$md" marginBottom="$2xl">
         {/* Headings */}
         <Column gap="$sm" alignItems="center">
           <h2
@@ -51,9 +41,10 @@ export function CategoriesSection() {
               fontSize: "clamp(24px, 5vw, 32px)",
               fontWeight: 600,
               lineHeight: 1.2,
-              color: "#323232",
+              color: "var(--text-primary, #323232)",
               margin: 0,
             }}
+            className="text-heading"
           >
             Shop by category
           </h2>
@@ -63,9 +54,10 @@ export function CategoriesSection() {
               fontSize: "clamp(16px, 3vw, 18px)",
               fontWeight: 400,
               lineHeight: 1.5,
-              color: "#545454",
+              color: "var(--text-secondary, #545454)",
               margin: 0,
             }}
+            className="text-secondary"
           >
             Find exactly what you need - faster.
           </p>
@@ -116,8 +108,7 @@ export function CategoriesSection() {
                 borderRadius: "14px",
                 flexShrink: 0,
                 textDecoration: "none",
-                boxShadow:
-                  "0 8px 16px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1)",
+                boxShadow: "0 8px 16px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1)",
                 transition: "transform 0.3s ease, box-shadow 0.3s ease",
               }}
             >

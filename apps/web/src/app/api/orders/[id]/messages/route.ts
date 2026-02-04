@@ -11,10 +11,7 @@ import { sendMessageNotification } from "@/lib/push-notifications";
  * GET /api/orders/[id]/messages
  * Get all messages for an order
  */
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Support both web cookies and mobile Bearer tokens
     const clerkId = await getUserIdFromRequest(req);
@@ -81,10 +78,7 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error fetching messages:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch messages" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch messages" }, { status: 500 });
   }
 }
 
@@ -92,10 +86,7 @@ export async function GET(
  * POST /api/orders/[id]/messages
  * Send a message on an order
  */
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Support both web cookies and mobile Bearer tokens
     const clerkId = await getUserIdFromRequest(req);
@@ -128,10 +119,7 @@ export async function POST(
     const { content } = body;
 
     if (!content || typeof content !== "string" || content.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Message content is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Message content is required" }, { status: 400 });
     }
 
     if (content.length > 2000) {
@@ -221,7 +209,7 @@ export async function POST(
     const redis = getRedisPublisher();
     const channel = `order:${orderId}:messages`;
     const messageEvent = {
-      type: 'new_message',
+      type: "new_message",
       message: {
         id: message.id,
         orderId: message.orderId,
@@ -264,9 +252,6 @@ export async function POST(
     });
   } catch (error) {
     console.error("Error sending message:", error);
-    return NextResponse.json(
-      { error: "Failed to send message" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to send message" }, { status: 500 });
   }
 }

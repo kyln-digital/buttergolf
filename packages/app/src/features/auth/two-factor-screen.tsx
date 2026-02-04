@@ -1,16 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import {
-  Column,
-  Row,
-  ScrollView,
-  Text,
-  Button,
-  Heading,
-  Spinner,
-  useTheme,
-} from "@buttergolf/ui";
+import { Column, Row, ScrollView, Text, Button, Heading, Spinner, useTheme } from "@buttergolf/ui";
 import { Button as TamaguiButton } from "tamagui";
 import { ArrowLeft, ShieldCheck, Smartphone, Mail } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -30,10 +21,7 @@ interface TwoFactorScreenProps {
  * Two-factor authentication screen
  * Supports TOTP (authenticator app) and email code strategies
  */
-export function TwoFactorScreen({
-  onSuccess,
-  onNavigateBack,
-}: Readonly<TwoFactorScreenProps>) {
+export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFactorScreenProps>) {
   const insets = useSafeAreaInsets();
   const { signIn, setActive, isLoaded } = useSignIn();
   const theme = useTheme();
@@ -74,7 +62,7 @@ export function TwoFactorScreen({
         setError(null);
       }
     },
-    [error],
+    [error]
   );
 
   const handleKeyPress = useCallback(
@@ -84,7 +72,7 @@ export function TwoFactorScreen({
         inputRefs.current[index - 1]?.focus();
       }
     },
-    [code],
+    [code]
   );
 
   const handlePaste = useCallback((pastedText: string) => {
@@ -129,15 +117,9 @@ export function TwoFactorScreen({
         }
 
         // Check for email_code first (most common for Clerk default setup)
-        const emailFactor = factors.find(
-          (f: { strategy: string }) => f.strategy === "email_code",
-        );
-        const totpFactor = factors.find(
-          (f: { strategy: string }) => f.strategy === "totp",
-        );
-        const phoneFactor = factors.find(
-          (f: { strategy: string }) => f.strategy === "phone_code",
-        );
+        const emailFactor = factors.find((f: { strategy: string }) => f.strategy === "email_code");
+        const totpFactor = factors.find((f: { strategy: string }) => f.strategy === "totp");
+        const phoneFactor = factors.find((f: { strategy: string }) => f.strategy === "phone_code");
 
         if (emailFactor) {
           console.log("[TwoFactor] Using email_code strategy");
@@ -312,11 +294,7 @@ export function TwoFactorScreen({
 
           {/* Security Icon */}
           <Column alignItems="center" paddingVertical="$4">
-            <Column
-              backgroundColor="$primaryLight"
-              padding="$5"
-              borderRadius="$full"
-            >
+            <Column backgroundColor="$primaryLight" padding="$5" borderRadius="$full">
               {strategy === "email_code" ? (
                 <Mail size={48} color="$primary" />
               ) : (
@@ -327,33 +305,26 @@ export function TwoFactorScreen({
 
           {/* Header */}
           <Column gap="$2" alignItems="center">
-            <Heading
-              level={1}
-              size="$8"
-              fontWeight="700"
-              color="$text"
-              textAlign="center"
-            >
+            <Heading level={1} size="$8" fontWeight="700" color="$text" textAlign="center">
               {strategy === "email_code" ? "Check Your Email" : "Two-Factor Authentication"}
             </Heading>
             <Text size="$5" color="$textSecondary" textAlign="center">
-              {strategy === "email_code" 
+              {strategy === "email_code"
                 ? `Enter the 6-digit code we sent to ${emailHint || "your email"}`
-                : "Enter the 6-digit code from your authenticator app"
-              }
+                : "Enter the 6-digit code from your authenticator app"}
             </Text>
             {isSendingCode && (
               <Row gap="$2" alignItems="center" marginTop="$2">
                 <Spinner size="sm" color="$primary" />
-                <Text size="$4" color="$textMuted">Sending code...</Text>
+                <Text size="$4" color="$textMuted">
+                  Sending code...
+                </Text>
               </Row>
             )}
           </Column>
 
           {/* Error Display */}
-          {error && (
-            <AuthErrorDisplay error={error} onDismiss={() => setError(null)} />
-          )}
+          {error && <AuthErrorDisplay error={error} onDismiss={() => setError(null)} />}
 
           {/* Code Input Grid */}
           <Column gap="$4" alignItems="center">
@@ -377,9 +348,7 @@ export function TwoFactorScreen({
                     }}
                     value={digit}
                     onChangeText={(text) => handleDigitChange(index, text)}
-                    onKeyPress={({ nativeEvent }) =>
-                      handleKeyPress(index, nativeEvent.key)
-                    }
+                    onKeyPress={({ nativeEvent }) => handleKeyPress(index, nativeEvent.key)}
                     keyboardType="number-pad"
                     textContentType="oneTimeCode"
                     autoComplete="one-time-code"
@@ -435,11 +404,7 @@ export function TwoFactorScreen({
             disabled={isSubmitting || fullCode.length !== 6 || isSendingCode}
             opacity={isSubmitting || fullCode.length !== 6 || isSendingCode ? 0.7 : 1}
           >
-            {isSubmitting ? (
-              <Spinner size="sm" color="$textInverse" />
-            ) : (
-              "Verify Code"
-            )}
+            {isSubmitting ? <Spinner size="sm" color="$textInverse" /> : "Verify Code"}
           </Button>
 
           {/* Help Text / Resend Code */}
@@ -465,14 +430,8 @@ export function TwoFactorScreen({
                 <Text size="$4" color="$textSecondary" textAlign="center">
                   {"Can't access your authenticator?"}
                 </Text>
-                <Text
-                  size="$3"
-                  color="$textMuted"
-                  textAlign="center"
-                  paddingHorizontal="$4"
-                >
-                  Contact support if you've lost access to your two-factor
-                  authentication device
+                <Text size="$3" color="$textMuted" textAlign="center" paddingHorizontal="$4">
+                  Contact support if you've lost access to your two-factor authentication device
                 </Text>
               </>
             )}

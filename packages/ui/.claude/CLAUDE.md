@@ -541,21 +541,11 @@ export type { ButtonProps } from "./components/button";
 
 // Typography
 export { Text, Heading, Label, Paragraph } from "./components/typography";
-export type {
-  TextProps,
-  HeadingProps,
-  LabelProps,
-  ParagraphProps,
-} from "./components/typography";
+export type { TextProps, HeadingProps, LabelProps, ParagraphProps } from "./components/typography";
 
 // Layout
 export { Row, Column, Container, Spacer } from "./components/layout";
-export type {
-  RowProps,
-  ColumnProps,
-  ContainerProps,
-  SpacerProps,
-} from "./components/layout";
+export type { RowProps, ColumnProps, ContainerProps, SpacerProps } from "./components/layout";
 
 // Card
 export { Card } from "./components/card";
@@ -577,7 +567,7 @@ describe("Button", () => {
     const { getByText } = render(
       <TamaguiProvider config={config}>
         <Button>Click me</Button>
-      </TamaguiProvider>,
+      </TamaguiProvider>
     );
 
     expect(getByText("Click me")).toBeTruthy();

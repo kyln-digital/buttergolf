@@ -81,7 +81,8 @@ export default async function MessagesPage() {
   const conversations = orders.map((order) => {
     const isBuyer = order.buyerId === user.id;
     const otherUser = isBuyer ? order.seller : order.buyer;
-    const otherUserName = `${otherUser.firstName || ""} ${otherUser.lastName || ""}`.trim() || otherUser.email;
+    const otherUserName =
+      `${otherUser.firstName || ""} ${otherUser.lastName || ""}`.trim() || otherUser.email;
     const lastMessage = order.messages[0];
 
     return {
@@ -93,7 +94,7 @@ export default async function MessagesPage() {
       lastMessagePreview: lastMessage?.content || null,
       lastMessageAt: lastMessage?.createdAt?.toISOString() || order.createdAt.toISOString(),
       unreadCount: order._count.messages,
-      userRole: isBuyer ? "buyer" as const : "seller" as const,
+      userRole: isBuyer ? ("buyer" as const) : ("seller" as const),
       orderStatus: order.status,
     };
   });

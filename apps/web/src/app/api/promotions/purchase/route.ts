@@ -36,10 +36,7 @@ export async function POST(request: NextRequest) {
 
     // Validate inputs
     if (!productId) {
-      return NextResponse.json(
-        { error: "Product ID is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Product ID is required" }, { status: 400 });
     }
 
     if (!promotionType || !["BUMP", "PRO_SHOP_FEATURE"].includes(promotionType)) {
@@ -76,10 +73,7 @@ export async function POST(request: NextRequest) {
 
     // Check if product is already sold
     if (product.isSold) {
-      return NextResponse.json(
-        { error: "Cannot promote a sold product" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Cannot promote a sold product" }, { status: 400 });
     }
 
     // Check for existing active promotion of the same type
@@ -153,10 +147,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error creating promotion PaymentIntent:", error);
-    return NextResponse.json(
-      { error: "Failed to create promotion" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to create promotion" }, { status: 500 });
   }
 }
 

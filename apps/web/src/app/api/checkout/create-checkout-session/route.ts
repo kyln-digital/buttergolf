@@ -14,13 +14,13 @@ import { getUserIdFromRequest } from "@/lib/auth";
  */
 export async function POST(req: Request) {
   console.log("[Checkout API] POST request received");
-  
+
   try {
     console.log("[Checkout API] Checking auth...");
     // Support both web cookies and mobile Bearer tokens
     const clerkUserId = await getUserIdFromRequest(req);
     console.log("[Checkout API] Clerk userId:", clerkUserId ? "present" : "missing");
-    
+
     if (!clerkUserId) {
       console.log("[Checkout API] ERROR: No clerkUserId - returning 401");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -32,10 +32,7 @@ export async function POST(req: Request) {
 
     if (!productId) {
       console.log("[Checkout API] ERROR: No productId - returning 400");
-      return NextResponse.json(
-        { error: "Product ID is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Product ID is required" }, { status: 400 });
     }
 
     // Get buyer from Clerk ID
@@ -72,32 +69,34 @@ export async function POST(req: Request) {
     console.log("[Checkout API] Product isSold:", product.isSold);
     if (product.isSold) {
       console.log("[Checkout API] ERROR: Product already sold - returning 400");
-      return NextResponse.json(
-        { error: "Product is already sold" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Product is already sold" }, { status: 400 });
     }
 
     // Prevent buying your own product
-    console.log("[Checkout API] Checking ownership - product.userId:", product.userId, "buyer.id:", buyer.id);
+    console.log(
+      "[Checkout API] Checking ownership - product.userId:",
+      product.userId,
+      "buyer.id:",
+      buyer.id
+    );
     if (product.userId === buyer.id) {
       console.log("[Checkout API] ERROR: User trying to buy own product - returning 400");
-      return NextResponse.json(
-        { error: "Cannot purchase your own product" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Cannot purchase your own product" }, { status: 400 });
     }
 
     // Get seller's Stripe Connect account
     const seller = product.user;
-    console.log("[Checkout API] Seller stripeConnectId:", seller.stripeConnectId ? "present" : "MISSING");
+    console.log(
+      "[Checkout API] Seller stripeConnectId:",
+      seller.stripeConnectId ? "present" : "MISSING"
+    );
     console.log("[Checkout API] Seller stripeOnboardingComplete:", seller.stripeOnboardingComplete);
-    
+
     if (!seller.stripeConnectId || !seller.stripeOnboardingComplete) {
       console.log("[Checkout API] ERROR: Seller not set up for payments - returning 400");
       return NextResponse.json(
         { error: "Seller is not set up to receive payments" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -108,15 +107,11 @@ export async function POST(req: Request) {
     const pricing = calculatePricingBreakdownInPence(productPriceInPence, 0);
 
     // Build product image URL for Stripe (use first image or placeholder)
-    const productImages = product.images[0]?.url
-      ? [product.images[0].url]
-      : undefined;
+    const productImages = product.images[0]?.url ? [product.images[0].url] : undefined;
 
     // Get base URL for return URL
     const origin =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      req.headers.get("origin") ||
-      "http://localhost:3000";
+      process.env.NEXT_PUBLIC_APP_URL || req.headers.get("origin") || "http://localhost:3000";
 
     // Create Stripe Embedded Checkout Session
     // NOTE: branding_settings is NOT allowed when ui_mode is "embedded"
@@ -242,8 +237,7 @@ export async function POST(req: Request) {
           sellerStripeConnectId: seller.stripeConnectId,
           // Store calculated amounts for order creation
           productPriceInPence: productPriceInPence.toString(),
-          buyerProtectionFeeInPence:
-            pricing.buyerProtectionFeeInPence.toString(),
+          buyerProtectionFeeInPence: pricing.buyerProtectionFeeInPence.toString(),
         },
       },
 
@@ -272,15 +266,20 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("[Checkout API] FATAL ERROR:", error);
-    console.error("[Checkout API] Error type:", error instanceof Error ? error.constructor.name : typeof error);
-    console.error("[Checkout API] Error message:", error instanceof Error ? error.message : String(error));
-    
+    console.error(
+      "[Checkout API] Error type:",
+      error instanceof Error ? error.constructor.name : typeof error
+    );
+    console.error(
+      "[Checkout API] Error message:",
+      error instanceof Error ? error.message : String(error)
+    );
+
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : "Failed to create checkout",
+        error: error instanceof Error ? error.message : "Failed to create checkout",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

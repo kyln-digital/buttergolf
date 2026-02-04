@@ -156,8 +156,7 @@ export async function GET(request: NextRequest) {
         updatedAt: product.updatedAt,
         images: product.images.map((img) => img.url),
         offersCount: product.offers.length,
-        pendingOffersCount: product.offers.filter((o) => o.status === "PENDING")
-          .length,
+        pendingOffersCount: product.offers.filter((o) => o.status === "PENDING").length,
       })),
       pagination: {
         page,
@@ -171,18 +170,12 @@ export async function GET(request: NextRequest) {
         activeListings: activeCount,
         soldListings: soldCount,
         totalViews: stats._sum.views || 0,
-        totalFavourites: products.reduce(
-          (sum, product) => sum + product.favourites.length,
-          0,
-        ),
+        totalFavourites: products.reduce((sum, product) => sum + product.favourites.length, 0),
         pendingOffers: pendingOffersCount,
       },
     });
   } catch (error) {
     console.error("Error fetching seller listings:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch listings" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to fetch listings" }, { status: 500 });
   }
 }

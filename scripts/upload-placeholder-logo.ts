@@ -46,7 +46,7 @@ async function uploadPlaceholderLogo() {
 
     const imagePath = join(
       process.cwd(),
-      "packages/assets/Butter Golf Logos/PNGs/Butter golf logos-01.png",
+      "packages/assets/Butter Golf Logos/PNGs/Butter golf logos-01.png"
     );
 
     console.log(`  Reading from: ${imagePath}`);
@@ -65,9 +65,7 @@ async function uploadPlaceholderLogo() {
     console.log("📍 Public ID:", result.public_id);
     console.log("🔗 URL:", result.secure_url);
     console.log("📐 Dimensions:", `${result.width}x${result.height}`);
-    console.log(
-      "\n🎉 Add this URL to packages/constants/src/images.ts as PLACEHOLDER_IMAGE_URL",
-    );
+    console.log("\n🎉 Add this URL to packages/constants/src/images.ts as PLACEHOLDER_IMAGE_URL");
     console.log(`   export const PLACEHOLDER_IMAGE_URL = "${result.secure_url}";`);
   } catch (error) {
     console.error("❌ Upload failed:", error);

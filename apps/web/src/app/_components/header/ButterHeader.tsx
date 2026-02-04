@@ -4,7 +4,12 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LazySignedIn, LazySignedOut, LazyUserButton, AuthButtonsSection } from "@/components/auth/LazyClerkComponents";
+import {
+  LazySignedIn,
+  LazySignedOut,
+  LazyUserButton,
+  AuthButtonsSection,
+} from "@/components/auth/LazyClerkComponents";
 import { MessageSquare } from "@tamagui/lucide-icons";
 import {
   Row,
@@ -18,6 +23,7 @@ import {
   type Category,
   Button,
 } from "@buttergolf/ui";
+import { useThemeName } from "tamagui";
 import { CATEGORIES } from "@buttergolf/db";
 import { MenuIcon } from "./icons";
 
@@ -31,6 +37,8 @@ export function ButterHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const themeName = useThemeName();
+  const isDark = themeName?.startsWith("dark");
 
   // Determine active category from pathname
   const getActiveCategory = (): string => {
@@ -56,6 +64,7 @@ export function ButterHeader() {
       {/* Combined Header - Main + Category Nav */}
       <Column
         width="100%"
+        backgroundColor="transparent"
         style={{ position: "sticky" } as React.CSSProperties}
         top={0}
         zIndex={999}
@@ -63,7 +72,7 @@ export function ButterHeader() {
       >
         {/* Main Header Row */}
         <Row
-          backgroundColor="$surface"
+          backgroundColor="$background"
           borderBottomWidth={1}
           borderBottomColor="$border"
           paddingHorizontal="$4"
@@ -81,7 +90,15 @@ export function ButterHeader() {
           >
             {/* Logo */}
             <Link href="/">
-              <div style={{ display: "flex", alignItems: "center", textDecoration: "none", flexShrink: 0, cursor: "pointer" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  textDecoration: "none",
+                  flexShrink: 0,
+                  cursor: "pointer",
+                }}
+              >
                 <Image
                   src="/logo-orange-on-white.svg"
                   alt="ButterGolf"
@@ -100,12 +117,7 @@ export function ButterHeader() {
             <Row flex={1} display="none" $gtMd={{ display: "flex" }} />
 
             {/* Navigation - Desktop Only (Right-aligned) */}
-            <Row
-              display="none"
-              $gtMd={{ display: "flex" }}
-              gap="$6"
-              alignItems="center"
-            >
+            <Row display="none" $gtMd={{ display: "flex" }} gap="$6" alignItems="center">
               <Link href="/" style={{ textDecoration: "none" }}>
                 <Row
                   paddingHorizontal="$3"
@@ -120,11 +132,7 @@ export function ButterHeader() {
                     transition: "all 200ms ease-out",
                   }}
                 >
-                  <Text
-                    size="$6"
-                    weight={isActive("/") ? "bold" : "normal"}
-                    color="$text"
-                  >
+                  <Text size="$6" weight={isActive("/") ? "bold" : "normal"} color="$text">
                     Home
                   </Text>
                 </Row>
@@ -143,11 +151,7 @@ export function ButterHeader() {
                     transition: "all 200ms ease-out",
                   }}
                 >
-                  <Text
-                    size="$6"
-                    weight={isActive("/listings") ? "bold" : "normal"}
-                    color="$text"
-                  >
+                  <Text size="$6" weight={isActive("/listings") ? "bold" : "normal"} color="$text">
                     Buying
                   </Text>
                 </Row>
@@ -166,11 +170,7 @@ export function ButterHeader() {
                     transition: "all 200ms ease-out",
                   }}
                 >
-                  <Text
-                    size="$6"
-                    weight={isActive("/sell") ? "bold" : "normal"}
-                    color="$text"
-                  >
+                  <Text size="$6" weight={isActive("/sell") ? "bold" : "normal"} color="$text">
                     Selling
                   </Text>
                 </Row>
@@ -194,15 +194,15 @@ export function ButterHeader() {
                     butterVariant="primary"
                     size="$4"
                     borderRadius="$full"
-                    onPress={() => router.push('/sign-in')}
+                    onPress={() => router.push("/sign-in")}
                   >
                     Log-in
                   </Button>
                   <Button
-                    butterVariant="tertiary"
+                    butterVariant="secondary"
                     size="$4"
                     borderRadius="$full"
-                    onPress={() => router.push('/sign-up')}
+                    onPress={() => router.push("/sign-up")}
                   >
                     Sign-up
                   </Button>
@@ -256,14 +256,14 @@ export function ButterHeader() {
           justifyContent="center"
           backgroundColor="transparent"
           display="none"
-          $gtMd={{ 
+          $gtMd={{
             display: "flex",
-            paddingHorizontal: "$6", 
-            paddingVertical: "$4" 
+            paddingHorizontal: "$6",
+            paddingVertical: "$4",
           }}
         >
           <GlassmorphismCard
-            intensity="medium"
+            intensity={isDark ? "dark" : "medium"}
             blur="medium"
             maxWidth={1280}
             width="100%"
@@ -294,7 +294,7 @@ export function ButterHeader() {
           left={0}
           right={0}
           bottom={0}
-          backgroundColor="$surface"
+          backgroundColor="$background"
           zIndex={45}
           paddingHorizontal="$6"
           paddingVertical="$8"
@@ -345,12 +345,7 @@ export function ButterHeader() {
           </Link>
 
           {/* Visual Divider */}
-          <Row
-            height={1}
-            backgroundColor="$border"
-            marginVertical="$4"
-            width="100%"
-          />
+          <Row height={1} backgroundColor="$border" marginVertical="$4" width="100%" />
 
           {/* Category Navigation - Mobile Only */}
           <Column gap="$4">
@@ -364,11 +359,7 @@ export function ButterHeader() {
                 style={{ textDecoration: "none" }}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <Row
-                  minHeight={44}
-                  alignItems="center"
-                  paddingVertical="$2"
-                >
+                <Row minHeight={44} alignItems="center" paddingVertical="$2">
                   <Text
                     size="$6"
                     weight={isActive(category.href) ? "bold" : "normal"}
@@ -382,12 +373,7 @@ export function ButterHeader() {
           </Column>
 
           {/* Theme Switcher - Mobile */}
-          <Row
-            height={1}
-            backgroundColor="$border"
-            marginVertical="$2"
-            width="100%"
-          />
+          <Row height={1} backgroundColor="$border" marginVertical="$2" width="100%" />
           <Row alignItems="center" justifyContent="space-between" paddingVertical="$2">
             <Text size="$5" weight="semibold" color="$textSecondary">
               Theme
@@ -400,21 +386,21 @@ export function ButterHeader() {
             <AuthButtonsSection
               placeholder={
                 <Column gap="$3" width="100%">
-                  <div 
-                    style={{ 
-                      width: "100%", 
-                      height: 48, 
-                      borderRadius: 9999, 
+                  <div
+                    style={{
+                      width: "100%",
+                      height: 48,
+                      borderRadius: 9999,
                       backgroundColor: "rgba(244, 83, 20, 0.3)",
-                    }} 
+                    }}
                   />
-                  <div 
-                    style={{ 
-                      width: "100%", 
-                      height: 48, 
-                      borderRadius: 9999, 
+                  <div
+                    style={{
+                      width: "100%",
+                      height: 48,
+                      borderRadius: 9999,
                       backgroundColor: "rgba(237, 237, 237, 0.5)",
-                    }} 
+                    }}
                   />
                 </Column>
               }
@@ -426,19 +412,19 @@ export function ButterHeader() {
                   width="100%"
                   borderRadius="$full"
                   onPress={() => {
-                    router.push('/sign-in');
+                    router.push("/sign-in");
                     setMobileMenuOpen(false);
                   }}
                 >
                   Log-in
                 </Button>
                 <Button
-                  butterVariant="tertiary"
+                  butterVariant="secondary"
                   size="$5"
                   width="100%"
                   borderRadius="$full"
                   onPress={() => {
-                    router.push('/sign-up');
+                    router.push("/sign-up");
                     setMobileMenuOpen(false);
                   }}
                 >

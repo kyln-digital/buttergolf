@@ -82,40 +82,46 @@ export function CategorySelector({
   const activeIndex = categories.findIndex((cat) => cat.href === activeCategory);
 
   // Update underline position (only for active category)
-  const updateUnderlinePosition = useCallback((index: number) => {
-    if (!containerRef.current) return;
+  const updateUnderlinePosition = useCallback(
+    (index: number) => {
+      if (!containerRef.current) return;
 
-    const category = categories[index];
-    if (!category) return;
-    
-    const ref = itemRefs.current[category.href];
+      const category = categories[index];
+      if (!category) return;
 
-    if (ref && ref.element) {
-      setUnderlineStyle({
-        left: ref.left,
-        width: ref.width,
-      });
-    }
-  }, [categories]);
+      const ref = itemRefs.current[category.href];
+
+      if (ref && ref.element) {
+        setUnderlineStyle({
+          left: ref.left,
+          width: ref.width,
+        });
+      }
+    },
+    [categories]
+  );
 
   // Update hover box position
-  const updateHoverBoxPosition = useCallback((index: number) => {
-    if (!containerRef.current) return;
+  const updateHoverBoxPosition = useCallback(
+    (index: number) => {
+      if (!containerRef.current) return;
 
-    const category = categories[index];
-    if (!category) return;
-    
-    const ref = itemRefs.current[category.href];
+      const category = categories[index];
+      if (!category) return;
 
-    if (ref && ref.element) {
-      const rect = ref.element.getBoundingClientRect();
-      setHoverBoxStyle({
-        left: ref.left,
-        width: ref.width,
-        height: rect.height,
-      });
-    }
-  }, [categories]);
+      const ref = itemRefs.current[category.href];
+
+      if (ref && ref.element) {
+        const rect = ref.element.getBoundingClientRect();
+        setHoverBoxStyle({
+          left: ref.left,
+          width: ref.width,
+          height: rect.height,
+        });
+      }
+    },
+    [categories]
+  );
 
   // Handle hover
   const handleHover = useCallback(
@@ -123,7 +129,7 @@ export function CategorySelector({
       setHoveredIndex(index);
       updateHoverBoxPosition(index);
     },
-    [updateHoverBoxPosition],
+    [updateHoverBoxPosition]
   );
 
   // Handle hover end
@@ -227,25 +233,29 @@ export function CategorySelector({
       {/* Animated underline for active category (stays still) */}
       {!prefersReducedMotion && (
         <AnimatedUnderline
-          style={{
-            transform: `translateX(${underlineStyle.left}px)`,
-            width: underlineStyle.width,
-            opacity: underlineStyle.width > 0 ? 1 : 0,
-          } as React.CSSProperties}
+          style={
+            {
+              transform: `translateX(${underlineStyle.left}px)`,
+              width: underlineStyle.width,
+              opacity: underlineStyle.width > 0 ? 1 : 0,
+            } as React.CSSProperties
+          }
         />
       )}
 
       {/* Animated hover box */}
       {!prefersReducedMotion && hoveredIndex !== null && (
         <AnimatedHoverBox
-          style={{
-            transform: `translateX(${hoverBoxStyle.left - 8}px)`,
-            width: hoverBoxStyle.width + 16,
-            height: hoverBoxStyle.height + 12,
-          } as React.CSSProperties}
+          style={
+            {
+              transform: `translateX(${hoverBoxStyle.left - 8}px)`,
+              width: hoverBoxStyle.width + 16,
+              height: hoverBoxStyle.height + 12,
+            } as React.CSSProperties
+          }
         />
       )}
-      
+
       {/* Static underline for reduced motion preference */}
       {prefersReducedMotion && (
         <Row

@@ -34,11 +34,7 @@ export interface LogContext {
  * );
  * ```
  */
-export function logError(
-  message: string,
-  error: unknown,
-  context: LogContext,
-): void {
+export function logError(message: string, error: unknown, context: LogContext): void {
   const errorMessage = error instanceof Error ? error.message : String(error);
   const errorStack = error instanceof Error ? error.stack : undefined;
 

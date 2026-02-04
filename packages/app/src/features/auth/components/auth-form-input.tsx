@@ -13,12 +13,7 @@ interface AuthFormInputProps {
   secureTextEntry?: boolean;
   error?: string | null;
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
-  keyboardType?:
-    | "default"
-    | "email-address"
-    | "numeric"
-    | "decimal-pad"
-    | "phone-pad";
+  keyboardType?: "default" | "email-address" | "numeric" | "decimal-pad" | "phone-pad";
   editable?: boolean;
   multiline?: boolean;
   numberOfLines?: number;

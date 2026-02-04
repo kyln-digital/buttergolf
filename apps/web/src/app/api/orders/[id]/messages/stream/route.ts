@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@buttergolf/db';
-import { getUserIdFromRequest } from '@/lib/auth';
-import { createRedisSubscriber } from '@/lib/redis';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@buttergolf/db";
+import { getUserIdFromRequest } from "@/lib/auth";
+import { createRedisSubscriber } from "@/lib/redis";
 
-export const runtime = 'nodejs'; // Required for Redis connections
+export const runtime = "nodejs"; // Required for Redis connections
 
 /**
  * GET /api/orders/[id]/messages/stream
@@ -16,16 +16,13 @@ export const runtime = 'nodejs'; // Required for Redis connections
  * - Sends heartbeat every 30s to keep connection alive (prevents proxies from closing)
  * ─────────────────────────────────────────────────
  */
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Authenticate user (works with both cookies and Bearer tokens)
     const userId = await getUserIdFromRequest(req);
 
     if (!userId) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
@@ -34,7 +31,7 @@ export async function GET(
     });
 
     if (!user) {
-      return new NextResponse('User not found', { status: 404 });
+      return new NextResponse("User not found", { status: 404 });
     }
 
     const { id: orderId } = await params;
@@ -50,11 +47,11 @@ export async function GET(
     });
 
     if (!order) {
-      return new NextResponse('Order not found', { status: 404 });
+      return new NextResponse("Order not found", { status: 404 });
     }
 
     if (order.buyerId !== user.id && order.sellerId !== user.id) {
-      return new NextResponse('Forbidden', { status: 403 });
+      return new NextResponse("Forbidden", { status: 403 });
     }
 
     // Create SSE stream using Next.js ReadableStream
@@ -75,7 +72,7 @@ export async function GET(
           console.log(`[SSE] User ${user.id} subscribed to channel: ${channel}`);
 
           // Send initial connection event
-          const initEvent = `data: ${JSON.stringify({ type: 'connected' })}\n\n`;
+          const initEvent = `data: ${JSON.stringify({ type: "connected" })}\n\n`;
           controller.enqueue(encoder.encode(initEvent));
 
           // Heartbeat every 30 seconds to keep connection alive
@@ -86,7 +83,7 @@ export async function GET(
           }, 30000);
 
           // Listen for messages published to this order's channel
-          redis.on('message', (receivedChannel: string, message: string) => {
+          redis.on("message", (receivedChannel: string, message: string) => {
             if (receivedChannel === channel) {
               try {
                 // Verify it's valid JSON before sending
@@ -100,7 +97,7 @@ export async function GET(
             }
           });
 
-          redis.on('error', (err) => {
+          redis.on("error", (err) => {
             console.error(`[SSE] Redis error for user ${user.id}:`, err);
             // Clear heartbeat on error to prevent it continuing
             if (heartbeat) {
@@ -110,7 +107,7 @@ export async function GET(
           });
 
           // Cleanup when client disconnects
-          req.signal.addEventListener('abort', () => {
+          req.signal.addEventListener("abort", () => {
             console.log(`[SSE] User ${user.id} disconnected from channel: ${channel}`);
             if (heartbeat) {
               clearInterval(heartbeat);
@@ -120,7 +117,7 @@ export async function GET(
             controller.close();
           });
         } catch (err) {
-          console.error('[SSE] Error starting stream:', err);
+          console.error("[SSE] Error starting stream:", err);
           // Clear heartbeat if it was set before error
           if (heartbeat) {
             clearInterval(heartbeat);
@@ -133,17 +130,14 @@ export async function GET(
     // Return SSE response with proper headers
     return new NextResponse(stream, {
       headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'X-Accel-Buffering': 'no', // Disable Nginx buffering
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+        "X-Accel-Buffering": "no", // Disable Nginx buffering
       },
     });
   } catch (error) {
-    console.error('[SSE] Unhandled error:', error);
-    return NextResponse.json(
-      { error: 'Failed to establish SSE connection' },
-      { status: 500 }
-    );
+    console.error("[SSE] Unhandled error:", error);
+    return NextResponse.json({ error: "Failed to establish SSE connection" }, { status: 500 });
   }
 }

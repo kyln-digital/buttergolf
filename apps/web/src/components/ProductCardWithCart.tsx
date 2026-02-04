@@ -10,9 +10,7 @@ export interface ProductCardWithCartProps {
   product: ProductCardData;
 }
 
-export function ProductCardWithCart({
-  product,
-}: Readonly<ProductCardWithCartProps>) {
+export function ProductCardWithCart({ product }: Readonly<ProductCardWithCartProps>) {
   const router = useRouter();
   const [purchasing, setPurchasing] = useState(false);
 
@@ -72,25 +70,13 @@ export function ProductCardWithCart({
 
         {/* NEW Badge Overlay */}
         {product.condition === "NEW" && (
-          <Badge
-            variant="success"
-            size="sm"
-            position="absolute"
-            top={8}
-            right={8}
-            zIndex={10}
-          >
+          <Badge variant="success" size="sm" position="absolute" top={8} right={8} zIndex={10}>
             <Text>NEW</Text>
           </Badge>
         )}
       </Card.Header>
       <Card.Body padding="$md" flex={1} display="flex">
-        <Column
-          gap="$md"
-          width="100%"
-          height="100%"
-          justifyContent="space-between"
-        >
+        <Column gap="$md" width="100%" height="100%" justifyContent="space-between">
           <Link
             href={`/products/${product.id}`}
             style={{
@@ -102,20 +88,10 @@ export function ProductCardWithCart({
             aria-label={`View ${product.title}`}
           >
             <Column gap="$xs" width="100%">
-              <Text
-                size="$4"
-                weight="semibold"
-                numberOfLines={2}
-                minHeight={42}
-              >
+              <Text size="$4" weight="semibold" numberOfLines={2} minHeight={42}>
                 {product.title}
               </Text>
-              <Row
-                gap="$sm"
-                alignItems="center"
-                justifyContent="space-between"
-                minHeight={24}
-              >
+              <Row gap="$sm" alignItems="center" justifyContent="space-between" minHeight={24}>
                 <Text size="$3" color="$textSecondary" numberOfLines={1}>
                   {product.category}
                 </Text>

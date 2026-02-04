@@ -14,14 +14,7 @@
 
 "use client";
 
-import {
-  Component,
-  type ReactNode,
-  type ErrorInfo,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import { Component, type ReactNode, type ErrorInfo, useCallback, useEffect, useState } from "react";
 import { Column, Row } from "./Layout";
 import { Text, Heading } from "./Text";
 import { Button } from "./Button";
@@ -39,10 +32,7 @@ export interface ErrorBoundaryState {
   errorInfo: ErrorInfo | null;
 }
 
-export class ErrorBoundary extends Component<
-  ErrorBoundaryProps,
-  ErrorBoundaryState
-> {
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
@@ -118,8 +108,8 @@ export class ErrorBoundary extends Component<
             </Heading>
 
             <Text align="center" color="$textSecondary">
-              We&apos;re sorry for the inconvenience. The error has been logged
-              and we&apos;ll look into it.
+              We&apos;re sorry for the inconvenience. The error has been logged and we&apos;ll look
+              into it.
             </Text>
 
             {/* eslint-disable-next-line turbo/no-undeclared-env-vars */}
@@ -143,12 +133,7 @@ export class ErrorBoundary extends Component<
             )}
 
             <Row gap="$md" width="100%">
-              <Button
-                flex={1}
-                butterVariant="primary"
-                size="$5"
-                onPress={this.handleReset}
-              >
+              <Button flex={1} butterVariant="primary" size="$5" onPress={this.handleReset}>
                 Try Again
               </Button>
 

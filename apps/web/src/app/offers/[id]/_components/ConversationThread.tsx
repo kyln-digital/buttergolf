@@ -43,12 +43,7 @@ export function ConversationThread({
 
   if (loading) {
     return (
-      <Column
-        alignItems="center"
-        justifyContent="center"
-        padding="$2xl"
-        minHeight={400}
-      >
+      <Column alignItems="center" justifyContent="center" padding="$2xl" minHeight={400}>
         <Spinner size="lg" color="$primary" />
         <Text size="$4" color="$textSecondary" marginTop="$md">
           Loading conversation...
@@ -60,8 +55,10 @@ export function ConversationThread({
   const isCurrentUserSeller = currentUserId === initialOffer.seller.id;
 
   // Compute display names
-  const buyerName = `${initialOffer.buyer.firstName} ${initialOffer.buyer.lastName}`.trim() || "Buyer";
-  const sellerName = `${initialOffer.seller.firstName} ${initialOffer.seller.lastName}`.trim() || "Seller";
+  const buyerName =
+    `${initialOffer.buyer.firstName} ${initialOffer.buyer.lastName}`.trim() || "Buyer";
+  const sellerName =
+    `${initialOffer.seller.firstName} ${initialOffer.seller.lastName}`.trim() || "Seller";
 
   return (
     <Column
@@ -85,9 +82,7 @@ export function ConversationThread({
 
       {/* Counter-offers */}
       {counterOffers.map((counterOffer) => {
-        const senderName = counterOffer.fromSeller
-          ? sellerName
-          : buyerName;
+        const senderName = counterOffer.fromSeller ? sellerName : buyerName;
 
         return (
           <OfferMessage

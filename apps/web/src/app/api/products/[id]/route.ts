@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Next.js 16: params is now a Promise
     const { id } = await params;
@@ -47,9 +44,6 @@ export async function GET(
     return NextResponse.json(product);
   } catch (error) {
     console.error("Failed to fetch product:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch product" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to fetch product" }, { status: 500 });
   }
 }

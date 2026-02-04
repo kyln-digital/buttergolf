@@ -73,7 +73,9 @@ interface OfferDetailScreenProps {
   onViewProduct?: (productId: string) => void;
 }
 
-function getStatusBadgeVariant(status: OfferStatus): "success" | "error" | "warning" | "info" | "neutral" {
+function getStatusBadgeVariant(
+  status: OfferStatus
+): "success" | "error" | "warning" | "info" | "neutral" {
   switch (status) {
     case "ACCEPTED":
       return "success";
@@ -122,12 +124,12 @@ function formatExpiresIn(expiresAt: string): string {
   const expires = new Date(expiresAt);
   const now = new Date();
   const diffMs = expires.getTime() - now.getTime();
-  
+
   if (diffMs < 0) return "Expired";
-  
+
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
-  
+
   if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? "s" : ""} left`;
   if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? "s" : ""} left`;
   return "Expiring soon";
@@ -468,7 +470,8 @@ export function OfferDetailScreen({
                   Buyer {isBuyer && "(You)"}
                 </Text>
                 <Text size="$4" fontWeight="500">
-                  {`${offer.buyer.firstName || ""} ${offer.buyer.lastName || ""}`.trim() || "Unknown"}
+                  {`${offer.buyer.firstName || ""} ${offer.buyer.lastName || ""}`.trim() ||
+                    "Unknown"}
                 </Text>
               </Column>
             </Row>
@@ -500,7 +503,8 @@ export function OfferDetailScreen({
                   Seller {isSeller && "(You)"}
                 </Text>
                 <Text size="$4" fontWeight="500">
-                  {`${offer.seller.firstName || ""} ${offer.seller.lastName || ""}`.trim() || "Unknown"}
+                  {`${offer.seller.firstName || ""} ${offer.seller.lastName || ""}`.trim() ||
+                    "Unknown"}
                 </Text>
               </Column>
             </Row>
@@ -546,7 +550,8 @@ export function OfferDetailScreen({
         {isBuyer && offer.status === "PENDING" && (
           <Card variant="filled" padding="$md" backgroundColor="$infoLight">
             <Text size="$3" color="$text" textAlign="center">
-              The seller has 7 days to respond to your offer. You&apos;ll be notified when they accept or decline.
+              The seller has 7 days to respond to your offer. You&apos;ll be notified when they
+              accept or decline.
             </Text>
           </Card>
         )}
@@ -586,7 +591,13 @@ export function OfferDetailScreen({
             onPress={handleReject}
             disabled={actionLoading !== null}
             opacity={actionLoading === "reject" ? 0.7 : 1}
-            icon={actionLoading === "reject" ? <Spinner size="sm" color="$textInverse" /> : <X size={20} />}
+            icon={
+              actionLoading === "reject" ? (
+                <Spinner size="sm" color="$textInverse" />
+              ) : (
+                <X size={20} />
+              )
+            }
           >
             {actionLoading === "reject" ? "Declining..." : "Decline"}
           </Button>
@@ -598,7 +609,13 @@ export function OfferDetailScreen({
             onPress={handleAccept}
             disabled={actionLoading !== null}
             opacity={actionLoading === "accept" ? 0.7 : 1}
-            icon={actionLoading === "accept" ? <Spinner size="sm" color="$textInverse" /> : <Check size={20} />}
+            icon={
+              actionLoading === "accept" ? (
+                <Spinner size="sm" color="$textInverse" />
+              ) : (
+                <Check size={20} />
+              )
+            }
           >
             {actionLoading === "accept" ? "Accepting..." : "Accept"}
           </Button>

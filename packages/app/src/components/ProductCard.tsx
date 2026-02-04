@@ -44,18 +44,13 @@ function HeartIcon({ filled }: Readonly<{ filled: boolean }>) {
   }
   // For native, use lucide Heart icon with proper styling
   return (
-    <Heart
-      size={18}
-      color="#F45314"
-      fill={filled ? "#F45314" : "transparent"}
-      strokeWidth={2.5}
-    />
+    <Heart size={18} color="#F45314" fill={filled ? "#F45314" : "transparent"} strokeWidth={2.5} />
   );
 }
 
 /**
  * ProductCard - Shopify/Airbnb style layout
- * 
+ *
  * Layout: Image on top (4:3 aspect ratio), content area below (96px)
  * Only overlays on image: favourite heart (top-right), optional condition badge (top-left)
  * Desktop hover: reveals quick action buttons at bottom of image
@@ -68,7 +63,7 @@ export function ProductCard({
   onQuickView,
 }: Readonly<ProductCardProps>) {
   const [isHovered, setIsHovered] = useState(false);
-  
+
   const handleFavouriteClick = () => {
     onFavourite?.(product.id);
   };
@@ -82,7 +77,7 @@ export function ProductCard({
     <Card
       variant="elevated"
       padding={0}
-      backgroundColor="$surface"
+      backgroundColor="$card"
       borderColor="$border"
       borderWidth={1}
       borderRadius={16}
@@ -158,9 +153,7 @@ export function ProductCard({
           pressStyle={{ transform: "scale(0.9)", opacity: 0.8 }}
           animation="quick"
           role="button"
-          aria-label={
-            isFavourited ? "Remove from favourites" : "Add to favourites"
-          }
+          aria-label={isFavourited ? "Remove from favourites" : "Add to favourites"}
           style={
             isWeb
               ? {
@@ -250,7 +243,9 @@ export function ProductCard({
           </Text>
           {sellerRatingCount > 0 ? (
             <Row alignItems="center" gap={3}>
-              <Text color="$primary" size="$4">★</Text>
+              <Text color="$primary" size="$4">
+                ★
+              </Text>
               <Text size="$4" fontWeight="500" color="$textSecondary">
                 {product.seller?.averageRating?.toFixed(1)}
               </Text>

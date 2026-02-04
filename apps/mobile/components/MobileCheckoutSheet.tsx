@@ -2,15 +2,7 @@ import { useState, useCallback, memo } from "react";
 import { Sheet } from "@tamagui/sheet";
 import { useStripe, CollectionMode, AddressCollectionMode } from "@stripe/stripe-react-native";
 import { InteractionManager } from "react-native";
-import {
-  Column,
-  Row,
-  Text,
-  Button,
-  Heading,
-  Card,
-  Spinner,
-} from "@buttergolf/ui";
+import { Column, Row, Text, Button, Heading, Card, Spinner } from "@buttergolf/ui";
 import { Info } from "@tamagui/lucide-icons";
 import { addBreadcrumb } from "../lib/breadcrumbs";
 
@@ -21,7 +13,7 @@ const SHIPPING_OPTIONS = [
   { id: "nextDay", name: "DPD Next Day", price: 899, days: "Next business day" },
 ] as const;
 
-type ShippingOptionId = typeof SHIPPING_OPTIONS[number]["id"];
+type ShippingOptionId = (typeof SHIPPING_OPTIONS)[number]["id"];
 
 // Calculate buyer protection fee (5% + £0.70 in pence)
 function calculateBuyerProtectionFee(priceInPounds: number): number {
@@ -135,7 +127,7 @@ const SheetContents = memo(function SheetContents({
 }: SheetContentsProps) {
   // useStripe is now always available since StripeProvider is at root level
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
-  
+
   const [shippingOption, setShippingOption] = useState<ShippingOptionId>("standard");
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -337,12 +329,7 @@ const SheetContents = memo(function SheetContents({
         </Row>
 
         {/* Order Summary */}
-        <Column
-          gap="$md"
-          pb="$md"
-          borderBottomWidth={1}
-          borderBottomColor="$border"
-        >
+        <Column gap="$md" pb="$md" borderBottomWidth={1} borderBottomColor="$border">
           <Column gap="$xs">
             <Text size="$5" fontWeight="600" numberOfLines={2} color="$text">
               {productTitle}
