@@ -48,7 +48,7 @@ export interface BuySellToggleProps {
 }
 
 /**
- * Styled Tabs.Tab (trigger) with pill styling matching AuthButton
+ * Styled Tabs.Tab (trigger) with pill styling matching Button component
  */
 const StyledTab = styled(Tabs.Tab, {
   name: "BuySellTab",
@@ -60,17 +60,16 @@ const StyledTab = styled(Tabs.Tab, {
   // Disable Tamagui's default tab unstyled prop
   unstyled: true,
 
-  // Default inactive state - use $card for proper elevation
-  // Elevation: background < surface (container) < card (buttons)
-  backgroundColor: "$card",
+  // Default inactive state - use $cloudMist for consistency with secondary buttons
+  backgroundColor: "$cloudMist",
   borderColor: "$border",
 
   // Web shadows for inactive
-  boxShadow: "0px 1px 5px 0px rgba(0, 0, 0, 0.1)",
+  boxShadow: "0px 1px 3px 0px rgba(0, 0, 0, 0.15)",
 
   hoverStyle: {
     opacity: 0.9,
-    backgroundColor: "$cardHover",
+    backgroundColor: "$cloudMistHover",
   },
 
   pressStyle: {
@@ -88,7 +87,7 @@ const StyledTab = styled(Tabs.Tab, {
   variants: {
     active: {
       true: {
-        // Spiced Clementine - explicit hex to override any defaults
+        // Spiced Clementine - matches primary button
         backgroundColor: "$primary",
         borderColor: "$primary",
         boxShadow: "0px 1px 5px 0px rgba(0, 0, 0, 0.25)",
@@ -102,11 +101,12 @@ const StyledTab = styled(Tabs.Tab, {
         },
       },
       false: {
-        backgroundColor: "$card",
+        // Light grey - matches secondary button
+        backgroundColor: "$cloudMist",
         borderColor: "$border",
-        boxShadow: "0px 1px 5px 0px rgba(0, 0, 0, 0.1)",
+        boxShadow: "0px 1px 3px 0px rgba(0, 0, 0, 0.15)",
         hoverStyle: {
-          backgroundColor: "$cardHover",
+          backgroundColor: "$cloudMistHover",
           opacity: 0.95,
         },
       },

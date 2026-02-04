@@ -267,7 +267,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
         >
           <Popover.Trigger asChild>
             <Button
-              butterVariant="secondary"
+              butterVariant="dark"
               size="$5"
               width="100%"
               height={56}

@@ -5,10 +5,11 @@
  * Supports cross-platform shadows with graceful degradation on mobile.
  *
  * Variants (via butterVariant prop):
- * - primary: Spiced Clementine (#F45314) with inner glow (web only)
- * - secondary: Ironstone (#323232) with subtle inner shadow (web only)
+ * - primary: Spiced Clementine (#F45314) - Main CTA, vibrant orange
+ * - secondary: Light grey (#EDEDED) - Secondary actions, "Skip", "Cancel"
+ * - dark: Burnt Olive (#3E3B2C) - Dark button for special cases
  *
- * Both variants include drop shadows on all platforms.
+ * Both primary and dark variants include drop shadows on all platforms.
  *
  * Note: Uses `butterVariant` prop instead of `variant` to avoid conflicts
  * with Tamagui's built-in Button variants.
@@ -16,8 +17,8 @@
  * @example
  * ```tsx
  * <Button butterVariant="primary">Sell now</Button>
- * <Button butterVariant="secondary">Shop now</Button>
- * <Button butterVariant="primary" size="$4">Small primary button</Button>
+ * <Button butterVariant="secondary">Skip for now</Button>
+ * <Button butterVariant="dark">Shop now</Button>
  * ```
  */
 
@@ -30,7 +31,7 @@ import { Platform } from "react-native";
  * Web: Combines drop shadow + inner shadow via boxShadow
  * Mobile: Only drop shadow via shadowColor/shadowOffset/shadowRadius/elevation
  */
-const getButtonShadow = (variant: "primary" | "secondary" | "tertiary") => {
+const getButtonShadow = (variant: "primary" | "secondary" | "dark") => {
   const baseShadow = {
     shadowColor: "rgba(0, 0, 0, 0.25)" as const,
     shadowOffset: { width: 0, height: 1 } as const,
@@ -40,7 +41,6 @@ const getButtonShadow = (variant: "primary" | "secondary" | "tertiary") => {
 
   if (Platform.OS === "web") {
     // Only the primary variant receives the inset glow on web.
-    // Secondary should not have an inner inset to avoid unwanted coloration.
     if (variant === "primary") {
       return {
         ...baseShadow,
@@ -48,8 +48,8 @@ const getButtonShadow = (variant: "primary" | "secondary" | "tertiary") => {
       };
     }
 
-    if (variant === "tertiary") {
-      // Tertiary (lighter) shadow
+    if (variant === "secondary") {
+      // Secondary: subtle shadow for light grey button
       return {
         shadowColor: "rgba(0, 0, 0, 0.15)" as const,
         shadowOffset: { width: 0, height: 1 } as const,
@@ -59,7 +59,7 @@ const getButtonShadow = (variant: "primary" | "secondary" | "tertiary") => {
       };
     }
 
-    // Secondary: keep drop shadow only (no inset)
+    // Dark: keep drop shadow only (no inset)
     return {
       ...baseShadow,
       boxShadow: `0px 1px 5px rgba(0,0,0,0.25)`,
@@ -107,11 +107,38 @@ const ButtonBase = styled(TamaguiButton, {
       },
 
       secondary: {
+        // Light grey background - perfect for "Skip", "Cancel", secondary actions
+        backgroundColor: "$cloudMist",
+        borderWidth: 1,
+        borderColor: "$border",
+        color: "$text", // Dark text on light grey for good contrast
+        ...getButtonShadow("secondary"),
+
+        hoverStyle: {
+          backgroundColor: "$cloudMistHover",
+          borderColor: "$borderHover",
+        },
+
+        pressStyle: {
+          backgroundColor: "$cloudMistPress",
+          borderColor: "$border",
+          scale: 0.98,
+        },
+
+        focusStyle: {
+          borderColor: "$borderFocus",
+          outlineColor: "$borderFocus",
+          outlineWidth: 2,
+        },
+      },
+
+      dark: {
+        // Dark button variant (Burnt Olive) - for special cases
         backgroundColor: "$secondary",
         borderWidth: 1,
         borderColor: "$secondaryBorder",
         color: "$textInverse",
-        ...getButtonShadow("secondary"),
+        ...getButtonShadow("dark"),
 
         hoverStyle: {
           backgroundColor: "$secondaryHover",
@@ -128,31 +155,6 @@ const ButtonBase = styled(TamaguiButton, {
           borderColor: "$secondaryFocus",
           outlineColor: "$secondaryFocus",
           outlineWidth: 2,
-        },
-      },
-
-      tertiary: {
-        backgroundColor: "$backgroundHover",
-        borderWidth: 1,
-        borderColor: "$border",
-        color: "$text",
-        ...getButtonShadow("tertiary"),
-
-        hoverStyle: {
-          backgroundColor: "$backgroundPress",
-          borderColor: "$borderHover",
-        },
-
-        pressStyle: {
-          backgroundColor: "$backgroundPress",
-          borderColor: "$border",
-          scale: 0.98,
-        },
-
-        focusStyle: {
-          backgroundColor: "$backgroundHover",
-          borderWidth: 2,
-          borderColor: "$borderFocus",
         },
       },
     },

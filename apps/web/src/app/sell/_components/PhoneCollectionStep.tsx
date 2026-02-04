@@ -151,10 +151,14 @@ export function PhoneCollectionStep({
                 {isSubmitting ? "Saving..." : "Continue"}
               </Button>
 
-              <Button size="$4" chromeless onPress={onSkip} disabled={isSubmitting}>
-                <Text color="$textSecondary" size="$4">
-                  Skip for now
-                </Text>
+              <Button
+                butterVariant="secondary"
+                size="$4"
+                width="100%"
+                onPress={onSkip}
+                disabled={isSubmitting}
+              >
+                Skip for now
               </Button>
             </Column>
           </Column>
