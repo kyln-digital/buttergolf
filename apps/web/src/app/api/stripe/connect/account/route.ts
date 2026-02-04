@@ -188,7 +188,10 @@ export async function POST(request: Request) {
         },
         business_profile: {
           mcc: "5941", // Sporting goods
-          product_description: "Golf equipment marketplace seller",
+          // Pre-fill URL and product description so these fields can be excluded from onboarding
+          // This prevents users from seeing irrelevant "Professional details" section
+          url: `https://buttergolf.com/seller/${user.id}`,
+          product_description: "Golf equipment seller on ButterGolf marketplace",
         },
         settings: {
           payouts: {
