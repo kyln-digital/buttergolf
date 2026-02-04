@@ -279,7 +279,6 @@ export function SellerOnboardingGate({
    * Skip phone collection - proceed directly to Stripe onboarding
    */
   const handleSkipPhone = useCallback(() => {
-    setShowPhoneCollection(false);
     setHasPhone(true); // Mark as "done" for this session so we proceed
   }, []);
 

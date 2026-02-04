@@ -150,9 +150,8 @@ export function PhoneCollectionStep({
                     onChangeCountry={handleCountryChange}
                     theme={{
                       containerStyle: styles.phoneInputContainer,
-                      textContainerStyle: styles.phoneTextContainer,
                       textInputStyle: styles.phoneTextInput,
-                      countryPickerButtonStyle: styles.countryPickerButton,
+                      flagButtonStyle: styles.countryPickerButton,
                     }}
                     countryPickerProps={{
                       withFilter: true,
@@ -164,7 +163,6 @@ export function PhoneCollectionStep({
                       },
                     }}
                     autoFocus
-                    placeholder="7XXX XXX XXX"
                   />
                 </View>
                 {error && (
@@ -258,10 +256,6 @@ const styles = StyleSheet.create({
   phoneInputContainer: {
     backgroundColor: "transparent",
     paddingHorizontal: 8,
-  },
-  phoneTextContainer: {
-    backgroundColor: "transparent",
-    paddingVertical: 0,
   },
   phoneTextInput: {
     fontSize: 16,
