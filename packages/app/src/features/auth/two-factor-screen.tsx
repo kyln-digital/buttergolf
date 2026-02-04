@@ -36,6 +36,8 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
   const [strategy, setStrategy] = useState<TwoFactorStrategy | null>(null);
   const [emailHint, setEmailHint] = useState<string | null>(null);
   const [codeSent, setCodeSent] = useState(false);
+  // Track current OTP value for manual submit button
+  const [currentOtp, setCurrentOtp] = useState("");
 
   // OTP input ref for programmatic control
   const otpRef = useRef<OtpInputRef>(null);
@@ -156,8 +158,9 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
         return;
       }
 
-      // For email_code strategy, wait until code has been sent
+      // For email_code strategy, require that the code has actually been sent
       if (strategy === "email_code" && !codeSent) {
+        setError("Verification code has not been sent. Please request a new code and try again.");
         return;
       }
 
@@ -274,6 +277,7 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
               ref={otpRef}
               numberOfDigits={CODE_LENGTH}
               onFilled={handleVerify}
+              onTextChange={setCurrentOtp}
               focusColor={primaryColor}
               disabled={isSubmitting || isSendingCode}
               type="numeric"
@@ -334,17 +338,21 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
             )}
           </Column>
 
-          {/* Verify Button - hidden since auto-submit on fill, but kept for accessibility */}
+          {/* Verify Button - provides manual submit fallback for accessibility */}
           <Button
             butterVariant="primary"
             size="$5"
             borderRadius="$full"
             fontWeight="600"
             onPress={() => {
-              // Manual submit fallback
+              if (currentOtp.length === CODE_LENGTH) {
+                handleVerify(currentOtp);
+              } else {
+                setError("Please enter all 6 digits");
+              }
             }}
-            disabled={isSubmitting || isSendingCode}
-            opacity={isSubmitting || isSendingCode ? 0.7 : 1}
+            disabled={isSubmitting || isSendingCode || currentOtp.length !== CODE_LENGTH}
+            opacity={isSubmitting || isSendingCode || currentOtp.length !== CODE_LENGTH ? 0.7 : 1}
           >
             {isSubmitting ? <Spinner size="sm" color="$textInverse" /> : "Verify Code"}
           </Button>

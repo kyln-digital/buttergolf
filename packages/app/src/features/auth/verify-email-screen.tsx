@@ -39,6 +39,8 @@ export function VerifyEmailScreen({
   const [isResending, setIsResending] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
   const [resendAttempts, setResendAttempts] = useState(0);
+  // Track current OTP value for manual submit button
+  const [currentOtp, setCurrentOtp] = useState("");
 
   // OTP input ref for programmatic control
   const otpRef = useRef<OtpInputRef>(null);
@@ -185,6 +187,7 @@ export function VerifyEmailScreen({
               ref={otpRef}
               numberOfDigits={CODE_LENGTH}
               onFilled={handleVerify}
+              onTextChange={setCurrentOtp}
               focusColor={primaryColor}
               disabled={isSubmitting}
               type="numeric"
@@ -233,19 +236,21 @@ export function VerifyEmailScreen({
             </Row>
           </Column>
 
-          {/* Verify Button - hidden since auto-submit on fill, but kept for accessibility */}
+          {/* Verify Button - provides manual submit fallback for accessibility */}
           <Button
             butterVariant="primary"
             size="$5"
             borderRadius="$full"
             fontWeight="600"
             onPress={() => {
-              // Manual submit fallback - get current value from ref if needed
-              // The OtpInput auto-submits on fill, so this is mainly for users who
-              // want to verify before all digits are entered (edge case)
+              if (currentOtp.length === CODE_LENGTH) {
+                handleVerify(currentOtp);
+              } else {
+                setError("Please enter all 6 digits");
+              }
             }}
-            disabled={isSubmitting}
-            opacity={isSubmitting ? 0.7 : 1}
+            disabled={isSubmitting || currentOtp.length !== CODE_LENGTH}
+            opacity={isSubmitting || currentOtp.length !== CODE_LENGTH ? 0.7 : 1}
           >
             {isSubmitting ? <Spinner size="sm" color="$textInverse" /> : "Verify Email"}
           </Button>
