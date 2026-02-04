@@ -73,8 +73,9 @@ export async function getMobileSessionUserData(
       return null;
     }
     // Explicit type validation for JWT payload properties.
-    // Returns null for any non-string values (including null, undefined, numbers).
-    // This ensures we only return verified string data that can be safely used for prefilling.
+    // Non-string values (numbers, objects, undefined, etc.) are treated as null.
+    // This protects against malformed or tampered tokens and ensures we only
+    // return verified string data that can be safely used for prefilling.
     return {
       userId: payload.sub as string,
       firstName: typeof payload.firstName === "string" ? payload.firstName : null,
