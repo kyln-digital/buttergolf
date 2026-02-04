@@ -3,8 +3,8 @@ packages:
   - packages/*
 
 catalog:
-  "@clerk/clerk-expo": 2.19.14
-  "@clerk/nextjs": 6.36.5
+  "@clerk/clerk-expo": 2.19.21
+  "@clerk/nextjs": 6.37.2
   "@easypost/api": 8.2.0
   "@next/bundle-analyzer": 16.1.6
   "@prisma/client": 6.19.0
@@ -89,7 +89,7 @@ catalog:
   socket.io-client: 4.8.1
   solito: 5.0.0
   stripe: 19.2.1
-  svix: 1.81.0
+  svix: 1.84.1
   tamagui: 1.144.3
   tsx: 4.20.6
   typescript: 5.9.3
