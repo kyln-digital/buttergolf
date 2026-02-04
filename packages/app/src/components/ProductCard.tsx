@@ -77,7 +77,7 @@ export function ProductCard({
     <Card
       variant="elevated"
       padding={0}
-      backgroundColor="$surface"
+      backgroundColor="$card"
       borderColor="$border"
       borderWidth={1}
       borderRadius={16}

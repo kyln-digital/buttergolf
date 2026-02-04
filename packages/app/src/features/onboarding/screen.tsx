@@ -290,11 +290,11 @@ export function OnboardingScreen({
         {/* CTAs - Design System Buttons */}
         <YStack gap={12} width="100%" paddingHorizontal={24}>
           {/* Primary Button - Pill-shaped, theme-aware */}
+          {/* In light mode: use butterVariant="primary" (orange bg, white text) */}
+          {/* In dark mode: override with cream bg, orange text */}
           <Button
             butterVariant={isDark ? undefined : "primary"}
             size="$4"
-            backgroundColor={isDark ? "$vanillaCream" : undefined}
-            color={isDark ? "$primary" : undefined}
             borderRadius="$full"
             paddingHorizontal="$6"
             paddingVertical="$2"
@@ -304,6 +304,10 @@ export function OnboardingScreen({
               scale: 0.98,
               opacity: 0.9,
             }}
+            {...(isDark && {
+              backgroundColor: "$vanillaCream",
+              color: "$primary",
+            })}
           >
             Create account
           </Button>

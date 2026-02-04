@@ -85,7 +85,7 @@ const ButtonBase = styled(TamaguiButton, {
         backgroundColor: "$primary",
         borderWidth: 1,
         borderColor: "$primaryBorder",
-        color: "$textInverse",
+        color: "$white", // Always white on orange, regardless of theme
         ...getButtonShadow("primary"),
 
         hoverStyle: {

@@ -208,7 +208,7 @@ export function Hero({
   // Mobile-specific layout
   if (isMobile) {
     return (
-      <Column width="100%" paddingHorizontal="$4" paddingTop="$2" backgroundColor="$surface">
+      <Column width="100%" paddingHorizontal="$4" paddingTop="$2" backgroundColor="$background">
         <View
           width="100%"
           height={minHeight}
@@ -275,7 +275,7 @@ export function Hero({
 
   // Web/Desktop layout
   return (
-    <Column width="100%" paddingHorizontal="$md" paddingTop="$md" backgroundColor="$surface">
+    <Column width="100%" paddingHorizontal="$md" paddingTop="$md" backgroundColor="$background">
       <View
         width="100%"
         height={320}

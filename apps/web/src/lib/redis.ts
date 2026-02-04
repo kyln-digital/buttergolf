@@ -150,6 +150,9 @@ export async function cacheDelete(key: string): Promise<void> {
  * Delete all keys matching a pattern.
  * Useful for bulk cache invalidation (e.g., all rates for a product).
  *
+ * Uses SCAN with cursor-based iteration to avoid blocking Redis
+ * on large keyspaces (unlike KEYS which blocks during scan).
+ *
  * @param pattern - Redis pattern (e.g., "shipping:rates:*:productId")
  */
 export async function cacheDeletePattern(pattern: string): Promise<void> {

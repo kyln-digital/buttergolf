@@ -51,8 +51,8 @@ export function HomeScreen({
   // Category press handlers - use callback prop
   const handleWoodsPress = () => onCategoryPress?.("woods");
   const handleIronsPress = () => onCategoryPress?.("irons");
-  const handleApparelPress = () => onCategoryPress?.("apparel");
-  const handleAccessoriesPress = () => onCategoryPress?.("accessories");
+  const handleWedgesPress = () => onCategoryPress?.("wedges");
+  const handlePuttersPress = () => onCategoryPress?.("putters");
 
   useEffect(() => {
     if (onFetchProducts && products.length === 0 && !loading) {
@@ -205,9 +205,9 @@ export function HomeScreen({
             </Column>
           </Row>
 
-          {/* Second row: Shoes & Accessories */}
+          {/* Second row: Wedges & Putters */}
           <Row gap="$4">
-            {/* Shoes card */}
+            {/* Wedges card */}
             <Column
               flex={1}
               height={180}
@@ -215,18 +215,18 @@ export function HomeScreen({
               borderRadius="$2xl"
               overflow="hidden"
               pressStyle={{ opacity: 0.9, scale: 0.98 }}
-              onPress={handleApparelPress}
+              onPress={handleWedgesPress}
               accessibilityRole="button"
-              accessibilityLabel="Browse shoes category"
+              accessibilityLabel="Browse wedges category"
             >
               <Image
-                source={images.clubs.club5}
+                source={images.clubs.club4}
                 width="100%"
                 height="100%"
                 resizeMode="cover"
                 position="absolute"
-                alt="Shoes category"
-                accessibilityLabel="Shoes category"
+                alt="Wedges category"
+                accessibilityLabel="Wedges category"
               />
               <Column
                 flex={1}
@@ -235,12 +235,12 @@ export function HomeScreen({
                 backgroundColor="rgba(0, 0, 0, 0.3)"
               >
                 <Text size="$8" fontWeight="700" color="$vanillaCream">
-                  Shoes
+                  Wedges
                 </Text>
               </Column>
             </Column>
 
-            {/* Accessories card */}
+            {/* Putters card */}
             <Column
               flex={1}
               height={180}
@@ -248,18 +248,18 @@ export function HomeScreen({
               borderRadius="$2xl"
               overflow="hidden"
               pressStyle={{ opacity: 0.9, scale: 0.98 }}
-              onPress={handleAccessoriesPress}
+              onPress={handlePuttersPress}
               accessibilityRole="button"
-              accessibilityLabel="Browse accessories category"
+              accessibilityLabel="Browse putters category"
             >
               <Image
-                source={images.clubs.club6}
+                source={images.clubs.club5}
                 width="100%"
                 height="100%"
                 resizeMode="cover"
                 position="absolute"
-                alt="Accessories category"
-                accessibilityLabel="Accessories category"
+                alt="Putters category"
+                accessibilityLabel="Putters category"
               />
               <Column
                 flex={1}
@@ -268,7 +268,7 @@ export function HomeScreen({
                 backgroundColor="rgba(0, 0, 0, 0.3)"
               >
                 <Text size="$8" fontWeight="700" color="$vanillaCream">
-                  Accessories
+                  Putters
                 </Text>
               </Column>
             </Column>

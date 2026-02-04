@@ -46,8 +46,9 @@ export const GlassmorphismCard = styled(View, {
         borderColor: "rgba(217, 217, 217, 0.55)",
       },
       dark: {
-        backgroundColor: "rgba(0, 0, 0, 0.35)",
-        borderColor: "rgba(217, 217, 217, 0.15)",
+        // Subtle light overlay to match dark theme surfaces
+        backgroundColor: "rgba(255, 255, 255, 0.08)",
+        borderColor: "rgba(255, 255, 255, 0.12)",
       },
     },
     blur: {

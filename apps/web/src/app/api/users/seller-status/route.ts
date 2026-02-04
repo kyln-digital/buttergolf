@@ -76,10 +76,14 @@ export async function GET(request: Request) {
           "code" in upsertError &&
           (upsertError as { code: string }).code === "P2002"
         ) {
+          // P2002 = unique constraint violation. This can happen in two scenarios:
+          // 1. Race condition: another concurrent request created the user first (recoverable)
+          // 2. Data integrity issue: email already exists for a different clerkId (edge case)
+          // We re-fetch by clerkId to handle case 1. If still null, case 2 occurred.
           console.warn(
             `[Seller Status] Unique constraint violation for user ${userId}, re-fetching`
           );
-          // Re-fetch the user that was created by another request
+          // Re-fetch the user - if this returns null, it's an email conflict (different user)
           user = await prisma.user.findUnique({
             where: { clerkId: userId },
             select: {
