@@ -215,6 +215,11 @@ async function handleAccountUpdated(account: Stripe.Account) {
       `Updated user ${user.id} Connect status: ${status}, requirements: ${currentlyDue.length} (V2 API)`
     );
 
+    // If seller just became fully onboarded, process any pending transfers
+    if (status === "active" && hasNoDue) {
+      await processPendingTransfersForSeller(user.id, account.id);
+    }
+
     // Sync address from Stripe to database
     await syncAddressFromStripe(user.id, account);
   } catch (error) {
@@ -314,5 +319,92 @@ async function syncAddressFromStripe(userId: string, account: Stripe.Account) {
   } catch (error) {
     console.error(`Error syncing address for user ${userId}:`, error);
     // Don't throw - we don't want address sync failures to break webhook processing
+  }
+}
+
+/**
+ * Process pending transfers for a seller who just completed onboarding
+ *
+ * When a seller completes Stripe Connect setup, check if they have any orders
+ * in PENDING_SELLER_ONBOARDING status and execute those transfers.
+ */
+async function processPendingTransfersForSeller(userId: string, stripeConnectId: string) {
+  try {
+    // Find all orders pending seller onboarding for this seller
+    const pendingOrders = await prisma.order.findMany({
+      where: {
+        sellerId: userId,
+        paymentHoldStatus: "PENDING_SELLER_ONBOARDING",
+      },
+      include: {
+        product: true,
+        seller: true,
+      },
+    });
+
+    if (pendingOrders.length === 0) {
+      console.log(`No pending transfers for seller ${userId}`);
+      return;
+    }
+
+    console.log(
+      `Processing ${pendingOrders.length} pending transfer(s) for seller ${userId} (${stripeConnectId})`
+    );
+
+    for (const order of pendingOrders) {
+      try {
+        // Skip if already has a transfer (shouldn't happen, but safety check)
+        if (order.stripeTransferId) {
+          console.warn(
+            `Order ${order.id} already has transfer ${order.stripeTransferId}, skipping`
+          );
+          continue;
+        }
+
+        // Calculate transfer amount
+        const transferAmountInPence = Math.round((order.stripeSellerPayout || 0) * 100);
+        if (transferAmountInPence <= 0) {
+          console.error(`Invalid transfer amount for order ${order.id}:`, order.stripeSellerPayout);
+          continue;
+        }
+
+        // Create transfer to seller's Stripe Connect account
+        const transfer = await stripe.transfers.create({
+          amount: transferAmountInPence,
+          currency: "gbp",
+          destination: stripeConnectId,
+          transfer_group: order.id,
+          metadata: {
+            orderId: order.id,
+            productId: order.productId,
+            sellerId: order.sellerId,
+            reason: "seller_completed_onboarding",
+          },
+        });
+
+        // Update order status
+        await prisma.order.update({
+          where: { id: order.id },
+          data: {
+            paymentHoldStatus: "RELEASED",
+            paymentReleasedAt: new Date(),
+            stripeTransferId: transfer.id,
+            stripePayoutStatus: "completed",
+          },
+        });
+
+        console.log(
+          `✅ Transfer ${transfer.id} created for order ${order.id}: £${transferAmountInPence / 100}`
+        );
+
+        // TODO: Send payment released email to seller
+      } catch (transferError) {
+        console.error(`Failed to process transfer for order ${order.id}:`, transferError);
+        // Continue with other orders - don't let one failure stop the rest
+      }
+    }
+  } catch (error) {
+    console.error(`Error processing pending transfers for seller ${userId}:`, error);
+    // Don't throw - we don't want this to break webhook processing
   }
 }

@@ -7,13 +7,17 @@ import { brandColors } from "@buttergolf/config";
 import { ConnectAccountOnboarding, ConnectComponentsProvider } from "@stripe/react-connect-js";
 import { loadConnectAndInitialize } from "@stripe/connect-js";
 import type { StepChange, StripeConnectInstance } from "@stripe/connect-js";
+import { PhoneCollectionStep } from "./PhoneCollectionStep";
 
 interface SellerStatus {
   hasAccount: boolean;
   onboardingComplete: boolean;
   accountStatus: string | null;
   requirementsCount: number;
+  phone: string | null;
 }
+
+type WizardStep = "phone" | "stripe" | "ready";
 
 interface SellOnboardingGateProps {
   /** Initial seller status from server */
@@ -26,14 +30,20 @@ interface SellOnboardingGateProps {
  * SellOnboardingGate - Zero-touch seller onboarding for the /sell page
  *
  * This component wraps the sell form and handles:
- * 1. Auto-creating Stripe Connect account on first visit
- * 2. Displaying embedded onboarding inline (no redirect)
- * 3. Showing the sell form once onboarding is complete
+ * 1. Collecting UK mobile number (pre-fills Stripe, improves UX)
+ * 2. Auto-creating Stripe Connect account on first visit
+ * 3. Displaying embedded onboarding inline (no redirect)
+ * 4. Showing the sell form once onboarding is complete
+ *
+ * Wizard flow:
+ * - Step 1 (phone): Collect UK mobile (skip if already have it)
+ * - Step 2 (stripe): Stripe embedded onboarding (with phone pre-filled if provided)
+ * - Step 3 (ready): Show the sell form
  *
  * Uses Stripe Embedded Onboarding with:
  * - UK-only (GB) country prefilled
  * - Individual/private seller type
- * - Incremental onboarding (collect what's needed, when it's needed)
+ * - Phone excluded from Stripe collection if we collected it
  */
 export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGateProps) {
   const router = useRouter();
@@ -43,18 +53,61 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
   const [stripeConnectInstance, setStripeConnectInstance] = useState<StripeConnectInstance | null>(
     null
   );
+  const [phoneSubmitting, setPhoneSubmitting] = useState(false);
   const hasReachedSummaryRef = useRef(false);
 
-  // If already onboarded with active account, show the sell form
+  // Determine current wizard step
   const isReadyToSell =
     status.hasAccount && status.onboardingComplete && status.accountStatus === "active";
 
-  // Auto-initialize onboarding when component mounts and user needs to onboard
+  const needsPhoneCollection = !status.phone && !status.hasAccount;
+
+  const getCurrentStep = (): WizardStep => {
+    if (isReadyToSell) return "ready";
+    if (needsPhoneCollection) return "phone";
+    return "stripe";
+  };
+
+  const [wizardStep, setWizardStep] = useState<WizardStep>(getCurrentStep);
+
+  // Auto-initialize Stripe onboarding when in stripe step
   useEffect(() => {
-    if (!isReadyToSell && !stripeConnectInstance && !loading) {
+    if (wizardStep === "stripe" && !stripeConnectInstance && !loading) {
       initializeOnboarding();
     }
-  }, [isReadyToSell]);
+  }, [wizardStep]);
+
+  async function handlePhoneSubmit(phone: string) {
+    try {
+      setPhoneSubmitting(true);
+      setError(null);
+
+      // Save phone to user profile
+      const response = await fetch("/api/user/phone", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to save phone number");
+      }
+
+      // Update local status and move to next step
+      setStatus((prev) => ({ ...prev, phone }));
+      setWizardStep("stripe");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save phone number");
+    } finally {
+      setPhoneSubmitting(false);
+    }
+  }
+
+  function handlePhoneSkip() {
+    // Move to Stripe onboarding without phone - Stripe will collect it
+    setWizardStep("stripe");
+  }
 
   async function initializeOnboarding() {
     try {
@@ -72,11 +125,15 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
         publishableKey,
         fetchClientSecret: async () => {
           // Call our API which creates account if needed and returns client secret
+          // Include phone for pre-filling if we collected it
           const response = await fetch("/api/stripe/connect/account", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
+            body: JSON.stringify({
+              phone: status.phone,
+            }),
           });
 
           if (!response.ok) {
@@ -122,12 +179,13 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
       const response = await fetch("/api/stripe/connect/account");
       if (response.ok) {
         const data = await response.json();
-        setStatus({
+        setStatus((prev) => ({
+          ...prev,
           hasAccount: data.hasAccount,
           onboardingComplete: data.onboardingComplete ?? false,
           accountStatus: data.chargesEnabled ? "active" : "pending",
           requirementsCount: data.requirements?.currently_due?.length ?? 0,
-        });
+        }));
 
         // If complete, refresh page to show sell form
         if (data.onboardingComplete && data.chargesEnabled) {
@@ -143,6 +201,18 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
   // User is ready to sell - show the form
   if (isReadyToSell) {
     return <>{children}</>;
+  }
+
+  // Phone collection step
+  if (wizardStep === "phone") {
+    return (
+      <PhoneCollectionStep
+        initialPhone={status.phone || undefined}
+        onSubmit={handlePhoneSubmit}
+        onSkip={handlePhoneSkip}
+        isSubmitting={phoneSubmitting}
+      />
+    );
   }
 
   // Loading state
@@ -275,14 +345,17 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
               collectionOptions={{
                 fields: "eventually_due",
                 futureRequirements: "include",
-                // Exclude business profile fields (pre-filled at account creation)
-                // and business_type (set to 'individual' at account creation)
-                // This removes confusing "Business type" and "Professional details" sections
+                // Exclude fields we've already collected or pre-filled
+                // - business_type: set to 'individual' at account creation
+                // - business_profile.*: pre-filled with sensible defaults
+                // - individual.phone: only excluded if we collected it in our form
                 requirements: {
                   exclude: [
                     "business_type",
                     "business_profile.url",
                     "business_profile.product_description",
+                    // Exclude phone if we collected it - Stripe will use the pre-filled value
+                    ...(status.phone ? ["individual.phone"] : []),
                   ],
                 },
               }}

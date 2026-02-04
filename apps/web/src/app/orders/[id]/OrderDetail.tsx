@@ -53,7 +53,12 @@ type ShipmentStatus =
   | "FAILED"
   | "CANCELLED";
 
-type PaymentHoldStatus = "HELD" | "RELEASED" | "DISPUTED" | "REFUNDED";
+type PaymentHoldStatus =
+  | "HELD"
+  | "PENDING_SELLER_ONBOARDING"
+  | "RELEASED"
+  | "DISPUTED"
+  | "REFUNDED";
 
 interface Order {
   id: string;
@@ -737,13 +742,17 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                     ? "success"
                     : order.paymentHoldStatus === "HELD"
                       ? "warning"
-                      : order.paymentHoldStatus === "DISPUTED"
-                        ? "error"
-                        : "neutral"
+                      : order.paymentHoldStatus === "PENDING_SELLER_ONBOARDING"
+                        ? "info"
+                        : order.paymentHoldStatus === "DISPUTED"
+                          ? "error"
+                          : "neutral"
                 }
                 size="lg"
               >
                 {order.paymentHoldStatus === "HELD" && "🔒 Payment Held"}
+                {order.paymentHoldStatus === "PENDING_SELLER_ONBOARDING" &&
+                  "⏳ Awaiting Seller Verification"}
                 {order.paymentHoldStatus === "RELEASED" && "✓ Payment Released"}
                 {order.paymentHoldStatus === "DISPUTED" && "⚠ Disputed"}
                 {order.paymentHoldStatus === "REFUNDED" && "↩ Refunded"}
@@ -858,6 +867,28 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
               </Column>
             )}
 
+            {/* Payment Pending Seller Onboarding - for buyers */}
+            {order.userRole === "buyer" &&
+              order.paymentHoldStatus === "PENDING_SELLER_ONBOARDING" && (
+                <View
+                  backgroundColor="$infoLight"
+                  borderRadius="$md"
+                  padding="$md"
+                  borderLeftWidth={4}
+                  borderLeftColor="$info"
+                >
+                  <Column gap="$sm">
+                    <Text fontWeight="600" color="$info">
+                      Your payment is protected
+                    </Text>
+                    <Text size="$4" color="$textSecondary">
+                      You&apos;ve confirmed receipt of your item. The payment is securely held and
+                      will be released to the seller once they complete their verification.
+                    </Text>
+                  </Column>
+                </View>
+              )}
+
             {/* Seller Payment Information */}
             {order.userRole === "seller" && (
               <Column gap="$sm">
@@ -898,6 +929,41 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                           </Text>
                         </Row>
                       )}
+                    </Column>
+                  </View>
+                )}
+
+                {order.paymentHoldStatus === "PENDING_SELLER_ONBOARDING" && (
+                  <View
+                    backgroundColor="$infoLight"
+                    borderRadius="$md"
+                    padding="$md"
+                    borderLeftWidth={4}
+                    borderLeftColor="$info"
+                  >
+                    <Column gap="$sm">
+                      <Text fontWeight="600" color="$info">
+                        Complete verification to receive payment
+                      </Text>
+                      <Text size="$4" color="$textSecondary">
+                        The buyer has confirmed receipt. Complete your seller verification to have
+                        this payment released to your account.
+                      </Text>
+                      {order.stripeSellerPayout && (
+                        <Row gap="$xs" alignItems="center">
+                          <DollarSign size={14} color="var(--color-success)" />
+                          <Text size="$5" fontWeight="600" color="$success">
+                            Pending payout: £{order.stripeSellerPayout.toFixed(2)}
+                          </Text>
+                        </Row>
+                      )}
+                      <Button
+                        butterVariant="primary"
+                        size="$4"
+                        onPress={() => (window.location.href = "/sell")}
+                      >
+                        Complete Verification
+                      </Button>
                     </Column>
                   </View>
                 )}

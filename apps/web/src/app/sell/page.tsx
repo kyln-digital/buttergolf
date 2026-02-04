@@ -29,6 +29,7 @@ export default async function SellPage() {
     where: { clerkId },
     select: {
       id: true,
+      phone: true,
       stripeConnectId: true,
       stripeOnboardingComplete: true,
       stripeAccountStatus: true,
@@ -51,6 +52,7 @@ export default async function SellPage() {
     onboardingComplete: user?.stripeOnboardingComplete ?? false,
     accountStatus: user?.stripeAccountStatus ?? null,
     requirementsCount,
+    phone: user?.phone ?? null,
   };
 
   // 3. Render with onboarding gate

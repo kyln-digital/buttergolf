@@ -86,13 +86,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Cannot purchase your own product" }, { status: 400 });
     }
 
-    // Get seller's Stripe Connect account
+    // Get seller info (may not be onboarded yet - Vinted-style flow)
+    // Funds stay on platform, transfer happens after delivery confirmed AND seller onboards
     const seller = product.user;
-    if (!seller.stripeConnectId || !seller.stripeOnboardingComplete) {
-      return NextResponse.json(
-        { error: "Seller is not set up to receive payments" },
-        { status: 400 }
-      );
+    if (!seller) {
+      return NextResponse.json({ error: "Seller not found" }, { status: 404 });
     }
 
     // Calculate Vinted-style pricing (0% seller fee, buyer pays protection fee)
@@ -113,7 +111,7 @@ export async function POST(req: Request) {
     });
 
     // Create Payment Intent - payment stays on platform (escrow-style)
-    // NO transfer_data - we'll transfer to seller after buyer confirms receipt
+    // NO transfer_data - we'll transfer to seller after buyer confirms AND seller is onboarded
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalAmountInPence,
       currency: "gbp",
@@ -124,8 +122,9 @@ export async function POST(req: Request) {
         productId: product.id,
         sellerId: seller.id,
         buyerId: buyer.id,
-        // Store seller Connect ID for later transfer
-        sellerStripeConnectId: seller.stripeConnectId,
+        // Store seller Connect ID for later transfer (may be null if seller not yet onboarded)
+        sellerStripeConnectId: seller.stripeConnectId || "",
+        sellerOnboarded: seller.stripeOnboardingComplete ? "true" : "false",
         // Store amounts for order creation
         productPriceInPence: productPriceInPence.toString(),
         shippingAmountInPence: shippingAmountInPence.toString(),
