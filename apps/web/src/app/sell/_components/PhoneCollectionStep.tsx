@@ -1,52 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Column, Row, Heading, Text, Button, Card, Input } from "@buttergolf/ui";
-
-// UK mobile phone number regex (07xxx or +447xxx, no spaces - we strip spaces before validation)
-const UK_MOBILE_REGEX = /^(?:\+44|0)7\d{9}$/;
-
-/**
- * Format a phone number for display (07XXX XXX XXX)
- */
-function formatPhoneNumber(value: string): string {
-  // Remove all non-digit characters except +
-  const cleaned = value.replace(/[^\d+]/g, "");
-
-  // If starts with +44, convert to 0
-  let digits = cleaned;
-  if (cleaned.startsWith("+44")) {
-    digits = "0" + cleaned.slice(3);
-  }
-
-  // Only keep 11 digits max (UK mobile)
-  digits = digits.slice(0, 11);
-
-  // Format as 07XXX XXX XXX
-  if (digits.length >= 5) {
-    return (
-      digits.slice(0, 5) +
-      " " +
-      digits.slice(5, 8) +
-      (digits.length > 8 ? " " + digits.slice(8) : "")
-    );
-  }
-  return digits;
-}
-
-/**
- * Normalize phone to +44 format for Stripe
- */
-function normalizeToE164(phone: string): string {
-  const digits = phone.replace(/[^\d]/g, "");
-  if (digits.startsWith("0")) {
-    return "+44" + digits.slice(1);
-  }
-  if (digits.startsWith("44")) {
-    return "+" + digits;
-  }
-  return "+44" + digits;
-}
+import { Column, Row, Heading, Text, Button, Card } from "@buttergolf/ui";
+import PhoneInput, { isValidPhoneNumber, type Value } from "react-phone-number-input";
+import "react-phone-number-input/style.css";
 
 interface PhoneCollectionStepProps {
   /** Initial phone value if user has one */
@@ -60,7 +17,12 @@ interface PhoneCollectionStepProps {
 }
 
 /**
- * PhoneCollectionStep - Collects UK mobile number before Stripe onboarding
+ * PhoneCollectionStep - Collects mobile number before Stripe onboarding
+ *
+ * Uses react-phone-number-input with libphonenumber-js for:
+ * - Country picker with flags
+ * - Auto-formatting
+ * - International phone number validation
  *
  * This allows us to pre-fill the phone number in Stripe Connect and exclude
  * that field from their embedded onboarding form, creating a smoother experience.
@@ -73,30 +35,28 @@ export function PhoneCollectionStep({
   onSkip,
   isSubmitting = false,
 }: PhoneCollectionStepProps) {
-  const [phone, setPhone] = useState(initialPhone || "");
+  const [phone, setPhone] = useState<Value | undefined>(initialPhone as Value | undefined);
   const [error, setError] = useState<string | null>(null);
 
-  function handlePhoneChange(value: string) {
+  function handlePhoneChange(value: Value | undefined) {
     setError(null);
-    setPhone(formatPhoneNumber(value));
+    setPhone(value);
   }
 
   async function handleSubmit() {
-    // Validate
-    const cleaned = phone.replace(/\s/g, "");
-    if (!cleaned) {
+    if (!phone) {
       setError("Please enter your mobile number");
       return;
     }
 
-    if (!UK_MOBILE_REGEX.test(cleaned)) {
-      setError("Please enter a valid UK mobile number (e.g., 07XXX XXX XXX)");
+    // Validate using libphonenumber-js
+    if (!isValidPhoneNumber(phone)) {
+      setError("Please enter a valid phone number");
       return;
     }
 
-    // Normalize to E.164 format for Stripe
-    const normalized = normalizeToE164(cleaned);
-    await onSubmit(normalized);
+    // Phone is already in E.164 format from react-phone-number-input
+    await onSubmit(phone);
   }
 
   return (
@@ -118,18 +78,25 @@ export function PhoneCollectionStep({
           <Column gap="$lg">
             <Column gap="$xs">
               <Text size="$4" fontWeight="500">
-                UK Mobile Number
+                Mobile Number
               </Text>
-              <Input
-                size="$5"
-                placeholder="07XXX XXX XXX"
-                value={phone}
-                onChangeText={handlePhoneChange}
-                keyboardType="phone-pad"
-                autoComplete="tel"
-                autoFocus
-                borderColor={error ? "$error" : undefined}
-              />
+              <div
+                className="phone-input-wrapper"
+                style={{
+                  border: error ? "1px solid #dc2626" : "1px solid #EDEDED",
+                  borderRadius: 12,
+                  backgroundColor: "#FFFFFF",
+                  padding: "4px 12px",
+                }}
+              >
+                <PhoneInput
+                  international
+                  defaultCountry="GB"
+                  value={phone}
+                  onChange={handlePhoneChange}
+                  placeholder="Enter phone number"
+                />
+              </div>
               {error && (
                 <Text size="$3" color="$error">
                   {error}
@@ -180,6 +147,38 @@ export function PhoneCollectionStep({
           </Row>
         </Card>
       </Column>
+
+      {/* Custom styles for phone input to match design system */}
+      <style jsx global>{`
+        .phone-input-wrapper .PhoneInput {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .phone-input-wrapper .PhoneInputCountry {
+          padding: 8px 0;
+        }
+        .phone-input-wrapper .PhoneInputCountryIcon {
+          width: 24px;
+          height: 18px;
+        }
+        .phone-input-wrapper .PhoneInputCountrySelectArrow {
+          margin-left: 4px;
+          opacity: 0.6;
+        }
+        .phone-input-wrapper .PhoneInputInput {
+          flex: 1;
+          border: none;
+          background: transparent;
+          font-size: 16px;
+          color: #323232;
+          padding: 12px 0;
+          outline: none;
+        }
+        .phone-input-wrapper .PhoneInputInput::placeholder {
+          color: #9ca3af;
+        }
+      `}</style>
     </Column>
   );
 }
