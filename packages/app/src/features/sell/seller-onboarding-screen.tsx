@@ -200,7 +200,12 @@ export function SellerOnboardingScreen({
               </Button>
 
               {onCancel && (
-                <Button butterVariant="tertiary" size="$4" onPress={onCancel} disabled={isStarting}>
+                <Button
+                  butterVariant="secondary"
+                  size="$4"
+                  onPress={onCancel}
+                  disabled={isStarting}
+                >
                   <Text color="$text" fontWeight="500">
                     Not Now
                   </Text>

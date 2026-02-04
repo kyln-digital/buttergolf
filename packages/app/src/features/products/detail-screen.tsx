@@ -482,7 +482,7 @@ export function ProductDetailScreen({
                   {isAuthenticated ? "Buy Now" : "Sign in to Buy"}
                 </Button>
                 <Button
-                  butterVariant="secondary"
+                  butterVariant="dark"
                   size="$5"
                   width="100%"
                   onPress={() => onMakeOffer?.(product.id, product.price)}
