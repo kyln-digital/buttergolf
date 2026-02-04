@@ -36,17 +36,50 @@ export async function POST(request: Request) {
       console.log(
         `[Stripe Connect] User not found for clerkId ${userId}, creating record from Clerk data`
       );
-      user = await prisma.user.create({
-        data: {
-          clerkId: userId,
-          email: userData.email,
-          firstName: userData.firstName || "",
-          lastName: userData.lastName || "",
-        },
-      });
-      console.log(
-        `[Stripe Connect] Created user record ${user.id} for clerkId ${userId} with Clerk data`
-      );
+      try {
+        user = await prisma.user.create({
+          data: {
+            clerkId: userId,
+            email: userData.email,
+            firstName: userData.firstName || "",
+            lastName: userData.lastName || "",
+          },
+        });
+        console.log(
+          `[Stripe Connect] Created user record ${user.id} for clerkId ${userId} with Clerk data`
+        );
+      } catch (createError) {
+        // Handle unique constraint violation (P2002) - email may already exist for another user
+        // or another request created the user with this clerkId concurrently
+        if (
+          createError instanceof Error &&
+          "code" in createError &&
+          (createError as { code: string }).code === "P2002"
+        ) {
+          console.warn(
+            `[Stripe Connect] Unique constraint violation for clerkId ${userId}, re-fetching`
+          );
+          // Re-fetch the user that was created by another request
+          user = await prisma.user.findUnique({
+            where: { clerkId: userId },
+          });
+          if (!user) {
+            // If still no user by clerkId, the conflict was on email (different user has this email)
+            console.error(
+              `[Stripe Connect] Email conflict for clerkId ${userId} - email already used by another account`
+            );
+            return NextResponse.json(
+              {
+                error:
+                  "This email address is already associated with another account. Please contact support.",
+              },
+              { status: 409 }
+            );
+          }
+        } else {
+          throw createError;
+        }
+      }
     } else if (!user) {
       // No email available from Clerk - cannot create user record safely
       // This is rare (Clerk usually provides email) but we handle it gracefully

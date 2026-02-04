@@ -410,17 +410,18 @@ export function SellerOnboardingGate({
           domStorageEnabled={true}
           sharedCookiesEnabled={false}
           thirdPartyCookiesEnabled={false}
-          // iOS specific: navigation gestures, content insets, and inline media
-          allowsBackForwardNavigationGestures={false}
-          allowsInlineMediaPlayback={true}
-          automaticallyAdjustContentInsets={false}
-          contentInsetAdjustmentBehavior="never"
+          // iOS specific: navigation and media handling
+          allowsBackForwardNavigationGestures={false} // iOS only - disable swipe navigation
+          allowsInlineMediaPlayback={true} // iOS only (also works on Android but has no effect)
+          // iOS specific: content inset adjustments for proper layout
+          automaticallyAdjustContentInsets={false} // iOS only
+          contentInsetAdjustmentBehavior="never" // iOS only
           // iOS specific - CRITICAL for keyboard/input handling in Stripe forms
-          // Without this, tapping inputs won't bring up the keyboard
-          keyboardDisplayRequiresUserAction={false}
+          // Without this, tapping inputs on iOS won't bring up the keyboard
+          keyboardDisplayRequiresUserAction={false} // iOS only
           // Android specific: window handling
-          setSupportMultipleWindows={false}
-          overScrollMode="never"
+          setSupportMultipleWindows={false} // Android only
+          overScrollMode="never" // Android only
           // Prevent bouncing/scroll issues that can cause reloads
           bounces={false}
           scrollEnabled={true}

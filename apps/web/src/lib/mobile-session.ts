@@ -72,8 +72,10 @@ export async function getMobileSessionUserData(
     if (payload.type !== "mobile_onboarding_session" || !payload.sub) {
       return null;
     }
-    // Explicit type validation for JWT payload properties
-    // Ensures we return null for missing/malformed data rather than masking issues
+    // Explicit type validation for JWT payload properties.
+    // Non-string values (numbers, objects, undefined, etc.) are treated as null.
+    // This protects against malformed or tampered tokens where payload properties
+    // may not be the expected type.
     return {
       userId: payload.sub as string,
       firstName: typeof payload.firstName === "string" ? payload.firstName : null,
