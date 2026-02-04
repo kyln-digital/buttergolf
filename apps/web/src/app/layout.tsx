@@ -59,7 +59,10 @@ export const metadata: Metadata = {
     description: "Buy and sell golf equipment with fellow golfers",
   },
   other: {
-    "apple-itunes-app": "app-id=YOUR_APP_ID", // TODO: Replace with actual App Store ID when available
+    // TODO: Replace with actual App Store ID when app is publicly available on the App Store
+    // Note: Smart App Banners only work for public App Store apps, NOT TestFlight
+    // The banner will appear broken in iOS Safari until this is set to a valid app-id
+    "apple-itunes-app": "app-id=YOUR_APP_ID",
     "mobile-web-app-capable": "yes",
   },
 };

@@ -36,6 +36,9 @@
         "RESEND_API_KEY",
         "CLOUDINARY_API_KEY",
         "CLOUDINARY_API_SECRET",
+        "MOBILE_SESSION_SECRET",
+        "REDIS_URL",
+        "SENTRY_AUTH_TOKEN",
         "TAMAGUI_DEBUG",
         "TAMAGUI_DISABLE_MISSING_TOKEN_LOG"
       ]
@@ -69,7 +72,14 @@
     "test": {
       "dependsOn": ["^build"],
       "outputs": ["coverage/**"],
-      "inputs": ["src/**/*.tsx", "src/**/*.ts", "**/*.test.tsx", "**/*.test.ts", "**/*.spec.tsx", "**/*.spec.ts"]
+      "inputs": [
+        "src/**/*.tsx",
+        "src/**/*.ts",
+        "**/*.test.tsx",
+        "**/*.test.ts",
+        "**/*.spec.tsx",
+        "**/*.spec.ts"
+      ]
     },
     "dev": {
       "cache": false,

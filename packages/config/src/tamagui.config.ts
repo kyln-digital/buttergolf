@@ -221,6 +221,7 @@ const brandColors = {
   // Extended gray scale (for app compatibility)
   gray100: "#F5F5F5", // Very light gray
   gray200: "#E5E5E5", // Light gray
+  gray600: "#666666", // Card background in dark mode (lighter than surface for elevation)
   gray700: "#707070", // Medium gray (for neutral badge text)
   gray900: "#1A1A1A", // Very dark gray
 
@@ -558,8 +559,8 @@ const darkTheme = {
   secondaryPress: brandColors.lemonHazePress,
   secondaryFocus: brandColors.lemonHaze,
   secondaryLight: brandColors.ironstone,
-  // Softer border for cream buttons on dark background (Burnt Olive instead of pure black)
-  secondaryBorder: brandColors.burntOlive,
+  // Subtle border for cream buttons on dark background (matches cream tone)
+  secondaryBorder: brandColors.lemonHazePress,
 
   success: brandColors.successBase,
   successLight: brandColors.ironstone,
@@ -584,10 +585,11 @@ const darkTheme = {
   textMuted: brandColors.slateSmokeHover,
   textInverse: brandColors.ironstone,
 
-  // Surface colors - override for dark mode (Slate Smoke for elevated surfaces)
+  // Surface colors - override for dark mode
+  // Elevation hierarchy: background (#323232) < surface (#545454) < card (#666666)
   surface: brandColors.slateSmoke,
-  card: brandColors.slateSmoke,
-  cardHover: brandColors.slateSmokeHover,
+  card: brandColors.gray600, // Lighter than surface for proper elevation in dark mode
+  cardHover: brandColors.gray700,
 
   // Border colors - override for dark mode
   border: brandColors.slateSmoke,
