@@ -3,16 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useClerk, useUser } from "@clerk/nextjs";
-import {
-  Column,
-  Row,
-  Heading,
-  Text,
-  Button,
-  Badge,
-  Container,
-  ThemeSwitcher,
-} from "@buttergolf/ui";
+import { Column, Row, Text, Button, Badge, Container, ThemeSwitcher } from "@buttergolf/ui";
 import { Avatar, Button as TamaguiButton } from "tamagui";
 import {
   LogOut,

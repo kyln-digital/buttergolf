@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Column, Row, Heading, Text, Button, Card } from "@buttergolf/ui";
-import { CreditCard, Plus } from "@tamagui/lucide-icons";
+import { CreditCard } from "@tamagui/lucide-icons";
 
 /**
  * Payment Methods Page

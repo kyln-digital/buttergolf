@@ -251,7 +251,7 @@ export function SellerOnboardingGate({
         }
 
         const response = await fetch(`${apiUrl}/api/user/phone`, {
-          method: "POST",
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,

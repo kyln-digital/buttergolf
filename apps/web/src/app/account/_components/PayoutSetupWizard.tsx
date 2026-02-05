@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { Column, Row, Heading, Text, Button, Card, Spinner } from "@buttergolf/ui";
 import { brandColors } from "@buttergolf/config";
 import { ConnectAccountOnboarding, ConnectComponentsProvider } from "@stripe/react-connect-js";
@@ -41,7 +40,6 @@ interface PayoutSetupWizardProps {
  * - Step 3 (complete): Show success message
  */
 export function PayoutSetupWizard({ initialStatus, onComplete, onExit }: PayoutSetupWizardProps) {
-  const router = useRouter();
   const [status, setStatus] = useState<PayoutStatus>(initialStatus);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

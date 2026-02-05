@@ -2,14 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@buttergolf/db";
 
-// UK mobile phone regex (matches 07XXX XXX XXX format or with country code)
-const UK_MOBILE_REGEX = /^(?:\+44|0)7\d{9}$/;
+// E.164 phone format regex (international phone numbers)
+// Accepts formats: +<country code><number> (1-15 digits total after +)
+// Examples: +447700900123, +14155551234, +33612345678
+const E164_REGEX = /^\+[1-9]\d{1,14}$/;
 
 /**
  * PUT /api/user/phone
- * Save UK mobile phone number to user profile
+ * Save phone number to user profile
  *
- * Request body: { phone: string } (can be 07XXX or +447XXX format)
+ * Request body: { phone: string } (E.164 format from react-phone-number-input)
  * Response: { success: true, phone: string } (E.164 format)
  */
 export async function PUT(req: NextRequest) {
@@ -30,18 +32,16 @@ export async function PUT(req: NextRequest) {
     // Normalize the phone number (remove spaces, dashes)
     const normalizedPhone = phone.replace(/[\s-]/g, "");
 
-    // Validate UK mobile format
-    if (!UK_MOBILE_REGEX.test(normalizedPhone)) {
+    // Validate E.164 format (international standard)
+    if (!E164_REGEX.test(normalizedPhone)) {
       return NextResponse.json(
-        { error: "Invalid UK mobile number. Please use format 07XXX XXX XXX" },
+        { error: "Invalid phone number format. Please enter a valid phone number." },
         { status: 400 }
       );
     }
 
-    // Convert to E.164 format for storage (+447XXXXXXXXX)
-    const e164Phone = normalizedPhone.startsWith("+44")
-      ? normalizedPhone
-      : `+44${normalizedPhone.slice(1)}`;
+    // Phone is already in E.164 format from react-phone-number-input
+    const e164Phone = normalizedPhone;
 
     // Find user by Clerk ID and update phone
     const user = await prisma.user.findUnique({
