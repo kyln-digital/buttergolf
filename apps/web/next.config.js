@@ -123,6 +123,9 @@ module.exports = () => {
       "@tamagui/portal",
       "@tamagui/polyfill-dev",
       "@tamagui/form",
+      "@tamagui/switch",
+      "@tamagui/switch-headless",
+      "@tamagui/slider",
     ],
     experimental: {
       scrollRestoration: true,
