@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Column, Row, Heading, Text, Button, Card } from "@buttergolf/ui";
+import { Column, Row, Heading, Text, Button, Card, Switch } from "@buttergolf/ui";
 import { Bell, Mail, ShoppingBag, Store, MessageCircle } from "@tamagui/lucide-icons";
-import { Switch } from "tamagui";
 
 interface NotificationSetting {
   id: string;
