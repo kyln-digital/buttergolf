@@ -2522,6 +2522,35 @@ When `resolve-library-id` returns multiple matches:
 8. **NEVER use old token names** - Don't use `$borderColor`, `$textDark`, `$bg`, `$color`, etc.
 9. **NEVER mix Tamagui and Tailwind** - Keep Tamagui for components, Tailwind for page layouts only
 
+### 🚨 NEVER Use Tamagui Components in Server Components
+
+**CRITICAL BUILD FAILURE**: Tamagui uses `React.createContext()` at module load time. This BREAKS during Next.js "Collecting page data" phase in server components with error: `TypeError: f.createContext is not a function`
+
+```tsx
+// ❌ WRONG - Server component importing Tamagui (CAUSES BUILD FAILURE)
+import { Column } from "@buttergolf/ui";
+
+export default async function Layout({ children }) {
+  const { userId } = await auth(); // Server-only code
+  return <Column>{children}</Column>; // 💥 BUILD FAILS HERE
+}
+
+// ✅ CORRECT - Use plain HTML in server components
+export default async function Layout({ children }) {
+  const { userId } = await auth();
+  return <div style={{ display: "flex", flexDirection: "column" }}>{children}</div>;
+}
+```
+
+**The Rule**: NEVER import ANY Tamagui component (Column, Row, Text, Button, Card, etc.) in:
+
+- `layout.tsx` without `"use client"`
+- `page.tsx` without `"use client"`
+- Server Actions
+- API routes
+
+**Why**: Tamagui was designed for React Native + Web where everything is client-side. Next.js App Router server components are a completely different execution model that Tamagui does not support.
+
 ### Common React/Tamagui Errors to Avoid
 
 10. **ALWAYS use props on their correct component type** - Text/typography props belong on Text components, not layout containers

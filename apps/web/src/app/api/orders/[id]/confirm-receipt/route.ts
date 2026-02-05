@@ -87,15 +87,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       );
     }
 
-    // Verify seller has a Stripe Connect account
-    if (!order.seller.stripeConnectId) {
-      console.error("Seller missing Stripe Connect ID:", {
-        orderId,
-        sellerId: order.sellerId,
-      });
-      return NextResponse.json({ error: "Seller payment account not configured" }, { status: 500 });
-    }
-
     // Calculate transfer amount (seller receives 100% of product + shipping)
     const transferAmountInPence = Math.round((order.stripeSellerPayout || 0) * 100);
 
@@ -116,7 +107,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       );
     }
 
-    // Verify the charge hasn't been refunded before transferring
+    // Verify the charge hasn't been refunded before proceeding
     try {
       const charge = await stripe.charges.retrieve(order.stripeChargeId);
       if (charge.refunded || (charge.amount_refunded && charge.amount_refunded > 0)) {
@@ -139,6 +130,45 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       );
     }
 
+    // Check if seller has completed Stripe Connect onboarding
+    // Vinted-style: If not onboarded, hold funds until seller completes setup
+    const sellerIsOnboarded = order.seller.stripeConnectId && order.seller.stripeOnboardingComplete;
+
+    if (!sellerIsOnboarded) {
+      // Seller hasn't completed onboarding - mark as pending, funds stay on platform
+      console.log("Seller not yet onboarded - marking order as PENDING_SELLER_ONBOARDING:", {
+        orderId,
+        sellerId: order.sellerId,
+        hasConnectId: !!order.seller.stripeConnectId,
+        onboardingComplete: order.seller.stripeOnboardingComplete,
+      });
+
+      const updatedOrder = await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          paymentHoldStatus: "PENDING_SELLER_ONBOARDING",
+          buyerConfirmedAt: new Date(),
+        },
+      });
+
+      console.log("Order updated to PENDING_SELLER_ONBOARDING:", {
+        orderId: updatedOrder.id,
+        buyerConfirmedAt: updatedOrder.buyerConfirmedAt,
+      });
+
+      // TODO: Send email to seller prompting them to complete onboarding
+      // to receive their funds
+
+      return NextResponse.json({
+        success: true,
+        orderId: order.id,
+        paymentHoldStatus: "PENDING_SELLER_ONBOARDING",
+        message:
+          "Receipt confirmed! Funds will be released to seller once they complete account setup.",
+      });
+    }
+
+    // Seller is onboarded - proceed with transfer
     console.log("Creating transfer to seller:", {
       orderId,
       sellerId: order.sellerId,
@@ -150,7 +180,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const transfer = await stripe.transfers.create({
       amount: transferAmountInPence,
       currency: "gbp",
-      destination: order.seller.stripeConnectId,
+      destination: order.seller.stripeConnectId!,
       transfer_group: order.id,
       metadata: {
         orderId: order.id,

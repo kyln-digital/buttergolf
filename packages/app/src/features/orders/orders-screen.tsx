@@ -13,7 +13,12 @@ type OrderStatus =
   | "DELIVERED"
   | "CANCELLED"
   | "REFUNDED";
-type PaymentHoldStatus = "HELD" | "RELEASED" | "DISPUTED" | "REFUNDED";
+type PaymentHoldStatus =
+  | "HELD"
+  | "PENDING_SELLER_ONBOARDING"
+  | "RELEASED"
+  | "DISPUTED"
+  | "REFUNDED";
 
 interface OrderProduct {
   id: string;

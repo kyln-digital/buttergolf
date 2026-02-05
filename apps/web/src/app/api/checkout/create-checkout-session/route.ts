@@ -84,21 +84,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Cannot purchase your own product" }, { status: 400 });
     }
 
-    // Get seller's Stripe Connect account
+    // Get seller's Stripe Connect account (may be null if not yet onboarded)
+    // In Vinted-style flow, we allow purchases even if seller hasn't onboarded yet
+    // Funds stay on platform, and transfer happens after BOTH delivery confirmed AND seller onboards
     const seller = product.user;
     console.log(
       "[Checkout API] Seller stripeConnectId:",
-      seller.stripeConnectId ? "present" : "MISSING"
+      seller.stripeConnectId ? "present" : "NOT_YET_ONBOARDED"
     );
     console.log("[Checkout API] Seller stripeOnboardingComplete:", seller.stripeOnboardingComplete);
-
-    if (!seller.stripeConnectId || !seller.stripeOnboardingComplete) {
-      console.log("[Checkout API] ERROR: Seller not set up for payments - returning 400");
-      return NextResponse.json(
-        { error: "Seller is not set up to receive payments" },
-        { status: 400 }
-      );
-    }
 
     // Calculate Vinted-style pricing (0% seller fee, buyer pays protection fee)
     const productPriceInPence = Math.round(product.price * 100);
@@ -227,14 +221,15 @@ export async function POST(req: Request) {
       },
 
       // Payment stays on platform account (escrow-style)
-      // NO transfer_data - we'll transfer to seller after buyer confirms receipt
+      // NO transfer_data - we'll transfer to seller after buyer confirms receipt AND seller is onboarded
       payment_intent_data: {
         metadata: {
           productId: product.id,
           sellerId: seller.id,
           buyerId: buyer.id,
-          // Store seller Connect ID for later transfer
-          sellerStripeConnectId: seller.stripeConnectId,
+          // Store seller Connect ID for later transfer (may be null if seller not yet onboarded)
+          sellerStripeConnectId: seller.stripeConnectId || "",
+          sellerOnboarded: seller.stripeOnboardingComplete ? "true" : "false",
           // Store calculated amounts for order creation
           productPriceInPence: productPriceInPence.toString(),
           buyerProtectionFeeInPence: pricing.buyerProtectionFeeInPence.toString(),
@@ -246,7 +241,8 @@ export async function POST(req: Request) {
         productId: product.id,
         sellerId: seller.id,
         buyerId: buyer.id,
-        sellerStripeConnectId: seller.stripeConnectId,
+        sellerStripeConnectId: seller.stripeConnectId || "",
+        sellerOnboarded: seller.stripeOnboardingComplete ? "true" : "false",
         productPriceInPence: productPriceInPence.toString(),
         buyerProtectionFeeInPence: pricing.buyerProtectionFeeInPence.toString(),
       },

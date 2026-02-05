@@ -24,9 +24,23 @@ export async function POST(request: Request) {
 
     const userId = userData.userId;
 
+    // Define consistent select fields for user queries (used throughout this endpoint)
+    const userSelectFields = {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      stripeConnectId: true,
+      stripeOnboardingComplete: true,
+      stripeAccountStatus: true,
+      stripeAccountType: true,
+    };
+
     // 2. Get user from database (or create if webhook hasn't fired yet)
     let user = await prisma.user.findUnique({
       where: { clerkId: userId },
+      select: userSelectFields,
     });
 
     // If user doesn't exist, the Clerk webhook hasn't fired yet
@@ -46,6 +60,7 @@ export async function POST(request: Request) {
             lastName: userData.lastName || "",
           },
           update: {}, // Don't update if user was created by another concurrent request
+          select: userSelectFields,
         });
         console.log(
           `[Stripe Connect] Upserted user record ${user.id} for clerkId ${userId} with Clerk data`
@@ -63,6 +78,7 @@ export async function POST(request: Request) {
           // Re-fetch the user that was created by another request
           user = await prisma.user.findUnique({
             where: { clerkId: userId },
+            select: userSelectFields,
           });
           if (!user) {
             // If still no user by clerkId, the conflict was on email (different user has this email)
@@ -102,6 +118,7 @@ export async function POST(request: Request) {
           firstName: userData.firstName || user.firstName || "",
           lastName: userData.lastName || user.lastName || "",
         },
+        select: userSelectFields,
       });
     }
 
@@ -181,14 +198,20 @@ export async function POST(request: Request) {
         },
         business_type: "individual",
         // Pre-populate individual details from our database
+        // Phone in E.164 format (+447XXXXXXXXX) is pre-filled if collected in our form
+        // This allows us to exclude individual.phone from the onboarding flow
         individual: {
           first_name: user.firstName || undefined,
           last_name: user.lastName || undefined,
           email: user.email || undefined,
+          phone: user.phone || undefined,
         },
         business_profile: {
           mcc: "5941", // Sporting goods
-          product_description: "Golf equipment marketplace seller",
+          // Pre-fill URL and product description so these fields can be excluded from onboarding
+          // This prevents users from seeing irrelevant "Professional details" section
+          url: `https://buttergolf.com/seller/${user.id}`,
+          product_description: "Golf equipment seller on ButterGolf marketplace",
         },
         settings: {
           payouts: {

@@ -34,7 +34,12 @@ type ShipmentStatus =
   | "FAILED"
   | "CANCELLED";
 
-type PaymentHoldStatus = "HELD" | "RELEASED" | "DISPUTED" | "REFUNDED";
+type PaymentHoldStatus =
+  | "HELD"
+  | "PENDING_SELLER_ONBOARDING"
+  | "RELEASED"
+  | "DISPUTED"
+  | "REFUNDED";
 
 interface Order {
   id: string;
@@ -123,6 +128,12 @@ const PAYMENT_STATUS_CONFIG = {
     color: "#F45314",
     bgColor: "#FFFAD2",
     icon: Clock,
+  },
+  PENDING_SELLER_ONBOARDING: {
+    label: "Complete Verification",
+    color: "#3c50e0",
+    bgColor: "#e8eeff",
+    icon: AlertCircle,
   },
   RELEASED: {
     label: "Payment Released",
@@ -353,6 +364,18 @@ function OrderCard({ order }: { order: Order }) {
                 <Text size="$2" color="$textMuted">
                   Auto-releases in {daysUntilRelease} days
                 </Text>
+              )}
+              {order.paymentHoldStatus === "PENDING_SELLER_ONBOARDING" && (
+                <Column gap="$xs">
+                  <Text size="$2" color="$info">
+                    Buyer confirmed receipt. Complete verification to receive payment.
+                  </Text>
+                  <Link href="/sell" style={{ textDecoration: "none" }}>
+                    <Text size="$2" fontWeight="600" color="$info">
+                      Complete Verification →
+                    </Text>
+                  </Link>
+                </Column>
               )}
             </Column>
           </Row>

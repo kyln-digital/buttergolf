@@ -201,7 +201,8 @@ export function OnboardingScreen({
       </YStack>
 
       {/* Scrolling Carousel - Two Rows Staggered */}
-      <View height={CAROUSEL_HEIGHT} overflow="hidden" marginTop={12} marginBottom={32}>
+      {/* marginTop reduced from 12 to 8 to tighten visual gap between header and carousel on mobile */}
+      <View height={CAROUSEL_HEIGHT} overflow="hidden" marginTop={8} marginBottom={32}>
         {/* Top Row - Scrolls Left */}
         <Animated.View
           style={{

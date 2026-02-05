@@ -1,10 +1,11 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Alert, StyleSheet, View, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView, WebViewMessageEvent } from "react-native-webview";
 import { useAuth } from "@clerk/clerk-expo";
 import { useSellerStatusContext } from "../context";
 import { SellerOnboardingScreen, SellScreen } from "@buttergolf/app";
+import { PhoneCollectionStep } from "./PhoneCollectionStep";
 import type { SellFormData, ImageData, Category, Brand, Model } from "@buttergolf/app";
 
 // ButterGolf brand colors
@@ -187,12 +188,106 @@ export function SellerOnboardingGate({
   // because each component mount created a new hook instance that fetched independently
   const { status, isLoading, error, refresh } = useSellerStatusContext();
 
+  // Phone collection state
+  const [hasPhone, setHasPhone] = useState<boolean | null>(null);
+  const [phoneLoading, setPhoneLoading] = useState(false);
+  const [phoneSubmitting, setPhoneSubmitting] = useState(false);
+
   // WebView state
   const [showWebView, setShowWebView] = useState(false);
   const [webViewLoading, setWebViewLoading] = useState(false);
   const [webViewUrl, setWebViewUrl] = useState<string | null>(null);
   const [onboardingError, setOnboardingError] = useState<string | null>(null);
   const webViewRef = useRef<WebView>(null);
+
+  /**
+   * Check if user has a phone number saved
+   */
+  const checkUserPhone = useCallback(async () => {
+    try {
+      setPhoneLoading(true);
+      const currentGetToken = getTokenRef.current;
+      if (typeof currentGetToken !== "function") return;
+
+      const token = await currentGetToken();
+      if (!token) return;
+
+      const response = await fetch(`${apiUrl}/api/user/phone`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setHasPhone(!!data.phone);
+      } else {
+        // If endpoint doesn't exist or errors, assume no phone
+        setHasPhone(false);
+      }
+    } catch (err) {
+      console.error("[SellerOnboardingGate] Failed to check phone:", err);
+      setHasPhone(false);
+    } finally {
+      setPhoneLoading(false);
+    }
+  }, [apiUrl]);
+
+  /**
+   * Save phone number to user profile
+   */
+  const savePhone = useCallback(
+    async (phone: string) => {
+      try {
+        setPhoneSubmitting(true);
+        const currentGetToken = getTokenRef.current;
+        if (typeof currentGetToken !== "function") {
+          throw new Error("Authentication not ready");
+        }
+
+        const token = await currentGetToken();
+        if (!token) {
+          throw new Error("Please sign in to continue");
+        }
+
+        const response = await fetch(`${apiUrl}/api/user/phone`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ phone }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || "Failed to save phone number");
+        }
+
+        // Phone saved - proceed to Stripe onboarding
+        setHasPhone(true);
+      } catch (err) {
+        throw err;
+      } finally {
+        setPhoneSubmitting(false);
+      }
+    },
+    [apiUrl]
+  );
+
+  /**
+   * Skip phone collection - proceed directly to Stripe onboarding
+   */
+  const handleSkipPhone = useCallback(() => {
+    setHasPhone(true); // Mark as "done" for this session so we proceed
+  }, []);
+
+  // Check phone status when component mounts and user is not ready to sell
+  useEffect(() => {
+    if (!isLoading && !status?.isReadyToSell && hasPhone === null) {
+      checkUserPhone();
+    }
+  }, [isLoading, status?.isReadyToSell, hasPhone, checkUserPhone]);
 
   /**
    * Start onboarding by obtaining a short-lived session token and preparing the WebView URL
@@ -329,12 +424,14 @@ export function SellerOnboardingGate({
     status,
     isReadyToSell: status?.isReadyToSell,
     showWebView,
+    hasPhone,
+    phoneLoading,
   });
 
   // Loading state while seller status is being fetched
   // Note: We no longer need to check isAuthLoaded because SellerStatusProvider
   // is placed inside <SignedIn>, guaranteeing auth is ready
-  if (isLoading) {
+  if (isLoading || phoneLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -465,6 +562,20 @@ export function SellerOnboardingGate({
           <ActivityIndicator size="large" color={brandColors.spicedClementine} />
         </View>
       </SafeAreaView>
+    );
+  }
+
+  // Show phone collection if user doesn't have a phone number yet
+  // hasPhone === false means we checked and they don't have one
+  // hasPhone === true means they have one OR they skipped this step
+  if (hasPhone === false) {
+    return (
+      <PhoneCollectionStep
+        onSubmit={savePhone}
+        onSkip={handleSkipPhone}
+        onBack={() => navigation.goBack()}
+        isSubmitting={phoneSubmitting}
+      />
     );
   }
 

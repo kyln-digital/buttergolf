@@ -419,7 +419,7 @@ function FavouriteProductCard({
         <Button flex={1} butterVariant="primary" size="$4" onPress={onBuyNow}>
           Buy Now
         </Button>
-        <Button flex={1} butterVariant="secondary" size="$4" onPress={onMakeOffer}>
+        <Button flex={1} butterVariant="dark" size="$4" onPress={onMakeOffer}>
           Make Offer
         </Button>
       </Row>

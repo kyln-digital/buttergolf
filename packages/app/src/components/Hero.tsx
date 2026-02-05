@@ -405,7 +405,7 @@ function HeroCTAButtons({ primaryCta, secondaryCta }: HeroCTAButtonsProps) {
       )}
       {secondaryCta && (
         <Button
-          butterVariant="secondary"
+          butterVariant="dark"
           size="$5"
           $gtSm={{ size: "$4" }}
           onPress={secondaryLink.onPress}

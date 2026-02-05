@@ -60,6 +60,35 @@ All internal packages use the `@buttergolf/` namespace:
 - The middleware file convention was renamed
 - Always use `proxy.ts` for route protection and middleware logic
 
+### 🚨 NEVER Use Tamagui Components in Server Components
+
+**CRITICAL**: Tamagui uses `React.createContext()` at module load time. This BREAKS during Next.js "Collecting page data" phase in server components.
+
+```tsx
+// ❌ WRONG - Server component importing Tamagui (CAUSES BUILD FAILURE)
+import { Column } from "@buttergolf/ui";
+
+export default async function Layout({ children }) {
+  const { userId } = await auth(); // Server-only code
+  return <Column>{children}</Column>; // 💥 TypeError: createContext is not a function
+}
+
+// ✅ CORRECT - Use plain HTML in server components
+export default async function Layout({ children }) {
+  const { userId } = await auth();
+  return <div style={{ display: "flex", flexDirection: "column" }}>{children}</div>;
+}
+```
+
+**The Rule**: NEVER import ANY Tamagui component (Column, Row, Text, Button, Card, etc.) in:
+
+- `layout.tsx` without `"use client"`
+- `page.tsx` without `"use client"`
+- Server Actions
+- API routes
+
+**Why**: Tamagui was designed for React Native + Web where everything is client-side. Next.js App Router server components are a completely different execution model.
+
 ### Navigation Architecture (IMPORTANT)
 
 **This is a Solito-based monorepo, NOT Expo Router**

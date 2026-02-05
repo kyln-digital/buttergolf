@@ -45,7 +45,12 @@ type ShipmentStatus =
   | "RETURNED"
   | "FAILED"
   | "CANCELLED";
-type PaymentHoldStatus = "HELD" | "RELEASED" | "DISPUTED" | "REFUNDED";
+type PaymentHoldStatus =
+  | "HELD"
+  | "PENDING_SELLER_ONBOARDING"
+  | "RELEASED"
+  | "DISPUTED"
+  | "REFUNDED";
 
 interface Address {
   id: string;

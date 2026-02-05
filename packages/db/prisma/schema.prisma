@@ -16,6 +16,7 @@ model User {
   firstName                  String
   lastName                   String
   imageUrl                   String?
+  phone                      String?        // UK mobile number for seller onboarding pre-fill
   createdAt                  DateTime       @default(now())
   updatedAt                  DateTime       @updatedAt
   stripeAccountStatus        String?
@@ -404,10 +405,11 @@ enum OfferStatus {
 }
 
 enum PaymentHoldStatus {
-  HELD
-  RELEASED
-  DISPUTED
-  REFUNDED
+  HELD                      // Payment captured, awaiting delivery confirmation
+  PENDING_SELLER_ONBOARDING // Delivery confirmed, but seller not yet onboarded - awaiting setup
+  RELEASED                  // Transferred to seller's Stripe Connect account
+  DISPUTED                  // Under dispute investigation
+  REFUNDED                  // Refunded to buyer
 }
 
 enum PromotionType {

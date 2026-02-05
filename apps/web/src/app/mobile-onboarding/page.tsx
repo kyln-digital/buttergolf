@@ -207,6 +207,16 @@ export default function MobileOnboardingPage() {
           collectionOptions={{
             fields: "eventually_due",
             futureRequirements: "include",
+            // Exclude business profile fields (pre-filled at account creation)
+            // and business_type (set to 'individual' at account creation)
+            // This removes confusing "Business type" and "Professional details" sections
+            requirements: {
+              exclude: [
+                "business_type",
+                "business_profile.url",
+                "business_profile.product_description",
+              ],
+            },
           }}
         />
       </ConnectComponentsProvider>
