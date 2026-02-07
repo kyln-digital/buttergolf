@@ -52,7 +52,6 @@ import {
   MakeOfferSheet,
   OffersListScreen,
   OfferDetailScreen,
-  SellerOnboardingGate,
 } from "./components";
 import { SellerStatusProvider, useSellerStatusContext } from "./context";
 import {
@@ -209,13 +208,6 @@ const linking = {
       },
       Sell: {
         path: routes.sell.slice(1), // 'sell'
-      },
-      // Seller onboarding deep link routes (handled by SellerOnboardingGate)
-      SellerOnboardingComplete: {
-        path: "seller/onboarding/complete",
-      },
-      SellerOnboardingRefresh: {
-        path: "seller/onboarding/refresh",
       },
       SignIn: {
         path: routes.signIn.slice(1), // 'sign-in'
@@ -692,13 +684,11 @@ async function uploadImageToCloudinary(
 
 /**
  * Wrapper component for SellScreen that provides the image upload function
- * with access to Clerk authentication and gates behind seller onboarding.
+ * with access to Clerk authentication.
  *
- * This wrapper uses SellerOnboardingGate which:
- * 1. Checks seller status on mount
- * 2. Shows SellerOnboardingScreen if user hasn't completed Stripe Connect setup
- * 3. Opens native Stripe Connect embedded onboarding (unified with web experience)
- * 4. Shows SellScreen once user is ready to sell
+ * Zero-friction selling: Users go straight to the listing form.
+ * Seller payout setup is handled separately in Account Settings.
+ * Funds are held until seller completes payout setup.
  */
 function SellScreenWrapper({ navigation }: { navigation: any }) {
   const { getToken } = useAuth();
@@ -721,15 +711,19 @@ function SellScreenWrapper({ navigation }: { navigation: any }) {
   );
 
   return (
-    <SellerOnboardingGate
-      navigation={navigation}
+    <SellScreen
+      isAuthenticated={true}
+      onFetchCategories={fetchCategories}
+      onSearchBrands={searchBrands}
+      onSearchModels={searchModels}
       onUploadImage={handleUploadImage}
       onPickImages={pickImages}
       onTakePhoto={takePhoto}
       onSubmitListing={handleSubmitListing}
-      onFetchCategories={fetchCategories}
-      onSearchBrands={searchBrands}
-      onSearchModels={searchModels}
+      onClose={() => navigation.goBack()}
+      onSuccess={(productId) => {
+        navigation.navigate("ProductDetail", { id: productId });
+      }}
     />
   );
 }
