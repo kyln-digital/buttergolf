@@ -15,7 +15,10 @@ import { ClerkProvider } from "@clerk/nextjs";
 export function NextTamaguiProvider({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <BaseProvider>
-      <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
+      <ClerkProvider
+        publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+        proxyUrl="/__clerk"
+      >
         {children}
       </ClerkProvider>
     </BaseProvider>
