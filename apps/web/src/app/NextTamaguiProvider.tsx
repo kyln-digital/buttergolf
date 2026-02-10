@@ -4,6 +4,8 @@ import { NextTamaguiProvider as BaseProvider } from "@buttergolf/app";
 import type { ReactNode } from "react";
 import { ClerkProvider } from "@clerk/nextjs";
 import { usePathname } from "next/navigation";
+import { FavouritesProvider } from "../providers/FavouritesProvider";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 
 /**
  * Web-specific provider wrapper
@@ -35,7 +37,9 @@ export function NextTamaguiProvider({ children }: Readonly<{ children: ReactNode
           publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
           proxyUrl="/__clerk"
         >
-          {children}
+          <ErrorBoundary name="FavouritesProvider">
+            <FavouritesProvider>{children}</FavouritesProvider>
+          </ErrorBoundary>
         </ClerkProvider>
       )}
     </BaseProvider>
