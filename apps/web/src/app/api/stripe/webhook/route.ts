@@ -60,7 +60,7 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("🔔 Stripe webhook event received:", event.type);
+    console.log("Stripe webhook event received:", event.type);
 
     // Handle events with switch for cleaner organization
     switch (event.type) {
@@ -125,7 +125,7 @@ export async function POST(req: Request) {
  * Creates order, sends confirmation emails to buyer and seller
  */
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  console.log("✅ Checkout session completed:", {
+  console.log("Checkout session completed:", {
     id: session.id,
     paymentIntentId: session.payment_intent,
     amountTotal: session.amount_total,
@@ -252,14 +252,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   if (!fromAddress) {
     // CRITICAL: Seller has no address - this should not happen if Stripe Connect onboarding is complete
     // Create minimal placeholder so order can be created, but flag for manual intervention
-    console.error(
-      "⚠️ Seller has no address - this indicates incomplete Stripe Connect onboarding:",
-      {
-        sellerId,
-        sellerEmail: product.user.email,
-        productId,
-      }
-    );
+    console.error("Seller has no address - this indicates incomplete Stripe Connect onboarding:", {
+      sellerId,
+      sellerEmail: product.user.email,
+      productId,
+    });
 
     fromAddress = await prisma.address.create({
       data: {
@@ -343,7 +340,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     data: { isSold: true },
   });
 
-  console.log("📦 Order created successfully:", order.id);
+  console.log("Order created successfully:", order.id);
 
   // Send email to seller if they need to complete their address
   if (sellerNeedsAddress) {
@@ -376,7 +373,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           </div>
         `,
       });
-      console.log("📧 Sent address required email to seller:", product.user.email);
+      console.log("Sent address required email to seller:", product.user.email);
     } catch (emailError) {
       console.error("Failed to send address required email:", emailError);
     }
@@ -385,13 +382,13 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // Attempt to generate shipping label automatically
   // (will fail gracefully if seller has no valid address)
   try {
-    console.log("🏷️ Attempting to auto-generate shipping label for order:", order.id);
+    console.log("Attempting to auto-generate shipping label for order:", order.id);
 
     const labelResult = await generateShippingLabel({
       orderId: order.id,
     });
 
-    console.log("✅ Shipping label generated successfully:", {
+    console.log("Shipping label generated successfully:", {
       orderId: order.id,
       trackingNumber: labelResult.trackingNumber,
       carrier: labelResult.carrier,
@@ -401,7 +398,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   } catch (labelError) {
     // Don't fail the order if label generation fails
     // Seller will need to generate manually later
-    console.warn("⚠️ Could not auto-generate shipping label:", {
+    console.warn("Could not auto-generate shipping label:", {
       orderId: order.id,
       error: labelError instanceof Error ? labelError.message : "Unknown error",
       reason: "Seller may need to update their address first",
@@ -445,7 +442,7 @@ async function sendOrderEmails(
   const sellerName =
     `${product.user.firstName} ${product.user.lastName}`.trim() || product.user.email;
 
-  console.log("📧 Sending order notification emails...", {
+  console.log("Sending order notification emails...", {
     orderId,
     buyerEmail: buyer.email,
     sellerEmail: product.user.email,
@@ -464,13 +461,13 @@ async function sendOrderEmails(
   });
 
   if (buyerEmailResult.success) {
-    console.log("✅ Buyer confirmation email sent:", {
+    console.log("Buyer confirmation email sent:", {
       orderId,
       emailId: buyerEmailResult.id,
       recipient: buyer.email,
     });
   } else {
-    console.error("❌ Failed to send buyer confirmation email:", {
+    console.error("Failed to send buyer confirmation email:", {
       orderId,
       recipient: buyer.email,
       error: buyerEmailResult.error,
@@ -493,13 +490,13 @@ async function sendOrderEmails(
   });
 
   if (sellerEmailResult.success) {
-    console.log("✅ Seller notification email sent:", {
+    console.log("Seller notification email sent:", {
       orderId,
       emailId: sellerEmailResult.id,
       recipient: product.user.email,
     });
   } else {
-    console.error("❌ Failed to send seller notification email:", {
+    console.error("Failed to send seller notification email:", {
       orderId,
       recipient: product.user.email,
       error: sellerEmailResult.error,
@@ -518,7 +515,7 @@ async function sendOrderEmails(
         productTitle: product.title,
         autoReleaseDate: autoReleaseAt,
       });
-      console.log("✅ Payment on-hold email sent to buyer:", buyer.email);
+      console.log("Payment on-hold email sent to buyer:", buyer.email);
     } catch (holdEmailError) {
       // Log but don't fail - this is a secondary email
       console.error("Failed to send payment on-hold email:", holdEmailError);
@@ -553,7 +550,7 @@ function handleCheckoutExpired(session: Stripe.Checkout.Session) {
 async function handlePromotionPayment(paymentIntent: Stripe.PaymentIntent) {
   const { productId, promotionType, durationMs } = paymentIntent.metadata;
 
-  console.log("🎯 Promotion payment succeeded:", {
+  console.log("Promotion payment succeeded:", {
     paymentIntentId: paymentIntent.id,
     productId,
     promotionType,
@@ -614,7 +611,7 @@ async function handlePromotionPayment(paymentIntent: Stripe.PaymentIntent) {
     },
   });
 
-  console.log("✅ Promotion activated:", {
+  console.log("Promotion activated:", {
     promotionId: promotion.id,
     productId,
     type: promotionType,
@@ -650,7 +647,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   });
 
   if (existingOrder) {
-    console.log("💰 Payment intent succeeded (already handled by checkout):", paymentIntent.id);
+    console.log("Payment intent succeeded (already handled by checkout):", paymentIntent.id);
     return;
   }
 
@@ -659,7 +656,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
 
   if (source !== "payment_element") {
     // Payment intent without matching order and not from PaymentElement - likely from legacy flow
-    console.log("💰 Payment intent succeeded without checkout session (legacy):", {
+    console.log("Payment intent succeeded without checkout session (legacy):", {
       id: paymentIntent.id,
       amount: paymentIntent.amount / 100,
       currency: paymentIntent.currency,
@@ -669,7 +666,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   }
 
   // This is from PaymentElement flow - create the order
-  console.log("💰 Payment intent succeeded from PaymentElement flow:", {
+  console.log("Payment intent succeeded from PaymentElement flow:", {
     id: paymentIntent.id,
     amount: paymentIntent.amount / 100,
     productId,
@@ -744,7 +741,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   let sellerNeedsAddress = false;
 
   if (!fromAddress) {
-    console.error("⚠️ Seller has no address:", { sellerId, productId });
+    console.error("Seller has no address:", { sellerId, productId });
 
     fromAddress = await prisma.address.create({
       data: {
@@ -819,7 +816,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     data: { isSold: true },
   });
 
-  console.log("📦 Order created successfully from PaymentElement flow:", order.id);
+  console.log("Order created successfully from PaymentElement flow:", order.id);
 
   // Send email to seller if they need to complete their address
   if (sellerNeedsAddress) {
@@ -852,7 +849,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
           </div>
         `,
       });
-      console.log("📧 Sent address required email to seller:", product.user.email);
+      console.log("Sent address required email to seller:", product.user.email);
     } catch (emailError) {
       console.error("Failed to send address required email:", emailError);
     }
@@ -860,19 +857,19 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
 
   // Attempt to generate shipping label automatically
   try {
-    console.log("🏷️ Attempting to auto-generate shipping label for order:", order.id);
+    console.log("Attempting to auto-generate shipping label for order:", order.id);
 
     const labelResult = await generateShippingLabel({
       orderId: order.id,
     });
 
-    console.log("✅ Shipping label generated successfully:", {
+    console.log("Shipping label generated successfully:", {
       orderId: order.id,
       trackingNumber: labelResult.trackingNumber,
       carrier: labelResult.carrier,
     });
   } catch (labelError) {
-    console.warn("⚠️ Could not auto-generate shipping label:", {
+    console.warn("Could not auto-generate shipping label:", {
       orderId: order.id,
       error: labelError instanceof Error ? labelError.message : "Unknown error",
     });
@@ -900,7 +897,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
  * Log failed payment attempts for monitoring
  */
 function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
-  console.error("❌ Payment failed:", {
+  console.error("Payment failed:", {
     id: paymentIntent.id,
     amount: paymentIntent.amount / 100,
     currency: paymentIntent.currency,
@@ -964,7 +961,7 @@ async function handleRefund(charge: Stripe.Charge) {
       where: { id: order.productId },
       data: { isSold: false },
     });
-    console.log("📦 Product restored to available:", order.productId);
+    console.log("Product restored to available:", order.productId);
   }
 
   // TODO: Send refund confirmation email to buyer
@@ -976,7 +973,7 @@ async function handleRefund(charge: Stripe.Charge) {
  * Alert on chargebacks - critical for marketplace operations
  */
 function handleDisputeCreated(dispute: Stripe.Dispute) {
-  console.error("⚠️ DISPUTE CREATED:", {
+  console.error("DISPUTE CREATED:", {
     disputeId: dispute.id,
     chargeId: dispute.charge,
     amount: dispute.amount / 100,
@@ -995,7 +992,7 @@ function handleDisputeCreated(dispute: Stripe.Dispute) {
  * Track dispute resolution outcome
  */
 function handleDisputeClosed(dispute: Stripe.Dispute) {
-  console.log("📋 Dispute closed:", {
+  console.log("Dispute closed:", {
     disputeId: dispute.id,
     chargeId: dispute.charge,
     status: dispute.status, // won, lost, warning_closed, etc.
