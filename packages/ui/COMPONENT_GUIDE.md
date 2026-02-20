@@ -462,14 +462,23 @@ Success (Teal)        Info (Blue)           Error (Red)
 ### Breakpoints
 
 ```
-$xs:     max-width 660px
-$xs:   min-width 661px
-$sm:     max-width 860px
-$sm:   min-width 861px
-$md:     max-width 1020px
-$md:   min-width 1021px
-$lg:     max-width 1280px
-$lg:   min-width 1281px
+Min-width (bare keys):
+$2xs:   min-width 340px
+$xs:    min-width 460px
+$sm:    min-width 640px
+$md:    min-width 768px
+$lg:    min-width 1024px
+$xl:    min-width 1280px
+$2xl:   min-width 1536px
+
+Max-width (explicit max* keys):
+$max2xs:  max-width 340px
+$maxXs:   max-width 460px
+$maxSm:   max-width 640px
+$maxMd:   max-width 768px
+$maxLg:   max-width 1024px
+$maxXl:   max-width 1280px
+$max2Xl:  max-width 1536px
 ```
 
 ---
