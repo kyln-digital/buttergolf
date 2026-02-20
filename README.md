@@ -1,4 +1,4 @@
-# ButterGolf Monorepo
+# ButterGolf Monorepo.
 
 A monorepo setup for ButterGolf using Turborepo, Next.js (web), and Expo (iOS/Android).
 
