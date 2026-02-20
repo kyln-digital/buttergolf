@@ -367,7 +367,7 @@ export function OrdersScreen({
                             marginTop="$2"
                           >
                             <Text size="$2" color="$warning">
-                              ⏳ Confirm receipt to release payment
+                              Confirm receipt to release payment
                             </Text>
                           </Row>
                         )}

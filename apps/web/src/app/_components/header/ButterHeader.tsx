@@ -10,7 +10,6 @@ import {
   LazyUserButton,
   AuthButtonsSection,
 } from "@/components/auth/LazyClerkComponents";
-import { MessageSquare } from "@tamagui/lucide-icons";
 import {
   Row,
   Column,
@@ -199,7 +198,7 @@ export function ButterHeader() {
                     Log-in
                   </Button>
                   <Button
-                    butterVariant="dark"
+                    butterVariant="secondary"
                     size="$4"
                     borderRadius="$full"
                     onPress={() => router.push("/sign-up")}
@@ -209,25 +208,6 @@ export function ButterHeader() {
                 </LazySignedOut>
 
                 <LazySignedIn>
-                  <Link
-                    href="/messages"
-                    style={{ textDecoration: "none" }}
-                    aria-label="Messages"
-                    title="Messages"
-                  >
-                    <Button
-                      chromeless
-                      circular
-                      size="$4"
-                      color={isActive("/messages") ? "$primary" : "$text"}
-                      hoverStyle={{
-                        backgroundColor: "$backgroundHover",
-                      }}
-                    >
-                      <MessageSquare size={20} />
-                    </Button>
-                  </Link>
-
                   <LazyUserButton size="default" />
                 </LazySignedIn>
               </AuthButtonsSection>
@@ -419,7 +399,7 @@ export function ButterHeader() {
                   Log-in
                 </Button>
                 <Button
-                  butterVariant="dark"
+                  butterVariant="secondary"
                   size="$5"
                   width="100%"
                   borderRadius="$full"

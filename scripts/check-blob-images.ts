@@ -13,7 +13,7 @@ async function checkBlobImages() {
     const { blobs } = await list();
 
     if (blobs.length === 0) {
-      console.log("❌ No images found in Vercel Blob storage");
+      console.log("No images found in Vercel Blob storage");
       console.log("\n📝 Next steps:");
       console.log("1. Upload product images to Vercel Blob");
       console.log("2. Update the seed file with real Vercel Blob URLs");
@@ -21,7 +21,7 @@ async function checkBlobImages() {
       return;
     }
 
-    console.log(`✅ Found ${blobs.length} blobs in storage:\n`);
+    console.log(`Found ${blobs.length} blobs in storage:\n`);
 
     blobs.forEach((blob, index) => {
       console.log(`${index + 1}. ${blob.pathname}`);
@@ -30,10 +30,10 @@ async function checkBlobImages() {
       console.log(`   Uploaded: ${new Date(blob.uploadedAt).toLocaleString()}\n`);
     });
 
-    console.log("\n📋 Copy these URLs to update your seed file!");
+    console.log("\nCopy these URLs to update your seed file!");
   } catch (error) {
-    console.error("❌ Error:", error);
-    console.log("\n💡 Make sure BLOB_READ_WRITE_TOKEN is set in .env.local");
+    console.error("Error:", error);
+    console.log("\nMake sure BLOB_READ_WRITE_TOKEN is set in .env.local");
   }
 }
 

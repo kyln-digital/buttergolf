@@ -1,109 +1,85 @@
 # Dependabot configuration for ButterGolf monorepo
 # Since we use pnpm catalog for version management, updates should target the root
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# DESIGN DECISIONS:
+# - Only 3 groups: platform-core (fragile), infra (moderate), everything-else (safe)
+# - Platform-core is security-only — minor/patch bumps for Tamagui/Expo/RN/Solito
+#   almost always break the build and require manual migration work
+# - Catch-all group sweeps ungrouped deps into one PR instead of N individual ones
+# - Max 3 PRs/month to keep noise manageable
 
 version: 2
 updates:
-  # Root workspace dependencies (pnpm catalog)
-  # CRITICAL: This is where the pnpm catalog lives - ALL versions are centralized here
-  # Individual packages use "catalog:" references, so only root updates matter
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 10
+      interval: "monthly"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
     groups:
-      # CRITICAL: Group ALL Tamagui packages together
-      # All @tamagui/* packages must be the same version
-      tamagui:
+      # ── Group 1: Platform-core (FRAGILE — security-only) ──────────────
+      # Tamagui, Expo, React Native, Solito, React Navigation are deeply
+      # intertwined. Even minor bumps regularly break builds.
+      # update-types limits this group to security patches only.
+      platform-core:
         patterns:
           - "tamagui"
           - "@tamagui/*"
-      # Group entire React ecosystem together
-      # These are pinned via pnpm overrides and must match
-      react:
-        patterns:
-          - "react"
-          - "react-dom"
-          - "react-native"
-          - "react-native-*"
-          - "@types/react"
-          - "@types/react-dom"
-          - "react-test-renderer"
-          - "react-is"
-      # Group Prisma together (client + CLI must match)
-      prisma:
-        patterns:
-          - "prisma"
-          - "@prisma/*"
-      # Group Expo together (version-sensitive ecosystem)
-      expo:
-        patterns:
           - "expo"
           - "expo-*"
           - "@expo/*"
-      # Group Stripe together (API versions must be compatible)
-      stripe:
+          - "react-native"
+          - "react-native-*"
+          - "solito"
+          - "@react-navigation/*"
+        update-types:
+          - "security"
+
+      # ── Group 2: Infrastructure (one combined PR) ─────────────────────
+      # Services and SDKs that need version alignment within their ecosystem
+      # but are generally safe for minor/patch bumps.
+      infrastructure:
         patterns:
-          - "stripe"
-          - "@stripe/*"
-      # Group Clerk together (auth must be consistent)
-      clerk:
-        patterns:
-          - "@clerk/*"
-          - "svix"
-      # Group Next.js together
-      nextjs:
-        patterns:
+          - "react"
+          - "react-dom"
+          - "react-is"
+          - "@types/react"
+          - "@types/react-dom"
+          - "react-test-renderer"
           - "next"
           - "next-*"
           - "@next/*"
           - "eslint-config-next"
-      # Group Sentry together
-      sentry:
-        patterns:
+          - "prisma"
+          - "@prisma/*"
+          - "stripe"
+          - "@stripe/*"
+          - "@clerk/*"
+          - "svix"
           - "@sentry/*"
-      # Group navigation (Solito + React Navigation)
-      navigation:
+
+      # ── Group 3: Everything else (one combined PR) ────────────────────
+      # Dev tools, utilities, media libs — low risk, batch together.
+      everything-else:
         patterns:
-          - "solito"
-          - "@react-navigation/*"
-      # Group build/dev tools
-      dev-dependencies:
-        patterns:
-          - "prettier"
-          - "turbo"
-          - "typescript"
-          - "tsx"
-          - "eslint"
-          - "eslint-*"
-          - "@types/node"
-      # Group carousel/media packages
-      media:
-        patterns:
-          - "embla-carousel*"
-          - "nuka-carousel"
-          - "cloudinary"
-          - "next-cloudinary"
-      # Group utility packages
-      utilities:
-        patterns:
-          - "date-fns"
-          - "uuid"
-          - "jose"
-          - "ioredis"
-          - "socket.io*"
-    # CRITICAL: Ignore major version bumps for version-sensitive packages
-    # These require manual testing and migration work
+          - "*"
+
     ignore:
+      # Block ALL major bumps for version-sensitive packages.
+      # These require manual migration work and testing.
       - dependency-name: "react"
         update-types: ["version-update:semver-major"]
       - dependency-name: "react-dom"
         update-types: ["version-update:semver-major"]
       - dependency-name: "react-native"
         update-types: ["version-update:semver-major"]
+      - dependency-name: "react-native-*"
+        update-types: ["version-update:semver-major"]
       - dependency-name: "expo"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "expo-*"
         update-types: ["version-update:semver-major"]
       - dependency-name: "next"
         update-types: ["version-update:semver-major"]
@@ -121,10 +97,14 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
+      - dependency-name: "solito"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@react-navigation/*"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions workflows
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "monthly"
-    open-pull-requests-limit: 5
+      interval: "quarterly"
+    open-pull-requests-limit: 2

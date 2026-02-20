@@ -1,3 +1,5 @@
+"use client";
+
 import { SignUp } from "@clerk/nextjs";
 import { AuthLayout } from "@/components/auth/auth-layout";
 

@@ -43,12 +43,12 @@ import { animations } from "./animations";
  * - Maintainable: Less custom code, easier upgrades
  *
  * USAGE GUIDE:
- * - ✅ CORRECT: <Text size="$4">Body text</Text>
- * - ✅ CORRECT: <Heading level={2}>Title</Heading>
- * - ✅ CORRECT: <Button size="md">Click me</Button>
- * - ❌ WRONG: <Text fontSize="$4">Text</Text> (use size instead)
- * - ❌ WRONG: <Text size="md">Text</Text> (no "md" token, use $4)
- * - ❌ WRONG: <Button fontSize="$4">Button</Button> (use size="md")
+ * - CORRECT: <Text size="$4">Body text</Text>
+ * - CORRECT: <Heading level={2}>Title</Heading>
+ * - CORRECT: <Button size="md">Click me</Button>
+ * - WRONG: <Text fontSize="$4">Text</Text> (use size instead)
+ * - WRONG: <Text size="md">Text</Text> (no "md" token, use $4)
+ * - WRONG: <Button fontSize="$4">Button</Button> (use size="md")
  *
  * ============================================================================
  */

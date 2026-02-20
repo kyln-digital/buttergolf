@@ -16,7 +16,7 @@ import { dirname, resolve } from "path";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, "..");
 
-console.log("🏌️  ButterGolf Lighthouse Audit\n");
+console.log("ButterGolf Lighthouse Audit\n");
 console.log("Starting web server and running Lighthouse audits...\n");
 
 // Run Lighthouse CI
@@ -28,10 +28,10 @@ const lhci = spawn("lhci", ["autorun"], {
 
 lhci.on("close", (code) => {
   if (code === 0) {
-    console.log("\n✅ Lighthouse audit passed!\n");
+    console.log("\nLighthouse audit passed!\n");
     process.exit(0);
   } else {
-    console.log("\n❌ Lighthouse audit failed. Check the results above.\n");
+    console.log("\nLighthouse audit failed. Check the results above.\n");
     process.exit(1);
   }
 });

@@ -9,12 +9,12 @@ dotenv.config({ path: resolve(__dirname, "../apps/web/.env.local") });
 
 // Verify token is loaded
 if (!process.env.BLOB_READ_WRITE_TOKEN) {
-  console.error("❌ Error: BLOB_READ_WRITE_TOKEN not found in environment");
+  console.error("Error: BLOB_READ_WRITE_TOKEN not found in environment");
   console.error("Make sure apps/web/.env.local contains the Vercel Blob token");
   process.exit(1);
 }
 
-console.log("✓ Vercel Blob token loaded");
+console.log("Vercel Blob token loaded");
 
 // Golf equipment images from Unsplash (high quality, free to use)
 // Updated with verified working URLs
@@ -30,7 +30,7 @@ const sampleImages = [
 ];
 
 async function uploadSampleImages() {
-  console.log("🏌️ Starting image upload to Vercel Blob...\n");
+  console.log("Starting image upload to Vercel Blob...\n");
 
   // Get all products that need image updates
   const products = await prisma.product.findMany({
@@ -69,7 +69,7 @@ async function uploadSampleImages() {
         allowOverwrite: true, // Allow updating existing images
       });
 
-      console.log(`  ✓ Uploaded to: ${blob.url}`);
+      console.log(`  Uploaded to: ${blob.url}`);
 
       // Update or create ProductImage in database
       if (product.images.length > 0) {
@@ -78,7 +78,7 @@ async function uploadSampleImages() {
           where: { id: product.images[0].id },
           data: { url: blob.url },
         });
-        console.log(`  ✓ Updated existing image record`);
+        console.log(`  Updated existing image record`);
       } else {
         // Create new image
         await prisma.productImage.create({
@@ -88,16 +88,16 @@ async function uploadSampleImages() {
             sortOrder: 0,
           },
         });
-        console.log(`  ✓ Created new image record`);
+        console.log(`  Created new image record`);
       }
 
-      console.log(`  ✅ Complete!\n`);
+      console.log(`  Complete!\n`);
     } catch (error) {
-      console.error(`  ❌ Error: ${error.message}\n`);
+      console.error(`  Error: ${error.message}\n`);
     }
   }
 
-  console.log("🎉 All images uploaded successfully!");
+  console.log("All images uploaded successfully!");
   console.log("\nYou can now:");
   console.log("1. Restart web server: pnpm dev:web");
   console.log("2. Reload mobile app: press r in terminal");
