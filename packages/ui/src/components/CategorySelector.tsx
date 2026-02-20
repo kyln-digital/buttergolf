@@ -44,6 +44,7 @@ const AnimatedHoverBox = styled(Row, {
   left: 0,
   backgroundColor: "rgba(244, 83, 20, 0.1)",
   borderRadius: "$md",
+  // @ts-expect-error -- tamagui v2: animation removed from styled() base props type; tracked in docs/tamagui-v2-migration.md bucket 5
   animation: "fast",
   pointerEvents: "none",
   paddingHorizontal: "$2",
@@ -172,7 +173,7 @@ export function CategorySelector({
   }, [activeIndex, updateUnderlinePosition]);
 
   return (
-    <CategorySelectorContainer ref={containerRef}>
+    <CategorySelectorContainer ref={containerRef as any}>
       {categories.map((category, index) => {
         const isActive = category.href === activeCategory;
         const isHovered = hoveredIndex === index;

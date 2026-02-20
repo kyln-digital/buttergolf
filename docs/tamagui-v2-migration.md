@@ -57,6 +57,27 @@ animation helpers compile with no errors under v2.
 
 ---
 
+### `@buttergolf/app` — ❌ **~35 error locations** across many files
+
+Same break categories as the `web` app. Root causes:
+
+| Error code | Root cause                                                                                                |
+| ---------- | --------------------------------------------------------------------------------------------------------- |
+| TS2322     | `children` type change; `color`/`animation` props removed from Button/Stack                               |
+| TS2747     | `children` typed as `Variable<any>` not `ReactNode`                                                       |
+| TS2578     | Context-dependent: some `@ts-expect-error` directives become unused in certain module resolution contexts |
+
+Representative affected files:
+
+- `src/components/CategoryButton.tsx`
+- `src/components/HeroSection.tsx`
+- `src/features/auth/sign-in-screen.tsx`, `sign-up-screen.tsx`, `forgot-password-screen.tsx`
+- `src/features/sell/components/DetailsStep.tsx`, `ListingStep.tsx`, `PhotoStep.tsx`, `ReviewStep.tsx`
+- `src/features/messages/message-thread-screen.tsx`, `messages-screen.tsx`
+- `src/features/onboarding/screen.tsx`
+
+---
+
 ### `web` app — ❌ **5 089 errors** across many files
 
 Total error breakdown by code:
@@ -190,6 +211,16 @@ custom props declared in the same interface.
 
 **Fix:** Separate the custom prop interface from `GetProps<typeof StyledComponent>`
 and avoid declaring non-style-token props inside a `styled()` prop block.
+
+---
+
+## Pre-push hook scope reduction
+
+`.husky/pre-push` was narrowed to run `pnpm turbo run check-types` only for
+`@buttergolf/db`, `@buttergolf/config`, and `@buttergolf/ui` (all three pass
+with 0 errors). The full workspace check is restored once the follow-up
+migration PRs resolve all break buckets. The TODO comment in the hook file
+tracks this.
 
 ---
 

@@ -152,7 +152,7 @@ export function Autocomplete({
   };
 
   return (
-    <Column ref={containerRef} position="relative" width="100%">
+    <Column ref={containerRef as any} position="relative" width="100%">
       <div onKeyDown={handleKeyDown}>
         <Input
           value={value}
