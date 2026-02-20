@@ -209,13 +209,14 @@ export function ButterHeader() {
                 </LazySignedOut>
 
                 <LazySignedIn>
+                  {/* Messages - exact copy of ThemeToggleButton with message icon */}
                   <Button
                     chromeless
                     circular
                     size="$4"
                     onPress={() => router.push("/messages")}
-                    aria-label="Messages"
-                    title="Messages"
+                    accessibilityLabel="Messages"
+                    accessibilityRole="button"
                   >
                     <MessageSquare size={20} color="$text" />
                   </Button>
