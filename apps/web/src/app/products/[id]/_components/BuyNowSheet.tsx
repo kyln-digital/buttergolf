@@ -114,7 +114,14 @@ const SheetContents = memo(function SheetContents({
 
   return (
     <Sheet.ScrollView>
-      <Column p="$4" gap="$5">
+      <Column
+        p="$4"
+        gap="$5"
+        width="100%"
+        maxWidth={540}
+        alignSelf="center"
+        $gtMd={{ paddingHorizontal: "$xl" }}
+      >
         {/* Header */}
         <Row justifyContent="space-between" alignItems="center">
           <Heading level={4} color="$text">

@@ -382,10 +382,22 @@ function CheckoutForm({
     <form onSubmit={handleSubmit}>
       <Column gap="$lg" padding="$md">
         {/* Back button */}
-        <Button chromeless onPress={onBack} alignSelf="flex-start" padding={0} marginBottom="$sm">
+        <Button
+          onPress={onBack}
+          alignSelf="flex-start"
+          backgroundColor="transparent"
+          borderWidth={0}
+          paddingHorizontal="$sm"
+          paddingVertical="$sm"
+          marginBottom="$sm"
+          hoverStyle={{ backgroundColor: "$backgroundHover" }}
+          pressStyle={{ backgroundColor: "$backgroundPress", scale: 0.98 }}
+        >
           <Row gap="$xs" alignItems="center">
-            <Text color="$textSecondary">←</Text>
-            <Text color="$textSecondary" size="$4">
+            <Text color="$text" size="$5">
+              ←
+            </Text>
+            <Text color="$text" size="$5">
               Back to shipping
             </Text>
           </Row>
