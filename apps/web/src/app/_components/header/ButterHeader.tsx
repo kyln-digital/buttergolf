@@ -215,16 +215,11 @@ export function ButterHeader() {
                     aria-label="Messages"
                     title="Messages"
                   >
-                    <Button
-                      chromeless
-                      circular
-                      size="$4"
-                      color={isActive("/messages") ? "$primary" : "$text"}
-                      hoverStyle={{
-                        backgroundColor: "$backgroundHover",
-                      }}
-                    >
-                      <MessageSquare size={20} />
+                    <Button chromeless circular size="$4">
+                      <MessageSquare
+                        size={20}
+                        color={isActive("/messages") ? "$primary" : "$text"}
+                      />
                     </Button>
                   </Link>
 
