@@ -42,7 +42,7 @@ const categoryToClubKind: Record<keyof ClubModelsData, ClubKind> = {
  * across all major brands and categories.
  */
 export async function seedClubModels(prisma: PrismaClient) {
-  console.log("🏌️  Seeding club models...");
+  console.log("Seeding club models...");
 
   // Load fixture data
   const fixturesPath = join(__dirname, "../fixtures/clubModels.json");
@@ -60,12 +60,12 @@ export async function seedClubModels(prisma: PrismaClient) {
     const fixtures = fixtureData[category as keyof ClubModelsData];
     if (!fixtures) continue;
 
-    console.log(`\n  📦 Processing ${category}...`);
+    console.log(`\n  Processing ${category}...`);
 
     for (const fixture of fixtures) {
       const brand = brandMap.get(fixture.brand);
       if (!brand) {
-        console.warn(`    ⚠️  Brand not found: ${fixture.brand}`);
+        console.warn(`     Brand not found: ${fixture.brand}`);
         continue;
       }
 
@@ -98,7 +98,7 @@ export async function seedClubModels(prisma: PrismaClient) {
 
           totalCreated++;
         } catch (error) {
-          console.error(`    ❌ Error creating ${brand.name} ${modelName}: ${error}`);
+          console.error(`    Error creating ${brand.name} ${modelName}: ${error}`);
           totalSkipped++;
         }
       }
@@ -106,7 +106,7 @@ export async function seedClubModels(prisma: PrismaClient) {
   }
 
   console.log(
-    `\n✅ Club models seeding complete: ${totalCreated} created/updated, ${totalSkipped} skipped`
+    `\nClub models seeding complete: ${totalCreated} created/updated, ${totalSkipped} skipped`
   );
 }
 

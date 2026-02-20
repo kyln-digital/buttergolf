@@ -4,6 +4,7 @@ import { useState, useCallback, memo } from "react";
 import { useRouter } from "next/navigation";
 import { Sheet } from "@tamagui/sheet";
 import { Column, Row, Text, Button, Heading, Image } from "@buttergolf/ui";
+import { Lock, Package, CheckCircle } from "@tamagui/lucide-icons";
 import { StripePaymentForm } from "@/app/checkout/_components/StripePaymentForm";
 import type { Product } from "../ProductDetailClient";
 
@@ -163,19 +164,19 @@ const SheetContents = memo(function SheetContents({
           {/* Trust Badges - Compact */}
           <Row gap="$lg" flexWrap="wrap">
             <Row gap="$xs" alignItems="center">
-              <Text size="$3">🔒</Text>
+              <Lock size={14} color="$textSecondary" />
               <Text size="$2" color="$textSecondary">
                 Secure checkout
               </Text>
             </Row>
             <Row gap="$xs" alignItems="center">
-              <Text size="$3">📦</Text>
+              <Package size={14} color="$textSecondary" />
               <Text size="$2" color="$textSecondary">
                 Tracked shipping
               </Text>
             </Row>
             <Row gap="$xs" alignItems="center">
-              <Text size="$3">✅</Text>
+              <CheckCircle size={14} color="$textSecondary" />
               <Text size="$2" color="$textSecondary">
                 Buyer protection
               </Text>

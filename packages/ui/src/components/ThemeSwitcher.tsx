@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Moon, Sun, Monitor } from "@tamagui/lucide-icons";
 import { XStack, SizableText, Button, styled, type GetProps } from "tamagui";
 import { useTheme, type ThemeMode } from "@buttergolf/app/src/hooks/useTheme";
@@ -162,6 +163,13 @@ export function ThemeToggleButton({
 }: ThemeToggleButtonProps) {
   const { resolvedTheme, toggle, canToggle } = useTheme();
 
+  // Defer theme-dependent rendering until after hydration to prevent
+  // server/client mismatch (Fixes BUTTERGOLF-1, BUTTERGOLF-4)
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // On mobile, theme is system-controlled - don't show toggle button
   if (!canToggle) {
     return null;
@@ -176,6 +184,16 @@ export function ThemeToggleButton({
   // Show opposite icon (what clicking will switch TO)
   const Icon = resolvedTheme === "light" ? Moon : Sun;
   const label = resolvedTheme === "light" ? "Switch to dark mode" : "Switch to light mode";
+
+  // Render a placeholder with identical dimensions before mount
+  // to prevent layout shift while avoiding hydration mismatch
+  if (!mounted) {
+    return (
+      <Button chromeless circular size="$4" accessibilityRole="button" aria-hidden {...props}>
+        <Sun size={iconSize} color="$text" style={{ opacity: 0 }} />
+      </Button>
+    );
+  }
 
   return (
     <Button

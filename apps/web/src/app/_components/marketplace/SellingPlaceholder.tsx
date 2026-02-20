@@ -1,6 +1,7 @@
 "use client";
 
 import { Column, Row, Heading, Text, Button } from "@buttergolf/ui";
+import { Check } from "@tamagui/lucide-icons";
 import Link from "next/link";
 
 /**
@@ -54,25 +55,25 @@ export function SellingPlaceholder() {
 
         <Column gap="$sm" marginTop="$lg" width="100%">
           <Row gap="$sm" alignItems="center">
-            <Text size="$7">✓</Text>
+            <Check size={18} color="$success" />
             <Text size="$4" color="$text">
               List items in under 60 seconds
             </Text>
           </Row>
           <Row gap="$sm" alignItems="center">
-            <Text size="$7">✓</Text>
+            <Check size={18} color="$success" />
             <Text size="$4" color="$text">
               No listing fees - only pay when you sell
             </Text>
           </Row>
           <Row gap="$sm" alignItems="center">
-            <Text size="$7">✓</Text>
+            <Check size={18} color="$success" />
             <Text size="$4" color="$text">
               Secure payments and buyer protection
             </Text>
           </Row>
           <Row gap="$sm" alignItems="center">
-            <Text size="$7">✓</Text>
+            <Check size={18} color="$success" />
             <Text size="$4" color="$text">
               Reach a community of passionate golfers
             </Text>

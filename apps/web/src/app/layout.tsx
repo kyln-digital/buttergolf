@@ -15,7 +15,6 @@ import { ButterHeader } from "./_components/header/ButterHeader";
 import { AppPromoBanner } from "./_components/AppPromoBanner";
 import { ConditionalLayout } from "./_components/ConditionalLayout";
 import { CartProvider } from "../context/CartContext";
-import { FavouritesProvider } from "../providers/FavouritesProvider";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 
 // Urbanist font configuration for Pure Butter brand
@@ -76,32 +75,28 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={urbanist.className}>
         <NextTamaguiProvider>
-          <ErrorBoundary name="FavouritesProvider">
-            <FavouritesProvider>
-              <CartProvider>
-                <ConditionalLayout
-                  excludeRoutes={[
-                    "/coming-soon",
-                    "/sign-in",
-                    "/sign-in/*",
-                    "/sign-up",
-                    "/sign-up/*",
-                    "/mobile-onboarding",
-                  ]}
-                >
-                  <ErrorBoundary
-                    name="ButterHeader"
-                    fallback={<div style={{ height: 72, backgroundColor: "#f5f5f5" }} />}
-                  >
-                    <ButterHeader />
-                  </ErrorBoundary>
-                  <AppPromoBanner />
-                </ConditionalLayout>
-                {/* Main content wrapper */}
-                <main className="bg-white">{children}</main>
-              </CartProvider>
-            </FavouritesProvider>
-          </ErrorBoundary>
+          <CartProvider>
+            <ConditionalLayout
+              excludeRoutes={[
+                "/coming-soon",
+                "/sign-in",
+                "/sign-in/*",
+                "/sign-up",
+                "/sign-up/*",
+                "/mobile-onboarding",
+              ]}
+            >
+              <ErrorBoundary
+                name="ButterHeader"
+                fallback={<div style={{ height: 72, backgroundColor: "#f5f5f5" }} />}
+              >
+                <ButterHeader />
+              </ErrorBoundary>
+              <AppPromoBanner />
+            </ConditionalLayout>
+            {/* Main content wrapper */}
+            <main className="bg-white">{children}</main>
+          </CartProvider>
         </NextTamaguiProvider>
         <Analytics />
         {/* Tidio chat - excluded from mobile-onboarding WebView */}

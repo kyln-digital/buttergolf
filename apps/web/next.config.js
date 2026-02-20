@@ -92,15 +92,19 @@ module.exports = () => {
         ],
       },
     ],
-    // Proxy Clerk Frontend API requests through our domain
-    // This allows clerk.buttergolf.com custom domain to work properly
+    // Proxy Clerk Frontend API requests through our domain (production only)
+    // Only active when NEXT_PUBLIC_CLERK_PROXY_URL is set — preview deployments
+    // skip the proxy so clerk.buttergolf.com doesn't reject their redirect URLs.
     // See: https://clerk.com/docs/deployments/clerk-cname-proxy
-    rewrites: async () => [
-      {
-        source: "/__clerk/:path*",
-        destination: "https://clerk.buttergolf.com/:path*",
-      },
-    ],
+    rewrites: async () =>
+      process.env.NEXT_PUBLIC_CLERK_PROXY_URL
+        ? [
+            {
+              source: "/__clerk/:path*",
+              destination: "https://clerk.buttergolf.com/:path*",
+            },
+          ]
+        : [],
     transpilePackages: [
       "@buttergolf/app",
       "@buttergolf/config",

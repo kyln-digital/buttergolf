@@ -597,7 +597,7 @@ async function uploadImageToCloudinary(
   // Determine content type
   const contentType = blob.type || "image/jpeg";
 
-  console.log("📦 Image blob:", {
+  console.log("Image blob:", {
     size: blob.size,
     sizeKB: Math.round(blob.size / 1024),
     type: contentType,
@@ -677,7 +677,7 @@ async function uploadImageToCloudinary(
   }
 
   const result = await uploadResponse.json();
-  console.log("✅ Upload success:", result.url);
+  console.log("Upload success:", result.url);
 
   return result.url;
 }

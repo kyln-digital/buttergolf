@@ -1,4 +1,5 @@
 import { View, Text, Button, YStack, XStack, Spinner } from "@buttergolf/ui";
+import { Banknote, Check } from "@tamagui/lucide-icons";
 import { useState, useCallback } from "react";
 import type { SellerStatus } from "../../hooks/useSellerStatus";
 
@@ -115,7 +116,7 @@ export function SellerOnboardingScreen({
           justifyContent="center"
           marginBottom="$md"
         >
-          <Text size="$13">💰</Text>
+          <Banknote size={48} color="$primary" />
         </View>
 
         {/* Title */}
@@ -140,19 +141,19 @@ export function SellerOnboardingScreen({
         {!showContinue && !showRestricted && (
           <YStack gap="$sm" marginTop="$md" width="100%" maxWidth={320}>
             <XStack gap="$sm" alignItems="center">
-              <Text color="$success">✓</Text>
+              <Check size={16} color="$success" />
               <Text size="$4" color="$text">
                 Secure payments via Stripe
               </Text>
             </XStack>
             <XStack gap="$sm" alignItems="center">
-              <Text color="$success">✓</Text>
+              <Check size={16} color="$success" />
               <Text size="$4" color="$text">
                 Daily payouts to your bank
               </Text>
             </XStack>
             <XStack gap="$sm" alignItems="center">
-              <Text color="$success">✓</Text>
+              <Check size={16} color="$success" />
               <Text size="$4" color="$text">
                 Reach thousands of golfers
               </Text>

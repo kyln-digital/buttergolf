@@ -27,7 +27,7 @@ async function fixFailedProducts() {
         where: { id: product.images[0].id },
         data: { url: FALLBACK_IMAGE },
       });
-      console.log(`  ✓ Updated to use fallback image\n`);
+      console.log(`  Updated to use fallback image\n`);
     } else {
       await prisma.productImage.create({
         data: {
@@ -36,11 +36,11 @@ async function fixFailedProducts() {
           sortOrder: 0,
         },
       });
-      console.log(`  ✓ Created with fallback image\n`);
+      console.log(`  Created with fallback image\n`);
     }
   }
 
-  console.log("✅ All fixed! All 17 products now have Vercel Blob images.");
+  console.log("All fixed! All 17 products now have Vercel Blob images.");
 }
 
 fixFailedProducts()

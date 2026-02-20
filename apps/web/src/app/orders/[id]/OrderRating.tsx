@@ -156,7 +156,7 @@ export function OrderRating({ orderId, isDelivered, isBuyer, sellerName }: Order
       <Card variant="elevated" backgroundColor="$successLight" padding="$lg">
         <Column gap="$md" alignItems="center">
           <Badge variant="success" size="lg">
-            ✓ Thank You!
+            Thank You!
           </Badge>
           <Heading level={2} size="$7" color="$success" textAlign="center">
             Your rating has been submitted

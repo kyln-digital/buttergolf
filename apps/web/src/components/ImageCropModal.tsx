@@ -36,7 +36,7 @@ async function getCroppedImg(image: HTMLImageElement, crop: PixelCrop): Promise<
   const sourceHeight = crop.height * scaleY;
 
   // Debug logging to verify coordinate scaling
-  console.log("🖼️ Image Crop Debug:", {
+  console.log("Image Crop Debug:", {
     natural: { width: image.naturalWidth, height: image.naturalHeight },
     displayed: { width: image.width, height: image.height },
     scale: { x: scaleX, y: scaleY },
@@ -73,7 +73,7 @@ async function getCroppedImg(image: HTMLImageElement, crop: PixelCrop): Promise<
           reject(new Error("Canvas is empty"));
           return;
         }
-        console.log("✅ Cropped blob created:", {
+        console.log("Cropped blob created:", {
           size: blob.size,
           sizeKB: Math.round(blob.size / 1024),
           type: blob.type,

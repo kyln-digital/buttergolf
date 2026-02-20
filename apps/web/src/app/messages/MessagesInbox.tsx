@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Column, Row, Text, Heading, Card, Badge, Image, Container } from "@buttergolf/ui";
+import { MessageSquare, Package } from "@tamagui/lucide-icons";
 import { formatDistanceToNow } from "date-fns";
 
 interface Conversation {
@@ -34,7 +35,7 @@ export function MessagesInbox({ conversations }: MessagesInboxProps) {
             alignItems="center"
             justifyContent="center"
           >
-            <Text size="$9">💬</Text>
+            <MessageSquare size={32} color="$textSecondary" />
           </Column>
           <Heading level={2}>No Messages Yet</Heading>
           <Text color="$textSecondary" textAlign="center" maxWidth={400}>
@@ -99,7 +100,7 @@ export function MessagesInbox({ conversations }: MessagesInboxProps) {
                       alignItems="center"
                       justifyContent="center"
                     >
-                      <Text size="$7">📦</Text>
+                      <Package size={24} color="$textSecondary" />
                     </Column>
                   )}
 

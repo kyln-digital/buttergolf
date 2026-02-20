@@ -53,7 +53,7 @@ async function main() {
       },
     });
 
-    console.log(`✅ Updated ${updateResult.count} orders to RELEASED status`);
+    console.log(`Updated ${updateResult.count} orders to RELEASED status`);
 
     // Log the affected order IDs for audit trail
     console.log("\nAffected Order IDs:");
@@ -82,9 +82,7 @@ async function main() {
   });
 
   if (oldPendingOrders.length > 0) {
-    console.log(
-      `\n⚠️  Found ${oldPendingOrders.length} old orders (>14 days) still in HELD status:`
-    );
+    console.log(`\n Found ${oldPendingOrders.length} old orders (>14 days) still in HELD status:`);
     console.log("These may need manual review:\n");
     oldPendingOrders.forEach((order) => {
       console.log(`  - ${order.id}`);
@@ -105,7 +103,7 @@ async function main() {
     console.log(`${row.paymentHoldStatus}: ${row._count.id} orders`);
   });
 
-  console.log("\n✅ Data migration complete!");
+  console.log("\nData migration complete!");
 }
 
 main()

@@ -32,7 +32,7 @@ async function main() {
   // Initialize Stripe with secret key from environment
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeSecretKey) {
-    console.error("❌ STRIPE_SECRET_KEY environment variable is required");
+    console.error("STRIPE_SECRET_KEY environment variable is required");
     console.log("   Make sure apps/web/.env.local has STRIPE_SECRET_KEY set");
     process.exit(1);
   }
@@ -58,11 +58,11 @@ async function main() {
   });
 
   if (!user) {
-    console.error(`❌ User not found with email: ${TARGET_EMAIL}`);
+    console.error(`User not found with email: ${TARGET_EMAIL}`);
     process.exit(1);
   }
 
-  console.log("📋 Current user state:");
+  console.log("Current user state:");
   console.log(`   ID: ${user.id}`);
   console.log(`   Email: ${user.email}`);
   console.log(`   Stripe Connect ID: ${user.stripeConnectId || "(none)"}`);
@@ -77,12 +77,12 @@ async function main() {
     console.log(`🗑️  Deleting Stripe Connect account: ${user.stripeConnectId}`);
     try {
       await stripe.accounts.del(user.stripeConnectId);
-      console.log("   ✅ Stripe account deleted");
+      console.log("   Stripe account deleted");
     } catch (error) {
       if (error instanceof Stripe.errors.StripeError && error.code === "resource_missing") {
-        console.log("   ⚠️  Account already deleted or doesn't exist in Stripe");
+        console.log("   Account already deleted or doesn't exist in Stripe");
       } else {
-        console.error("   ❌ Failed to delete Stripe account:", error);
+        console.error("   Failed to delete Stripe account:", error);
         // Continue anyway to clear DB
       }
     }
@@ -102,7 +102,7 @@ async function main() {
       phone: null, // Also clear phone so you can test phone collection
     },
   });
-  console.log("   ✅ Database fields cleared");
+  console.log("   Database fields cleared");
 
   // 4. Verify reset
   const updatedUser = await prisma.user.findUnique({
@@ -116,13 +116,13 @@ async function main() {
     },
   });
 
-  console.log("\n✅ Reset complete! New state:");
+  console.log("\nReset complete! New state:");
   console.log(`   Stripe Connect ID: ${updatedUser?.stripeConnectId || "(none)"}`);
   console.log(`   Onboarding Complete: ${updatedUser?.stripeOnboardingComplete}`);
   console.log(`   Account Status: ${updatedUser?.stripeAccountStatus || "(none)"}`);
   console.log(`   Account Type: ${updatedUser?.stripeAccountType || "(none)"}`);
   console.log(`   Phone: ${updatedUser?.phone || "(none)"}`);
-  console.log("\n🚀 You can now test the onboarding flow at /sell\n");
+  console.log("\nYou can now test the onboarding flow at /sell\n");
 
   await prisma.$disconnect();
 }
