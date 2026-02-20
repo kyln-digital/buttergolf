@@ -36,59 +36,64 @@ const isComingSoonAllowedRoute = createRouteMatcher([
   "/mobile-onboarding(.*)", // Allow mobile Stripe onboarding (uses token-based auth, not cookies)
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
-  // DEBUG: Log incoming request headers for API routes to diagnose mobile auth
-  if (req.url.includes("/api/")) {
-    const authHeader = req.headers.get("Authorization");
-    console.log("[Proxy] API request headers:", {
-      url: req.url,
-      method: req.method,
-      hasAuthHeader: !!authHeader,
-      authHeaderPrefix: authHeader?.substring(0, 30),
-      authHeaderLength: authHeader?.length,
-      userAgent: req.headers.get("User-Agent")?.substring(0, 80),
-      origin: req.headers.get("Origin"),
-      host: req.headers.get("Host"),
-    });
-  }
-
-  // Handle CORS preflight OPTIONS requests
-  if (req.method === "OPTIONS") {
-    const origin = req.headers.get("origin");
-    console.log("[Proxy] OPTIONS preflight request:", {
-      origin,
-      url: req.url,
-      requestedHeaders: req.headers.get("Access-Control-Request-Headers"),
-    });
-    return new NextResponse(null, {
-      status: 200,
-      headers: {
-        "Access-Control-Allow-Origin": origin || "*",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        "Access-Control-Max-Age": "86400",
-      },
-    });
-  }
-
-  // Coming soon mode - redirect all traffic to coming soon page (unless admin)
-  const isComingSoonEnabled = process.env.NEXT_PUBLIC_COMING_SOON_ENABLED === "true";
-
-  if (isComingSoonEnabled && !isComingSoonAllowedRoute(req)) {
-    // Check if user is the admin (by userId)
-    const session = await auth();
-    const isAdmin = session?.userId && ADMIN_USER_IDS.includes(session.userId);
-
-    if (!isAdmin) {
-      return NextResponse.redirect(new URL("/coming-soon", req.url));
+export default clerkMiddleware(
+  async (auth, req) => {
+    // DEBUG: Log incoming request headers for API routes to diagnose mobile auth
+    if (req.url.includes("/api/")) {
+      const authHeader = req.headers.get("Authorization");
+      console.log("[Proxy] API request headers:", {
+        url: req.url,
+        method: req.method,
+        hasAuthHeader: !!authHeader,
+        authHeaderPrefix: authHeader?.substring(0, 30),
+        authHeaderLength: authHeader?.length,
+        userAgent: req.headers.get("User-Agent")?.substring(0, 80),
+        origin: req.headers.get("Origin"),
+        host: req.headers.get("Host"),
+      });
     }
-  }
 
-  // Only protect specific routes, leave everything else public
-  if (isProtectedRoute(req)) {
-    await auth.protect();
+    // Handle CORS preflight OPTIONS requests
+    if (req.method === "OPTIONS") {
+      const origin = req.headers.get("origin");
+      console.log("[Proxy] OPTIONS preflight request:", {
+        origin,
+        url: req.url,
+        requestedHeaders: req.headers.get("Access-Control-Request-Headers"),
+      });
+      return new NextResponse(null, {
+        status: 200,
+        headers: {
+          "Access-Control-Allow-Origin": origin || "*",
+          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Max-Age": "86400",
+        },
+      });
+    }
+
+    // Coming soon mode - redirect all traffic to coming soon page (unless admin)
+    const isComingSoonEnabled = process.env.NEXT_PUBLIC_COMING_SOON_ENABLED === "true";
+
+    if (isComingSoonEnabled && !isComingSoonAllowedRoute(req)) {
+      // Check if user is the admin (by userId)
+      const session = await auth();
+      const isAdmin = session?.userId && ADMIN_USER_IDS.includes(session.userId);
+
+      if (!isAdmin) {
+        return NextResponse.redirect(new URL("/coming-soon", req.url));
+      }
+    }
+
+    // Only protect specific routes, leave everything else public
+    if (isProtectedRoute(req)) {
+      await auth.protect();
+    }
+  },
+  {
+    proxyUrl: process.env.NEXT_PUBLIC_CLERK_PROXY_URL || undefined,
   }
-});
+);
 
 export const config = {
   matcher: [
