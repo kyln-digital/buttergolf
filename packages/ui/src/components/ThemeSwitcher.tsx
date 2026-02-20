@@ -117,9 +117,9 @@ export function ThemeSwitcher({
             key={optionMode}
             active={isActive}
             onPress={() => handleModeChange(optionMode)}
-            accessibilityRole="button"
-            accessibilityState={{ selected: isActive }}
-            accessibilityLabel={`Set theme to ${label}`}
+            role="button"
+            aria-selected={isActive}
+            aria-label={`Set theme to ${label}`}
           >
             <Icon size={18} color={isActive ? "$textInverse" : "$text"} />
             {showLabels && (
@@ -189,7 +189,7 @@ export function ThemeToggleButton({
   // to prevent layout shift while avoiding hydration mismatch
   if (!mounted) {
     return (
-      <Button chromeless circular size="$4" accessibilityRole="button" aria-hidden {...props}>
+      <Button chromeless circular size="$4" role="button" aria-hidden {...props}>
         <Sun size={iconSize} color="$text" style={{ opacity: 0 }} />
       </Button>
     );
@@ -201,8 +201,8 @@ export function ThemeToggleButton({
       circular
       size="$4"
       onPress={handleToggle}
-      accessibilityLabel={label}
-      accessibilityRole="button"
+      aria-label={label}
+      role="button"
       {...props}
     >
       <Icon size={iconSize} color="$text" />

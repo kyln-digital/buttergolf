@@ -177,7 +177,7 @@ export function OnboardingScreen({
               height="100%"
               resizeMode="contain"
               accessible={true}
-              accessibilityLabel="Butter Golf Logo"
+              aria-label="Butter Golf Logo"
             />
           ) : (
             <LogoOrangeSvg
@@ -235,7 +235,7 @@ export function OnboardingScreen({
                 height={CARD_HEIGHT}
                 resizeMode="contain"
                 accessible={true}
-                accessibilityLabel={item.label}
+                aria-label={item.label}
               />
             </View>
           ))}
@@ -272,7 +272,7 @@ export function OnboardingScreen({
                 height={CARD_HEIGHT}
                 resizeMode="contain"
                 accessible={true}
-                accessibilityLabel={item.label}
+                aria-label={item.label}
               />
             </View>
           ))}

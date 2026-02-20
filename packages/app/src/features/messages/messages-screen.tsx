@@ -209,7 +209,7 @@ export function MessagesScreen({
               onPress={handleRefresh}
               disabled={refreshing}
               opacity={refreshing ? 0.5 : 1}
-              accessibilityLabel="Refresh messages"
+              aria-label="Refresh messages"
             >
               {refreshing ? (
                 <Spinner size="sm" color="$primary" />

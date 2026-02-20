@@ -144,8 +144,8 @@ export function FavouritesScreen({
                 padding="$2"
                 borderRadius="$full"
                 pressStyle={{ opacity: 0.7 }}
-                accessibilityRole="button"
-                accessibilityLabel="Go back"
+                role="button"
+                aria-label="Go back"
               >
                 <ArrowLeft size={24} color="$text" />
               </Column>
@@ -203,8 +203,8 @@ export function FavouritesScreen({
               padding="$2"
               borderRadius="$full"
               pressStyle={{ opacity: 0.7 }}
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
+              role="button"
+              aria-label="Go back"
             >
               <ArrowLeft size={24} color="$text" />
             </Column>
@@ -343,8 +343,8 @@ function FavouriteProductCard({
         <Column
           onPress={onView}
           pressStyle={{ opacity: 0.9 }}
-          accessibilityRole="button"
-          accessibilityLabel={`View ${product.title}`}
+          role="button"
+          aria-label={`View ${product.title}`}
           width={120}
           height={90}
           borderRadius="$md"
@@ -365,8 +365,8 @@ function FavouriteProductCard({
           <Column
             onPress={onView}
             pressStyle={{ opacity: 0.9 }}
-            accessibilityRole="button"
-            accessibilityLabel={`View ${product.title}`}
+            role="button"
+            aria-label={`View ${product.title}`}
           >
             <Text size="$5" fontWeight="600" color="$text" numberOfLines={2}>
               {product.title}
@@ -407,8 +407,8 @@ function FavouriteProductCard({
           backgroundColor="$border"
           pressStyle={{ opacity: 0.7, backgroundColor: "$errorLight" }}
           disabled={isRemoving}
-          accessibilityRole="button"
-          accessibilityLabel="Remove from favourites"
+          role="button"
+          aria-label="Remove from favourites"
         >
           <Trash2 size={20} color="$error" />
         </Column>
