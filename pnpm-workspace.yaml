@@ -7,7 +7,7 @@ catalog:
   "@clerk/nextjs": 6.37.2
   "@easypost/api": 8.2.0
   "@next/bundle-analyzer": 16.1.6
-  "@prisma/client": 6.19.0
+  "@prisma/client": 6.19.2
   "@react-navigation/native": 7.1.19
   "@react-navigation/native-stack": 7.6.2
   "@sentry/nextjs": 10.34.0
@@ -70,7 +70,7 @@ catalog:
   next-seo: 7.1.0
   next-sitemap: 4.2.3
   nuka-carousel: 8.2.0
-  prisma: 6.19.0
+  prisma: 6.19.2
   react: 19.1.0
   react-dom: 19.1.0
   react-image-crop: 11.0.10
