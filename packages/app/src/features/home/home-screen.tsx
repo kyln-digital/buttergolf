@@ -147,8 +147,8 @@ export function HomeScreen({
               overflow="hidden"
               pressStyle={{ opacity: 0.9, scale: 0.98 }}
               onPress={handleWoodsPress}
-              accessibilityRole="button"
-              accessibilityLabel="Browse woods category"
+              role="button"
+              aria-label="Browse woods category"
             >
               <Image
                 source={images.clubs.club1}
@@ -157,7 +157,6 @@ export function HomeScreen({
                 resizeMode="cover"
                 position="absolute"
                 alt="Woods category"
-                accessibilityLabel="Woods category"
               />
               <Column
                 flex={1}
@@ -180,8 +179,8 @@ export function HomeScreen({
               overflow="hidden"
               pressStyle={{ opacity: 0.9, scale: 0.98 }}
               onPress={handleIronsPress}
-              accessibilityRole="button"
-              accessibilityLabel="Browse irons category"
+              role="button"
+              aria-label="Browse irons category"
             >
               <Image
                 source={images.clubs.club3}
@@ -190,7 +189,6 @@ export function HomeScreen({
                 resizeMode="cover"
                 position="absolute"
                 alt="Irons category"
-                accessibilityLabel="Irons category"
               />
               <Column
                 flex={1}
@@ -216,8 +214,8 @@ export function HomeScreen({
               overflow="hidden"
               pressStyle={{ opacity: 0.9, scale: 0.98 }}
               onPress={handleWedgesPress}
-              accessibilityRole="button"
-              accessibilityLabel="Browse wedges category"
+              role="button"
+              aria-label="Browse wedges category"
             >
               <Image
                 source={images.clubs.club4}
@@ -226,7 +224,6 @@ export function HomeScreen({
                 resizeMode="cover"
                 position="absolute"
                 alt="Wedges category"
-                accessibilityLabel="Wedges category"
               />
               <Column
                 flex={1}
@@ -249,8 +246,8 @@ export function HomeScreen({
               overflow="hidden"
               pressStyle={{ opacity: 0.9, scale: 0.98 }}
               onPress={handlePuttersPress}
-              accessibilityRole="button"
-              accessibilityLabel="Browse putters category"
+              role="button"
+              aria-label="Browse putters category"
             >
               <Image
                 source={images.clubs.club5}
@@ -259,7 +256,6 @@ export function HomeScreen({
                 resizeMode="cover"
                 position="absolute"
                 alt="Putters category"
-                accessibilityLabel="Putters category"
               />
               <Column
                 flex={1}

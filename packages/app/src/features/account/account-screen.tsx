@@ -122,7 +122,7 @@ export function AccountScreen({
               circular
               size="$4"
               onPress={onNavigateBack}
-              accessibilityLabel="Go back"
+              aria-label="Go back"
             >
               <ArrowLeft size={24} color="$text" />
             </TamaguiButton>
@@ -148,7 +148,7 @@ export function AccountScreen({
             {/* Avatar */}
             <Avatar circular size="$10">
               {user?.imageUrl ? (
-                <Avatar.Image accessibilityLabel={getDisplayName()} src={user.imageUrl} />
+                <Avatar.Image aria-label={getDisplayName()} src={user.imageUrl} />
               ) : (
                 <Avatar.Fallback
                   backgroundColor="$primary"

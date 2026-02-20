@@ -393,7 +393,7 @@ function HeroCTAButtons({ primaryCta, secondaryCta }: HeroCTAButtonsProps) {
           size="$5"
           $sm={{ size: "$4" }}
           onPress={primaryLink.onPress}
-          accessibilityRole="link"
+          role="link"
         >
           {primaryCta.label}
         </Button>
@@ -404,7 +404,7 @@ function HeroCTAButtons({ primaryCta, secondaryCta }: HeroCTAButtonsProps) {
           size="$5"
           $sm={{ size: "$4" }}
           onPress={secondaryLink.onPress}
-          accessibilityRole="link"
+          role="link"
         >
           {secondaryCta.label}
         </Button>

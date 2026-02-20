@@ -153,7 +153,7 @@ export function ProfileEditScreen({
           <View position="relative">
             <Avatar circular size="$14">
               {displayImageUri ? (
-                <Avatar.Image accessibilityLabel="Profile photo" src={displayImageUri} />
+                <Avatar.Image aria-label="Profile photo" src={displayImageUri} />
               ) : (
                 <Avatar.Fallback
                   backgroundColor="$primary"
