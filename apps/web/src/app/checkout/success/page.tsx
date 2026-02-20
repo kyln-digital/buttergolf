@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { Column, Text, Heading, Button, Card, Spinner, Row, Image, Badge } from "@buttergolf/ui";
-import { Lock, ShieldCheck, MapPin, Mail } from "@tamagui/lucide-icons";
+import { Lock, ShieldCheck, MapPin, Mail, Check } from "@tamagui/lucide-icons";
 import Link from "next/link";
 import confetti from "canvas-confetti";
 
@@ -219,7 +219,7 @@ function CheckoutSuccessContent() {
               width={64}
               height={64}
             >
-              <Text size="$7">✓</Text>
+              <Check size={24} color="$textInverse" />
             </Column>
             <Column gap="$sm" alignItems="center">
               <Heading level={3}>Payment Successful!</Heading>
@@ -276,9 +276,7 @@ function CheckoutSuccessContent() {
             scale={1}
             opacity={1}
           >
-            <Text size="$11" color="$textInverse">
-              ✓
-            </Text>
+            <Check size={40} color="$textInverse" />
           </Column>
 
           {/* Success Message */}
@@ -350,9 +348,7 @@ function CheckoutSuccessContent() {
                   alignItems="center"
                   justifyContent="center"
                 >
-                  <Text color="$textInverse" size="$3">
-                    ✓
-                  </Text>
+                  <Check size={14} color="$textInverse" />
                 </Column>
                 <Text size="$2" color="$success" textAlign="center" marginTop="$xs">
                   Payment
