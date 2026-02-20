@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Column, Row, Heading, Text, Button, Card, Spinner } from "@buttergolf/ui";
+import { Lock, Banknote, Sparkles } from "@tamagui/lucide-icons";
 import { brandColors } from "@buttergolf/config";
 import { ConnectAccountOnboarding, ConnectComponentsProvider } from "@stripe/react-connect-js";
 import { loadConnectAndInitialize } from "@stripe/connect-js";
@@ -321,19 +322,19 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
         <Card variant="outlined" padding="$md">
           <Row gap="$md" flexWrap="wrap" justifyContent="center">
             <Row gap="$xs" alignItems="center">
-              <Text size="$6">🔒</Text>
+              <Lock size={20} color="$textSecondary" />
               <Text size="$4" color="$textSecondary">
                 Secure payments
               </Text>
             </Row>
             <Row gap="$xs" alignItems="center">
-              <Text size="$6">💷</Text>
+              <Banknote size={20} color="$textSecondary" />
               <Text size="$4" color="$textSecondary">
                 Fast payouts to your bank
               </Text>
             </Row>
             <Row gap="$xs" alignItems="center">
-              <Text size="$6">✨</Text>
+              <Sparkles size={20} color="$textSecondary" />
               <Text size="$4" color="$textSecondary">
                 One-time setup
               </Text>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Column, Row, Heading, Text, Button, Card, Spinner } from "@buttergolf/ui";
+import { CheckCircle, Lock, Banknote, Sparkles } from "@tamagui/lucide-icons";
 import { brandColors } from "@buttergolf/config";
 import { ConnectAccountOnboarding, ConnectComponentsProvider } from "@stripe/react-connect-js";
 import { loadConnectAndInitialize } from "@stripe/connect-js";
@@ -202,7 +203,7 @@ export function PayoutSetupWizard({ initialStatus, onComplete, onExit }: PayoutS
   if (isComplete) {
     return (
       <Column gap="$lg" alignItems="center" padding="$xl">
-        <Text size="$12">✅</Text>
+        <CheckCircle size={40} color="$success" />
         <Heading level={2} textAlign="center">
           Payout Setup Complete!
         </Heading>
@@ -294,19 +295,19 @@ export function PayoutSetupWizard({ initialStatus, onComplete, onExit }: PayoutS
       <Card variant="outlined" padding="$md">
         <Row gap="$md" flexWrap="wrap" justifyContent="center">
           <Row gap="$xs" alignItems="center">
-            <Text size="$6">🔒</Text>
+            <Lock size={20} color="$textSecondary" />
             <Text size="$4" color="$textSecondary">
               Secure payments
             </Text>
           </Row>
           <Row gap="$xs" alignItems="center">
-            <Text size="$6">💷</Text>
+            <Banknote size={20} color="$textSecondary" />
             <Text size="$4" color="$textSecondary">
               Fast bank transfers
             </Text>
           </Row>
           <Row gap="$xs" alignItems="center">
-            <Text size="$6">✨</Text>
+            <Sparkles size={20} color="$textSecondary" />
             <Text size="$4" color="$textSecondary">
               One-time setup
             </Text>

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { Column, Row, Heading, Text, Button, Input, Card } from "@buttergolf/ui";
+import { Package } from "@tamagui/lucide-icons";
 
 interface Address {
   id: string;
@@ -429,7 +430,7 @@ export default function AddressesPage() {
           {addresses.length === 0 ? (
             <Card variant="outlined" padding="$xl">
               <Column gap="$md" alignItems="center">
-                <Text size="$10">📦</Text>
+                <Package size={36} color="$textSecondary" />
                 <Column gap="$sm" alignItems="center">
                   <Heading level={4}>No shipping addresses yet</Heading>
                   <Text color="$textSecondary" textAlign="center">

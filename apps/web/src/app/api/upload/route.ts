@@ -213,7 +213,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     // The blob is already cropped by ImageCropModal, SDK applies background transformation to it
     const result = await cloudinary.uploader.upload(base64Image, uploadOptions);
 
-    console.log("✅ Cloudinary Upload Success:", {
+    console.log("Cloudinary Upload Success:", {
       publicId: result.public_id,
       url: result.secure_url,
       dimensions: `${result.width}x${result.height}`,

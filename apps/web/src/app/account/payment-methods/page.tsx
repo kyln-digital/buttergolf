@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Column, Row, Heading, Text, Button, Card } from "@buttergolf/ui";
-import { CreditCard } from "@tamagui/lucide-icons";
+import { CreditCard, Lightbulb } from "@tamagui/lucide-icons";
 
 /**
  * Payment Methods Page
@@ -53,7 +53,7 @@ export default function PaymentMethodsPage() {
         {/* Info Card */}
         <Card variant="filled" padding="$lg" backgroundColor="$infoLight">
           <Row gap="$md" alignItems="flex-start">
-            <Text size="$6">💡</Text>
+            <Lightbulb size={20} color="$info" />
             <Column gap="$xs" flex={1}>
               <Text weight="medium" color="$info">
                 Looking for payout settings?

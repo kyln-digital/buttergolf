@@ -47,7 +47,7 @@ export function PhotoStep({
       try {
         console.log("📤 PhotoStep: Uploading image...", { isFirstImage });
         const uploadedUrl = await onUploadImage(image, isFirstImage);
-        console.log("✅ PhotoStep: Upload complete:", uploadedUrl);
+        console.log("PhotoStep: Upload complete:", uploadedUrl);
         return {
           ...image,
           uri: uploadedUrl,
@@ -55,7 +55,7 @@ export function PhotoStep({
           isFirstImage,
         };
       } catch (error) {
-        console.error("❌ PhotoStep: Upload failed:", error);
+        console.error("PhotoStep: Upload failed:", error);
         throw error;
       }
     },

@@ -48,7 +48,7 @@ async function main() {
     },
   });
 
-  console.log("✅ Created users:", [
+  console.log("Created users:", [
     `${user1.firstName} ${user1.lastName}`,
     `${user2.firstName} ${user2.lastName}`,
     `${user3.firstName} ${user3.lastName}`,
@@ -70,7 +70,7 @@ async function main() {
     )
   );
 
-  console.log(`✅ Created ${categories.length} categories`);
+  console.log(`Created ${categories.length} categories`);
 
   // Create brands from centralized constants
   const brands = await Promise.all(
@@ -87,7 +87,7 @@ async function main() {
     )
   );
 
-  console.log(`✅ Created ${brands.length} brands`);
+  console.log(`Created ${brands.length} brands`);
 
   // Seed club models for product upload dropdowns
   await seedClubModels(prisma);
@@ -302,13 +302,13 @@ async function main() {
     }),
   ]);
 
-  console.log(`✅ Created ${products.length} sample products`);
+  console.log(`Created ${products.length} sample products`);
   console.log("🌱 Seeding complete!");
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Seeding failed:", e);
+    console.error("Seeding failed:", e);
     process.exit(1);
   })
   .finally(async () => {

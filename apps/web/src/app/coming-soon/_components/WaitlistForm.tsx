@@ -66,7 +66,7 @@ export function WaitlistForm() {
             color: "#FFFAD2",
           }}
         >
-          🎉 You&apos;re on the list!
+          You&apos;re on the list!
         </span>
         <span
           style={{

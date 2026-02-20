@@ -43,7 +43,7 @@ async function main() {
     },
   });
 
-  console.log("✅ Created users:", [user1.name, user2.name, user3.name]);
+  console.log("Created users:", [user1.name, user2.name, user3.name]);
 
   // Create categories from centralized constants
   const categories = await Promise.all(
@@ -61,7 +61,7 @@ async function main() {
     )
   );
 
-  console.log(`✅ Created ${categories.length} categories`);
+  console.log(`Created ${categories.length} categories`);
 
   // Create sample products with realistic golf equipment
   const driversCategory = categories.find((c) => c.slug === "drivers")!;
@@ -358,13 +358,13 @@ async function main() {
     }),
   ]);
 
-  console.log(`✅ Created ${products.length} sample products`);
+  console.log(`Created ${products.length} sample products`);
   console.log("🌱 Seeding complete!");
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Seeding failed:", e);
+    console.error("Seeding failed:", e);
     process.exit(1);
   })
   .finally(async () => {

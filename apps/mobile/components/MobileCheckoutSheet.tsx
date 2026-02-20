@@ -3,7 +3,7 @@ import { Sheet } from "@tamagui/sheet";
 import { useStripe, CollectionMode, AddressCollectionMode } from "@stripe/stripe-react-native";
 import { InteractionManager } from "react-native";
 import { Column, Row, Text, Button, Heading, Card, Spinner } from "@buttergolf/ui";
-import { Info } from "@tamagui/lucide-icons";
+import { Info, Lock, Package, CheckCircle } from "@tamagui/lucide-icons";
 import { addBreadcrumb } from "../lib/breadcrumbs";
 
 // Shipping options matching the web API
@@ -339,19 +339,19 @@ const SheetContents = memo(function SheetContents({
           {/* Trust Badges - Compact */}
           <Row gap="$lg" flexWrap="wrap">
             <Row gap="$xs" alignItems="center">
-              <Text size="$3">🔒</Text>
+              <Lock size={14} color="$textSecondary" />
               <Text size="$2" color="$textSecondary">
                 Secure checkout
               </Text>
             </Row>
             <Row gap="$xs" alignItems="center">
-              <Text size="$3">📦</Text>
+              <Package size={14} color="$textSecondary" />
               <Text size="$2" color="$textSecondary">
                 Tracked shipping
               </Text>
             </Row>
             <Row gap="$xs" alignItems="center">
-              <Text size="$3">✅</Text>
+              <CheckCircle size={14} color="$textSecondary" />
               <Text size="$2" color="$textSecondary">
                 Buyer protection
               </Text>
@@ -448,7 +448,7 @@ const SheetContents = memo(function SheetContents({
         {/* Payment Hold Info Banner */}
         <Card variant="outlined" padding="$sm" borderColor="$info" backgroundColor="$infoLight">
           <Row gap="$sm" alignItems="center">
-            <Text size="$4">🔒</Text>
+            <Lock size={16} color="$info" />
             <Column gap="$xs" flex={1}>
               <Text size="$3" color="$info" fontWeight="600">
                 Payment held securely

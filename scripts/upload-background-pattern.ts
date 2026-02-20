@@ -21,7 +21,7 @@ if (
   !process.env.CLOUDINARY_API_SECRET ||
   !process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
 ) {
-  console.error("❌ Error: Cloudinary credentials not found in environment");
+  console.error("Error: Cloudinary credentials not found in environment");
   console.error("Make sure apps/web/.env.local contains:");
   console.error("  - NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME");
   console.error("  - CLOUDINARY_API_KEY");
@@ -29,7 +29,7 @@ if (
   process.exit(1);
 }
 
-console.log("✓ Cloudinary credentials loaded");
+console.log("Cloudinary credentials loaded");
 
 // Configure Cloudinary
 cloudinary.config({
@@ -56,16 +56,16 @@ async function uploadBackgroundPattern() {
       overwrite: true, // Replace if exists
     });
 
-    console.log("✅ Background pattern uploaded successfully!");
+    console.log("Background pattern uploaded successfully!");
     console.log("📍 Public ID:", result.public_id);
     console.log("🔗 URL:", result.secure_url);
     console.log("📐 Dimensions:", `${result.width}x${result.height}`);
-    console.log("\n🎉 You can now use this pattern in product image uploads!");
+    console.log("\nYou can now use this pattern in product image uploads!");
     console.log(
       "   The upload API will automatically apply it as background after removing the original background."
     );
   } catch (error) {
-    console.error("❌ Upload failed:", error);
+    console.error("Upload failed:", error);
     process.exit(1);
   }
 }

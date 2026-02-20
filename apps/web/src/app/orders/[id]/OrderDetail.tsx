@@ -750,12 +750,12 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                 }
                 size="lg"
               >
-                {order.paymentHoldStatus === "HELD" && "🔒 Payment Held"}
+                {order.paymentHoldStatus === "HELD" && "Payment Held"}
                 {order.paymentHoldStatus === "PENDING_SELLER_ONBOARDING" &&
-                  "⏳ Awaiting Seller Verification"}
-                {order.paymentHoldStatus === "RELEASED" && "✓ Payment Released"}
-                {order.paymentHoldStatus === "DISPUTED" && "⚠ Disputed"}
-                {order.paymentHoldStatus === "REFUNDED" && "↩ Refunded"}
+                  "Awaiting Seller Verification"}
+                {order.paymentHoldStatus === "RELEASED" && "Payment Released"}
+                {order.paymentHoldStatus === "DISPUTED" && "Disputed"}
+                {order.paymentHoldStatus === "REFUNDED" && "Refunded"}
               </Badge>
 
               {order.paymentReleasedAt && (

@@ -12,7 +12,7 @@ import {
 } from "@stripe/react-stripe-js";
 import { Column, Row, Text, Button, Spinner, Card, Heading } from "@buttergolf/ui";
 import { calculateBuyerProtectionFee, formatPrice } from "@/lib/pricing";
-import { Info } from "@tamagui/lucide-icons";
+import { Info, Lock, ShieldCheck, Package } from "@tamagui/lucide-icons";
 
 // Initialize Stripe outside component to avoid re-creating on every render
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
@@ -190,7 +190,7 @@ export function StripePaymentForm({
         {/* Payment Hold Info Banner */}
         <Card variant="outlined" padding="$sm" borderColor="$info" backgroundColor="$infoLight">
           <Row gap="$sm" alignItems="center">
-            <Text size="$4">🔒</Text>
+            <Lock size={16} color="$info" />
             <Column gap="$xs" flex={1}>
               <Text size="$3" color="$info" fontWeight="600">
                 Payment held securely
@@ -525,19 +525,19 @@ function CheckoutForm({
         {/* Trust badges */}
         <Row gap="$lg" justifyContent="center" flexWrap="wrap">
           <Row gap="$xs" alignItems="center">
-            <Text size="$3">🔒</Text>
+            <Lock size={14} color="$textSecondary" />
             <Text size="$2" color="$textSecondary">
               Payment held until receipt
             </Text>
           </Row>
           <Row gap="$xs" alignItems="center">
-            <Text size="$3">🛡️</Text>
+            <ShieldCheck size={14} color="$textSecondary" />
             <Text size="$2" color="$textSecondary">
               Buyer protection
             </Text>
           </Row>
           <Row gap="$xs" alignItems="center">
-            <Text size="$3">📦</Text>
+            <Package size={14} color="$textSecondary" />
             <Text size="$2" color="$textSecondary">
               Tracked shipping
             </Text>

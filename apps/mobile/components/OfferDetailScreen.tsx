@@ -560,7 +560,7 @@ export function OfferDetailScreen({
         {offer.status === "ACCEPTED" && isBuyer && (
           <Card variant="filled" padding="$md" backgroundColor="$successLight" marginBottom="$4">
             <Text size="$4" fontWeight="600" color="$success" textAlign="center" marginBottom="$sm">
-              🎉 Your offer was accepted!
+              Your offer was accepted!
             </Text>
             <Text size="$3" color="$text" textAlign="center">
               Complete your purchase to secure this item at the agreed price.

@@ -50,7 +50,7 @@ export function useImageUpload(): UseImageUploadReturn {
       const extension = file.name.split(".").pop();
       const filename = `${timestamp}-${randomStr}.${extension}`;
 
-      console.log("🚀 useImageUpload: Sending file to server:", {
+      console.log("useImageUpload: Sending file to server:", {
         filename,
         originalName: file.name,
         size: file.size,
@@ -82,7 +82,7 @@ export function useImageUpload(): UseImageUploadReturn {
 
       const result: UploadResult = await response.json();
 
-      console.log("✅ useImageUpload: Server response:", result);
+      console.log("useImageUpload: Server response:", result);
 
       setProgress(100);
       setUploading(false);

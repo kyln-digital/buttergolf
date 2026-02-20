@@ -14,6 +14,7 @@ import {
   Button,
 } from "@buttergolf/ui";
 import Link from "next/link";
+import { Lock, Package, CheckCircle } from "@tamagui/lucide-icons";
 import { StripeEmbeddedCheckout } from "./_components/StripeEmbeddedCheckout";
 import { PageHero } from "../_components/marketplace/PageHero";
 import { TrustSection } from "../_components/marketplace/TrustSection";
@@ -197,19 +198,19 @@ function CheckoutPageContent() {
                   {/* Trust Badges */}
                   <Column gap="$sm" paddingTop="$md" borderTopWidth={1} borderTopColor="$border">
                     <Row gap="$sm" alignItems="center">
-                      <Text size="$4">🔒</Text>
+                      <Lock size={16} color="$textSecondary" />
                       <Text size="$3" color="$textSecondary">
                         Secure checkout powered by Stripe
                       </Text>
                     </Row>
                     <Row gap="$sm" alignItems="center">
-                      <Text size="$4">📦</Text>
+                      <Package size={16} color="$textSecondary" />
                       <Text size="$3" color="$textSecondary">
                         Tracked shipping included
                       </Text>
                     </Row>
                     <Row gap="$sm" alignItems="center">
-                      <Text size="$4">✅</Text>
+                      <CheckCircle size={16} color="$textSecondary" />
                       <Text size="$3" color="$textSecondary">
                         Buyer protection guarantee
                       </Text>
