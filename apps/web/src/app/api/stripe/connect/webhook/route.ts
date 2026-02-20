@@ -295,7 +295,7 @@ async function syncAddressFromStripe(userId: string, account: Stripe.Account) {
           country: stripeAddress.country || "GB",
         },
       });
-      console.log(`✅ Updated address for user ${userId} from Stripe Connect`);
+      console.log(`Updated address for user ${userId} from Stripe Connect`);
     } else {
       // Create new address from Stripe data
       const name =
@@ -315,7 +315,7 @@ async function syncAddressFromStripe(userId: string, account: Stripe.Account) {
           isDefault: true,
         },
       });
-      console.log(`✅ Created address for user ${userId} from Stripe Connect`);
+      console.log(`Created address for user ${userId} from Stripe Connect`);
     }
   } catch (error) {
     console.error(`Error syncing address for user ${userId}:`, error);
@@ -447,7 +447,7 @@ async function processPendingTransfersForSeller(userId: string, stripeConnectId:
         });
 
         console.log(
-          `✅ Transfer ${transfer.id} created for order ${order.id}: £${transferAmountInPence / 100}`
+          `Transfer ${transfer.id} created for order ${order.id}: £${transferAmountInPence / 100}`
         );
 
         // TODO: Send payment released email to seller

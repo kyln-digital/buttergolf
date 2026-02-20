@@ -205,7 +205,7 @@ export function ImageUpload({
           onCropComplete={async (croppedBlob) => {
             try {
               // Debug: Log the received blob
-              console.log("📦 ImageUpload received cropped blob:", {
+              console.log("ImageUpload received cropped blob:", {
                 size: croppedBlob.size,
                 sizeKB: Math.round(croppedBlob.size / 1024),
                 type: croppedBlob.type,
