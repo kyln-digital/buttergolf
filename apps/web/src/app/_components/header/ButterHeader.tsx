@@ -209,19 +209,16 @@ export function ButterHeader() {
                 </LazySignedOut>
 
                 <LazySignedIn>
-                  <Link
-                    href="/messages"
-                    style={{ textDecoration: "none" }}
+                  <Button
+                    chromeless
+                    circular
+                    size="$4"
+                    onPress={() => router.push("/messages")}
                     aria-label="Messages"
                     title="Messages"
                   >
-                    <Button chromeless circular size="$4">
-                      <MessageSquare
-                        size={20}
-                        color={isActive("/messages") ? "$primary" : "$text"}
-                      />
-                    </Button>
-                  </Link>
+                    <MessageSquare size={20} color="$text" />
+                  </Button>
 
                   <LazyUserButton size="default" />
                 </LazySignedIn>
