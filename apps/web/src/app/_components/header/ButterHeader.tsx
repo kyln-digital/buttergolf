@@ -10,7 +10,6 @@ import {
   LazyUserButton,
   AuthButtonsSection,
 } from "@/components/auth/LazyClerkComponents";
-import { MessageSquare } from "@tamagui/lucide-icons";
 import {
   Row,
   Column,
@@ -209,18 +208,6 @@ export function ButterHeader() {
                 </LazySignedOut>
 
                 <LazySignedIn>
-                  {/* Messages - exact copy of ThemeToggleButton with message icon */}
-                  <Button
-                    chromeless
-                    circular
-                    size="$4"
-                    onPress={() => router.push("/messages")}
-                    accessibilityLabel="Messages"
-                    accessibilityRole="button"
-                  >
-                    <MessageSquare size={20} color="$text" />
-                  </Button>
-
                   <LazyUserButton size="default" />
                 </LazySignedIn>
               </AuthButtonsSection>
