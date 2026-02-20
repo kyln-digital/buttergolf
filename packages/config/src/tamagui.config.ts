@@ -1,4 +1,4 @@
-import { defaultConfig } from "@tamagui/config/v4";
+import { defaultConfig } from "@tamagui/config/v5";
 import { createTamagui, createTokens, createFont } from "tamagui";
 // Platform-specific animations: bundlers resolve animations.ts (web) or animations.native.ts (mobile)
 import { animations } from "./animations";
@@ -747,19 +747,22 @@ export const config = createTamagui({
   // Animations for Sheet and other animated components
   animations,
   // Media queries for responsive design
+  // Breakpoints are Tailwind-aligned (v5): xs=460, sm=640, md=768, lg=1024, xl=1280, xxl=1536
+  // NOTE: Names use the v4-era "gt*" convention (gtSm = minWidth) to preserve all existing
+  // component usage of $gtSm/$gtMd/$gtLg. Breakpoint VALUES align with Tailwind v5 defaults.
   media: {
-    xs: { maxWidth: 660 },
-    sm: { maxWidth: 800 },
-    md: { maxWidth: 1020 },
-    lg: { maxWidth: 1280 },
-    xl: { maxWidth: 1420 },
-    xxl: { maxWidth: 1600 },
-    gtXs: { minWidth: 660 + 1 },
-    gtSm: { minWidth: 800 + 1 },
-    gtMd: { minWidth: 1020 + 1 },
-    gtLg: { minWidth: 1280 + 1 },
-    gtXl: { minWidth: 1420 + 1 },
-    gtXxl: { minWidth: 1600 + 1 },
+    xs: { maxWidth: 460 },
+    sm: { maxWidth: 640 },
+    md: { maxWidth: 768 },
+    lg: { maxWidth: 1024 },
+    xl: { maxWidth: 1280 },
+    xxl: { maxWidth: 1536 },
+    gtXs: { minWidth: 461 },
+    gtSm: { minWidth: 641 },
+    gtMd: { minWidth: 769 },
+    gtLg: { minWidth: 1025 },
+    gtXl: { minWidth: 1281 },
+    gtXxl: { minWidth: 1537 },
     short: { maxHeight: 820 },
     tall: { minHeight: 820 },
     hoverNone: { hover: "none" },
@@ -768,6 +771,28 @@ export const config = createTamagui({
   settings: {
     ...defaultConfig.settings,
     onlyAllowShorthands: false,
+    // Explicit SSR defaults for our custom media query names.
+    // v5's built-in mediaQueryDefaultActive references v5 media names (e.g. "max-sm", "md")
+    // which don't exist in our custom set — so we override it here.
+    // Default assumes a mobile viewport (~375px), matching v4 behaviour.
+    mediaQueryDefaultActive: {
+      xs: true, // maxWidth: 460 — active (mobile ≤ 460px)
+      sm: true, // maxWidth: 640 — active
+      md: false, // maxWidth: 768 — inactive (larger than mobile default)
+      lg: false, // maxWidth: 1024
+      xl: false, // maxWidth: 1280
+      xxl: false, // maxWidth: 1536
+      gtXs: false, // minWidth: 461 — inactive (not wide enough)
+      gtSm: false, // minWidth: 641
+      gtMd: false, // minWidth: 769
+      gtLg: false, // minWidth: 1025
+      gtXl: false, // minWidth: 1281
+      gtXxl: false, // minWidth: 1537
+      short: false,
+      tall: true,
+      hoverNone: true, // assume touch (no hover) on mobile
+      pointerCoarse: true, // assume coarse pointer (touch) on mobile
+    },
   },
 });
 
