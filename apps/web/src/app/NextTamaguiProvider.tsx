@@ -35,7 +35,7 @@ export function NextTamaguiProvider({ children }: Readonly<{ children: ReactNode
       ) : (
         <ClerkProvider
           publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-          proxyUrl="/__clerk"
+          proxyUrl={process.env.NEXT_PUBLIC_CLERK_PROXY_URL || undefined}
         >
           <ErrorBoundary name="FavouritesProvider">
             <FavouritesProvider>{children}</FavouritesProvider>
