@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { Column, Text, Heading, Button, Card, Spinner, Row, Image, Badge } from "@buttergolf/ui";
+import { Lock, ShieldCheck, MapPin, Mail } from "@tamagui/lucide-icons";
 import Link from "next/link";
 import confetti from "canvas-confetti";
 
@@ -283,7 +284,7 @@ function CheckoutSuccessContent() {
           {/* Success Message */}
           <Column gap="$sm" alignItems="center">
             <Heading level={1} textAlign="center">
-              Order Confirmed! 🎉
+              Order Confirmed!
             </Heading>
             <Text color="$textSecondary" textAlign="center" size="$5">
               Thank you for your purchase. Your order has been successfully placed.
@@ -299,7 +300,7 @@ function CheckoutSuccessContent() {
             alignItems="center"
             fullWidth
           >
-            <Text size="$5">📧</Text>
+            <Mail size={18} color="$success" />
             <Text size="$4" color="$success" flex={1}>
               A confirmation email has been sent to your inbox
             </Text>
@@ -463,7 +464,7 @@ function CheckoutSuccessContent() {
                 <Row justifyContent="space-between" alignItems="center">
                   <Row gap="$xs" alignItems="center">
                     <Text color="$textSecondary">Buyer Protection</Text>
-                    <Text size="$3">🛡️</Text>
+                    <ShieldCheck size={14} color="$textSecondary" />
                   </Row>
                   <Text weight="medium">£{order.buyerProtectionFee.toFixed(2)}</Text>
                 </Row>
@@ -521,7 +522,7 @@ function CheckoutSuccessContent() {
             >
               <Column gap="$sm">
                 <Row gap="$sm" alignItems="center">
-                  <Text size="$5">🔒</Text>
+                  <Lock size={18} color="$info" />
                   <Text fontWeight="600" color="$info">
                     Payment Held Securely
                   </Text>
@@ -550,7 +551,7 @@ function CheckoutSuccessContent() {
           <Card variant="outlined" padding="$lg" fullWidth>
             <Column gap="$sm">
               <Row gap="$sm" alignItems="center">
-                <Text size="$5">📍</Text>
+                <MapPin size={18} color="$text" />
                 <Text weight="semibold">Shipping To</Text>
               </Row>
               <Text color="$textSecondary">{order.shippingAddress.name}</Text>

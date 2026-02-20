@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Column, Row, Heading, Text, Button, Card } from "@buttergolf/ui";
+import { Lock, Smartphone } from "@tamagui/lucide-icons";
 import PhoneInput, { isValidPhoneNumber, type Value } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 
@@ -64,7 +65,7 @@ export function PhoneCollectionStep({
       <Column maxWidth={600} paddingHorizontal="$6" paddingVertical="$8" width="100%" gap="$lg">
         {/* Header */}
         <Column gap="$md" alignItems="center">
-          <Text size="$10">📱</Text>
+          <Smartphone size={36} color="$textSecondary" />
           <Heading level={2} textAlign="center">
             Add your mobile number
           </Heading>
@@ -134,7 +135,7 @@ export function PhoneCollectionStep({
         {/* Why we need this */}
         <Card variant="outlined" padding="$md">
           <Row gap="$sm" alignItems="flex-start">
-            <Text size="$5">🔒</Text>
+            <Lock size={18} color="$textSecondary" style={{ marginTop: 2 }} />
             <Column gap="$xs" flex={1}>
               <Text size="$4" fontWeight="500">
                 Why do we need this?

@@ -1,6 +1,7 @@
 "use client";
 
 import { Column, Text, Heading, Button, Card, Row } from "@buttergolf/ui";
+import { AlertTriangle } from "@tamagui/lucide-icons";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -27,7 +28,7 @@ export default function CheckoutCancelPage() {
             width={80}
             height={80}
           >
-            <Text size="$9">⚠️</Text>
+            <AlertTriangle size={36} color="$warning" />
           </Column>
 
           {/* Cancel Message */}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Column, Row, Heading, Text, Button, Card, Switch } from "@buttergolf/ui";
-import { Bell, Mail, ShoppingBag, Store, MessageCircle } from "@tamagui/lucide-icons";
+import { Bell, Mail, ShoppingBag, Store, MessageCircle, Smartphone } from "@tamagui/lucide-icons";
 
 interface NotificationSetting {
   id: string;
@@ -135,7 +135,7 @@ export default function NotificationsPage() {
         {/* Info Card */}
         <Card variant="filled" padding="$md" backgroundColor="$backgroundHover">
           <Row gap="$sm" alignItems="center">
-            <Text size="$5">📱</Text>
+            <Smartphone size={18} color="$textSecondary" />
             <Text size="$3" color="$textSecondary" flex={1}>
               Push notifications are managed through your device settings when using the ButterGolf
               mobile app.

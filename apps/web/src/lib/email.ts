@@ -185,7 +185,7 @@ export async function sendNewSaleEmail(params: {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: sellerEmail,
-      subject: `🎉 You made a sale! ${productTitle}`,
+      subject: `You made a sale! ${productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -205,7 +205,7 @@ export async function sendNewSaleEmail(params: {
         <body>
           <div class="container">
             <div class="header">
-              <h1>🎉 Congratulations!</h1>
+              <h1>Congratulations!</h1>
             </div>
             <div class="content">
               <p>Hi ${sellerName},</p>
@@ -286,7 +286,7 @@ export async function sendShippedEmail(params: {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: buyerEmail,
-      subject: `📦 Your order is on its way! ${productTitle}`,
+      subject: `Your order is on its way! ${productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -306,7 +306,7 @@ export async function sendShippedEmail(params: {
         <body>
           <div class="container">
             <div class="header">
-              <h1>📦 Your Order Has Shipped!</h1>
+              <h1>Your Order Has Shipped!</h1>
             </div>
             <div class="content">
               <p>Hi ${buyerName},</p>
@@ -388,7 +388,7 @@ export async function sendNewMessageEmail(params: {
         <body>
           <div class="container">
             <div class="header">
-              <h1>💬 New Message</h1>
+              <h1>New Message</h1>
             </div>
             <div class="content">
               <p>Hi ${recipientName},</p>
@@ -438,8 +438,8 @@ export async function sendDeliveredEmail(params: {
   const { email, name, orderId, productTitle, isBuyer } = params;
 
   const subject = isBuyer
-    ? `✅ Your order has been delivered! ${productTitle}`
-    : `✅ Your sale has been delivered! ${productTitle}`;
+    ? `Your order has been delivered! ${productTitle}`
+    : `Your sale has been delivered! ${productTitle}`;
 
   const message = isBuyer
     ? "Your package has been delivered! We hope you love your new golf gear."
@@ -467,7 +467,7 @@ export async function sendDeliveredEmail(params: {
         <body>
           <div class="container">
             <div class="header">
-              <h1>✅ Delivered!</h1>
+              <h1>Delivered!</h1>
             </div>
             <div class="content">
               <p>Hi ${name},</p>
@@ -530,7 +530,7 @@ export async function sendLabelGeneratedEmail(params: {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: buyerEmail,
-      subject: `📋 Shipping label created for: ${productTitle}`,
+      subject: `Shipping label created for: ${productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -549,7 +549,7 @@ export async function sendLabelGeneratedEmail(params: {
         <body>
           <div class="container">
             <div class="header">
-              <h1>📋 Shipping Label Created</h1>
+              <h1>Shipping Label Created</h1>
             </div>
             <div class="content">
               <p>Hi ${buyerName},</p>
@@ -626,7 +626,7 @@ export async function sendInTransitEmail(params: {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: buyerEmail,
-      subject: `📦 Your package is on the move! ${productTitle}`,
+      subject: `Your package is on the move! ${productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -646,7 +646,7 @@ export async function sendInTransitEmail(params: {
         <body>
           <div class="container">
             <div class="header">
-              <h1>📦 Package In Transit!</h1>
+              <h1>Package In Transit!</h1>
             </div>
             <div class="content">
               <p>Hi ${buyerName},</p>
@@ -928,7 +928,7 @@ export async function sendPaymentReleasedEmail(params: {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: sellerEmail,
-      subject: `💰 Payment released! £${payoutAmount.toFixed(2)} for ${productTitle}`,
+      subject: `Payment released! £${payoutAmount.toFixed(2)} for ${productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -948,7 +948,7 @@ export async function sendPaymentReleasedEmail(params: {
         <body>
           <div class="container">
             <div class="header">
-              <h1>💰 Payment Released!</h1>
+              <h1>Payment Released!</h1>
             </div>
             <div class="content">
               <p>Hi ${sellerName},</p>
@@ -965,7 +965,7 @@ export async function sendPaymentReleasedEmail(params: {
                 <h3 style="margin-top: 0;">Order Details</h3>
                 <p><strong>Product:</strong> ${productTitle}</p>
                 <p><strong>Order ID:</strong> ${orderId.slice(0, 8).toUpperCase()}</p>
-                <p><strong>Status:</strong> ✅ Payment Released</p>
+                <p><strong>Status:</strong> Payment Released</p>
               </div>
               
               <p>The funds will be transferred to your bank account according to your Stripe payout schedule (usually 2-7 business days).</p>
@@ -976,7 +976,7 @@ export async function sendPaymentReleasedEmail(params: {
             </div>
             <div class="footer">
               <p>Thanks for selling on ButterGolf!</p>
-              <p>Keep listing to keep earning 🏌️</p>
+              <p>Keep listing to keep earning</p>
             </div>
           </div>
         </body>
@@ -1012,7 +1012,7 @@ export async function sendPaymentOnHoldEmail(params: {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: buyerEmail,
-      subject: `🔒 Your payment is protected: ${productTitle}`,
+      subject: `Your payment is protected: ${productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -1031,7 +1031,7 @@ export async function sendPaymentOnHoldEmail(params: {
         <body>
           <div class="container">
             <div class="header">
-              <h1>🔒 Buyer Protection Active</h1>
+              <h1>Buyer Protection Active</h1>
             </div>
             <div class="content">
               <p>Hi ${buyerName},</p>

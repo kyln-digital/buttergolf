@@ -154,7 +154,7 @@ export function AppPromoBanner() {
             flexShrink: 0,
           }}
         >
-          ⛳
+          BG
         </div>
 
         {/* Content */}
