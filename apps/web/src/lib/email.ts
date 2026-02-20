@@ -107,7 +107,7 @@ export async function sendOrderConfirmationEmail(params: {
         <body>
           <div class="container">
             <div class="header">
-              <h1>✓ Order Confirmed!</h1>
+              <h1>Order Confirmed!</h1>
             </div>
             <div class="content">
               <p>Hi ${buyerName},</p>
