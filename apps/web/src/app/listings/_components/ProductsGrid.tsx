@@ -198,7 +198,7 @@ export function ProductsGrid({
         <Text size="$7" weight="semibold" color="$textSecondary">
           No products found
         </Text>
-        <Text color="$textMuted">Try adjusting your filters or search query</Text>
+        <Text color="$text">Try adjusting your filters or search query</Text>
       </Column>
     );
   }
