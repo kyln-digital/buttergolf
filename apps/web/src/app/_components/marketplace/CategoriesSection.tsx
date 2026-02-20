@@ -54,10 +54,10 @@ export function CategoriesSection() {
               fontSize: "clamp(16px, 3vw, 18px)",
               fontWeight: 400,
               lineHeight: 1.5,
-              color: "var(--text-secondary, #545454)",
+              color: "var(--text-primary, #323232)",
               margin: 0,
             }}
-            className="text-secondary"
+            className="text-primary"
           >
             Find exactly what you need - faster.
           </p>
