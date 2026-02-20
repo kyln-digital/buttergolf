@@ -24,6 +24,7 @@ import {
   Gauge,
   CircleDot,
   Crosshair,
+  Lightbulb,
 } from "@tamagui/lucide-icons";
 
 import type { SellFormData, Category, Brand, Model } from "../types";
@@ -678,8 +679,9 @@ export function DetailsStep({
         {/* Helper Text */}
         <Column marginTop="$6" gap="$2">
           <Row backgroundColor="$lemonHaze" borderRadius="$lg" padding="$3" gap="$2">
+            <Lightbulb size={14} color="$burntOlive" />
             <Text size="$3" color="$burntOlive">
-              💡 Accurate details help your item get discovered by the right buyers
+              Accurate details help your item get discovered by the right buyers
             </Text>
           </Row>
         </Column>

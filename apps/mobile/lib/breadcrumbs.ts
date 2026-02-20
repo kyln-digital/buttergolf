@@ -58,7 +58,7 @@ export function addBreadcrumb(
   // Log to console in dev for immediate visibility
   // Standard React Native __DEV__ global
   if (typeof __DEV__ !== "undefined" && __DEV__) {
-    const prefix = level === "error" ? "❌" : level === "warning" ? "⚠️" : "📍";
+    const prefix = level === "error" ? "[ERROR]" : level === "warning" ? "[WARN]" : "[INFO]";
     console.log(`${prefix} [${category}] ${message}`, data || "");
   }
 }

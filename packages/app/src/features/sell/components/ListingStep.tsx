@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { TextInput, Keyboard } from "react-native";
 import { Column, Row, Text, View, Input, ScrollView, useTheme } from "@buttergolf/ui";
-import { Sparkles, Type, FileText, PoundSterling } from "@tamagui/lucide-icons";
+import { Sparkles, Type, FileText, PoundSterling, Lightbulb } from "@tamagui/lucide-icons";
 
 import type { SellFormData } from "../types";
 import { calculateAverageCondition, mapConditionToEnum, CONDITION_OPTIONS } from "../types";
@@ -274,9 +274,12 @@ export function ListingStep({ formData, onUpdate, direction }: Readonly<ListingS
                 focusStyle={{ borderWidth: 0, outlineWidth: 0 }}
               />
             </Row>
-            <Text size="$3" color="$textSecondary">
-              💡 Set a competitive price - check similar listings for guidance
-            </Text>
+            <Row gap="$1" alignItems="center">
+              <Lightbulb size={12} color="$textSecondary" />
+              <Text size="$3" color="$textSecondary">
+                Set a competitive price - check similar listings for guidance
+              </Text>
+            </Row>
           </Column>
         </Column>
 

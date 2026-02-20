@@ -1,6 +1,7 @@
 import { useState, useCallback, memo } from "react";
 import { Sheet } from "@tamagui/sheet";
 import { Column, Row, Text, Button, Heading, Card, Spinner, Input } from "@buttergolf/ui";
+import { Lightbulb } from "@tamagui/lucide-icons";
 
 interface MakeOfferSheetProps {
   productId: string;
@@ -287,7 +288,7 @@ const SheetContents = memo(function SheetContents({
         {/* Info Card */}
         <Card variant="outlined" padding="$sm" borderColor="$info" backgroundColor="$infoLight">
           <Row gap="$sm" alignItems="flex-start">
-            <Text size="$4">💡</Text>
+            <Lightbulb size={16} color="$info" />
             <Column gap="$xs" flex={1}>
               <Text size="$3" color="$info" fontWeight="600">
                 How offers work

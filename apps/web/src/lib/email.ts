@@ -726,7 +726,7 @@ export async function sendOutForDeliveryEmail(params: {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: buyerEmail,
-      subject: `🚚 Your package arrives TODAY! ${productTitle}`,
+      subject: `Your package arrives TODAY! ${productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -746,7 +746,7 @@ export async function sendOutForDeliveryEmail(params: {
         <body>
           <div class="container">
             <div class="header">
-              <h1>🚚 Out for Delivery TODAY!</h1>
+              <h1>Out for Delivery TODAY!</h1>
             </div>
             <div class="content">
               <p>Hi ${buyerName},</p>

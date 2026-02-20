@@ -20,7 +20,7 @@ async function keepalive() {
   const redisUrl = process.env.REDIS_URL;
 
   if (!redisUrl) {
-    console.error("❌ REDIS_URL not found in apps/web/.env.local or environment");
+    console.error("REDIS_URL not found in apps/web/.env.local or environment");
     process.exit(1);
   }
 
@@ -38,20 +38,20 @@ async function keepalive() {
 
     await redis.setex(key, 60 * 60 * 24 * 30, value); // 30 days TTL
 
-    console.log(`✅ Set keepalive key: ${key}`);
+    console.log(`Set keepalive key: ${key}`);
     console.log(`   Value: ${value}`);
     console.log(`   TTL: 30 days`);
 
     // Verify it was written
     const stored = await redis.get(key);
-    console.log(`✅ Verified read: ${stored}`);
+    console.log(`Verified read: ${stored}`);
 
     // Show some stats
     const info = await redis.info("memory");
     const usedMemory = info.match(/used_memory_human:(\S+)/)?.[1] || "unknown";
     console.log(`📊 Redis memory usage: ${usedMemory}`);
   } catch (error) {
-    console.error("❌ Redis error:", error);
+    console.error("Redis error:", error);
     process.exit(1);
   } finally {
     await redis.quit();
