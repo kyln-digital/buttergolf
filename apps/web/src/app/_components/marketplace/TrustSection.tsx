@@ -34,7 +34,7 @@ export function TrustSection() {
         <Heading
           level={2}
           size="$9"
-          $gtMd={{ size: "$10" }}
+          $md={{ size: "$10" }}
           color="$text"
           textAlign="center"
           marginBottom="$16"
@@ -47,10 +47,10 @@ export function TrustSection() {
           style={{ display: "grid" }}
           gridTemplateColumns="1"
           gap="$12"
-          $gtMd={{
+          $md={{
             gridTemplateColumns: "repeat(2, 1fr)",
           }}
-          $gtLg={{
+          $lg={{
             gridTemplateColumns: "repeat(4, 1fr)",
           }}
         >

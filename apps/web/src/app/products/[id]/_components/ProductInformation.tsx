@@ -67,7 +67,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
       padding="$lg"
       gap="$md"
       width="100%"
-      $gtMd={{
+      $md={{
         width: 420,
         flexShrink: 0,
       }}

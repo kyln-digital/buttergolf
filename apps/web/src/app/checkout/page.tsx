@@ -125,28 +125,16 @@ function CheckoutPageContent() {
             gap="$xl"
             width="100%"
             flexDirection="column-reverse"
-            $gtMd={{ flexDirection: "row", alignItems: "flex-start" }}
+            $md={{ flexDirection: "row", alignItems: "flex-start" }}
             alignItems="stretch"
           >
             {/* Left Column - Stripe Embedded Checkout (wider on desktop) */}
-            <Column
-              flexBasis={0}
-              flexGrow={3}
-              flexShrink={1}
-              minWidth={0}
-              $gtMd={{ minWidth: 500 }}
-            >
+            <Column flexBasis={0} flexGrow={3} flexShrink={1} minWidth={0} $md={{ minWidth: 500 }}>
               <StripeEmbeddedCheckout productId={product.id} onError={(err) => setError(err)} />
             </Column>
 
             {/* Right Column - Product Summary (narrower on desktop) */}
-            <Column
-              flexBasis={0}
-              flexGrow={1}
-              flexShrink={1}
-              minWidth={0}
-              $gtMd={{ maxWidth: 350 }}
-            >
+            <Column flexBasis={0} flexGrow={1} flexShrink={1} minWidth={0} $md={{ maxWidth: 350 }}>
               <Card variant="elevated" padding="$lg">
                 <Column gap="$md">
                   <Heading level={4}>Order Summary</Heading>

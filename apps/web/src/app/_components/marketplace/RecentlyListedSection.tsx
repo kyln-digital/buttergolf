@@ -24,10 +24,10 @@ export function RecentlyListedSectionClient({ products }: RecentlyListedSectionC
       >
         {/* Header - Centered */}
         <Column alignItems="center" gap="$md" width="100%">
-          <Heading level={2} size="$9" $gtMd={{ size: "$10" }} color="$text" textAlign="center">
+          <Heading level={2} size="$9" $md={{ size: "$10" }} color="$text" textAlign="center">
             Recently listed
           </Heading>
-          <Text size="$6" $gtMd={{ size: "$7" }} color="$textSecondary" textAlign="center">
+          <Text size="$6" $md={{ size: "$7" }} color="$textSecondary" textAlign="center">
             Latest drops, hottest deals - upgrade your game today.
           </Text>
         </Column>
@@ -38,14 +38,14 @@ export function RecentlyListedSectionClient({ products }: RecentlyListedSectionC
           style={{ display: "grid" }}
           gridTemplateColumns="repeat(2, 1fr)"
           gap="$md"
-          $gtSm={{
+          $sm={{
             gridTemplateColumns: "repeat(3, 1fr)",
             gap: "$lg",
           }}
-          $gtMd={{
+          $md={{
             gridTemplateColumns: "repeat(4, 1fr)",
           }}
-          $gtLg={{
+          $lg={{
             gridTemplateColumns: "repeat(5, 1fr)",
           }}
         >

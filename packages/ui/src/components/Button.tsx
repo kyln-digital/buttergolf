@@ -47,7 +47,6 @@ const ButtonBase = styled(TamaguiButton, {
   name: "Button",
 
   // Base styles for all buttons
-  // @ts-expect-error -- tamagui v2: fontFamily removed from ButtonStyledContext default variants; tracked in docs/tamagui-v2-migration.md bucket 5
   fontFamily: "$body",
   fontWeight: "700",
   cursor: "pointer",

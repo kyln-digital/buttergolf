@@ -44,7 +44,6 @@ const AnimatedHoverBox = styled(Row, {
   left: 0,
   backgroundColor: "rgba(244, 83, 20, 0.1)",
   borderRadius: "$md",
-  // @ts-expect-error -- tamagui v2: animation removed from styled() base props type; tracked in docs/tamagui-v2-migration.md bucket 5
   animation: "fast",
   pointerEvents: "none",
   paddingHorizontal: "$2",
