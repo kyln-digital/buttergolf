@@ -652,12 +652,12 @@ Our custom Button component uses `butterVariant` prop for brand-consistent styli
 // ✅ CORRECT - Use butterVariant for styled buttons
 import { Button } from "@buttergolf/ui";
 
-// Primary button (Spiced Clementine with inner glow)
+// Primary button (Spiced Clementine with drop shadow)
 <Button butterVariant="primary" size="$5">
   Sell now
 </Button>
 
-// Secondary button (Ironstone/dark with subtle shadow)
+// Secondary button (Light grey with drop shadow)
 <Button butterVariant="secondary" size="$4">
   Shop now
 </Button>
@@ -693,7 +693,7 @@ import { Button } from "@buttergolf/ui";
 **Why butterVariant?**
 
 - **Brand consistency** - Enforces Figma-designed button styles
-- **Cross-platform shadows** - Web gets inner glow + drop shadow, mobile gracefully degrades
+- **Cross-platform shadows** - Both variants get unified drop shadow, mobile gracefully degrades
 - **Built-in states** - Proper hover, press, and focus styles included
 - **Type-safe** - Only `primary` | `secondary` allowed
 - **Compiler-optimized** - Uses Tamagui `styled()` for performance
