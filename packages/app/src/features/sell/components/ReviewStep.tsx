@@ -102,7 +102,7 @@ export function ReviewStep({ formData, onEdit, direction }: Readonly<ReviewStepP
   return (
     <Column
       flex={1}
-      animation="quick"
+      transition="quick"
       enterStyle={{
         opacity: 0,
         x: direction === "forward" ? 50 : -50,

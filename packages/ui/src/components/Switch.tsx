@@ -11,7 +11,7 @@ import { Switch as TamaguiSwitch, styled, GetProps, Label, XStack } from "tamagu
  * @example
  * // Basic switch
  * <Switch size="$4">
- *   <Switch.Thumb animation="bouncy" />
+ *   <Switch.Thumb transition="bouncy" />
  * </Switch>
  *
  * @example
@@ -108,7 +108,7 @@ export function SwitchWithLabel({
         onCheckedChange={onCheckedChange}
         disabled={disabled}
       >
-        <Switch.Thumb animation="bouncy" />
+        <Switch.Thumb transition="bouncy" />
       </Switch>
       <Label
         htmlFor={switchId}

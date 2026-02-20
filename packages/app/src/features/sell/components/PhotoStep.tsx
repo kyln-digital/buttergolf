@@ -161,7 +161,7 @@ export function PhotoStep({
   return (
     <Column
       flex={1}
-      animation="quick"
+      transition="quick"
       enterStyle={{
         opacity: 0,
         x: direction === "forward" ? 50 : -50,

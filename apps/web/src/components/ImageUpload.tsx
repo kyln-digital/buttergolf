@@ -97,7 +97,7 @@ export function ImageUpload({
         justifyContent="center"
         minHeight={currentImages.length === 0 ? 280 : 180}
         cursor="pointer"
-        animation="quick"
+        transition="quick"
         width="100%"
         hoverStyle={{
           borderColor: "$primary",

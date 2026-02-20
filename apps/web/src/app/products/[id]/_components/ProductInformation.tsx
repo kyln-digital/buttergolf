@@ -287,7 +287,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
             shadowOffset={{ width: 0, height: 10 }}
             shadowOpacity={0.15}
             elevate
-            animation={[
+            transition={[
               "medium",
               {
                 opacity: {

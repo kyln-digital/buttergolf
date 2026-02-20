@@ -45,7 +45,7 @@ export function MobileFilterSheet({
 
   return (
     <Sheet modal open={open} onOpenChange={onOpenChange} snapPoints={[85]} dismissOnSnapToBottom>
-      <Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
+      <Overlay transition="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
       <Frame
         aria-modal={true}
         aria-labelledby={headingId}

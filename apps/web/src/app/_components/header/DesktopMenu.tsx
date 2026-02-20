@@ -50,7 +50,7 @@ export function DesktopMenu({ menuData }: Readonly<DesktopMenuProps>) {
                     </Text>
                     <Column
                       transform={activeDropdown === menuIndex ? [{ rotate: "180deg" }] : undefined}
-                      animation="quick"
+                      transition="quick"
                     >
                       <ChevronDownIcon />
                     </Column>
@@ -72,7 +72,7 @@ export function DesktopMenu({ menuData }: Readonly<DesktopMenuProps>) {
                   opacity={activeDropdown === menuIndex ? 1 : 0}
                   y={activeDropdown === menuIndex ? 0 : 8}
                   pointerEvents={activeDropdown === menuIndex ? "auto" : "none"}
-                  animation="quick"
+                  transition="quick"
                   shadowColor="$shadowColor"
                   shadowRadius={16}
                   shadowOffset={{ width: 0, height: 4 }}
