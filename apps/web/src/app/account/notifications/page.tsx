@@ -124,7 +124,7 @@ export default function NotificationsPage() {
                     onCheckedChange={() => handleToggle(setting.id)}
                     backgroundColor={setting.enabled ? "$primary" : "$backgroundHover"}
                   >
-                    <Switch.Thumb animation="quick" backgroundColor="$surface" />
+                    <Switch.Thumb transition="quick" backgroundColor="$surface" />
                   </Switch>
                 </Row>
               </Card>

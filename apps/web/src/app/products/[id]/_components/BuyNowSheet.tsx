@@ -61,10 +61,10 @@ export function BuyNowSheet({ product, isOpen, onOpenChange }: BuyNowSheetProps)
       onPositionChange={setPosition}
       dismissOnSnapToBottom
       zIndex={100_000}
-      animation="medium"
+      transition="medium"
     >
       <Sheet.Overlay
-        animation="lazy"
+        transition="lazy"
         enterStyle={{ opacity: 0 }}
         exitStyle={{ opacity: 0 }}
         backgroundColor="$overlayDark50"

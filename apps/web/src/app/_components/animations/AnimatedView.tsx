@@ -59,7 +59,7 @@ export function AnimatedView({
       width="100%"
       opacity={isVisible ? 1 : 0}
       y={isVisible ? 0 : 30}
-      animation={disableAnimations || prefersReducedMotion ? undefined : "lazy"}
+      transition={disableAnimations || prefersReducedMotion ? undefined : "lazy"}
     >
       {children}
     </View>

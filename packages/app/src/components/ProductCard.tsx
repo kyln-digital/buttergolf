@@ -151,7 +151,7 @@ export function ProductCard({
           }}
           hoverStyle={{ transform: "scale(1.1)" }}
           pressStyle={{ transform: "scale(0.9)", opacity: 0.8 }}
-          animation="quick"
+          transition="quick"
           role="button"
           aria-label={isFavourited ? "Remove from favourites" : "Add to favourites"}
           style={
