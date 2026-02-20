@@ -48,7 +48,8 @@ export interface BuySellToggleProps {
 }
 
 /**
- * Styled Tabs.Tab (trigger) with pill styling matching Button component
+ * Styled Tabs.Tab (trigger) with pill styling matching Button component.
+ * Uses Tamagui v2 activeStyle pseudo-prop for active state styling.
  */
 const StyledTab = styled(Tabs.Tab, {
   name: "BuySellTab",
@@ -67,6 +68,7 @@ const StyledTab = styled(Tabs.Tab, {
   // Web shadows for inactive
   boxShadow: "0px 1px 3px 0px rgba(0, 0, 0, 0.15)",
 
+  // When inactive: gray hover shows slightly reduced opacity
   hoverStyle: {
     opacity: 0.9,
     backgroundColor: "$cloudMistHover",
@@ -77,40 +79,22 @@ const StyledTab = styled(Tabs.Tab, {
     opacity: 0.9,
   },
 
-  // Override Tamagui's built-in active/selected states
   focusStyle: {
     outlineWidth: 2,
     outlineColor: "$primary",
     outlineStyle: "solid",
   },
 
+  // v2 pattern: activeStyle pseudo-prop applies when tab value matches parent Tabs value.
+  // Nested pseudo-props (hoverStyle/pressStyle) are not supported inside activeStyle;
+  // the default hoverStyle/pressStyle above apply for both active and inactive states.
+  activeStyle: {
+    backgroundColor: "$primary",
+    borderColor: "$primary",
+    boxShadow: "0px 1px 5px 0px rgba(0, 0, 0, 0.25)",
+  },
+
   variants: {
-    active: {
-      true: {
-        // Spiced Clementine - matches primary button
-        backgroundColor: "$primary",
-        borderColor: "$primary",
-        boxShadow: "0px 1px 5px 0px rgba(0, 0, 0, 0.25)",
-        hoverStyle: {
-          backgroundColor: "$primaryHover",
-          opacity: 1,
-        },
-        pressStyle: {
-          backgroundColor: "$primaryPress",
-          scale: 0.98,
-        },
-      },
-      false: {
-        // Light grey - matches secondary button
-        backgroundColor: "$cloudMist",
-        borderColor: "$border",
-        boxShadow: "0px 1px 3px 0px rgba(0, 0, 0, 0.15)",
-        hoverStyle: {
-          backgroundColor: "$cloudMistHover",
-          opacity: 0.95,
-        },
-      },
-    },
     layout: {
       mobile: {
         flex: 1,
@@ -165,12 +149,10 @@ export function BuySellToggle({
       orientation="horizontal"
       width="100%"
       flexDirection="column"
-      activationMode="manual"
     >
       <StyledTabsList layout={layout}>
         <StyledTab
           value="buying"
-          active={activeMode === "buying"}
           layout={layout}
           aria-label="Switch to buying mode"
         >
@@ -185,7 +167,6 @@ export function BuySellToggle({
 
         <StyledTab
           value="selling"
-          active={activeMode === "selling"}
           layout={layout}
           aria-label="Switch to selling mode"
         >

@@ -127,7 +127,6 @@ export function ForgotPasswordScreen({
             butterVariant="primary"
             size="$5"
             borderRadius="$full"
-            fontWeight="600"
             onPress={handleSubmit}
             disabled={isSubmitting || !isLoaded}
             opacity={isSubmitting ? 0.7 : 1}
@@ -140,7 +139,6 @@ export function ForgotPasswordScreen({
             chromeless
             size="$4"
             color="$primary"
-            fontWeight="600"
             onPress={onNavigateBack}
             disabled={isSubmitting}
             marginTop="$4"

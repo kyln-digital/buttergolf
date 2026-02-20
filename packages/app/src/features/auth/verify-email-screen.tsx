@@ -241,7 +241,6 @@ export function VerifyEmailScreen({
             butterVariant="primary"
             size="$5"
             borderRadius="$full"
-            fontWeight="600"
             onPress={() => {
               if (currentOtp.length === CODE_LENGTH) {
                 handleVerify(currentOtp);
@@ -265,7 +264,6 @@ export function VerifyEmailScreen({
               chromeless
               size="$4"
               color={resendCountdown > 0 ? "$textMuted" : "$primary"}
-              fontWeight="600"
               onPress={handleResendCode}
               disabled={resendCountdown > 0 || isResending}
               opacity={resendCountdown > 0 || isResending ? 0.5 : 1}

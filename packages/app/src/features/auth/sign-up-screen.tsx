@@ -342,7 +342,6 @@ export function SignUpScreen({
               butterVariant="primary"
               size="$5"
               borderRadius="$full"
-              fontWeight="600"
               onPress={handleSubmit}
               disabled={isSubmitting || !isLoaded}
               opacity={isSubmitting ? 0.7 : 1}
@@ -358,7 +357,6 @@ export function SignUpScreen({
                 chromeless
                 size="$5"
                 color="$primary"
-                fontWeight="600"
                 onPress={onNavigateToSignIn}
                 disabled={isSubmitting}
                 paddingVertical="$2"

@@ -44,7 +44,7 @@ const AnimatedHoverBox = styled(Row, {
   left: 0,
   backgroundColor: "rgba(244, 83, 20, 0.1)",
   borderRadius: "$md",
-  animation: "fast",
+  transition: "fast",
   pointerEvents: "none",
   paddingHorizontal: "$2",
   paddingVertical: "$1",

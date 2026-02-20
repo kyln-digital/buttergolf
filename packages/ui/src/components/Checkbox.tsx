@@ -6,7 +6,6 @@ import { useState } from "react";
 // Visible checkbox box
 const CheckboxBox = styled(YStack, {
   name: "CheckboxBox",
-  tag: "div" as const,
   width: 20,
   height: 20,
   borderWidth: 2,
@@ -17,7 +16,6 @@ const CheckboxBox = styled(YStack, {
   alignItems: "center",
   justifyContent: "center",
   cursor: "pointer",
-  transition: "all 0.2s ease",
 
   hoverStyle: {
     borderColor: "$fieldBorderHover",
