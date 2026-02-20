@@ -143,7 +143,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 backgroundColor="transparent"
                 borderWidth={2}
                 borderColor="$border"
-                color="$text"
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- tamagui v2: color removed from Button props; tracked in docs/tamagui-v2-migration.md bucket 5
+                {...({ color: "$text" } as any)}
                 onPress={() => {
                   // Navigate to home or reload page
                   if (globalThis.window !== undefined) {

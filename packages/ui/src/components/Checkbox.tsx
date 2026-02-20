@@ -1,11 +1,12 @@
 "use client";
 
-import { styled, GetProps, Stack } from "tamagui";
+import { styled, GetProps, YStack } from "tamagui";
 import { useState } from "react";
 
 // Visible checkbox box
-const CheckboxBox = styled(Stack, {
+const CheckboxBox = styled(YStack, {
   name: "CheckboxBox",
+  // @ts-expect-error -- tamagui v2: tag prop removed from YStack base variants; tracked in docs/tamagui-v2-migration.md bucket 5
   tag: "div" as const,
   width: 20,
   height: 20,
