@@ -8,7 +8,7 @@ import { animations } from "./animations";
  * TAMAGUI SIZE SYSTEM DOCUMENTATION
  * ============================================================================
  *
- * This config extends @tamagui/config/v4 which provides NUMERIC SIZE TOKENS
+ * This config extends @tamagui/config/v5 which provides NUMERIC SIZE TOKENS
  * for reliable, predictable sizing using standard Tamagui patterns.
  *
  * UNDERSTANDING SIZE IN TAMAGUI:
@@ -715,6 +715,39 @@ const dark_warning = {
   border: brandColors.warningBase,
 };
 
+const breakpoints = {
+  "2xs": 340,
+  xs: 460,
+  sm: 640,
+  md: 768,
+  lg: 1024,
+  xl: 1280,
+  "2xl": 1536,
+} as const;
+
+const SSR_VIEWPORT_WIDTH = 375;
+
+const mediaQueryDefaultActive = {
+  maxXs: SSR_VIEWPORT_WIDTH <= breakpoints.xs,
+  max2xs: SSR_VIEWPORT_WIDTH <= breakpoints["2xs"],
+  maxSm: SSR_VIEWPORT_WIDTH <= breakpoints.sm,
+  maxMd: SSR_VIEWPORT_WIDTH <= breakpoints.md,
+  maxLg: SSR_VIEWPORT_WIDTH <= breakpoints.lg,
+  maxXl: SSR_VIEWPORT_WIDTH <= breakpoints.xl,
+  max2Xl: SSR_VIEWPORT_WIDTH <= breakpoints["2xl"],
+  "2xl": SSR_VIEWPORT_WIDTH >= breakpoints["2xl"],
+  xl: SSR_VIEWPORT_WIDTH >= breakpoints.xl,
+  lg: SSR_VIEWPORT_WIDTH >= breakpoints.lg,
+  md: SSR_VIEWPORT_WIDTH >= breakpoints.md,
+  sm: SSR_VIEWPORT_WIDTH >= breakpoints.sm,
+  xs: SSR_VIEWPORT_WIDTH >= breakpoints.xs,
+  "2xs": SSR_VIEWPORT_WIDTH >= breakpoints["2xs"],
+  short: false,
+  tall: true,
+  hoverNone: true,
+  pointerCoarse: true,
+} as const;
+
 export const config = createTamagui({
   ...defaultConfig,
   tokens: customTokens,
@@ -746,23 +779,25 @@ export const config = createTamagui({
   },
   // Animations for Sheet and other animated components
   animations,
-  // Media queries for responsive design
-  // Breakpoints are Tailwind-aligned (v5): xs=460, sm=640, md=768, lg=1024, xl=1280, xxl=1536
-  // NOTE: Names use the v4-era "gt*" convention (gtSm = minWidth) to preserve all existing
-  // component usage of $gtSm/$gtMd/$gtLg. Breakpoint VALUES align with Tailwind v5 defaults.
+  // Media queries for responsive design.
+  // Canonical v5 semantics:
+  // - min-width breakpoints use bare names (sm, md, lg...)
+  // - max-width breakpoints use explicit max* names (maxSm, maxMd, maxLg...)
   media: {
-    xs: { maxWidth: 460 },
-    sm: { maxWidth: 640 },
-    md: { maxWidth: 768 },
-    lg: { maxWidth: 1024 },
-    xl: { maxWidth: 1280 },
-    xxl: { maxWidth: 1536 },
-    gtXs: { minWidth: 461 },
-    gtSm: { minWidth: 641 },
-    gtMd: { minWidth: 769 },
-    gtLg: { minWidth: 1025 },
-    gtXl: { minWidth: 1281 },
-    gtXxl: { minWidth: 1537 },
+    maxXs: { maxWidth: breakpoints.xs },
+    max2xs: { maxWidth: breakpoints["2xs"] },
+    maxSm: { maxWidth: breakpoints.sm },
+    maxMd: { maxWidth: breakpoints.md },
+    maxLg: { maxWidth: breakpoints.lg },
+    maxXl: { maxWidth: breakpoints.xl },
+    max2Xl: { maxWidth: breakpoints["2xl"] },
+    "2xl": { minWidth: breakpoints["2xl"] },
+    xl: { minWidth: breakpoints.xl },
+    lg: { minWidth: breakpoints.lg },
+    md: { minWidth: breakpoints.md },
+    sm: { minWidth: breakpoints.sm },
+    xs: { minWidth: breakpoints.xs },
+    "2xs": { minWidth: breakpoints["2xs"] },
     short: { maxHeight: 820 },
     tall: { minHeight: 820 },
     hoverNone: { hover: "none" },
@@ -771,28 +806,8 @@ export const config = createTamagui({
   settings: {
     ...defaultConfig.settings,
     onlyAllowShorthands: false,
-    // Explicit SSR defaults for our custom media query names.
-    // v5's built-in mediaQueryDefaultActive references v5 media names (e.g. "max-sm", "md")
-    // which don't exist in our custom set — so we override it here.
-    // Default assumes a mobile viewport (~375px), matching v4 behaviour.
-    mediaQueryDefaultActive: {
-      xs: true, // maxWidth: 460 — active (mobile ≤ 460px)
-      sm: true, // maxWidth: 640 — active
-      md: false, // maxWidth: 768 — inactive (larger than mobile default)
-      lg: false, // maxWidth: 1024
-      xl: false, // maxWidth: 1280
-      xxl: false, // maxWidth: 1536
-      gtXs: false, // minWidth: 461 — inactive (not wide enough)
-      gtSm: false, // minWidth: 641
-      gtMd: false, // minWidth: 769
-      gtLg: false, // minWidth: 1025
-      gtXl: false, // minWidth: 1281
-      gtXxl: false, // minWidth: 1537
-      short: false,
-      tall: true,
-      hoverNone: true, // assume touch (no hover) on mobile
-      pointerCoarse: true, // assume coarse pointer (touch) on mobile
-    },
+    // Stable SSR defaults derived from canonical media keys for a mobile-first viewport.
+    mediaQueryDefaultActive,
   },
 });
 
