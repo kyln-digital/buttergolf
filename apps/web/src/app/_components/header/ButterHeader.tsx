@@ -199,7 +199,7 @@ export function ButterHeader() {
                     Log-in
                   </Button>
                   <Button
-                    butterVariant="dark"
+                    butterVariant="secondary"
                     size="$4"
                     borderRadius="$full"
                     onPress={() => router.push("/sign-up")}
@@ -414,7 +414,7 @@ export function ButterHeader() {
                   Log-in
                 </Button>
                 <Button
-                  butterVariant="dark"
+                  butterVariant="secondary"
                   size="$5"
                   width="100%"
                   borderRadius="$full"

@@ -141,7 +141,7 @@ export function HorizontalProductCard({
 
         {/* Make an Offer Button */}
         <Button
-          butterVariant="dark"
+          butterVariant="secondary"
           size="$4"
           disabled={isSold}
           onPress={() => onMakeOffer(product.id)}
