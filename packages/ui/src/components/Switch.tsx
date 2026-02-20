@@ -108,7 +108,6 @@ export function SwitchWithLabel({
         onCheckedChange={onCheckedChange}
         disabled={disabled}
       >
-        {/* @ts-expect-error -- tamagui v2: animation removed from Switch.Thumb props; tracked in docs/tamagui-v2-migration.md bucket 5 */}
         <Switch.Thumb animation="bouncy" />
       </Switch>
       <Label
