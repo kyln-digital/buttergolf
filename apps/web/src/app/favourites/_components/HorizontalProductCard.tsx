@@ -35,7 +35,7 @@ export function HorizontalProductCard({
       shadowRadius={8}
       elevation={2}
       flexDirection="row"
-      $sm={{
+      $maxSm={{
         flexDirection: "column",
         gap: "$md",
         alignItems: "stretch",
@@ -59,7 +59,7 @@ export function HorizontalProductCard({
           cursor: "pointer",
         }}
         onPress={() => onViewDetails(product.id)}
-        $sm={{
+        $maxSm={{
           width: "100%",
           height: 200,
           alignSelf: "center",
@@ -119,7 +119,7 @@ export function HorizontalProductCard({
         flexShrink={0}
         flexDirection="row"
         flexWrap="wrap"
-        $sm={{
+        $maxSm={{
           width: "100%",
           justifyContent: "space-between",
         }}
@@ -131,7 +131,7 @@ export function HorizontalProductCard({
           disabled={isSold}
           onPress={() => onBuyNow(product.id)}
           minWidth={120}
-          $sm={{
+          $maxSm={{
             flex: 1,
             minWidth: 0,
           }}
@@ -146,7 +146,7 @@ export function HorizontalProductCard({
           disabled={isSold}
           onPress={() => onMakeOffer(product.id)}
           minWidth={120}
-          $sm={{
+          $maxSm={{
             flex: 1,
             minWidth: 0,
           }}

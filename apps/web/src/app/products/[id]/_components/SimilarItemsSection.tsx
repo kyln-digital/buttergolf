@@ -25,10 +25,10 @@ export function SimilarItemsSection({ products, category }: SimilarItemsSectionP
       >
         {/* Header */}
         <Column alignItems="center" gap="$md" width="100%">
-          <Heading level={2} size="$9" $gtMd={{ size: "$10" }} color="$text" textAlign="center">
+          <Heading level={2} size="$9" $md={{ size: "$10" }} color="$text" textAlign="center">
             Similar Items
           </Heading>
-          <Text size="$6" $gtMd={{ size: "$7" }} color="$textSecondary" textAlign="center">
+          <Text size="$6" $md={{ size: "$7" }} color="$textSecondary" textAlign="center">
             Other {category.toLowerCase()} items you might like
           </Text>
         </Column>

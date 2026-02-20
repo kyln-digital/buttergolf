@@ -212,7 +212,7 @@ function MyButton() {
       hoverStyle={{
         backgroundColor: "$primaryHover",
       }}
-      $gtMd={{
+      $md={{
         padding: "$lg",
       }}
     >

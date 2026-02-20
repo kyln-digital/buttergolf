@@ -75,7 +75,7 @@ export function OffersSidebar({ offers, currentUserId }: OffersSidebarProps) {
   return (
     <Column
       width="100%"
-      $gtLg={{
+      $lg={{
         width: "20%",
         minWidth: 250,
         maxWidth: 300,

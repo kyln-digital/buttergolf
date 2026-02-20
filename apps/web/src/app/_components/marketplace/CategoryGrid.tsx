@@ -70,13 +70,13 @@ export function CategoryGrid() {
           letterSpacing={2}
           textTransform="uppercase"
           size="$10"
-          $gtMd={{ size: "$11" }}
+          $md={{ size: "$11" }}
         >
           SHOP BY CATEGORY
         </Heading>
 
         {/* Category Grid */}
-        <Row flexWrap="wrap" gap="$lg" width="100%" $gtSm={{ gap: "$lg" }}>
+        <Row flexWrap="wrap" gap="$lg" width="100%" $sm={{ gap: "$lg" }}>
           {categories.map((category) => (
             <Link
               key={category.id}

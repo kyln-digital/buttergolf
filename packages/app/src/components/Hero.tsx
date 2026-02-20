@@ -136,8 +136,8 @@ function HeroHeading({
   const lines = getHeadingLines(heading);
   const media = useMedia();
 
-  // On mobile (below $gtSm breakpoint), skip animation and use responsive Tamagui Heading
-  const isMobile = !media.gtSm;
+  // On mobile (below $sm breakpoint), skip animation and use responsive Tamagui Heading
+  const isMobile = !media.sm;
 
   if (animationVariant === "fade-up" && !isMobile) {
     return <FadeUpText text={text} delay={animationDelay} style={headingStyle} />;
@@ -174,7 +174,7 @@ function HeroHeading({
       color="$text"
       fontWeight="700"
       textAlign="center"
-      $gtSm={{ textAlign: "left", fontSize: "$9", lineHeight: "$9" }}
+      $sm={{ textAlign: "left", fontSize: "$9", lineHeight: "$9" }}
       style={{ whiteSpace: "normal", wordBreak: "keep-all" }}
     >
       {text}
@@ -279,8 +279,8 @@ export function Hero({
       <View
         width="100%"
         height={320}
-        $gtSm={{ height: 350 }}
-        $gtMd={{ height: 400 }}
+        $sm={{ height: 350 }}
+        $md={{ height: 400 }}
         minHeight={minHeight}
         maxHeight={maxHeight}
         borderRadius="$2xl"
@@ -323,20 +323,15 @@ export function Hero({
             alignItems="center"
             paddingLeft="$6"
             paddingRight="$6"
-            $gtSm={{
+            $sm={{
               width: "55%",
               paddingLeft: "$8",
               paddingRight: "$2",
               alignItems: "flex-start",
             }}
-            $gtMd={{ width: "60%", paddingLeft: "$12", paddingRight: "$4" }}
+            $md={{ width: "60%", paddingLeft: "$12", paddingRight: "$4" }}
           >
-            <Column
-              gap="$4"
-              $gtSm={{ gap: "$5", maxWidth: 700 }}
-              $gtMd={{ gap: "$6" }}
-              width="100%"
-            >
+            <Column gap="$4" $sm={{ gap: "$5", maxWidth: 700 }} $md={{ gap: "$6" }} width="100%">
               {/* Heading */}
               <HeroHeading
                 heading={heading}
@@ -348,7 +343,7 @@ export function Hero({
               {subtitle && (
                 <Text
                   size="$7"
-                  $gtSm={{ fontSize: "$8", textAlign: "left" }}
+                  $sm={{ fontSize: "$8", textAlign: "left" }}
                   $md={{ fontSize: "$9" }}
                   color="$textSecondary"
                   fontWeight="500"
@@ -390,13 +385,13 @@ function HeroCTAButtons({ primaryCta, secondaryCta }: HeroCTAButtonsProps) {
       flexWrap="wrap"
       marginTop="$4"
       justifyContent="center"
-      $gtSm={{ justifyContent: "flex-start" }}
+      $sm={{ justifyContent: "flex-start" }}
     >
       {primaryCta && (
         <Button
           butterVariant="primary"
           size="$5"
-          $gtSm={{ size: "$4" }}
+          $sm={{ size: "$4" }}
           onPress={primaryLink.onPress}
           accessibilityRole="link"
         >
@@ -407,7 +402,7 @@ function HeroCTAButtons({ primaryCta, secondaryCta }: HeroCTAButtonsProps) {
         <Button
           butterVariant="secondary"
           size="$5"
-          $gtSm={{ size: "$4" }}
+          $sm={{ size: "$4" }}
           onPress={secondaryLink.onPress}
           accessibilityRole="link"
         >
@@ -434,8 +429,8 @@ function HeroImage({ source }: HeroImageProps) {
       alignItems="center"
       justifyContent="flex-end"
       paddingRight="$4"
-      $gtSm={{ display: "flex", width: "45%" }}
-      $gtMd={{ width: "40%", paddingRight: "$8" }}
+      $sm={{ display: "flex", width: "45%" }}
+      $md={{ width: "40%", paddingRight: "$8" }}
     >
       {isWeb ? (
         <img

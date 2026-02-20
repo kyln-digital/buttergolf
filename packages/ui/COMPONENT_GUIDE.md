@@ -445,11 +445,11 @@ Success (Teal)        Info (Blue)           Error (Red)
 <Container size="lg">
   <YStack
     gap="$4"
-    $gtMd={{ gap: "lg" }} // Larger gap on desktop
+    $md={{ gap: "lg" }} // Larger gap on desktop
   >
     <XStack
       flexDirection="column"
-      $gtSm={{ flexDirection: "row" }} // Horizontal on tablet+
+      $sm={{ flexDirection: "row" }} // Horizontal on tablet+
       gap="$4"
     >
       <YStack flex={1}>Content 1</YStack>
@@ -463,13 +463,13 @@ Success (Teal)        Info (Blue)           Error (Red)
 
 ```
 $xs:     max-width 660px
-$gtXs:   min-width 661px
+$xs:   min-width 661px
 $sm:     max-width 860px
-$gtSm:   min-width 861px
+$sm:   min-width 861px
 $md:     max-width 1020px
-$gtMd:   min-width 1021px
+$md:   min-width 1021px
 $lg:     max-width 1280px
-$gtLg:   min-width 1281px
+$lg:   min-width 1281px
 ```
 
 ---

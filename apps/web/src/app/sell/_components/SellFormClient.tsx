@@ -469,7 +469,7 @@ export function SellFormClient() {
                   borderBottomColor="$border"
                   width="100%"
                 >
-                  <Row gap="$lg" flexWrap="wrap" $gtMd={{ flexWrap: "nowrap" }} width="100%">
+                  <Row gap="$lg" flexWrap="wrap" $md={{ flexWrap: "nowrap" }} width="100%">
                     {/* Left: Image Upload (2/3 width on desktop) */}
                     <Column flex={2} minWidth={300} width="100%">
                       <ImageUpload

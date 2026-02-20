@@ -113,10 +113,10 @@ export function ButterHeader() {
             </Link>
 
             {/* Spacer to push navigation to the right */}
-            <Row flex={1} display="none" $gtMd={{ display: "flex" }} />
+            <Row flex={1} display="none" $md={{ display: "flex" }} />
 
             {/* Navigation - Desktop Only (Right-aligned) */}
-            <Row display="none" $gtMd={{ display: "flex" }} gap="$6" alignItems="center">
+            <Row display="none" $md={{ display: "flex" }} gap="$6" alignItems="center">
               <Link href="/" style={{ textDecoration: "none" }}>
                 <Row
                   paddingHorizontal="$3"
@@ -179,7 +179,7 @@ export function ButterHeader() {
             {/* Right Side: Auth Buttons - Desktop Only */}
             <Row
               display="none"
-              $gtMd={{ display: "flex" }}
+              $md={{ display: "flex" }}
               gap="$3"
               alignItems="center"
               flexShrink={0}
@@ -219,7 +219,7 @@ export function ButterHeader() {
               circular
               size="$4"
               display="flex"
-              $gtMd={{ display: "none" }}
+              $md={{ display: "none" }}
               onPress={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Menu"
               color="$text"
@@ -236,7 +236,7 @@ export function ButterHeader() {
           justifyContent="center"
           backgroundColor="transparent"
           display="none"
-          $gtMd={{
+          $md={{
             display: "flex",
             paddingHorizontal: "$6",
             paddingVertical: "$4",

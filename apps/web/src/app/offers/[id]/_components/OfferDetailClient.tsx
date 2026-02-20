@@ -162,7 +162,7 @@ export function OfferDetailClient({ offer: initialOffer, currentUserId }: OfferD
 
   return (
     <>
-      {/* Mobile Product Bar (visible below $gtLg) */}
+      {/* Mobile Product Bar (visible below $lg) */}
       <MobileProductBar
         product={offer.product}
         offer={offer}
@@ -183,12 +183,12 @@ export function OfferDetailClient({ offer: initialOffer, currentUserId }: OfferD
         paddingBottom="$2xl"
         alignItems="flex-start"
         flexDirection="column"
-        $gtLg={{ flexDirection: "row" }}
+        $lg={{ flexDirection: "row" }}
       >
         {/* Left Sidebar: Offers Navigation (desktop only) */}
         <Column
           display="none"
-          $gtLg={{
+          $lg={{
             display: "flex",
             flexBasis: "25%",
             flexGrow: 0,
@@ -204,7 +204,7 @@ export function OfferDetailClient({ offer: initialOffer, currentUserId }: OfferD
         <Column
           gap="$lg"
           width="100%"
-          $gtLg={{
+          $lg={{
             flexBasis: "50%",
             flexGrow: 1,
             flexShrink: 1,
@@ -242,7 +242,7 @@ export function OfferDetailClient({ offer: initialOffer, currentUserId }: OfferD
         {/* Right Sidebar: Product Summary (desktop only) */}
         <Column
           display="none"
-          $gtLg={{
+          $lg={{
             display: "flex",
             flexBasis: "25%",
             flexGrow: 0,
