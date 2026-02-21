@@ -28,15 +28,15 @@
   },
   "devDependencies": {
     "@tamagui/cli": "catalog:",
-    "check-dependency-version-consistency": "^5.0.1",
-    "dotenv": "^17.2.3",
+    "check-dependency-version-consistency": "^6.0.0",
+    "dotenv": "^17.3.1",
     "eslint": "catalog:",
-    "eslint-plugin-turbo": "^2.7.4",
+    "eslint-plugin-turbo": "^2.8.10",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
-    "prettier": "^3.6.2",
+    "prettier": "^3.8.1",
     "tsx": "catalog:",
-    "turbo": "^2.7.3",
+    "turbo": "^2.8.10",
     "typescript": "catalog:"
   },
   "pnpm": {
