@@ -14,6 +14,7 @@ import {
   Button,
 } from "@buttergolf/ui";
 import { Heart } from "@tamagui/lucide-icons";
+import { useTheme } from "tamagui";
 import type { ProductCardData } from "../types/product";
 
 export interface ProductCardProps {
@@ -26,11 +27,12 @@ export interface ProductCardProps {
 
 // Heart icon component — uses Tamagui lucide icon which is cross-platform
 function HeartIcon({ filled }: Readonly<{ filled: boolean }>) {
+  const theme = useTheme();
   return (
     <Heart
       size={18}
       color="$primary"
-      fill={filled ? "$primary" : "transparent"}
+      fill={filled ? theme.primary.val : "transparent"}
       strokeWidth={2.5}
     />
   );
