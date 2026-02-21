@@ -177,11 +177,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     });
 
     // Create transfer to seller's Stripe Connect account
+    // source_transaction links this transfer to the original charge, ensuring:
+    // 1. Transfer succeeds even if platform balance hasn't settled
+    // 2. Automatic payouts don't drain funds before transfer
     const transfer = await stripe.transfers.create({
       amount: transferAmountInPence,
       currency: "gbp",
       destination: order.seller.stripeConnectId!,
       transfer_group: order.id,
+      source_transaction: order.stripeChargeId!,
       metadata: {
         orderId: order.id,
         productId: order.productId,

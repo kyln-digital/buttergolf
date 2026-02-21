@@ -60,6 +60,8 @@ export async function GET(request: NextRequest) {
         seller: true,
         product: true,
       },
+      // stripeChargeId and stripePaymentId are scalar fields on Order,
+      // so they're included by default (no need to explicitly select them)
     });
 
     console.log(`Found ${ordersToRelease.length} orders eligible for auto-release`);
@@ -166,6 +168,22 @@ export async function GET(request: NextRequest) {
         }
 
         // STEP 3: Create the Stripe transfer (order is now locked as RELEASED)
+        // Retrieve charge ID for source_transaction linking
+        // This ensures the transfer draws from the specific charge's funds,
+        // not the platform's general balance
+        let chargeId = order.stripeChargeId;
+        if (!chargeId && order.stripePaymentId) {
+          try {
+            const pi = await stripe.paymentIntents.retrieve(order.stripePaymentId);
+            chargeId =
+              typeof pi.latest_charge === "string"
+                ? pi.latest_charge
+                : pi.latest_charge?.id || null;
+          } catch (piError) {
+            console.warn(`Could not retrieve charge for order ${order.id}:`, piError);
+          }
+        }
+
         let transfer;
         try {
           transfer = await stripe.transfers.create({
@@ -173,6 +191,7 @@ export async function GET(request: NextRequest) {
             currency: "gbp",
             destination: order.seller.stripeConnectId,
             transfer_group: order.id,
+            ...(chargeId ? { source_transaction: chargeId } : {}),
             metadata: {
               orderId: order.id,
               productId: order.productId,
