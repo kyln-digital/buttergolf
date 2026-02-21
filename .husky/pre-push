@@ -1,4 +1,4 @@
-export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
+export PATH="/home/runner/actions-runner/cached/externals/node24/lib/node_modules/corepack/shims:/usr/local/bin:/opt/homebrew/bin:$PATH"
 # Run type checks on all packages that are clean under Tamagui v2.
 # web and mobile still have known Tamagui v2 type-level breaks (children/Variable<any>,
 # CSS-only props in hoverStyle, etc.) that are documented in docs/tamagui-v2-migration.md.
