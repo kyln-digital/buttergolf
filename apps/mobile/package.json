@@ -45,6 +45,7 @@
     "react-native-phone-entry": "^0.2.4",
     "react-native-gesture-handler": "catalog:",
     "react-native-reanimated": "catalog:",
+    "react-native-teleport": "catalog:",
     "react-native-safe-area-context": "catalog:",
     "react-native-screens": "catalog:",
     "react-native-svg": "catalog:",
