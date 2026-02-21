@@ -8,7 +8,7 @@ function SkeletonPulse({
   height,
   borderRadius = "$sm",
 }: {
-  width: number | string;
+  width: number | `${number}%`;
   height: number;
   borderRadius?: string;
 }) {
