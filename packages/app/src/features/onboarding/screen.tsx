@@ -175,7 +175,7 @@ export function OnboardingScreen({
               source={LogoCreamPng}
               width="100%"
               height="100%"
-              resizeMode="contain"
+              objectFit="contain"
               accessible={true}
               aria-label="Butter Golf Logo"
             />
@@ -233,7 +233,7 @@ export function OnboardingScreen({
                 source={item.source}
                 width={CARD_WIDTH}
                 height={CARD_HEIGHT}
-                resizeMode="contain"
+                objectFit="contain"
                 accessible={true}
                 aria-label={item.label}
               />
@@ -270,7 +270,7 @@ export function OnboardingScreen({
                 source={item.source}
                 width={CARD_WIDTH}
                 height={CARD_HEIGHT}
-                resizeMode="contain"
+                objectFit="contain"
                 accessible={true}
                 aria-label={item.label}
               />

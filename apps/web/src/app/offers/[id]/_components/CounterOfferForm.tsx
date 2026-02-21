@@ -118,7 +118,7 @@ export function CounterOfferForm({
                 placeholder="0.00"
                 value={amount}
                 onChangeText={setAmount}
-                keyboardType="decimal-pad"
+                inputMode="decimal"
                 fullWidth
                 disabled={submitting}
               />

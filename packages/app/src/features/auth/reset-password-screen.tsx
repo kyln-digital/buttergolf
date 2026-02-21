@@ -187,7 +187,7 @@ export function ResetPasswordScreen({
               value={code}
               onChangeText={handleCodeChange}
               placeholder="000000"
-              keyboardType="numeric"
+              inputMode="numeric"
               error={codeError}
               editable={!isSubmitting}
             />
@@ -199,9 +199,10 @@ export function ResetPasswordScreen({
                 value={newPassword}
                 onChangeText={handlePasswordChange}
                 placeholder="••••••••"
-                secureTextEntry
+                type="password"
                 error={passwordError}
                 editable={!isSubmitting}
+                autoComplete="new-password"
               />
 
               {/* Password Strength Indicator */}
@@ -249,9 +250,10 @@ export function ResetPasswordScreen({
               value={confirmPassword}
               onChangeText={handleConfirmPasswordChange}
               placeholder="••••••••"
-              secureTextEntry
+              type="password"
               error={confirmPasswordError}
               editable={!isSubmitting}
+              autoComplete="new-password"
             />
           </Column>
 

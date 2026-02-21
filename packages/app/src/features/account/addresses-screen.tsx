@@ -314,7 +314,7 @@ export function AddressesScreen({
                 value={formData.phone}
                 onChangeText={(text) => setFormData((prev) => ({ ...prev, phone: text }))}
                 placeholder="For delivery updates (optional)"
-                keyboardType="phone-pad"
+                inputMode="tel"
               />
             </Column>
 

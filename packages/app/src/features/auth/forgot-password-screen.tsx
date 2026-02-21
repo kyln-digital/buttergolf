@@ -112,9 +112,10 @@ export function ForgotPasswordScreen({
               value={email}
               onChangeText={handleEmailChange}
               placeholder="your@email.com"
-              keyboardType="email-address"
+              type="email"
               error={emailError}
               editable={!isSubmitting}
+              autoComplete="email"
             />
 
             <Text size="$3" color="$textMuted">

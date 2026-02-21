@@ -311,7 +311,8 @@ export function OrdersScreen({
                     {/* Product Image */}
                     {productImage ? (
                       <Image
-                        source={{ uri: productImage }}
+                        src={productImage}
+                        alt="Product image"
                         width={80}
                         height={80}
                         borderRadius="$md"

@@ -181,10 +181,9 @@ export function SignInScreen({
               value={formData.email}
               onChangeText={handleEmailChange}
               placeholder="your@email.com"
-              keyboardType="email-address"
+              type="email"
               error={fieldErrors.email}
               editable={!isSubmitting}
-              textContentType="emailAddress"
               autoComplete="email"
             />
 
@@ -193,11 +192,10 @@ export function SignInScreen({
               value={formData.password}
               onChangeText={handlePasswordChange}
               placeholder="••••••••"
-              secureTextEntry
+              type="password"
               error={fieldErrors.password}
               editable={!isSubmitting}
-              textContentType="password"
-              autoComplete="password"
+              autoComplete="current-password"
             />
 
             {/* Forgot Password Link */}
