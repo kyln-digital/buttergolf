@@ -324,6 +324,14 @@ function CheckoutForm({
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [email, setEmail] = useState("");
+  const [shippingAddress, setShippingAddress] = useState<{
+    line1?: string;
+    line2?: string | null;
+    city?: string;
+    state?: string;
+    postal_code?: string;
+    country?: string;
+  } | null>(null);
   const [isEmailComplete, setIsEmailComplete] = useState(false);
   const [isAddressComplete, setIsAddressComplete] = useState(false);
   const [isPaymentComplete, setIsPaymentComplete] = useState(false);
@@ -365,6 +373,16 @@ function CheckoutForm({
           payment_method_data: {
             billing_details: {
               email,
+              address: shippingAddress
+                ? {
+                    line1: shippingAddress.line1,
+                    line2: shippingAddress.line2 ?? undefined,
+                    city: shippingAddress.city,
+                    state: shippingAddress.state,
+                    postal_code: shippingAddress.postal_code,
+                    country: shippingAddress.country,
+                  }
+                : undefined,
             },
           },
         },
@@ -438,6 +456,9 @@ function CheckoutForm({
             }}
             onChange={(event) => {
               setIsAddressComplete(event.complete);
+              if (event.value?.address) {
+                setShippingAddress(event.value.address);
+              }
             }}
           />
         </Column>
