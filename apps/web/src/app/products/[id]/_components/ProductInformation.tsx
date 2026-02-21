@@ -366,13 +366,6 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
           </Popover.Content>
         </Popover>
       </Column>
-
-      {/* View Price Breakdown Link */}
-      <Row justifyContent="center" width="100%">
-        <Button chromeless size="$3" color="$textSecondary" textDecorationLine="underline">
-          View price breakdown
-        </Button>
-      </Row>
     </Column>
   );
 }
