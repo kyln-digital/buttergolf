@@ -1,38 +1,24 @@
 "use client";
 
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Column,
   Row,
-  ScrollView,
   Text,
   Spinner,
   Button,
-  TextArea,
-  Card,
-  Image,
+  View,
+  ChatMessageList,
+  ChatInput,
 } from "@buttergolf/ui";
+import type { ChatMessage } from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ArrowLeft, Send, Clock } from "@tamagui/lucide-icons";
-import { formatDistanceToNow } from "date-fns";
+import { ArrowLeft } from "@tamagui/lucide-icons";
 
 const MESSAGE_LIMITS = {
   MAX_LENGTH: 2000,
   MIN_LENGTH: 1,
 };
-
-interface Message {
-  id: string;
-  orderId: string;
-  senderId: string;
-  senderName: string;
-  senderImage: string | null;
-  content: string;
-  createdAt: string;
-  isRead: boolean;
-  senderRole?: "buyer" | "seller";
-  isOwnMessage?: boolean;
-}
 
 interface MessageThreadScreenProps {
   /** Order ID for this conversation */
@@ -49,11 +35,34 @@ interface MessageThreadScreenProps {
   productTitle?: string;
   /** Callback to fetch messages for this order */
   onFetchMessages?: (orderId: string) => Promise<{
-    messages: Message[];
+    messages: Array<{
+      id: string;
+      orderId: string;
+      senderId: string;
+      senderName: string;
+      senderImage: string | null;
+      content: string;
+      createdAt: string;
+      isRead: boolean;
+      senderRole?: "buyer" | "seller";
+      isOwnMessage?: boolean;
+    }>;
     userRole?: "buyer" | "seller";
   }>;
   /** Callback to send a message */
-  onSendMessage?: (orderId: string, content: string) => Promise<Message>;
+  onSendMessage?: (
+    orderId: string,
+    content: string
+  ) => Promise<{
+    id: string;
+    orderId: string;
+    senderId: string;
+    senderName: string;
+    senderImage: string | null;
+    content: string;
+    createdAt: string;
+    isRead: boolean;
+  }>;
   /** Callback to mark messages as read */
   onMarkAsRead?: (orderId: string) => Promise<void>;
   /** Navigate back */
@@ -63,7 +72,6 @@ interface MessageThreadScreenProps {
 export function MessageThreadScreen({
   orderId,
   currentUserId,
-  userRole = "buyer",
   otherUserName,
   otherUserImage,
   productTitle = "Order",
@@ -73,15 +81,13 @@ export function MessageThreadScreen({
   onBack,
 }: Readonly<MessageThreadScreenProps>) {
   const insets = useSafeAreaInsets();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [sseError, setSSEError] = useState<string | null>(null);
-  const scrollViewRef = useRef<ScrollView>(null);
-  const eventSourceRef = useRef<EventSource | null>(null);
 
   const isOverLimit = newMessage.length > MESSAGE_LIMITS.MAX_LENGTH;
 
@@ -89,31 +95,29 @@ export function MessageThreadScreen({
   useEffect(() => {
     let cancelled = false;
 
-    const fetchAndSetupSSE = async () => {
+    const fetchAndSetup = async () => {
       try {
-        // Fetch initial messages
         if (onFetchMessages) {
           const data = await onFetchMessages(orderId);
           if (!cancelled) {
             setMessages(
               data.messages.map((msg) => ({
-                ...msg,
-                isOwnMessage: msg.senderId === currentUserId,
+                id: msg.id,
+                senderId: msg.senderId,
+                content: msg.content,
+                createdAt: msg.createdAt,
+                isRead: msg.isRead,
               }))
             );
           }
         }
 
-        // Mark messages as read
         if (onMarkAsRead && !cancelled) {
-          await onMarkAsRead(orderId).catch((err) => {
-            console.warn("Failed to mark messages as read:", err);
-          });
+          await onMarkAsRead(orderId).catch(() => {});
         }
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Failed to load messages");
-          console.error("Error fetching messages:", err);
         }
       } finally {
         if (!cancelled) {
@@ -122,42 +126,40 @@ export function MessageThreadScreen({
       }
     };
 
-    fetchAndSetupSSE();
+    fetchAndSetup();
 
     // Setup SSE stream for real-time messages (web-only)
+    let eventSource: EventSource | null = null;
     if (typeof window !== "undefined" && window.EventSource) {
-      const eventSource = new EventSource(`/api/orders/${orderId}/messages/stream`);
-      eventSourceRef.current = eventSource;
+      eventSource = new EventSource(`/api/orders/${orderId}/messages/stream`);
 
       eventSource.addEventListener("open", () => {
-        console.log("[SSE] Connected to message stream");
-        setIsConnected(true);
-        setSSEError(null);
+        if (!cancelled) {
+          setIsConnected(true);
+          setSSEError(null);
+        }
       });
 
       eventSource.addEventListener("message", (event) => {
         try {
           const data = JSON.parse(event.data);
-
-          if (data.type === "new_message" && data.message) {
-            if (!cancelled) {
-              setMessages((prev) => {
-                // Avoid duplicates
-                if (prev.some((m) => m.id === data.message.id)) {
-                  return prev;
-                }
-                return [
-                  ...prev,
-                  {
-                    ...data.message,
-                    isOwnMessage: data.message.senderId === currentUserId,
-                  },
-                ];
-              });
-            }
+          if (data.type === "new_message" && data.message && !cancelled) {
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === data.message.id)) return prev;
+              return [
+                ...prev,
+                {
+                  id: data.message.id,
+                  senderId: data.message.senderId,
+                  content: data.message.content,
+                  createdAt: data.message.createdAt,
+                  isRead: data.message.isRead,
+                },
+              ];
+            });
           }
-        } catch (err) {
-          console.error("[SSE] Failed to parse message:", err);
+        } catch {
+          // Ignore heartbeat parse errors
         }
       });
 
@@ -165,66 +167,55 @@ export function MessageThreadScreen({
         if (!cancelled) {
           setIsConnected(false);
           setSSEError("Connection lost. Reconnecting...");
-          console.error("[SSE] Connection error");
         }
       });
     }
 
     return () => {
       cancelled = true;
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
+      eventSource?.close();
     };
   }, [orderId, currentUserId, onFetchMessages, onMarkAsRead]);
 
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    scrollViewRef.current?.scrollToEnd({ animated: true });
-  }, [messages]);
-
   const handleSend = useCallback(async () => {
-    if (!newMessage.trim() || sending || isOverLimit) {
-      return;
-    }
+    if (!newMessage.trim() || sending || isOverLimit) return;
 
     setSending(true);
     setError(null);
 
+    const content = newMessage.trim();
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMessage: ChatMessage = {
+      id: tempId,
+      senderId: currentUserId,
+      content,
+      createdAt: new Date().toISOString(),
+      isRead: false,
+    };
+
+    setMessages((prev) => [...prev, optimisticMessage]);
+    setNewMessage("");
+
     try {
       if (onSendMessage) {
-        // Optimistic update
-        const tempId = `temp-${Date.now()}`;
-        const optimisticMessage: Message = {
-          id: tempId,
-          orderId,
-          senderId: currentUserId,
-          senderName: "You",
-          senderImage: null,
-          content: newMessage.trim(),
-          createdAt: new Date().toISOString(),
-          isRead: false,
-          isOwnMessage: true,
-        };
-
-        setMessages((prev) => [...prev, optimisticMessage]);
-        setNewMessage("");
-
-        try {
-          // Send to server
-          const message = await onSendMessage(orderId, newMessage.trim());
-
-          // Replace optimistic message with real message
-          setMessages((prev) =>
-            prev.map((m) => (m.id === tempId ? { ...message, isOwnMessage: true } : m))
-          );
-        } catch (err) {
-          // Remove optimistic message on failure
-          setMessages((prev) => prev.filter((m) => m.id !== tempId));
-          setError(err instanceof Error ? err.message : "Failed to send message");
-          console.error("Error sending message:", err);
-        }
+        const message = await onSendMessage(orderId, content);
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === tempId
+              ? {
+                  id: message.id,
+                  senderId: message.senderId,
+                  content: message.content,
+                  createdAt: message.createdAt,
+                  isRead: message.isRead,
+                }
+              : m
+          )
+        );
       }
+    } catch (err) {
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      setError(err instanceof Error ? err.message : "Failed to send message");
     } finally {
       setSending(false);
     }
@@ -240,6 +231,7 @@ export function MessageThreadScreen({
         paddingVertical="$md"
         borderBottomWidth={1}
         borderBottomColor="$border"
+        backgroundColor="$surface"
       >
         <Button
           size="$4"
@@ -255,10 +247,9 @@ export function MessageThreadScreen({
             <Text size="$6" weight="bold" numberOfLines={1} flex={1}>
               {productTitle}
             </Text>
-            {/* Real-time connection indicator (web only) */}
             {typeof window !== "undefined" && window.EventSource && (
               <Row alignItems="center" gap="$xs">
-                <Column
+                <View
                   width={8}
                   height={8}
                   borderRadius="$full"
@@ -276,148 +267,55 @@ export function MessageThreadScreen({
         </Column>
       </Row>
 
-      {/* Connection Status */}
+      {/* SSE Error Banner */}
       {sseError && (
         <Row
-          backgroundColor="$warning"
-          opacity={0.1}
+          backgroundColor="$warningLight"
           paddingHorizontal="$md"
           paddingVertical="$sm"
           alignItems="center"
-          gap="$md"
+          gap="$sm"
         >
-          <Clock size={16} color="$warning" />
           <Text size="$3" color="$warning">
             {sseError}
           </Text>
         </Row>
       )}
 
-      {/* Messages */}
-      <ScrollView
-        ref={scrollViewRef}
-        flex={1}
-        showsVerticalScrollIndicator={false}
-        paddingHorizontal="$md"
-        paddingVertical="$md"
-      >
-        {error && (
-          <Card backgroundColor="$error" opacity={0.1} marginBottom="$md">
-            <Text color="$error" size="$4">
-              {error}
-            </Text>
-          </Card>
-        )}
-
-        {loading ? (
-          <Column alignItems="center" justifyContent="center" flex={1} gap="$md">
-            <Spinner size="lg" color="$primary" />
-            <Text color="$textSecondary">Loading messages...</Text>
-          </Column>
-        ) : messages.length === 0 ? (
-          <Column alignItems="center" justifyContent="center" gap="$md" paddingVertical="$xl">
-            <Text size="$5" color="$textSecondary" textAlign="center">
-              Start a conversation with {otherUserName}
-            </Text>
-          </Column>
-        ) : (
-          <Column gap="$md" paddingBottom="$md">
-            {messages.map((message) => (
-              <Row
-                key={message.id}
-                alignItems="flex-end"
-                gap="$md"
-                flexDirection={message.isOwnMessage ? "row-reverse" : "row"}
-              >
-                {/* Avatar */}
-                {!message.isOwnMessage && otherUserImage && (
-                  <Image
-                    source={{ uri: otherUserImage }}
-                    width={32}
-                    height={32}
-                    borderRadius={16}
-                    backgroundColor="$surface"
-                  />
-                )}
-                {message.isOwnMessage && <Column width={32} />}
-
-                {/* Message Bubble */}
-                <Column
-                  maxWidth="75%"
-                  backgroundColor={message.isOwnMessage ? "$primary" : "$surface"}
-                  borderRadius="$lg"
-                  paddingHorizontal="$md"
-                  paddingVertical="$sm"
-                  borderWidth={1}
-                  borderColor={message.isOwnMessage ? "$primary" : "$border"}
-                >
-                  <Text
-                    size="$4"
-                    color={message.isOwnMessage ? "$textInverse" : "$text"}
-                    whiteSpace="pre-wrap"
-                  >
-                    {message.content}
-                  </Text>
-                  <Text
-                    size="$2"
-                    color={message.isOwnMessage ? "$primaryLight" : "$textTertiary"}
-                    marginTop="$xs"
-                  >
-                    {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
-                  </Text>
-                </Column>
-              </Row>
-            ))}
-          </Column>
-        )}
-      </ScrollView>
-
-      {/* Input Area */}
-      <Column
-        gap="$md"
-        paddingHorizontal="$md"
-        paddingVertical="$md"
-        borderTopWidth={1}
-        borderTopColor="$border"
-        backgroundColor="$background"
-        paddingBottom={Math.max(insets.bottom, 8)}
-      >
-        <Row alignItems="flex-end" gap="$md">
-          <Column flex={1} gap="$xs">
-            <TextArea
-              value={newMessage}
-              onChangeText={setNewMessage}
-              placeholder="Type a message..."
-              size="md"
-              rows={2}
-              maxLength={MESSAGE_LIMITS.MAX_LENGTH + 100}
-              editable={!sending}
-              disabled={sending}
-            />
-            <Row justifyContent="space-between" alignItems="center">
-              <Text size="$2" color={isOverLimit ? "$error" : "$textTertiary"}>
-                {newMessage.length}/{MESSAGE_LIMITS.MAX_LENGTH}
-              </Text>
-              {isOverLimit && (
-                <Text size="$2" color="$error">
-                  Over limit
-                </Text>
-              )}
-            </Row>
-          </Column>
-
-          <Button
-            size="$5"
-            backgroundColor="$primary"
-            color="$textInverse"
-            borderRadius="$full"
-            onPress={handleSend}
-            disabled={sending || !newMessage.trim() || isOverLimit}
-            paddingHorizontal="$md"
-          >
-            {sending ? <Spinner size="sm" color="$textInverse" /> : <Send size={20} />}
-          </Button>
+      {/* Error Banner */}
+      {error && (
+        <Row
+          backgroundColor="$errorLight"
+          paddingHorizontal="$md"
+          paddingVertical="$sm"
+          alignItems="center"
+          gap="$sm"
+        >
+          <Text size="$3" color="$error" flex={1}>
+            {error}
+          </Text>
         </Row>
+      )}
+
+      {/* Messages */}
+      <ChatMessageList
+        messages={messages}
+        currentUserId={currentUserId}
+        otherUserName={otherUserName}
+        otherUserImage={otherUserImage}
+        loading={loading}
+        emptyMessage={`Start a conversation with ${otherUserName}`}
+      />
+
+      {/* Input */}
+      <Column paddingBottom={Math.max(insets.bottom, 8)}>
+        <ChatInput
+          value={newMessage}
+          onChangeText={setNewMessage}
+          onSend={handleSend}
+          sending={sending}
+          maxLength={MESSAGE_LIMITS.MAX_LENGTH}
+        />
       </Column>
     </Column>
   );

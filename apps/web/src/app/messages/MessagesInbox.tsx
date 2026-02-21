@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Column, Row, Text, Heading, Card, Badge, Image, Container } from "@buttergolf/ui";
-import { MessageSquare, Package } from "@tamagui/lucide-icons";
+import { useRouter } from "next/navigation";
+import { Column, Row, Text, Heading, Badge, Container, ConversationListItem } from "@buttergolf/ui";
+import { MessageSquare } from "@tamagui/lucide-icons";
 import { formatDistanceToNow } from "date-fns";
 
 interface Conversation {
@@ -23,6 +24,8 @@ interface MessagesInboxProps {
 }
 
 export function MessagesInbox({ conversations }: MessagesInboxProps) {
+  const router = useRouter();
+
   if (conversations.length === 0) {
     return (
       <Container size="lg" paddingVertical="$3xl">
@@ -66,92 +69,20 @@ export function MessagesInbox({ conversations }: MessagesInboxProps) {
         </Row>
 
         <Column gap="$md">
-          {conversations.map((conversation) => (
-            <Link
+          {conversations.map((conversation, index) => (
+            <ConversationListItem
               key={conversation.orderId}
-              href={`/orders/${conversation.orderId}`}
-              style={{ textDecoration: "none" }}
-            >
-              <Card
-                variant="outlined"
-                padding="$md"
-                hoverStyle={{
-                  borderColor: "$primary",
-                  backgroundColor: "$backgroundHover",
-                }}
-                cursor="pointer"
-              >
-                <Row gap="$md" alignItems="center">
-                  {/* Product Image */}
-                  {conversation.productImage ? (
-                    <Image
-                      source={{ uri: conversation.productImage }}
-                      width={60}
-                      height={60}
-                      borderRadius="$md"
-                      alt={conversation.productTitle}
-                    />
-                  ) : (
-                    <Column
-                      width={60}
-                      height={60}
-                      borderRadius="$md"
-                      backgroundColor="$backgroundHover"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <Package size={24} color="$textSecondary" />
-                    </Column>
-                  )}
-
-                  {/* Conversation Details */}
-                  <Column flex={1} gap="$xs">
-                    <Row justifyContent="space-between" alignItems="center">
-                      <Text weight="semibold" numberOfLines={1}>
-                        {conversation.otherUserName}
-                      </Text>
-                      <Text size="$2" color="$textSecondary">
-                        {formatDistanceToNow(new Date(conversation.lastMessageAt), {
-                          addSuffix: true,
-                        })}
-                      </Text>
-                    </Row>
-
-                    <Text size="$3" color="$textSecondary" numberOfLines={1}>
-                      {conversation.productTitle}
-                    </Text>
-
-                    {conversation.lastMessagePreview && (
-                      <Text
-                        size="$4"
-                        color={conversation.unreadCount > 0 ? "$text" : "$textSecondary"}
-                        weight={conversation.unreadCount > 0 ? "semibold" : "normal"}
-                        numberOfLines={1}
-                      >
-                        {conversation.lastMessagePreview}
-                      </Text>
-                    )}
-                  </Column>
-
-                  {/* Unread Badge */}
-                  {conversation.unreadCount > 0 && (
-                    <Column
-                      backgroundColor="$primary"
-                      borderRadius="$full"
-                      minWidth={24}
-                      height={24}
-                      alignItems="center"
-                      justifyContent="center"
-                      paddingHorizontal="$xs"
-                    >
-                      <Text size="$2" color="$textInverse" weight="bold">
-                        {conversation.unreadCount > 9 ? "9+" : conversation.unreadCount}
-                      </Text>
-                    </Column>
-                  )}
-                </Row>
-              </Card>
-            </Link>
+              productImage={conversation.productImage}
+              productTitle={conversation.productTitle}
+              otherUserName={conversation.otherUserName}
+              lastMessage={conversation.lastMessagePreview}
+              timestamp={formatDistanceToNow(new Date(conversation.lastMessageAt), {
+                addSuffix: true,
+              })}
+              unreadCount={conversation.unreadCount}
+              onPress={() => router.push(`/messages/${conversation.orderId}`)}
+              index={index}
+            />
           ))}
         </Column>
       </Column>
