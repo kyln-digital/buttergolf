@@ -14,6 +14,7 @@ if (process.env.NODE_ENV === "production") {
 import { ButterHeader } from "./_components/header/ButterHeader";
 import { AppPromoBanner } from "./_components/AppPromoBanner";
 import { ConditionalLayout } from "./_components/ConditionalLayout";
+import { MobileInterstitial } from "./_components/MobileInterstitial";
 import { CartProvider } from "../context/CartContext";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 
@@ -76,6 +77,19 @@ export default function RootLayout({
       <body className={urbanist.className}>
         <NextTamaguiProvider>
           <CartProvider>
+            {/* Mobile interstitial — blocks mobile browsers, directs to desktop or native app */}
+            <ConditionalLayout
+              excludeRoutes={[
+                "/coming-soon",
+                "/mobile-onboarding",
+                "/sign-in",
+                "/sign-in/*",
+                "/sign-up",
+                "/sign-up/*",
+              ]}
+            >
+              <MobileInterstitial />
+            </ConditionalLayout>
             <ConditionalLayout
               excludeRoutes={[
                 "/coming-soon",
