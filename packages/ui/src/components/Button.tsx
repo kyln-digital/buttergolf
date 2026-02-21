@@ -20,7 +20,7 @@
  * ```
  */
 
-import { Button as TamaguiButton, styled, GetProps } from "tamagui";
+import { Button as TamaguiButton, styled, GetProps, withStaticProperties } from "tamagui";
 import { Platform } from "react-native";
 
 /**
@@ -112,5 +112,13 @@ const ButtonBase = styled(TamaguiButton, {
   },
 });
 
-export const Button = ButtonBase;
+/**
+ * Tamagui's `styled()` doesn't carry over sub-components from compound
+ * components like Button. The documented pattern (from the "How to Build
+ * a Button" guide) is to re-compose with `withStaticProperties`.
+ */
+export const Button = withStaticProperties(ButtonBase, {
+  Text: TamaguiButton.Text,
+  Icon: TamaguiButton.Icon,
+});
 export type ButtonProps = GetProps<typeof ButtonBase>;

@@ -139,14 +139,13 @@ export function ForgotPasswordScreen({
           <TamaguiButton
             chromeless
             size="$4"
-            color="$primary"
             onPress={onNavigateBack}
             disabled={isSubmitting}
             marginTop="$4"
             paddingVertical={0}
             paddingHorizontal="$2"
           >
-            Back to Sign In
+            <TamaguiButton.Text color="$primary">Back to Sign In</TamaguiButton.Text>
           </TamaguiButton>
         </Column>
       </ScrollView>
