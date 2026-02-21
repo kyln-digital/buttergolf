@@ -19,14 +19,14 @@ export const runtime = "nodejs"; // Required for Redis connections
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Authenticate user (works with both cookies and Bearer tokens)
-    const userId = await getUserIdFromRequest(req);
+    const clerkId = await getUserIdFromRequest(req);
 
-    if (!userId) {
+    if (!clerkId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { clerkId },
       select: { id: true },
     });
 

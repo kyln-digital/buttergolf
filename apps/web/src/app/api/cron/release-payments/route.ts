@@ -168,37 +168,30 @@ export async function GET(request: NextRequest) {
         }
 
         // STEP 3: Create the Stripe transfer (order is now locked as RELEASED)
-        // Retrieve charge ID for source_transaction linking
-        // This ensures the transfer draws from the specific charge's funds,
-        // not the platform's general balance
-        let chargeId = order.stripeChargeId;
-        if (!chargeId && order.stripePaymentId) {
-          try {
-            const pi = await stripe.paymentIntents.retrieve(order.stripePaymentId);
-            chargeId =
-              typeof pi.latest_charge === "string"
-                ? pi.latest_charge
-                : pi.latest_charge?.id || null;
-          } catch (piError) {
-            console.warn(`Could not retrieve charge for order ${order.id}:`, piError);
-          }
-        }
+        // Keep params deterministic so retries can safely use idempotency keys.
+        const chargeId = order.stripeChargeId;
 
         let transfer;
         try {
-          transfer = await stripe.transfers.create({
-            amount: transferAmountInPence,
-            currency: "gbp",
-            destination: order.seller.stripeConnectId,
-            transfer_group: order.id,
-            ...(chargeId ? { source_transaction: chargeId } : {}),
-            metadata: {
-              orderId: order.id,
-              productId: order.productId,
-              sellerId: order.sellerId,
-              reason: "auto_release_14_days",
+          transfer = await stripe.transfers.create(
+            {
+              amount: transferAmountInPence,
+              currency: "gbp",
+              destination: order.seller.stripeConnectId,
+              transfer_group: order.id,
+              ...(chargeId ? { source_transaction: chargeId } : {}),
+              metadata: {
+                orderId: order.id,
+                productId: order.productId,
+                sellerId: order.sellerId,
+                reason: "auto_release_14_days",
+              },
             },
-          });
+            {
+              // Prevent duplicate payouts if transfer succeeds but DB update fails.
+              idempotencyKey: `auto-release:${order.id}`,
+            }
+          );
         } catch (stripeError) {
           // Transfer failed - rollback status to HELD
           console.error("Stripe transfer failed, rolling back status:", {

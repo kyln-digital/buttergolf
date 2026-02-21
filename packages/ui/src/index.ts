@@ -128,6 +128,16 @@ export {
 } from "./components/Popover";
 export type { PopoverProps, PopoverSheetProps } from "./components/Popover";
 
+// Chat Components
+export { ChatBubble } from "./components/ChatBubble";
+export type { ChatBubbleProps } from "./components/ChatBubble";
+export { ChatInput } from "./components/ChatInput";
+export type { ChatInputProps } from "./components/ChatInput";
+export { ChatMessageList } from "./components/ChatMessageList";
+export type { ChatMessageListProps, ChatMessage } from "./components/ChatMessageList";
+export { ConversationListItem } from "./components/ConversationListItem";
+export type { ConversationListItemProps } from "./components/ConversationListItem";
+
 // Theme Components
 export { ThemeSwitcher, ThemeToggleButton } from "./components/ThemeSwitcher";
 export type { ThemeSwitcherProps, ThemeToggleButtonProps } from "./components/ThemeSwitcher";
