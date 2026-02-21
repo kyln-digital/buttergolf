@@ -4,7 +4,44 @@ import tseslint from "typescript-eslint";
 import pluginReactHooks from "eslint-plugin-react-hooks";
 import pluginReact from "eslint-plugin-react";
 import globals from "globals";
-import { config as baseConfig } from "./base.js";
+import { config as baseConfig, baseImportPatterns, baseImportPaths } from "./base.js";
+
+// ========================================================================
+// REACT IMPORT RESTRICTIONS - Exported for composition in app configs.
+// Includes all base restrictions plus React-specific ones.
+// ========================================================================
+export const reactImportPatterns = [...baseImportPatterns];
+
+export const reactImportPaths = [
+  ...baseImportPaths,
+  {
+    name: "tamagui",
+    importNames: [
+      "Spinner",
+      "Button",
+      "Input",
+      "Text",
+      "Heading",
+      "Card",
+      "Image",
+      "ScrollView",
+      "View",
+      "XStack",
+      "YStack",
+    ],
+    message:
+      "Import UI components from '@buttergolf/ui' instead of 'tamagui' directly. Our UI package provides custom variants and consistent theming.",
+  },
+  {
+    name: "jsdom",
+    message: "jsdom is web-only and contains SharedArrayBuffer which React Native doesn't support.",
+  },
+  {
+    name: "happy-dom",
+    message:
+      "happy-dom is web-only and contains SharedArrayBuffer which React Native doesn't support.",
+  },
+];
 
 /**
  * A custom ESLint configuration for libraries that use React.
@@ -28,7 +65,6 @@ export const config = [
   {
     plugins: {
       "react-hooks": pluginReactHooks,
-      // deprecation: Not compatible with ESLint 9 yet
     },
     settings: { react: { version: "detect" } },
     rules: {
@@ -79,41 +115,12 @@ export const config = [
           ],
         },
       ],
-      // Prevent direct tamagui imports - use @buttergolf/ui instead
-      // This ensures consistent component behavior and custom variants
+      // Merged import restrictions: base (Prisma, config) + React-specific (direct tamagui, jsdom)
       "no-restricted-imports": [
         "error",
         {
-          paths: [
-            {
-              name: "tamagui",
-              importNames: [
-                "Spinner",
-                "Button",
-                "Input",
-                "Text",
-                "Heading",
-                "Card",
-                "Image",
-                "ScrollView",
-                "View",
-                "XStack",
-                "YStack",
-              ],
-              message:
-                "Import UI components from '@buttergolf/ui' instead of 'tamagui' directly. Our UI package provides custom variants and consistent theming.",
-            },
-            {
-              name: "jsdom",
-              message:
-                "jsdom is web-only and contains SharedArrayBuffer which React Native doesn't support.",
-            },
-            {
-              name: "happy-dom",
-              message:
-                "happy-dom is web-only and contains SharedArrayBuffer which React Native doesn't support.",
-            },
-          ],
+          patterns: reactImportPatterns,
+          paths: reactImportPaths,
         },
       ],
     },

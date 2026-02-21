@@ -1,18 +1,7 @@
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
+import { nextJsConfig } from "@buttergolf/eslint-config/next-js";
 
 const eslintConfig = [
-  ...nextVitals,
-  ...nextTs,
-  {
-    ignores: [
-      ".next/**",
-      "out/**",
-      "build/**",
-      "next-env.d.ts",
-      ".tamagui/**",
-    ],
-  },
+  ...nextJsConfig,
   {
     files: ["*.config.js", "*.config.mjs"],
     rules: {
@@ -20,8 +9,6 @@ const eslintConfig = [
       "@typescript-eslint/no-unused-vars": "warn",
     },
   },
-  // Note: @tamagui/next-theme is now allowed - using official pattern from Tamagui docs
-  // Previous ban removed: useRootTheme() + NextThemeProvider now work correctly
 ];
 
 export default eslintConfig;

@@ -4,6 +4,33 @@ import turboPlugin from "eslint-plugin-turbo";
 import tseslint from "typescript-eslint";
 import onlyWarn from "eslint-plugin-only-warn";
 
+// ========================================================================
+// SHARED IMPORT RESTRICTIONS - Exported for composition in other configs.
+// Each config that redefines no-restricted-imports must include these
+// because ESLint flat config replaces (not merges) same-named rules.
+// ========================================================================
+export const baseImportPatterns = [
+  {
+    group: ["@buttergolf/ui/tamagui.config*"],
+    message:
+      "Import Tamagui config from '@buttergolf/config' instead of '@buttergolf/ui/tamagui.config'. The config source of truth lives in packages/config/src/tamagui.config.ts",
+  },
+];
+
+export const baseImportPaths = [
+  {
+    name: "@buttergolf/ui",
+    importNames: ["config"],
+    message:
+      "Import Tamagui config from '@buttergolf/config' instead of '@buttergolf/ui'. Use: import { config } from '@buttergolf/config'",
+  },
+  {
+    name: "@prisma/client",
+    message:
+      "Import from '@buttergolf/db' instead of '@prisma/client'. Direct imports cause build failures in pnpm monorepos. Use: import { prisma, Prisma, ProductCondition } from '@buttergolf/db'",
+  },
+];
+
 /**
  * A shared ESLint configuration for the repository.
  *
@@ -34,32 +61,8 @@ export const config = [
       "no-restricted-imports": [
         "error",
         {
-          patterns: [
-            {
-              group: ["@buttergolf/ui/tamagui.config*"],
-              message:
-                "Import Tamagui config from '@buttergolf/config' instead of '@buttergolf/ui/tamagui.config'. The config source of truth lives in packages/config/src/tamagui.config.ts",
-            },
-          ],
-          paths: [
-            {
-              name: "@buttergolf/ui",
-              importNames: ["config"],
-              message:
-                "Import Tamagui config from '@buttergolf/config' instead of '@buttergolf/ui'. Use: import { config } from '@buttergolf/config'",
-            },
-            // ================================================================
-            // PRISMA CLIENT - Must import from @buttergolf/db
-            // Direct @prisma/client imports cause "Cannot find module
-            // '.prisma/client/default'" errors in pnpm monorepos due to
-            // symlink resolution. Our custom output path fixes this.
-            // ================================================================
-            {
-              name: "@prisma/client",
-              message:
-                "Import from '@buttergolf/db' instead of '@prisma/client'. Direct imports cause build failures in pnpm monorepos. Use: import { prisma, Prisma, ProductCondition } from '@buttergolf/db'",
-            },
-          ],
+          patterns: baseImportPatterns,
+          paths: baseImportPaths,
         },
       ],
       // ========================================================================
@@ -99,6 +102,8 @@ export const config = [
   // CIRCULAR DEPENDENCY PREVENTION FOR UI COMPONENTS
   // Components in packages/ui/src/components should import siblings directly,
   // not through the barrel index, to avoid circular dependencies.
+  // NOTE: Must include baseImportPatterns/Paths because no-restricted-imports
+  // is replaced (not merged) in ESLint flat config.
   // ========================================================================
   {
     files: ["**/packages/ui/src/components/**/*.{ts,tsx}"],
@@ -107,12 +112,14 @@ export const config = [
         "error",
         {
           patterns: [
+            ...baseImportPatterns,
             {
               group: ["../index", "../index.ts", "../index.tsx"],
               message:
                 "Do not import from the barrel index inside components/ to avoid circular dependencies. Use direct sibling imports instead, e.g.: import { Button } from './Button'",
             },
           ],
+          paths: baseImportPaths,
         },
       ],
     },
@@ -122,6 +129,8 @@ export const config = [
   // Enforce proper dependency direction in the monorepo:
   // - packages/* cannot import from apps/*
   // - packages/app can import from packages/ui but not vice versa
+  // NOTE: Must include baseImportPatterns/Paths because no-restricted-imports
+  // is replaced (not merged) in ESLint flat config.
   // ========================================================================
   {
     files: ["**/packages/**/*.{ts,tsx}"],
@@ -130,12 +139,14 @@ export const config = [
         "error",
         {
           patterns: [
+            ...baseImportPatterns,
             {
               group: ["**/apps/web/**", "**/apps/mobile/**"],
               message:
                 "Packages cannot import from apps. Move shared code to a package (e.g., @buttergolf/app or @buttergolf/ui).",
             },
           ],
+          paths: baseImportPaths,
         },
       ],
     },
@@ -146,7 +157,11 @@ export const config = [
   // All other code must import the singleton from @buttergolf/db.
   // ========================================================================
   {
-    files: ["**/apps/**/*.{ts,tsx}", "**/packages/app/**/*.{ts,tsx}", "**/packages/ui/**/*.{ts,tsx}"],
+    files: [
+      "**/apps/**/*.{ts,tsx}",
+      "**/packages/app/**/*.{ts,tsx}",
+      "**/packages/ui/**/*.{ts,tsx}",
+    ],
     rules: {
       "no-restricted-syntax": [
         "error",

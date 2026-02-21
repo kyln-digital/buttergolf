@@ -60,6 +60,7 @@
     "uuid": "catalog:"
   },
   "devDependencies": {
+    "@buttergolf/eslint-config": "workspace:*",
     "@next/bundle-analyzer": "catalog:",
     "@prisma/nextjs-monorepo-workaround-plugin": "7.1.0",
     "@tailwindcss/postcss": "^4",
