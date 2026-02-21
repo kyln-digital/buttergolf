@@ -323,6 +323,7 @@ function CheckoutForm({
   const elements = useElements();
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [shippingAddress, setShippingAddress] = useState<{
     line1?: string;
@@ -332,6 +333,7 @@ function CheckoutForm({
     postal_code?: string;
     country?: string;
   } | null>(null);
+  const [hasPhone, setHasPhone] = useState(false);
   const [isEmailComplete, setIsEmailComplete] = useState(false);
   const [isAddressComplete, setIsAddressComplete] = useState(false);
   const [isPaymentComplete, setIsPaymentComplete] = useState(false);
@@ -343,14 +345,16 @@ function CheckoutForm({
     elements &&
     isEmailComplete &&
     isAddressComplete &&
+    hasPhone &&
     isPaymentComplete &&
     !isProcessing;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLocalError(null);
 
     if (!stripe || !elements) {
-      onError("Payment system not ready. Please try again.");
+      setLocalError("Payment system not ready. Please try again.");
       return;
     }
 
@@ -360,7 +364,7 @@ function CheckoutForm({
       // First, validate all elements
       const { error: submitError } = await elements.submit();
       if (submitError) {
-        onError(submitError.message || "Please check your payment details");
+        setLocalError(submitError.message || "Please check your payment details");
         setIsProcessing(false);
         return;
       }
@@ -390,22 +394,18 @@ function CheckoutForm({
       });
 
       if (error) {
-        // Payment failed
-        onError(error.message || "Payment failed. Please try again.");
+        setLocalError(error.message || "Payment failed. Please try again.");
         setIsProcessing(false);
       } else if (paymentIntent?.status === "succeeded") {
-        // Payment succeeded without redirect
         onSuccess(paymentIntent.id);
       } else if (paymentIntent?.status === "requires_action") {
-        // 3DS or other action required - Stripe will handle this
-        // The user will be redirected back to return_url after completing action
+        // 3DS or other action required - Stripe will handle via redirect
       } else {
-        // Unexpected status
-        onError(`Unexpected payment status: ${paymentIntent?.status}`);
+        setLocalError(`Unexpected payment status: ${paymentIntent?.status}`);
         setIsProcessing(false);
       }
     } catch (err) {
-      onError(err instanceof Error ? err.message : "An unexpected error occurred");
+      setLocalError(err instanceof Error ? err.message : "An unexpected error occurred");
       setIsProcessing(false);
     }
   };
@@ -456,6 +456,7 @@ function CheckoutForm({
             }}
             onChange={(event) => {
               setIsAddressComplete(event.complete);
+              setHasPhone(!!event.value?.phone?.trim());
               if (event.value?.address) {
                 setShippingAddress(event.value.address);
               }
@@ -523,6 +524,15 @@ function CheckoutForm({
             </Row>
           </Column>
         </Card>
+
+        {/* Inline error */}
+        {localError && (
+          <Card variant="outlined" padding="$sm" borderColor="$error" backgroundColor="$errorLight">
+            <Text size="$3" color="$error">
+              {localError}
+            </Text>
+          </Card>
+        )}
 
         {/* Submit Button */}
         <Button
