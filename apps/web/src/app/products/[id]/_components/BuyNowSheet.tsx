@@ -75,6 +75,11 @@ export function BuyNowSheet({ product, isOpen, onOpenChange }: BuyNowSheetProps)
         borderTopLeftRadius="$xl"
         borderTopRightRadius="$xl"
         paddingBottom="$xl"
+        shadowColor="$shadowColor"
+        shadowOffset={{ width: 0, height: -4 }}
+        shadowOpacity={0.15}
+        shadowRadius={16}
+        elevation={10}
       >
         <SheetContents
           product={product}
