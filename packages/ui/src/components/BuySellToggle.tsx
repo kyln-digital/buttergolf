@@ -85,16 +85,15 @@ const StyledTab = styled(Tabs.Tab, {
     outlineStyle: "solid",
   },
 
-  // v2 pattern: activeStyle pseudo-prop applies when tab value matches parent Tabs value.
-  // Nested pseudo-props (hoverStyle/pressStyle) are not supported inside activeStyle;
-  // the default hoverStyle/pressStyle above apply for both active and inactive states.
-  activeStyle: {
-    backgroundColor: "$primary",
-    borderColor: "$primary",
-    boxShadow: "0px 1px 5px 0px rgba(0, 0, 0, 0.25)",
-  },
-
   variants: {
+    // Runtime active variant — will be replaced by activeStyle pseudo-prop in Tamagui v2
+    isActive: {
+      true: {
+        backgroundColor: "$primary",
+        borderColor: "$primary",
+        boxShadow: "0px 1px 5px 0px rgba(0, 0, 0, 0.25)",
+      },
+    },
     layout: {
       mobile: {
         flex: 1,
@@ -154,6 +153,7 @@ export function BuySellToggle({
         <StyledTab
           value="buying"
           layout={layout}
+          isActive={activeMode === "buying"}
           aria-label="Switch to buying mode"
         >
           <SizableText
@@ -168,6 +168,7 @@ export function BuySellToggle({
         <StyledTab
           value="selling"
           layout={layout}
+          isActive={activeMode === "selling"}
           aria-label="Switch to selling mode"
         >
           <SizableText
