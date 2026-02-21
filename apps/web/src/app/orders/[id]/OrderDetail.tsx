@@ -77,6 +77,8 @@ interface Order {
   trackingCode: string | null;
   trackingUrl: string | null;
   labelUrl: string | null;
+  labelPngUrl: string | null;
+  labelZplUrl: string | null;
   carrier: string | null;
   service: string | null;
   estimatedDelivery: Date | null;
@@ -680,6 +682,23 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
             {/* Seller Actions */}
             {order.userRole === "seller" && order.labelUrl && (
               <Column gap="$sm" marginTop="$md">
+                {/* Inline PNG label preview */}
+                {order.labelPngUrl && (
+                  <Column
+                    borderWidth={1}
+                    borderColor="$border"
+                    borderRadius="$md"
+                    overflow="hidden"
+                    backgroundColor="$surface"
+                  >
+                    <img
+                      src={order.labelPngUrl}
+                      alt="Shipping label preview"
+                      style={{ width: "100%", height: "auto", display: "block" }}
+                    />
+                  </Column>
+                )}
+                {/* PDF download */}
                 <a
                   href={order.labelUrl}
                   target="_blank"
@@ -695,9 +714,31 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                     borderRadius="$md"
                     icon={<Download size={18} color="white" />}
                   >
-                    Download Shipping Label
+                    Download PDF Label
                   </Button>
                 </a>
+                {/* ZPL download for thermal printers */}
+                {order.labelZplUrl && (
+                  <a
+                    href={order.labelZplUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ textDecoration: "none" }}
+                  >
+                    <Button
+                      size="$5"
+                      borderWidth={1}
+                      borderColor="$border"
+                      backgroundColor="transparent"
+                      width="100%"
+                      paddingVertical="$md"
+                      borderRadius="$md"
+                      icon={<Download size={18} />}
+                    >
+                      ZPL (Thermal Printer)
+                    </Button>
+                  </a>
+                )}
                 <Text size="$4" color="$textSecondary" textAlign="center">
                   Print this label and attach it to your package. Drop it off at any {order.carrier}{" "}
                   location.

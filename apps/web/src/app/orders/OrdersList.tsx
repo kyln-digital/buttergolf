@@ -33,6 +33,8 @@ interface Order {
   trackingCode: string | null;
   trackingUrl: string | null;
   labelUrl: string | null;
+  labelPngUrl: string | null;
+  labelZplUrl: string | null;
   carrier: string | null;
   service: string | null;
   userRole: "buyer" | "seller";
@@ -317,7 +319,27 @@ function OrderCard({ order }: { order: Order }) {
                   borderRadius="$md"
                   icon={<Download size={14} color="white" />}
                 >
-                  Download Label
+                  Download PDF Label
+                </Button>
+              </a>
+            )}
+            {order.userRole === "seller" && order.labelZplUrl && (
+              <a
+                href={order.labelZplUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: "none" }}
+              >
+                <Button
+                  size="$3"
+                  borderWidth={1}
+                  borderColor="$border"
+                  backgroundColor="transparent"
+                  paddingHorizontal="$md"
+                  borderRadius="$md"
+                  icon={<Download size={14} />}
+                >
+                  ZPL Label
                 </Button>
               </a>
             )}
