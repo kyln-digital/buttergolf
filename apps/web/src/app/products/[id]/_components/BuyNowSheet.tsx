@@ -75,11 +75,8 @@ export function BuyNowSheet({ product, isOpen, onOpenChange }: BuyNowSheetProps)
         borderTopLeftRadius="$xl"
         borderTopRightRadius="$xl"
         paddingBottom="$xl"
-        shadowColor="$shadowColor"
-        shadowOffset={{ width: 0, height: -4 }}
-        shadowOpacity={0.15}
-        shadowRadius={16}
         elevation={10}
+        style={{ boxShadow: "0 -8px 32px rgba(0,0,0,0.18)" }}
       >
         <SheetContents
           product={product}
@@ -133,8 +130,8 @@ const SheetContents = memo(function SheetContents({
           <Heading level={4} color="$text">
             Checkout
           </Heading>
-          <Button size="$4" circular chromeless onPress={onClose}>
-            <Text size="$5" fontWeight="bold" color="$text">
+          <Button size="$4" circular backgroundColor="$primary" onPress={onClose}>
+            <Text size="$5" fontWeight="bold" color="$textInverse">
               ✕
             </Text>
           </Button>
