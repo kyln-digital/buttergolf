@@ -208,7 +208,7 @@ export function ProfileEditScreen({
               onChangeText={setFirstName}
               placeholder="Enter your first name"
               autoCapitalize="words"
-              autoCorrect="off"
+              autoCorrect={false}
             />
           </Column>
 
@@ -222,7 +222,7 @@ export function ProfileEditScreen({
               onChangeText={setLastName}
               placeholder="Enter your last name"
               autoCapitalize="words"
-              autoCorrect="off"
+              autoCorrect={false}
             />
           </Column>
 

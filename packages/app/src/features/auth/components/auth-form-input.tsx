@@ -52,7 +52,7 @@ export function AuthFormInput({
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const isPassword = type === "password";
-  const resolvedType = isPassword && isPasswordVisible ? "text" : type;
+  const secureTextEntry = isPassword && !isPasswordVisible;
 
   return (
     <Column gap="$2">
@@ -67,9 +67,18 @@ export function AuthFormInput({
           onChangeText={onChangeText}
           placeholder={placeholder}
           placeholderTextColor="$slateSmoke"
-          type={resolvedType}
+          secureTextEntry={secureTextEntry}
           autoCapitalize={autoCapitalize}
-          inputMode={inputMode}
+          inputMode={
+            inputMode ??
+            (type === "email"
+              ? "email"
+              : type === "tel"
+                ? "tel"
+                : type === "number"
+                  ? "numeric"
+                  : undefined)
+          }
           disabled={!editable}
           multiline={multiline}
           numberOfLines={numberOfLines}
