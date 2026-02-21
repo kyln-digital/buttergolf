@@ -124,27 +124,27 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
 
   return (
     <>
-      <Container size="xl" padding="$md" backgroundColor="$pureWhite">
+      <Container size="xl" padding="$md" backgroundColor="$background">
         <Column gap="$lg" paddingVertical="$lg">
           {/* Breadcrumb */}
           <Row gap="$sm" alignItems="center" flexWrap="wrap">
             <Link href="/" style={{ textDecoration: "none" }}>
-              <Text size="$3" color="$ironstone" hoverStyle={{ color: "$primary" }}>
+              <Text size="$3" color="$textSecondary" hoverStyle={{ color: "$primary" }}>
                 Listings
               </Text>
             </Link>
-            <Text size="$3" color="$ironstone">
+            <Text size="$3" color="$textSecondary">
               &gt;
             </Text>
             <Link href={`/category/${product.category.slug}`} style={{ textDecoration: "none" }}>
-              <Text size="$3" color="$ironstone" hoverStyle={{ color: "$primary" }}>
+              <Text size="$3" color="$textSecondary" hoverStyle={{ color: "$primary" }}>
                 {product.category.name}
               </Text>
             </Link>
-            <Text size="$3" color="$ironstone">
+            <Text size="$3" color="$textSecondary">
               &gt;
             </Text>
-            <Text size="$3" color="$ironstone" fontWeight="bold">
+            <Text size="$3" color="$text" fontWeight="bold">
               {product.title}
             </Text>
           </Row>
