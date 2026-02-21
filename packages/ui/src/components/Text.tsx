@@ -12,10 +12,10 @@
  *    - Example: <Text size="$4">Body text</Text>
  *    - fontSize prop is for rare overrides only
  *
- * 2. For UI COMPONENTS (Button, Input, Badge, Spinner):
- *    - Use named variants: size="sm" | "md" | "lg"
- *    - These control height, padding, and geometric dimensions
- *    - Example: <Button size="md">Click me</Button>
+ * 2. For UI COMPONENTS:
+ *    - Button: Use numeric tokens: size="$4", size="$5" (standard Tamagui SizeTokens)
+ *    - Input, Badge, Spinner: Use named variants: size="sm" | "md" | "lg"
+ *    - Example: <Button size="$5">Click me</Button>
  *
  * @example
  * ```tsx
@@ -28,9 +28,9 @@
  * <Heading level={1}>Page Title</Heading>
  * <Heading level={2}>Section Title</Heading>
  *
- * // Component sizing - use named size variants
- * <Button size="md">Medium button</Button>
- * <Input size="lg">Large input</Input>
+ * // Component sizing
+ * <Button size="$5">Medium button</Button>
+ * <Input size="md">Medium input</Input>
  * ```
  */
 

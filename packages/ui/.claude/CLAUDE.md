@@ -150,22 +150,17 @@ $full: 9999px  // Perfect circles
 
 ### Button Component
 
-**ALWAYS use standard Tamagui Button with numeric size tokens and direct props**
+**Use `butterVariant` for brand-styled buttons, numeric size tokens ($1-$16)**
 
 ```tsx
 import { Button } from "@buttergolf/ui";
 
-// ✅ CORRECT - Numeric size tokens with direct styling props
-<Button
-  size="$5"
-  backgroundColor="$primary"
-  color="$textInverse"
-  paddingHorizontal="$6"
-  borderRadius="$full"
->
-  Primary Button
-</Button>
+// ✅ CORRECT - Use butterVariant for brand-consistent buttons
+<Button butterVariant="primary" size="$5">Primary Button</Button>
+<Button butterVariant="secondary" size="$4">Secondary Button</Button>
+<Button size="$4" chromeless>Ghost Button</Button>
 
+// ✅ CORRECT - Direct props for non-standard styling
 <Button
   size="$4"
   backgroundColor="transparent"
@@ -173,17 +168,11 @@ import { Button } from "@buttergolf/ui";
   borderColor="$primary"
   color="$primary"
 >
-  Secondary Button
+  Outline Button
 </Button>
 
-<Button size="$4" chromeless>
-  Ghost Button
-</Button>
-
-// ❌ WRONG - Don't use custom variants (we removed them)
+// ❌ WRONG - Don't use named sizes or non-existent variants
 <Button size="lg" tone="primary">Submit</Button>
-
-// ❌ WRONG - Don't use named sizes
 <Button size="medium">Submit</Button>
 ```
 
@@ -263,7 +252,7 @@ import { Row, Column, Container, Spacer } from "@buttergolf/ui";
 import { Card } from "@buttergolf/ui";
 
 // ✅ CORRECT - Compound components
-<Card variant="elevated" padding="lg">
+<Card variant="elevated" padding="$lg">
   <Card.Header>
     <Heading level={3}>Card Title</Heading>
     <Text color="$textSecondary">Subtitle</Text>
@@ -277,7 +266,7 @@ import { Card } from "@buttergolf/ui";
 </Card>
 
 // Variants: elevated, outlined, filled, ghost
-<Card variant="outlined" padding="md">
+<Card variant="outlined" padding="$md">
   <Text>Outlined card</Text>
 </Card>
 ```
@@ -495,10 +484,11 @@ Card.Footer = CardFooter;
 ### 2️⃣ Component Size (Button/Input/Badge)
 
 ```tsx
-// ✅ CORRECT - size prop with numeric tokens
+// ✅ CORRECT - size prop with numeric tokens (Button) or named variants (Input/Badge/Spinner)
 <Button size="$5">Click me</Button>
-<Input size="$5" />
-<Badge size="$3">NEW</Badge>
+<Input size="md" />
+<Badge size="sm">NEW</Badge>
+<Spinner size="lg" />
 
 // ❌ WRONG
 <Button size="medium">Wrong!</Button>  // No named sizes

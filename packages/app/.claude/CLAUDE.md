@@ -328,7 +328,7 @@ import { Column, Row, Text, Button, Card, Input, Spinner } from "@buttergolf/ui"
 export function Component() {
   return (
     <Column gap="$md" padding="$lg">
-      <Card variant="elevated" padding="md">
+      <Card variant="elevated" padding="$md">
         <Text size="$6" fontWeight="600">
           Title
         </Text>
