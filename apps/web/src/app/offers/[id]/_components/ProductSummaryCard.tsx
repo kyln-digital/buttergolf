@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Column, Row, Text, Button, Heading, Badge, Image } from "@buttergolf/ui";
+import { Column, Row, Text, Button, Heading, Badge, Image, View } from "@buttergolf/ui";
 import { useRouter } from "next/navigation";
 
 interface ProductSummaryCardProps {
@@ -138,7 +138,7 @@ export function ProductSummaryCard({
       </Column>
 
       {/* Divider */}
-      <div style={{ height: 1, backgroundColor: "#CCCCCC", width: "100%" }} />
+      <View height={1} backgroundColor="$border" width="100%" />
 
       {/* Seller Info */}
       <Column gap="$sm">
@@ -149,7 +149,9 @@ export function ProductSummaryCard({
         </Text>
         {ratingCount > 0 && (
           <Row gap="$xs" alignItems="center">
-            <span style={{ color: "#F45314", fontSize: "14px" }}>★</span>
+            <Text color="$primary" size="$4">
+              ★
+            </Text>
             <Text size="$3" color="$ironstone" weight="semibold">
               {averageRating.toFixed(1)}
             </Text>
@@ -161,7 +163,7 @@ export function ProductSummaryCard({
       </Column>
 
       {/* Divider */}
-      <div style={{ height: 1, backgroundColor: "#CCCCCC", width: "100%" }} />
+      <View height={1} backgroundColor="$border" width="100%" />
 
       {/* Product Specifications */}
       <Row gap="$md">
@@ -190,7 +192,7 @@ export function ProductSummaryCard({
       </Row>
 
       {/* Divider */}
-      <div style={{ height: 1, backgroundColor: "#CCCCCC", width: "100%" }} />
+      <View height={1} backgroundColor="$border" width="100%" />
 
       {/* Action Buttons */}
       <Column gap="$sm">

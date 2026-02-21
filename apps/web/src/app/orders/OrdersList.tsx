@@ -147,10 +147,7 @@ export function OrdersList({ orders }: Readonly<OrdersListProps>) {
             borderBottomColor="$primary"
             borderRadius={0}
             icon={
-              <ShoppingBag
-                size={16}
-                color={filter === "buyer" ? "var(--color-primary)" : "var(--color-textSecondary)"}
-              />
+              <ShoppingBag size={16} color={filter === "buyer" ? "$primary" : "$textSecondary"} />
             }
           >
             <Text fontWeight="500" color={filter === "buyer" ? "$primary" : "$textSecondary"}>
@@ -165,12 +162,7 @@ export function OrdersList({ orders }: Readonly<OrdersListProps>) {
             borderBottomWidth={filter === "seller" ? 2 : 0}
             borderBottomColor="$primary"
             borderRadius={0}
-            icon={
-              <Package
-                size={16}
-                color={filter === "seller" ? "var(--color-primary)" : "var(--color-textSecondary)"}
-              />
-            }
+            icon={<Package size={16} color={filter === "seller" ? "$primary" : "$textSecondary"} />}
           >
             <Text fontWeight="500" color={filter === "seller" ? "$primary" : "$textSecondary"}>
               Sales ({salesCount})
@@ -182,7 +174,7 @@ export function OrdersList({ orders }: Readonly<OrdersListProps>) {
         {filteredOrders.length === 0 ? (
           <Card variant="outlined" padding="$xl">
             <Column alignItems="center" gap="$md" paddingVertical="$xl">
-              <Package size={48} color="var(--color-textMuted)" />
+              <Package size={48} color="$textMuted" />
               <Heading level={4} color="$textSecondary">
                 No orders found
               </Heading>
@@ -296,7 +288,7 @@ function OrderCard({ order }: { order: Order }) {
                     <Text size="$4" color="$primary" fontWeight="500">
                       Track
                     </Text>
-                    <ExternalLink size={14} color="var(--color-primary)" />
+                    <ExternalLink size={14} color="$primary" />
                   </Row>
                 </a>
               )}
