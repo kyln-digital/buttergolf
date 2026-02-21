@@ -163,7 +163,7 @@ export function OrdersList({ orders }: Readonly<OrdersListProps>) {
         {filteredOrders.length === 0 ? (
           <Card variant="outlined" padding="$xl">
             <Column alignItems="center" gap="$md" paddingVertical="$xl">
-              <Package size={48} color="var(--color-textMuted)" />
+              <Package size={48} color="$textMuted" />
               <Heading level={4} color="$textSecondary">
                 No orders found
               </Heading>
@@ -277,7 +277,7 @@ function OrderCard({ order }: { order: Order }) {
                     <Text size="$4" color="$primary" fontWeight="500">
                       Track
                     </Text>
-                    <ExternalLink size={14} color="var(--color-primary)" />
+                    <ExternalLink size={14} color="$primary" />
                   </Row>
                 </a>
               )}

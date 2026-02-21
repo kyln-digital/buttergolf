@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { Column, Row, Heading, Text, Button, Card, Spinner, Theme } from "@buttergolf/ui";
+import { useTheme } from "tamagui";
 import { Plus, Package, Eye, Heart, Tag } from "@tamagui/lucide-icons";
 import Link from "next/link";
 import { SellerProductCard, type SellerProduct } from "./SellerProductCard";
@@ -39,6 +40,7 @@ interface SellerHubResponse {
 export function SellerHub() {
   const { isSignedIn, isLoaded } = useUser();
   const router = useRouter();
+  const theme = useTheme();
 
   const [data, setData] = useState<SellerHubResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -374,15 +376,15 @@ export function SellerHub() {
                   fontFamily: "inherit",
                   fontWeight: 500,
                   borderRadius: 24,
-                  border: "1px solid var(--color-ironstone)",
-                  backgroundColor: "white",
-                  color: "var(--color-ironstone)",
+                  border: `1px solid ${theme.fieldBorder.val}`,
+                  backgroundColor: theme.surface.val,
+                  color: theme.text.val,
                   cursor: "pointer",
                   minWidth: 180,
                   outline: "none",
                   appearance: "none",
                   WebkitAppearance: "none",
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23323232' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(theme.text.val)}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
                   backgroundRepeat: "no-repeat",
                   backgroundPosition: "right 16px center",
                 }}

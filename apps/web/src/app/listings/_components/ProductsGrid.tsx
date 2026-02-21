@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Column, Row, View, Text } from "@buttergolf/ui";
+import { useTheme } from "tamagui";
 import { ProductCard } from "@/components/ProductCard";
 import type { ProductCardData } from "@buttergolf/app";
 import { useRouter } from "next/navigation";
@@ -65,6 +66,8 @@ function DotPagination({
   };
 
   const visiblePages = getVisiblePages();
+  const theme = useTheme();
+  const primaryColor = theme.primary.val;
 
   return (
     <Row alignItems="center" justifyContent="center" gap="$sm" paddingVertical="$xl">
@@ -84,15 +87,11 @@ function DotPagination({
               height: "10px",
               borderRadius: "5px",
               border: "none",
-              backgroundColor: isActive
-                ? "#F45314"
-                : disabled
-                  ? "rgba(244, 83, 20, 0.3)"
-                  : "rgba(244, 83, 20, 0.5)",
+              backgroundColor: primaryColor,
+              opacity: isActive ? 1 : disabled ? 0.3 : 0.5,
               cursor: disabled ? "wait" : "pointer",
               transition: "all 0.3s ease",
               padding: 0,
-              opacity: disabled && !isActive ? 0.6 : 1,
             }}
           />
         );

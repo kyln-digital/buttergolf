@@ -45,7 +45,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
             <Text color="$textSecondary" textAlign="center">
               {error}
             </Text>
-            <Link href="/account">
+            <Link href="/account" style={{ textDecoration: "none" }}>
               <Button butterVariant="primary" size="$4">
                 Go to Account Settings
               </Button>
@@ -67,7 +67,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
               Complete your seller onboarding to access your dashboard and start listing golf
               equipment.
             </Text>
-            <Link href="/account">
+            <Link href="/account" style={{ textDecoration: "none" }}>
               <Button butterVariant="primary" size="$5">
                 Complete Seller Setup
               </Button>
@@ -83,7 +83,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
     return (
       <Column fullWidth minHeight="60vh" alignItems="center" justifyContent="center" gap="$md">
         <Text color="$textSecondary">Unable to initialize seller dashboard. Please try again.</Text>
-        <Link href="/account">
+        <Link href="/account" style={{ textDecoration: "none" }}>
           <Button butterVariant="primary" size="$4">
             Go to Account Settings
           </Button>

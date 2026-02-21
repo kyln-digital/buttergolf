@@ -181,7 +181,7 @@ export function StripePaymentForm({
                   title="Your payment is held securely until you confirm receipt. Includes purchase protection for damaged or missing items."
                   style={{ cursor: "help" }}
                 >
-                  <Info size={14} color="var(--color-textSecondary)" />
+                  <Info size={14} color="$textSecondary" />
                 </div>
               </Row>
               <Text fontWeight="500">{formatPrice(buyerProtectionFee)}</Text>
@@ -506,7 +506,7 @@ function CheckoutForm({
                   title="Your payment is held securely until you confirm receipt. Includes purchase protection for damaged or missing items."
                   style={{ cursor: "help" }}
                 >
-                  <Info size={14} color="var(--color-textSecondary)" />
+                  <Info size={14} color="$textSecondary" />
                 </div>
               </Row>
               <Text fontWeight="500">{formatPrice(buyerProtectionFee)}</Text>
