@@ -130,11 +130,15 @@ const SheetContents = memo(function SheetContents({
           <Heading level={4} color="$text">
             Checkout
           </Heading>
-          <Button size="$4" circular backgroundColor="$primary" onPress={onClose}>
-            <Text size="$5" fontWeight="bold" color="$textInverse">
-              ✕
-            </Text>
-          </Button>
+          <Text
+            size="$4"
+            color="$textSecondary"
+            onPress={onClose}
+            cursor="pointer"
+            hoverStyle={{ color: "$text" }}
+          >
+            ✕ Close
+          </Text>
         </Row>
 
         {/* Order Summary */}
