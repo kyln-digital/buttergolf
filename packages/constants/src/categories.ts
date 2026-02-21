@@ -92,13 +92,6 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
     imageUrl: "/_assets/images/trainingaids.png",
     sortOrder: 9,
   },
-  {
-    name: "GPS & Tech",
-    slug: "gps-tech",
-    description: "GPS devices, rangefinders, and tech",
-    imageUrl: "/_assets/images/clubs-4.jpg", // TODO: Update with proper tech image
-    sortOrder: 10,
-  },
 ] as const;
 
 /**
