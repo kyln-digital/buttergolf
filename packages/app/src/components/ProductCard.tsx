@@ -28,9 +28,10 @@ export interface ProductCardProps {
 // Heart icon component that works on both platforms
 function HeartIcon({ filled }: Readonly<{ filled: boolean }>) {
   const theme = useTheme();
-  const primaryColor = theme.primary.val;
 
   if (Platform.OS === "web") {
+    // SVG requires a resolved hex value, not a token string
+    const primaryColor = theme.primary.val;
     return (
       <svg
         width="18"
@@ -46,12 +47,12 @@ function HeartIcon({ filled }: Readonly<{ filled: boolean }>) {
       </svg>
     );
   }
-  // For native, use lucide Heart icon with proper styling
+  // For native, use Tamagui token strings so the icon system resolves the color correctly
   return (
     <Heart
       size={18}
-      color={primaryColor}
-      fill={filled ? primaryColor : "transparent"}
+      color="$primary"
+      fill={filled ? "$primary" : "transparent"}
       strokeWidth={2.5}
     />
   );
