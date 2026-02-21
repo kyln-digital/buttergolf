@@ -275,12 +275,18 @@ export function Hero({
 
   // Web/Desktop layout
   return (
-    <Column width="100%" paddingHorizontal="$md" paddingTop="$md" backgroundColor="$background">
+    <Column
+      width="100%"
+      paddingHorizontal="$md"
+      paddingTop="$md"
+      backgroundColor="$background"
+      alignItems="center"
+    >
       <View
         width="100%"
         height={320}
         $gtSm={{ height: 350 }}
-        $gtMd={{ height: 400 }}
+        $gtMd={{ height: 400, width: "80%" }}
         minHeight={minHeight}
         maxHeight={maxHeight}
         borderRadius="$2xl"
