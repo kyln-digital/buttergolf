@@ -18,6 +18,16 @@ import { MobileInterstitial } from "./_components/MobileInterstitial";
 import { CartProvider } from "../context/CartContext";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 
+/** Routes excluded from header, banners, and mobile interstitial */
+const EXCLUDED_CHROME_ROUTES = [
+  "/coming-soon",
+  "/mobile-onboarding",
+  "/sign-in",
+  "/sign-in/*",
+  "/sign-up",
+  "/sign-up/*",
+];
+
 // Urbanist font configuration for Pure Butter brand
 // Supports weights 100-900 with italic variants
 const urbanist = Urbanist({
@@ -77,29 +87,11 @@ export default function RootLayout({
       <body className={urbanist.className}>
         <NextTamaguiProvider>
           <CartProvider>
-            {/* Mobile interstitial — blocks mobile browsers, directs to desktop or native app */}
-            <ConditionalLayout
-              excludeRoutes={[
-                "/coming-soon",
-                "/mobile-onboarding",
-                "/sign-in",
-                "/sign-in/*",
-                "/sign-up",
-                "/sign-up/*",
-              ]}
-            >
+            {/* Mobile interstitial — dismissible overlay directing to desktop or native app */}
+            <ConditionalLayout excludeRoutes={EXCLUDED_CHROME_ROUTES}>
               <MobileInterstitial />
             </ConditionalLayout>
-            <ConditionalLayout
-              excludeRoutes={[
-                "/coming-soon",
-                "/sign-in",
-                "/sign-in/*",
-                "/sign-up",
-                "/sign-up/*",
-                "/mobile-onboarding",
-              ]}
-            >
+            <ConditionalLayout excludeRoutes={EXCLUDED_CHROME_ROUTES}>
               <ErrorBoundary
                 name="ButterHeader"
                 fallback={<div style={{ height: 72, backgroundColor: "#f5f5f5" }} />}
