@@ -23,6 +23,9 @@
     "@buttergolf/constants": "workspace:*",
     "@prisma/client": "catalog:"
   },
+  "prisma": {
+    "schema": "./prisma/schema.prisma"
+  },
   "devDependencies": {
     "@buttergolf/eslint-config": "workspace:*",
     "@buttergolf/typescript-config": "workspace:*",
