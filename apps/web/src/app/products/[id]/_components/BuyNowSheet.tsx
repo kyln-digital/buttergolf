@@ -75,6 +75,8 @@ export function BuyNowSheet({ product, isOpen, onOpenChange }: BuyNowSheetProps)
         borderTopLeftRadius="$xl"
         borderTopRightRadius="$xl"
         paddingBottom="$xl"
+        elevation={10}
+        style={{ boxShadow: "0 -8px 32px rgba(0,0,0,0.18)" }}
       >
         <SheetContents
           product={product}
@@ -114,14 +116,22 @@ const SheetContents = memo(function SheetContents({
 
   return (
     <Sheet.ScrollView>
-      <Column p="$4" gap="$5">
+      <Column
+        p="$4"
+        gap="$5"
+        width="100%"
+        maxWidth={540}
+        alignSelf="center"
+        $gtMd={{ paddingHorizontal: "$xl", maxWidth: "65%", width: "65%" }}
+        $gtLg={{ maxWidth: "60%", width: "60%" }}
+      >
         {/* Header */}
         <Row justifyContent="space-between" alignItems="center">
           <Heading level={4} color="$text">
             Checkout
           </Heading>
-          <Button size="$4" circular chromeless onPress={onClose}>
-            <Text size="$5" fontWeight="bold" color="$text">
+          <Button size="$4" circular backgroundColor="$primary" onPress={onClose}>
+            <Text size="$5" fontWeight="bold" color="$textInverse">
               ✕
             </Text>
           </Button>

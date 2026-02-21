@@ -11,6 +11,7 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 import { Column, Row, Text, Button, Spinner, Card, Heading } from "@buttergolf/ui";
+import { useTheme } from "tamagui";
 import { calculateBuyerProtectionFee, formatPrice } from "@/lib/pricing";
 import { Info, Lock, ShieldCheck, Package } from "@tamagui/lucide-icons";
 
@@ -59,6 +60,8 @@ export function StripePaymentForm({
   // Phase 2: Payment form (after payment intent created)
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
+
+  const theme = useTheme();
 
   const selectedShipping = SHIPPING_OPTIONS.find((o) => o.id === shippingOption)!;
   const buyerProtectionFee = calculateBuyerProtectionFee(productPrice);
@@ -168,7 +171,7 @@ export function StripePaymentForm({
                   title="Your payment is held securely until you confirm receipt. Includes purchase protection for damaged or missing items."
                   style={{ cursor: "help" }}
                 >
-                  <Info size={14} color="var(--color-textSecondary)" />
+                  <Info size={14} color="$textSecondary" />
                 </div>
               </Row>
               <Text fontWeight="500">{formatPrice(buyerProtectionFee)}</Text>
@@ -247,26 +250,27 @@ export function StripePaymentForm({
         appearance: {
           theme: "stripe",
           variables: {
-            colorPrimary: "#F45314", // Spiced Clementine
-            colorBackground: "#FFFFFF",
-            colorText: "#323232", // Ironstone
-            colorDanger: "#dc2626",
+            colorPrimary: theme.primary.val,
+            colorBackground: theme.surface.val,
+            colorText: theme.text.val,
+            colorDanger: theme.error.val,
             fontFamily: "Urbanist, system-ui, sans-serif",
             spacingUnit: "4px",
             borderRadius: "10px",
           },
           rules: {
             ".Input": {
-              border: "1px solid #EDEDED",
+              border: `1px solid ${theme.border.val}`,
               boxShadow: "none",
             },
             ".Input:focus": {
-              border: "2px solid #F45314",
+              border: `2px solid ${theme.primary.val}`,
               boxShadow: "none",
             },
             ".Label": {
               fontWeight: "500",
               marginBottom: "6px",
+              color: theme.text.val,
             },
           },
         },
@@ -475,7 +479,7 @@ function CheckoutForm({
                   title="Your payment is held securely until you confirm receipt. Includes purchase protection for damaged or missing items."
                   style={{ cursor: "help" }}
                 >
-                  <Info size={14} color="var(--color-textSecondary)" />
+                  <Info size={14} color="$textSecondary" />
                 </div>
               </Row>
               <Text fontWeight="500">{formatPrice(buyerProtectionFee)}</Text>

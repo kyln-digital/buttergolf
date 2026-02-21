@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Column, Row, Text, Badge, Card, Image } from "@buttergolf/ui";
+import { Column, Row, Text, Badge, Card, Image, Button } from "@buttergolf/ui";
 import { useRouter, usePathname } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 
@@ -90,40 +90,30 @@ export function OffersSidebar({ offers, currentUserId }: OffersSidebarProps) {
     >
       {/* Buying / Selling Toggle */}
       <Row gap="$xs" width="100%">
-        <button
-          onClick={() => setActiveTab("buying")}
-          style={{
-            flex: 1,
-            padding: "12px",
-            borderRadius: "100px",
-            border: "none",
-            backgroundColor: activeTab === "buying" ? "#F45314" : "transparent",
-            color: activeTab === "buying" ? "#FFFFFF" : "#323232",
-            fontWeight: 600,
-            fontSize: "14px",
-            cursor: "pointer",
-            transition: "all 0.2s ease",
-          }}
+        <Button
+          flex={1}
+          borderRadius="$full"
+          backgroundColor={activeTab === "buying" ? "$primary" : "transparent"}
+          color={activeTab === "buying" ? "$textInverse" : "$text"}
+          fontWeight="600"
+          size="$4"
+          onPress={() => setActiveTab("buying")}
+          animation="quick"
         >
           Buying
-        </button>
-        <button
-          onClick={() => setActiveTab("selling")}
-          style={{
-            flex: 1,
-            padding: "12px",
-            borderRadius: "100px",
-            border: "none",
-            backgroundColor: activeTab === "selling" ? "#F45314" : "transparent",
-            color: activeTab === "selling" ? "#FFFFFF" : "#323232",
-            fontWeight: 600,
-            fontSize: "14px",
-            cursor: "pointer",
-            transition: "all 0.2s ease",
-          }}
+        </Button>
+        <Button
+          flex={1}
+          borderRadius="$full"
+          backgroundColor={activeTab === "selling" ? "$primary" : "transparent"}
+          color={activeTab === "selling" ? "$textInverse" : "$text"}
+          fontWeight="600"
+          size="$4"
+          onPress={() => setActiveTab("selling")}
+          animation="quick"
         >
           Selling
-        </button>
+        </Button>
       </Row>
 
       {/* Offers List */}
@@ -150,12 +140,12 @@ export function OffersSidebar({ offers, currentUserId }: OffersSidebarProps) {
                 onPress={() => router.push(`/offers/${offer.id}`)}
                 style={{
                   cursor: "pointer",
-                  backgroundColor: isActive ? "#FFFAD2" : undefined,
-                  borderWidth: isActive ? 2 : 1,
-                  borderColor: isActive ? "#F45314" : "#EDEDED",
                 }}
+                backgroundColor={isActive ? "$primaryLight" : undefined}
+                borderWidth={isActive ? 2 : 1}
+                borderColor={isActive ? "$primary" : "$border"}
                 hoverStyle={{
-                  backgroundColor: isActive ? "#FFFAD2" : "#F9F9F9",
+                  backgroundColor: isActive ? "$primaryLight" : "$surface",
                 }}
               >
                 <Row gap="$sm" alignItems="flex-start">

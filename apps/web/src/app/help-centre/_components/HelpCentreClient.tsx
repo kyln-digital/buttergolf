@@ -1,7 +1,7 @@
 "use client";
 
 import { Column, Container, Heading, Text, Row, Card } from "@buttergolf/ui";
-import { Mail, MessageCircle, Clock, HelpCircle } from "lucide-react";
+import { Mail, MessageCircle, Clock, HelpCircle } from "@tamagui/lucide-icons";
 
 export function HelpCentreClient() {
   return (
@@ -22,7 +22,7 @@ export function HelpCentreClient() {
             <Row gap="$md" flexWrap="wrap">
               <Card variant="elevated" padding="$lg" flex={1} minWidth={250}>
                 <Column gap="$md" alignItems="center">
-                  <MessageCircle size={32} color="#F45314" />
+                  <MessageCircle size={32} color="$primary" />
                   <Column gap="$sm" alignItems="center">
                     <Heading level={3}>Live Chat</Heading>
                     <Text color="$textSecondary" textAlign="center">
@@ -37,7 +37,7 @@ export function HelpCentreClient() {
 
               <Card variant="elevated" padding="$lg" flex={1} minWidth={250}>
                 <Column gap="$md" alignItems="center">
-                  <Mail size={32} color="#F45314" />
+                  <Mail size={32} color="$primary" />
                   <Column gap="$sm" alignItems="center">
                     <Heading level={3}>Email Support</Heading>
                     <Text color="$textSecondary" textAlign="center">
@@ -52,7 +52,7 @@ export function HelpCentreClient() {
 
               <Card variant="elevated" padding="$lg" flex={1} minWidth={250}>
                 <Column gap="$md" alignItems="center">
-                  <Clock size={32} color="#F45314" />
+                  <Clock size={32} color="$primary" />
                   <Column gap="$sm" alignItems="center">
                     <Heading level={3}>Response Times</Heading>
                     <Text color="$textSecondary" textAlign="center">
@@ -74,7 +74,7 @@ export function HelpCentreClient() {
             <Card variant="outlined" padding="$lg">
               <Column gap="$md">
                 <Row gap="$sm" alignItems="center">
-                  <HelpCircle size={24} color="#F45314" />
+                  <HelpCircle size={24} color="$primary" />
                   <Heading level={3}>How do I list an item for sale?</Heading>
                 </Row>
                 <Text>
@@ -89,7 +89,7 @@ export function HelpCentreClient() {
             <Card variant="outlined" padding="$lg">
               <Column gap="$md">
                 <Row gap="$sm" alignItems="center">
-                  <HelpCircle size={24} color="#F45314" />
+                  <HelpCircle size={24} color="$primary" />
                   <Heading level={3}>What payment methods do you accept?</Heading>
                 </Row>
                 <Text>
@@ -103,7 +103,7 @@ export function HelpCentreClient() {
             <Card variant="outlined" padding="$lg">
               <Column gap="$md">
                 <Row gap="$sm" alignItems="center">
-                  <HelpCircle size={24} color="#F45314" />
+                  <HelpCircle size={24} color="$primary" />
                   <Heading level={3}>How does shipping work?</Heading>
                 </Row>
                 <Text>
@@ -117,7 +117,7 @@ export function HelpCentreClient() {
             <Card variant="outlined" padding="$lg">
               <Column gap="$md">
                 <Row gap="$sm" alignItems="center">
-                  <HelpCircle size={24} color="#F45314" />
+                  <HelpCircle size={24} color="$primary" />
                   <Heading level={3}>What is your return policy?</Heading>
                 </Row>
                 <Text>
@@ -132,7 +132,7 @@ export function HelpCentreClient() {
             <Card variant="outlined" padding="$lg">
               <Column gap="$md">
                 <Row gap="$sm" alignItems="center">
-                  <HelpCircle size={24} color="#F45314" />
+                  <HelpCircle size={24} color="$primary" />
                   <Heading level={3}>How do I contact a seller or buyer?</Heading>
                 </Row>
                 <Text>
@@ -147,7 +147,7 @@ export function HelpCentreClient() {
             <Card variant="outlined" padding="$lg">
               <Column gap="$md">
                 <Row gap="$sm" alignItems="center">
-                  <HelpCircle size={24} color="#F45314" />
+                  <HelpCircle size={24} color="$primary" />
                   <Heading level={3}>What fees does ButterGolf charge?</Heading>
                 </Row>
                 <Text>
@@ -161,7 +161,7 @@ export function HelpCentreClient() {
             <Card variant="outlined" padding="$lg">
               <Column gap="$md">
                 <Row gap="$sm" alignItems="center">
-                  <HelpCircle size={24} color="#F45314" />
+                  <HelpCircle size={24} color="$primary" />
                   <Heading level={3}>How do I become a verified seller?</Heading>
                 </Row>
                 <Text>
@@ -176,7 +176,7 @@ export function HelpCentreClient() {
             <Card variant="outlined" padding="$lg">
               <Column gap="$md">
                 <Row gap="$sm" alignItems="center">
-                  <HelpCircle size={24} color="#F45314" />
+                  <HelpCircle size={24} color="$primary" />
                   <Heading level={3}>What should I do if I suspect fraud?</Heading>
                 </Row>
                 <Text>

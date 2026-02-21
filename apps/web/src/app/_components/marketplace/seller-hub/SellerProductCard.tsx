@@ -201,7 +201,7 @@ export function SellerProductCard({
             {!product.isSold && (
               <Button
                 size="$3"
-                backgroundColor="#FFFAD2"
+                backgroundColor="$primaryLight"
                 color="$primary"
                 borderRadius="$full"
                 paddingHorizontal="$3"
@@ -210,7 +210,7 @@ export function SellerProductCard({
                 disabled={isDeleting || isUpdating}
               >
                 <Row gap="$xs" alignItems="center">
-                  <Zap size={14} color="#F45314" />
+                  <Zap size={14} color="$primary" />
                   <Text color="$primary" weight="semibold">
                     Boost
                   </Text>

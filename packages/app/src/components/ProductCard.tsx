@@ -14,6 +14,7 @@ import {
   Button,
 } from "@buttergolf/ui";
 import { Heart } from "@tamagui/lucide-icons";
+import { useTheme } from "tamagui";
 import type { ProductCardData } from "../types/product";
 
 export interface ProductCardProps {
@@ -24,27 +25,16 @@ export interface ProductCardProps {
   onQuickView?: (productId: string) => void;
 }
 
-// Heart icon component that works on both platforms
+// Heart icon component — uses Tamagui lucide icon which is cross-platform
 function HeartIcon({ filled }: Readonly<{ filled: boolean }>) {
-  if (Platform.OS === "web") {
-    return (
-      <svg
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        fill={filled ? "#F45314" : "none"}
-        stroke="#F45314"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-      </svg>
-    );
-  }
-  // For native, use lucide Heart icon with proper styling
+  const theme = useTheme();
   return (
-    <Heart size={18} color="#F45314" fill={filled ? "#F45314" : "transparent"} strokeWidth={2.5} />
+    <Heart
+      size={18}
+      color="$primary"
+      fill={filled ? theme.primary.val : "transparent"}
+      strokeWidth={2.5}
+    />
   );
 }
 
@@ -117,7 +107,7 @@ export function ProductCard({
             position="absolute"
             top={10}
             left={10}
-            backgroundColor={product.activePromotion.type === "BUMP" ? "$primary" : "#02aaa4"}
+            backgroundColor={product.activePromotion.type === "BUMP" ? "$primary" : "$success"}
             paddingHorizontal={10}
             paddingVertical={4}
             borderRadius={12}

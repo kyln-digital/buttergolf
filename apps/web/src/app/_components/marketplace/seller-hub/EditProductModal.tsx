@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Column, Row, Heading, Text, Button, Input, Card } from "@buttergolf/ui";
+import { useTheme } from "tamagui";
 import type { SellerProduct } from "./SellerProductCard";
 
 interface EditProductModalProps {
@@ -37,6 +38,7 @@ const CONDITIONS = [
  * Inline modal for editing product details
  */
 export function EditProductModal({ product, onClose, onSave }: EditProductModalProps) {
+  const theme = useTheme();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -184,8 +186,9 @@ export function EditProductModal({ product, onClose, onSave }: EditProductModalP
                     padding: "12px 18px",
                     fontSize: "15px",
                     borderRadius: "24px",
-                    border: "1px solid var(--color-ironstone)",
-                    backgroundColor: "white",
+                    border: `1px solid ${theme.fieldBorder.val}`,
+                    backgroundColor: theme.surface.val,
+                    color: theme.text.val,
                     width: "100%",
                     fontFamily: "inherit",
                     resize: "vertical",
@@ -228,7 +231,7 @@ export function EditProductModal({ product, onClose, onSave }: EditProductModalP
                       outline: "none",
                       appearance: "none",
                       WebkitAppearance: "none",
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23323232' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(theme.text.val)}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
                       backgroundRepeat: "no-repeat",
                       backgroundPosition: "right 16px center",
                     }}
@@ -259,15 +262,15 @@ export function EditProductModal({ product, onClose, onSave }: EditProductModalP
                     fontFamily: "inherit",
                     fontWeight: 500,
                     borderRadius: 24,
-                    border: "1px solid var(--color-ironstone)",
-                    backgroundColor: "white",
-                    color: "var(--color-ironstone)",
+                    border: `1px solid ${theme.fieldBorder.val}`,
+                    backgroundColor: theme.surface.val,
+                    color: theme.text.val,
                     cursor: "pointer",
                     width: "100%",
                     outline: "none",
                     appearance: "none",
                     WebkitAppearance: "none",
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23323232' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(theme.text.val)}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
                     backgroundRepeat: "no-repeat",
                     backgroundPosition: "right 16px center",
                   }}
@@ -308,15 +311,15 @@ export function EditProductModal({ product, onClose, onSave }: EditProductModalP
                     fontFamily: "inherit",
                     fontWeight: 500,
                     borderRadius: 24,
-                    border: "1px solid var(--color-ironstone)",
-                    backgroundColor: "white",
-                    color: "var(--color-ironstone)",
+                    border: `1px solid ${theme.fieldBorder.val}`,
+                    backgroundColor: theme.surface.val,
+                    color: theme.text.val,
                     cursor: "pointer",
                     width: "100%",
                     outline: "none",
                     appearance: "none",
                     WebkitAppearance: "none",
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23323232' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(theme.text.val)}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
                     backgroundRepeat: "no-repeat",
                     backgroundPosition: "right 16px center",
                   }}
