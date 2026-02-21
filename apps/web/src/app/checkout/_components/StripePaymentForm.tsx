@@ -12,6 +12,8 @@ import {
 } from "@stripe/react-stripe-js";
 import { Column, Row, Text, Button, Spinner, Card, Heading } from "@buttergolf/ui";
 import { useTheme } from "tamagui";
+import { useAuth } from "@clerk/nextjs";
+import { useRouter, usePathname } from "next/navigation";
 import { calculateBuyerProtectionFee, formatPrice } from "@/lib/pricing";
 import { Info, Lock, ShieldCheck, Package } from "@tamagui/lucide-icons";
 
@@ -62,6 +64,9 @@ export function StripePaymentForm({
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
 
   const theme = useTheme();
+  const { isSignedIn } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const selectedShipping = SHIPPING_OPTIONS.find((o) => o.id === shippingOption)!;
   const buyerProtectionFee = calculateBuyerProtectionFee(productPrice);
@@ -69,6 +74,11 @@ export function StripePaymentForm({
 
   // Create payment intent when user confirms shipping
   const handleContinueToPayment = useCallback(async () => {
+    if (!isSignedIn) {
+      router.push(`/sign-in?redirect_url=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
     setIsCreatingIntent(true);
     try {
       const response = await fetch("/api/checkout/create-payment-intent", {
@@ -93,7 +103,7 @@ export function StripePaymentForm({
     } finally {
       setIsCreatingIntent(false);
     }
-  }, [productId, shippingOption, onError]);
+  }, [productId, shippingOption, onError, isSignedIn, router, pathname]);
 
   // Phase 1: Shipping Selection
   if (!clientSecret) {
@@ -386,13 +396,8 @@ function CheckoutForm({
     <form onSubmit={handleSubmit}>
       <Column gap="$lg" padding="$md">
         {/* Back button */}
-        <Button chromeless onPress={onBack} alignSelf="flex-start" padding={0} marginBottom="$sm">
-          <Row gap="$xs" alignItems="center">
-            <Text color="$textSecondary">←</Text>
-            <Text color="$textSecondary" size="$4">
-              Back to shipping
-            </Text>
-          </Row>
+        <Button chromeless size="$3" onPress={onBack} alignSelf="flex-start">
+          ← Back to shipping
         </Button>
 
         {/* Email - using LinkAuthenticationElement for Stripe Link support */}
