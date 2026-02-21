@@ -399,68 +399,9 @@ const color: "primary" | "default" = isActive ? "primary" : "default"
 
 **Key Learning**: When you need to change styling based on state (active, hover, selected, etc.), wrap the component in a `<Theme>` component instead of using conditional variant props. This is type-safe, performant, and the proper Tamagui pattern.
 
-### Key Tamagui Concepts
+### Tamagui Reference
 
-#### Component Creation
-
-```tsx
-// Use styled() for optimized components
-import { View, styled } from "tamagui";
-
-export const Button = styled(View, {
-  name: "Button", // Required for compiler optimization
-  backgroundColor: "$background",
-  pressStyle: {
-    backgroundColor: "$backgroundPress",
-  },
-  variants: {
-    size: {
-      sm: { height: "$8", paddingHorizontal: "$3" },
-      md: { height: "$10", paddingHorizontal: "$4" },
-      lg: { height: "$12", paddingHorizontal: "$5" },
-    },
-  },
-});
-```
-
-#### Theme Access
-
-```tsx
-import { useTheme } from "tamagui";
-
-function MyComponent() {
-  const theme = useTheme();
-  return <View backgroundColor={theme.background.val} />;
-}
-```
-
-#### Token Usage
-
-- Prefix tokens with `$`: `fontSize="$lg"`, `padding="$4"`
-- Tokens are defined in your Tamagui config
-- Available token categories: `size`, `space`, `color`, `radius`, `zIndex`
-
-### Tamagui Package Structure
-
-The `@buttergolf/ui` package is source-first (no build step):
-
-```json
-{
-  "main": "src/index.ts",
-  "types": "src/index.ts",
-  "exports": {
-    ".": "./src/index.ts"
-  }
-}
-```
-
-**Important**: Components must be re-exports from Tamagui packages:
-
-```tsx
-// packages/ui/src/components/Button.tsx
-export { Button } from "@tamagui/button";
-export type { ButtonProps } from "@tamagui/button";
-```
+For generic Tamagui concepts (styled(), useTheme, tokens, variants, compiler), fetch https://tamagui.dev/llms-full.txt or use Context7 MCP. The guidance below covers only ButterGolf-specific conventions.
 
 ## Platform-Specific Patterns
 
@@ -760,12 +701,12 @@ Semantic tokens automatically adapt to theme changes and make intent clear. **Pr
 
 ```tsx
 // ✅ CORRECT - Use standard Tamagui patterns
-<Button size="$5" backgroundColor="$primary" color="$textInverse">Submit</Button>
-<Text fontSize="$4" fontWeight="600">Helper text</Text>
-<Card variant="elevated" padding="lg">Content</Card>
+<Button butterVariant="primary" size="$5">Submit</Button>
+<Text size="$4" fontWeight="600">Helper text</Text>
+<Card variant="elevated" padding="$lg">Content</Card>
 <Input size="md" error fullWidth />
 
-// ❌ WRONG - Don't use outdated custom variants
+// ❌ WRONG - Don't use non-existent variants
 <Button size="lg" tone="primary">Submit</Button>
 ```
 
@@ -943,115 +884,6 @@ Tamagui's design system uses numeric tokens for all sizing. Our config defines f
 
 **Important**: The Text component does NOT have color variants. Use direct token references with the `$` prefix for all color styling.
 
-### Understanding Variants vs Direct Token Props
-
-**CRITICAL DISTINCTION:** Tamagui has two ways to use design tokens:
-
-#### 1️⃣ **Custom Variants** (For Custom Component APIs Only)
-
-Variants are **named options** defined in `styled()` components. They use **plain strings WITHOUT `$`** that map to tokens internally.
-
-```tsx
-// ✅ CORRECT - Using custom variants (NO $ prefix) in custom components
-<Card padding="lg">         // "lg" is a variant option we defined
-<Container size="lg">       // Custom variant for max-width
-<Badge variant="primary">   // Custom variant for visual style
-
-// Defined in styled() like this:
-const Card = styled(View, {
-  variants: {
-    padding: {
-      lg: { padding: '$lg' },
-    }
-  }
-})
-```
-
-**⚠️ IMPORTANT:** Never create variants for props that **already exist on the base component** (like `gap`, `padding`, `margin`, `alignItems`, `justifyContent`). This causes TypeScript intersection type errors!
-
-**When to use:** Component-specific props that have a fixed set of semantic options (card padding, container size, badge variant).
-
-#### 2️⃣ **Direct Token Props** (For Standard Tamagui Components & Styling)
-
-Direct props accept token values **WITH `$`** for ad-hoc styling on any Tamagui component. This is how Tamagui's built-in components work.
-
-```tsx
-// ✅ CORRECT - Using direct token props (WITH $ prefix)
-<Row gap="$xl">                         // Use tokens directly - gap is native to XStack
-<Column gap="$lg">                      // Use tokens directly - gap is native to YStack
-<View padding="$md">                    // Direct token reference
-<YStack gap="$4">                       // Direct token reference
-<Text size="$5" color="$textMuted">     // Direct token references
-<Button size="$4" backgroundColor="$primary"> // Standard Tamagui Button with direct props
-<View backgroundColor="$surface">       // Direct token reference
-<View borderRadius="$lg">               // Direct token reference
-```
-
-**When to use:** Layout spacing (gap, padding, margin), geometric properties (width, height, borderRadius), colors, Button styling, and any prop that exists natively on the base component.
-
-### Real-World Examples
-
-```tsx
-// ✅ CORRECT - Mixed usage based on context
-
-// Layout components use DIRECT TOKENS for native props
-<Row gap="$md" alignItems="center">     // gap="$md" - direct token (native prop)
-  <Column gap="$lg">                     // gap="$lg" - direct token (native prop)
-    <Text color="$textMuted" size="$4">  // color & size - both direct tokens
-      Helper text
-    </Text>
-  </Column>
-</Row>
-
-// Primitives use direct tokens (flexible, ad-hoc)
-<View padding="$4" backgroundColor="$surface" borderRadius="$md">
-  <YStack gap="$3">
-    <Text size="$4" color="$text">Direct token usage</Text>
-  </YStack>
-</View>
-
-// Standard Tamagui Button uses direct props
-<Button size="$5" backgroundColor="$primary" color="$textInverse">
-  Submit
-</Button>
-
-// Custom components use their defined variants
-<Card variant="elevated" padding="lg">  // variant/padding - custom variants
-  <Card.Body>
-    <Text>Content</Text>
-  </Card.Body>
-</Card>
-```
-
-### Token Usage Cheat Sheet
-
-```tsx
-// ✅ CORRECT - Direct tokens (WITH $ prefix) for layout components
-<Row gap="$xl">                   // Row/Column use DIRECT tokens (gap is native to XStack)
-<Column gap="$lg">                // Don't use variants for native props!
-<YStack gap="$4">                 // Direct prop on primitive
-<View padding="$md">              // Direct prop on primitive
-<Text size="$5" color="$textMuted"> // Direct props (not using size variant)
-<View borderRadius="$lg">         // Direct geometric prop
-<View backgroundColor="$surface"> // Direct color token
-
-// ✅ CORRECT - Custom variants (NO $ prefix) for component-specific props
-<Card padding="lg">               // Card component variant (custom, not native padding)
-<Container size="lg">             // Container size variant
-
-// ❌ WRONG - Creating variants for native props
-<Row gap="md">                    // ❌ gap exists natively, use gap="$md"
-<Column gap="lg">                 // ❌ gap exists natively, use gap="$lg"
-
-// ❌ WRONG - Mixing them up
-<View padding="md">               // ❌ Missing $ for direct prop
-
-// ❌ WRONG - Using specific/old tokens
-<View backgroundColor="$spicedClementine"> // ❌ Too specific, use semantic
-<Text color="$color">             // ❌ Old token name
-<View borderColor="$borderColor"> // ❌ Old token name
-```
-
 #### ✅ **Web-Only CSS Properties Pattern**
 
 For web-only CSS properties that React Native doesn't support (like `position: sticky/fixed`, `overflow: auto`), use the `style` prop:
@@ -1140,164 +972,89 @@ export type { MyComponentProps } from "./components/MyComponent";
 
 #### Understanding Component Size Props
 
-**CRITICAL: ALL components now use standard Tamagui numeric size tokens**
-
-1. **Button** - `size` uses **numeric tokens** ($1-$16):
+1. **Button** - `size` uses **numeric tokens** ($1-$16) from Tamagui. Use `butterVariant` for brand styling:
 
    ```tsx
-   <Button size="$4">Standard button</Button>  // ✅ Numeric tokens control font size
-   <Button size="$5" paddingHorizontal="$5" paddingVertical="$3">Larger</Button>
+   <Button butterVariant="primary" size="$5">Sell now</Button>
+   <Button butterVariant="secondary" size="$4">Shop now</Button>
+   <Button chromeless size="$4">Cancel</Button>
    ```
 
 2. **Text, Paragraph** - `size` uses **numeric tokens** ($1-$16):
 
    ```tsx
-   <Text size="$5">Body text</Text>  // ✅ Use numeric tokens ($1-$16)
+   <Text size="$5">Body text</Text>
    <Paragraph size="$5">Paragraph with theme colors</Paragraph>
    ```
 
-3. **Input, Badge, Spinner** - `size` variant controls **HEIGHT and padding** (custom sizing):
+3. **Input, Badge, Spinner** - `size` uses **named variants** (sm/md/lg):
 
    ```tsx
-   <Input size="sm" />   // ✅ Custom variants for these components
-   <Badge size="md" />   // ✅ sm/md/lg controls height
-   <Spinner size="lg" /> // ✅ Geometric sizing
+   <Input size="sm" />   // sm/md/lg controls height and padding
+   <Badge size="md" />
+   <Spinner size="lg" />
    ```
 
-4. **Heading** - NO `size` variant, use **`level` prop** (semantic HTML):
+4. **Heading** - use **`level` prop** (maps to font size internally):
    ```tsx
-   <Heading level={2}>Title</Heading>  // ✅ level controls h1-h6 + font size
-   <Heading size="$8">Override size</Heading>  // ⚠️ Can override with size prop
+   <Heading level={2}>Title</Heading> // level controls h1-h6 + font size
    ```
 
 #### Button
 
-**CRITICAL: We use STANDARD Tamagui Button with numeric size tokens and direct prop styling. NO custom variants.**
-
 ```tsx
-<Button
-  size="$4" // Standard Tamagui numeric size tokens ($1-$16)
-  backgroundColor="$primary" // Direct color prop
-  color="$textInverse" // Direct text color
-  paddingHorizontal="$4" // Direct padding
-  paddingVertical="$3" // Direct padding
-  borderRadius={24} // Direct styling
-  width="100%" // Full width if needed
-  disabled={boolean} // Disabled state
-  chromeless={boolean} // Chromeless/ghost style (use instead of tone="ghost")
->
-  Button Text
-</Button>
-```
+// Use butterVariant for brand-consistent buttons (PREFERRED)
+<Button butterVariant="primary" size="$5">Primary Action</Button>
+<Button butterVariant="secondary" size="$4">Secondary Action</Button>
+<Button chromeless size="$4">Cancel</Button>
 
-**Standard Tamagui Button Patterns:**
-
-```tsx
-// Primary button (pill-shaped)
-<Button size="$5" backgroundColor="$primary" color="$textInverse" paddingHorizontal="$5" paddingVertical="$3" borderRadius="$full">
-  Primary Action
-</Button>
-
-// Outline button (pill-shaped)
-<Button size="$4" backgroundColor="transparent" color="$primary" borderWidth={2} borderColor="$primary" paddingHorizontal="$4" paddingVertical="$3" borderRadius="$full">
-  Secondary Action
-</Button>
-
-// Ghost/chromeless button
-<Button size="$4" chromeless>
-  Cancel
-</Button>
-
-// Success button (pill-shaped)
-<Button size="$5" backgroundColor="$success" color="$textInverse" paddingHorizontal="$5" paddingVertical="$3" borderRadius="$full">
+// For non-standard styling, use direct props:
+<Button size="$4" backgroundColor="$success" color="$textInverse" borderRadius="$full">
   Confirm
 </Button>
 ```
-
-**Important**: Button uses standard Tamagui size tokens ($1-$16) which control font size. Use paddingHorizontal/paddingVertical to control button dimensions.
 
 #### Text
 
 ```tsx
 <Text
-  size="$1" | "$2" | "$3" | "$4" | "$5" | ... "$16" // Use numeric tokens (default: $5)
-  fontWeight="400" | "500" | "600" | "700" // Font weight (or use weight prop)
-  weight="normal | medium | semibold | bold" // Semantic weight variant
-  textAlign="left | center | right" // Text alignment
-  truncate={boolean} // Truncate with ellipsis
-  color="$token" // Use direct token references (e.g., "$text", "$textSecondary", "$primary")
+  size="$5" // Numeric tokens $1-$16 (default: $5 = 15px body)
+  weight="semibold" // Variant: normal | medium | semibold | bold
+  align="center" // Variant: left | center | right
+  truncate // Boolean: truncate with ellipsis
+  color="$textMuted" // Direct token prop (no color variant exists)
 >
   Text content
 </Text>
 ```
 
-**CRITICAL**: Text uses standard Tamagui `size` prop with numeric tokens (`$1` through `$16`). This is the STANDARD way.
-
-**Note**: Text does NOT have color variants. Always use direct token references like `color="$textMuted"` or `color="$primary"`.
-
 #### Heading
 
 ```tsx
 <Heading
-  level={1 | 2 | 3 | 4 | 5 | 6} // Heading level (h1-h6)
-  align="left | center | right" // Text alignment
-  color="$token" // Use direct token references (e.g., "$text", "$primary")
+  level={2} // 1-6, controls HTML tag + default font size
+  align="center" // left | center | right
+  color="$text" // Direct token prop
 >
   Heading text
 </Heading>
 ```
 
-**Note**: Heading does NOT have color variants. Use direct token references for colors.
-
-#### Row (Horizontal Layout)
-
-```tsx
-<Row
-  gap="$xs | $sm | $md | $lg | $xl" // Gap between children (use tokens)
-  alignItems="flex-start | center | flex-end | stretch | baseline" // Vertical alignment
-  justifyContent="flex-start | center | flex-end | space-between | space-around | space-evenly" // Horizontal alignment
-  flexWrap="wrap | nowrap" // Allow wrapping
-  width="100%" // Full width (or any other value)
->
-  {children}
-</Row>
-```
-
-**Note**: Row is a thin wrapper over XStack - use native React Native flexbox props, not custom variants.
-
-#### Column (Vertical Layout)
-
-```tsx
-<Column
-  gap="$xs | $sm | $md | $lg | $xl" // Gap between children (use tokens)
-  alignItems="flex-start | center | flex-end | stretch" // Horizontal alignment
-  justifyContent="flex-start | center | flex-end | space-between | space-around | space-evenly" // Vertical alignment
-  width="100%" // Full width
-  height="100%" // Full height
->
-  {children}
-</Column>
-```
-
-**Note**: Column is a thin wrapper over YStack - use native React Native flexbox props, not custom variants.
-
 #### Card
+
+Card has NO padding variant — use direct Tamagui token props:
 
 ```tsx
 <Card
-  variant="elevated | outlined | filled | ghost" // Card style (default: elevated)
-  padding="none | xs | sm | md | lg | xl" // Padding (default: md)
-  interactive={boolean} // Adds hover/press effects
-  fullWidth={boolean} // Full width
+  variant="elevated" // elevated | outlined | filled | ghost (default: elevated)
+  padding="$lg" // Direct token prop (default: $md). Use padding={0} for none.
+  interactive // Boolean: adds hover/press effects
+  fullWidth // Boolean
 >
-  <Card.Header padding="md" noBorder={boolean}>
-    Header content
-  </Card.Header>
-
-  <Card.Body padding="md">Main content</Card.Body>
-
-  <Card.Footer padding="md" align="left | center | right" noBorder={boolean}>
-    Footer content
+  <Card.Header noBorder>Header</Card.Header>
+  <Card.Body>Content</Card.Body>
+  <Card.Footer align="right" noBorder>
+    Footer
   </Card.Footer>
 </Card>
 ```
@@ -1306,12 +1063,11 @@ export type { MyComponentProps } from "./components/MyComponent";
 
 ```tsx
 <Input
-  size="sm | md | lg" // Size variant (default: md)
+  size="sm | md | lg" // Named variant (default: md)
   error={boolean} // Error state
   success={boolean} // Success state
-  disabled={boolean} // Disabled state
-  fullWidth={boolean} // Full width
-  placeholder="..." // Placeholder text
+  fullWidth // Boolean
+  placeholder="..."
 />
 ```
 
@@ -1320,8 +1076,8 @@ export type { MyComponentProps } from "./components/MyComponent";
 ```tsx
 <Badge
   variant="primary | secondary | success | error | warning | info | neutral | outline"
-  size="sm | md | lg" // Size variant (default: md)
-  dot={boolean} // Minimal dot indicator
+  size="sm | md | lg" // Named variant
+  dot // Boolean: minimal dot indicator
 >
   Badge text
 </Badge>
@@ -1329,11 +1085,12 @@ export type { MyComponentProps } from "./components/MyComponent";
 
 #### Container
 
+Container has a `size` variant for max-width. Padding uses direct Tamagui token props:
+
 ```tsx
 <Container
-  size="sm | md | lg | xl | 2xl | full" // Max width (default: lg)
-  padding="none | xs | sm | md | lg | xl" // Horizontal padding (default: md)
-  center={boolean} // Center align content
+  size="sm | md | lg | xl | 2xl | full" // Max width variant (default: lg)
+  paddingHorizontal="$md" // Direct token prop
 >
   {children}
 </Container>
@@ -2324,175 +2081,16 @@ For detailed setup instructions, see `docs/CLOUDINARY_SETUP.md`.
 
 ## Documentation References
 
-### Tamagui Documentation (PRIMARY REFERENCE)
-
-**CRITICAL: Always reference Tamagui docs for component usage, styling patterns, and theming.**
-
-- **Full LLM-Optimized Documentation**: https://tamagui.dev/llms-full.txt (complete single-file reference)
-- **Quick Overview**: https://tamagui.dev/llms.txt (structured overview with links)
-- **Core Concepts**: https://tamagui.dev/docs/intro/introduction
-
-**Core Documentation:**
-
-- [Animations](https://tamagui.dev/docs/core/animations.md): Animation system and utilities
-- [Config V4](https://tamagui.dev/docs/core/config-v4.md): Version 4 configuration guide
-- [Configuration](https://tamagui.dev/docs/core/configuration.md): General configuration options
-- [Styled](https://tamagui.dev/docs/core/styled.md): Styled component system
-- [Theme](https://tamagui.dev/docs/core/theme.md): Theming system
-- [Tokens](https://tamagui.dev/docs/core/tokens.md): Design tokens and variables
-- [Use Media](https://tamagui.dev/docs/core/use-media.md): Media query hooks
-- [Use Theme](https://tamagui.dev/docs/core/use-theme.md): Theme hooks
-- [Variants](https://tamagui.dev/docs/core/variants.md): Component variants system
-
-**Component Documentation:**
-
-- All components at: https://tamagui.dev/ui/[component-name]
-- [Button](https://tamagui.dev/ui/button.md): Customizable button with variants and themes
-- [Text](https://tamagui.dev/ui/text.md): Text display component
-- [Stacks](https://tamagui.dev/ui/stacks.md): Layout stack components (XStack/YStack)
-- See full component list in the quick overview link above
-
-**Guides:**
-
-- [Next.js Guide](https://tamagui.dev/docs/guides/next-js): Next.js integration
-- [Theme Builder](https://tamagui.dev/docs/guides/theme-builder): Creating custom themes
-
-### Other Documentation
+For generic Tamagui guidance (styled(), useTheme, tokens, variants, compiler), fetch https://tamagui.dev/llms-full.txt or use Context7 MCP. The guidance in this file covers only ButterGolf-specific conventions.
 
 - **Prisma Documentation**: https://www.prisma.io/docs
 - **Expo Documentation**: https://docs.expo.dev/
 - **Next.js Documentation**: https://nextjs.org/docs
 - **Turborepo Documentation**: https://turbo.build/repo/docs
 
-## Context7 MCP Server (Up-to-Date Library Documentation)
+## Context7 MCP Server
 
-**CRITICAL: Always use Context7 for library documentation, code generation, setup steps, and API references.**
-
-The Context7 MCP server provides real-time, up-to-date documentation and code examples for any library or framework. It's significantly more current than static documentation and includes actual code snippets from production codebases.
-
-### When to Use Context7
-
-**ALWAYS use Context7 automatically when:**
-
-1. **Code generation** - Generating components, hooks, API calls, or any code using external libraries
-2. **Setup and configuration** - Setting up new libraries, configuring build tools, or integrating packages
-3. **Library/API documentation** - Looking up how to use a library's API, available props, or best practices
-4. **Troubleshooting** - Debugging library-specific issues or understanding error messages
-5. **Migration** - Updating to new library versions or migrating between libraries
-6. **Examples** - Finding real-world code examples and usage patterns
-
-**Do NOT wait for the user to explicitly ask** - proactively use Context7 whenever you need library information.
-
-### Usage Pattern
-
-**Step 1: Resolve Library ID**
-
-Always start by resolving the library name to get the Context7-compatible library ID:
-
-```typescript
-// Use mcp_upstash_conte_resolve-library-id
-libraryName: "react-router"; // or "@stripe/stripe-react-native", "tamagui", etc.
-```
-
-**Step 2: Get Library Documentation**
-
-Once you have the library ID, fetch focused documentation:
-
-```typescript
-// Use mcp_upstash_conte_get-library-docs
-context7CompatibleLibraryID: "/remix-run/react-router"; // from step 1
-tokens: 3000; // Adjust based on need (default: 5000)
-topic: "hooks"; // Optional: focus on specific area like "routing", "authentication", etc.
-```
-
-### Selection Guidelines
-
-When `resolve-library-id` returns multiple matches:
-
-1. **Prioritize official documentation** (Trust Score 9-10)
-2. **Choose based on version** - Use versioned ID if user specifies version (e.g., `/org/project/v5.2.1`)
-3. **Prefer higher Code Snippet counts** - More examples = better documentation
-4. **Match description to intent** - Read descriptions to find the most relevant match
-
-### Real-World Examples
-
-#### Example 1: Implementing Stripe Payment
-
-```typescript
-// ✅ CORRECT - Use Context7 automatically
-// Step 1: Resolve Stripe library
-(await mcp_upstash_conte_resolve) - library - id({ libraryName: "@stripe/stripe-react-native" });
-// Step 2: Get payment integration docs
-(await mcp_upstash_conte_get) -
-  library -
-  docs({
-    context7CompatibleLibraryID: "/stripe/stripe-react-native",
-    tokens: 3000,
-    topic: "payment sheet",
-  });
-// Step 3: Generate code using the examples from Context7
-
-// ❌ WRONG - Don't rely on static knowledge or outdated documentation
-// Generating code without checking current API patterns
-```
-
-#### Example 2: Adding Navigation
-
-```typescript
-// ✅ CORRECT - Check latest React Router patterns
-(await mcp_upstash_conte_resolve) - library - id({ libraryName: "react-router" });
-(await mcp_upstash_conte_get) -
-  library -
-  docs({
-    context7CompatibleLibraryID: "/remix-run/react-router",
-    tokens: 2000,
-    topic: "navigation hooks",
-  });
-
-// ❌ WRONG - Using potentially outdated patterns from training data
-```
-
-#### Example 3: Tamagui Component Setup
-
-```typescript
-// ✅ CORRECT - Get current Tamagui best practices
-(await mcp_upstash_conte_resolve) - library - id({ libraryName: "tamagui" });
-(await mcp_upstash_conte_get) -
-  library -
-  docs({
-    context7CompatibleLibraryID: "/tamagui/tamagui",
-    tokens: 2000,
-    topic: "styled components",
-  });
-```
-
-### Integration with Existing Workflow
-
-**Before writing code that uses external libraries:**
-
-1. Use Context7 to get current documentation
-2. Review code examples and API patterns
-3. Generate code following the examples
-4. Reference Context7 output in code comments if helpful
-
-**When user asks about libraries:**
-
-- Don't just answer from static knowledge
-- Fetch Context7 docs first
-- Provide answer based on current documentation
-- Include relevant code examples from Context7
-
-### Benefits
-
-- **Up-to-date**: Docs reflect latest library versions and best practices
-- **Real examples**: Code snippets from production codebases, not just docs
-- **Comprehensive**: Covers edge cases and common pitfalls
-- **Accurate**: Based on actual library implementations, not LLM training data
-- **Efficient**: Targeted documentation (use `topic` parameter) reduces token usage
-
-### Remember
-
-**Context7 is not optional** - it's a critical tool for ensuring code quality and accuracy. Always use it proactively when working with external libraries, frameworks, or APIs. Don't wait to be asked - make it part of your standard workflow.
+Use the Context7 MCP server for up-to-date library documentation. Always call `resolve-library-id` first, then `query-docs` with a focused `topic` parameter. Use it proactively when generating code with external libraries — don't wait to be asked.
 
 ## Best Practices
 
@@ -2578,206 +2176,11 @@ export default async function Layout({ children }) {
     - ✅ CORRECT: `const resolvedParams = await params; resolvedParams.slug`
     - Update Props interface: `params: Promise<{ slug: string }>` not `params: { slug: string }`
 
-### Understanding Variants vs Direct Token Props
-
-**CRITICAL DISTINCTION:** Tamagui has two ways to use design tokens:
-
-#### 1️⃣ **Custom Variants** (For NEW Component APIs Only)
-
-Variants are **named options** defined in `styled()` components. They use **plain strings WITHOUT `$`** that map to tokens internally.
-
-```tsx
-// ✅ CORRECT - Using custom variants (NO $ prefix)
-<Button size="lg">          // "lg" is a variant option
-<Text color="muted">        // "muted" is a variant option
-<Card padding="lg">         // "lg" is a variant option
-
-// Defined in styled() like this:
-const Button = styled(View, {
-  variants: {
-    size: {
-      lg: { height: '$10', paddingHorizontal: '$4' },
-    }
-  }
-})
-```
-
-**⚠️ IMPORTANT:** Never create variants for props that **already exist on the base component** (like `gap`, `padding`, `margin`). This causes TypeScript intersection type errors!
-
-**When to use:** Component-specific props that have a fixed set of semantic options (button size/tone, card variant, text color schemes).
-
-#### 2️⃣ **Direct Token Props** (For Layout & Styling)
-
-Direct props accept token values **WITH `$`** for ad-hoc styling on any Tamagui component. This is how Tamagui's built-in components work.
-
-```tsx
-// ✅ CORRECT - Using direct token props (WITH $ prefix)
-<Row gap="$xl">                         // Use tokens directly - gap is native to XStack
-<Column gap="$lg">                      // Use tokens directly - gap is native to YStack
-<View padding="$md">                    // Direct token reference
-<YStack gap="$4">                       // Direct token reference
-<Text fontSize="$5">                    // Direct token reference
-<View backgroundColor="$surface">       // Direct token reference
-<View borderRadius="$lg">               // Direct token reference
-```
-
-**When to use:** Layout spacing (gap, padding, margin), geometric properties (width, height, borderRadius), and any prop that exists natively on the base component.
-
-### When to Use Which Pattern
-
-#### ✅ Use Custom Variants For:
-
-1. **Component identity** - Button size/tone, Input size, Card variant
-2. **Semantic options** - Text colors (muted, secondary)
-3. **Design system boundaries** - Enforcing approved sizes/colors
-4. **Component-specific props** - Container maxWidth, Card padding
-5. **Better DX** - Autocomplete, type safety, prevents one-offs
-
-#### ✅ Use Direct Tokens For:
-
-1. **Layout spacing** - padding, margin on containers
-2. **Geometric props** - borderRadius, borderWidth, width, height
-3. **One-off containers** - Temporary View/YStack wrappers
-4. **Advanced layouts** - Complex positioning, absolute positioning
-5. **Prototyping** - Quick iteration before creating variants
-
-### Real-World Examples
-
-```tsx
-// ✅ CORRECT - Mixed usage based on context
-
-// Layout components use DIRECT TOKENS for native props
-<Row gap="$md" alignItems="center">    // gap="$md" - direct token (native prop)
-  <Column gap="$lg">                     // gap="$lg" - direct token (native prop)
-    <Text color="$textMuted" size="$4">  // color & size - both direct tokens
-      Helper text
-    </Text>
-  </Column>
-</Row>
-
-// Primitives use direct tokens (flexible, ad-hoc)
-<View padding="$4" backgroundColor="$surface" borderRadius="$md">
-  <YStack gap="$3">
-    <Text size="$4" color="$text">Direct token usage</Text>
-  </YStack>
-</View>
-
-// Standard Tamagui Button uses direct props
-<Button size="$5" backgroundColor="$primary" color="$textInverse">
-  Submit
-</Button>
-
-// Custom components use their defined variants
-<Card variant="elevated" padding="lg">  // variant/padding - custom variants
-  <Card.Body>
-    <Text>Content</Text>
-  </Card.Body>
-</Card>
-```
-
-### Token Usage Cheat Sheet
-
-```tsx
-// ✅ CORRECT - Direct tokens (WITH $ prefix) for layout components
-<Row gap="$xl">                   // Row/Column use DIRECT tokens (gap is native to XStack)
-<Column gap="$lg">                // Don't use variants for native props!
-<YStack gap="$4">                 // Direct prop on primitive
-<View padding="$md">              // Direct prop on primitive
-<Text size="$5" color="$textMuted"> // Direct token references
-<Button size="$4" backgroundColor="$primary"> // Standard Tamagui Button with direct props
-<View borderRadius="$lg">         // Direct geometric prop
-<View backgroundColor="$surface"> // Direct color token
-
-// ✅ CORRECT - Custom variants (NO $ prefix) for component-specific props
-<Card padding="lg">               // Card component variant (custom, not native padding)
-<Container size="lg">             // Container size variant
-
-// ❌ WRONG - Creating variants for native props
-<Row gap="md">                    // ❌ gap exists natively, use gap="$md"
-<Column gap="lg">                 // ❌ gap exists natively, use gap="$lg"
-
-// ❌ WRONG - Mixing them up
-<View padding="md">               // ❌ Missing $ for direct prop
-
-// ❌ WRONG - Using old token names
-<Text color="$color">             // ❌ Old token name, use $text
-<View borderColor="$borderColor"> // ❌ Old token name, use $border
-```
-
-### Component Usage Cheat Sheet
-
-```tsx
-// ✅ CORRECT Component Usage
-<Button size="$5" backgroundColor="$primary" color="$textInverse">Submit</Button>
-<Text color="$textMuted" size="$4">Helper text</Text>
-<Card variant="elevated" padding="lg">
-  <Card.Header><Heading level={3}>Title</Heading></Card.Header>
-  <Card.Body><Text>Content</Text></Card.Body>
-</Card>
-<Row gap="$md" alignItems="center">
-  <Text>Label</Text>
-  <Spacer flex />
-  <Button>Action</Button>
-</Row>
-
-// ❌ WRONG Component Usage
-<Button paddingHorizontal="$5" backgroundColor="$spicedClementine">Submit</Button>
-<Text fontSize="$3" color="$gray500">Helper text</Text>
-<Row gap="md">Wrong - use gap="$md"</Row>
-<Card elevate size="$4" bordered>
-  <CardHeader padding="$3">Title</CardHeader>
-</Card>
-<XStack gap="$4" alignItems="center">
-  <Text>Label</Text>
-  <View flex={1} />
-  <Button>Action</Button>
-</XStack>
-```
-
-### Component Design Decision Matrix
-
-Use this matrix when creating or updating components:
-
-| Property Type              | Use Variant                      | Use Direct Token           | Example                                              |
-| -------------------------- | -------------------------------- | -------------------------- | ---------------------------------------------------- |
-| **Spacing (gap, padding)** | ❌ DON'T (native props)          | ✅ Always use tokens       | `<Row gap="$md">` (gap is native to XStack)          |
-| **Sizing (width, height)** | ✅ For semantic sizes (sm/md/lg) | ⚠️ For specific dimensions | `<Input size="md">` vs `<View width={200}>`          |
-| **Colors**                 | ✅ For semantic tokens           | ⚠️ For brand tokens in UI  | `<Text color="$text">` or `color="$primary"`         |
-| **Typography (size)**      | ❌ No variants on Text           | ✅ Use numeric tokens      | `<Text size="$5">` (standard Tamagui pattern)        |
-| **Border radius**          | ⚠️ Rare (use defaults)           | ✅ For geometric control   | Usually inherit, or `borderRadius="$md"`             |
-| **Alignment**              | ❌ No custom variants            | ✅ Use native flexbox      | `<Row alignItems="center">` native React Native prop |
-| **Component state**        | ✅ Always (tone, variant)        | ❌ Never                   | `<Button tone="primary">` never manual colors        |
-
-**Legend:**
-
-- ✅ Preferred approach
-- ⚠️ Use case dependent
-- ❌ Avoid/Never
-
-### Variant Design Guidelines
-
-When creating a new component, add variants for:
-
-1. **Must Have:**
-   - `size` - If component has sizing (sm, md, lg)
-   - `variant` or `tone` - Visual style variations
-2. **Should Have:**
-   - Component-specific semantics (e.g., `align` for Row, `level` for Heading)
-   - Common states (active, disabled) if not in base component
-3. **Nice to Have:**
-   - `fullWidth` / `fullHeight` - If commonly needed
-   - Spacing variants if component commonly wraps content
-
-4. **Don't Variant:**
-   - One-off values (use direct props)
-   - Geometric properties (width, height numbers)
-   - Complex positioning (absolute, z-index)
-
 ### General Best Practices
 
 9. **Always use Tamagui components** from `@buttergolf/ui` for cross-platform consistency
 10. **CRITICAL: Always use semantic color tokens in app code** - Use `$primary`, `$text`, `$textSecondary`, `$textMuted`, `$border`, `$background`, `$surface` for automatic theme switching and maintainability. Only use brand tokens (`$ironstone`, `$spicedClementine`, `$vanillaCream`) when defining component defaults in `packages/ui` or when you need a specific color that absolutely won't change with themes. Never use raw hex values or numbered colors.
-11. **CRITICAL: Always use standard Tamagui Button component** - Never create manual HTML `<button>` elements with inline styles. Import `{ Button }` from `@buttergolf/ui` and use standard Tamagui numeric size tokens (`size="$4"`) with direct prop styling (`backgroundColor`, `color`, `paddingHorizontal`, `paddingVertical`, `borderRadius`). We removed custom variants (size="sm|md|lg", tone="primary|outline") to use standard Tamagui patterns. This ensures consistency, proper theming, hover/press states, and cross-platform compatibility.
+11. **CRITICAL: Always use butterVariant for brand buttons** - Use `<Button butterVariant="primary" size="$5">` for primary CTAs and `<Button butterVariant="secondary" size="$4">` for secondary actions. Use `chromeless` for ghost buttons. Only fall back to direct `backgroundColor`/`color` props for non-standard one-off styling.
 12. **Keep React versions aligned** across web and mobile
 13. **Use workspace protocol** for internal dependencies: `"workspace:*"`
 14. **Export types** alongside components for better DX
@@ -2788,11 +2191,11 @@ When creating a new component, add variants for:
 19. **Use `name` prop** on styled components for better compiler optimization
 20. **Use Prisma Client singleton** from `@buttergolf/db` - never create new instances
 21. **Run `pnpm db:generate`** after any schema changes
-22. **Use migrations** (`db:migrate:dev`) for production-bound changes, `db:push` for quick dev iteration
+22. **ALWAYS use migrations** (`db:migrate:dev`) for ALL schema changes — NEVER use `db:push` (see Database section above)
 23. **Define variants for common patterns** - If you're writing the same props 3+ times, make it a variant
 24. **Use direct tokens for one-offs** - Don't create variants for rarely-used combinations
 25. **Avoid `style` prop in shared code** - In `packages/ui` and `packages/app`, use Tamagui's native props so the compiler can optimize. In web-only files (`apps/web`), you may use `style` for genuine web-only CSS like `position: sticky` or `overflow: auto`.
-26. **Use Tamagui Text with fontSize tokens** - In shared cross-platform code, use `<Text fontSize="$5">` with numeric tokens. For web-only custom typography (like CSS clamp), create dedicated components in `apps/web` or use Tailwind classes. Trust the lineHeight values defined in `packages/config/src/tamagui.config.ts` - avoid manual overrides unless absolutely necessary.
+26. **Use Tamagui Text with size tokens** - In shared cross-platform code, use `<Text size="$5">` with numeric tokens (NOT `fontSize`). For web-only custom typography (like CSS clamp), create dedicated components in `apps/web` or use Tailwind classes.
 
 ### British Spelling Convention
 
@@ -2874,7 +2277,7 @@ When generating new code:
 - Export both component and type
 - Use semantic tokens ($ prefix) - NEVER use numbered colors
 - ALWAYS use component variants instead of manual styling
-- ALWAYS use Text color variants (color="muted" not color="$textMuted")
+- ALWAYS use direct color tokens on Text (color="$textMuted" not color="muted" — Text has NO color variant)
 - ALWAYS use compound components for Cards
 - ALWAYS use layout components (Row, Column, Container)
 - Include responsive variants with media queries
@@ -2910,8 +2313,8 @@ When generating new code:
 ### Product Card
 
 ```tsx
-<Card variant="elevated" padding="none" fullWidth>
-  <Card.Header padding="none" noBorder>
+<Card variant="elevated" padding={0} fullWidth>
+  <Card.Header padding={0} noBorder>
     <Image
       source={{ uri: product.imageUrl }}
       width="100%"
@@ -2921,7 +2324,7 @@ When generating new code:
     />
   </Card.Header>
 
-  <Card.Body padding="lg">
+  <Card.Body padding="$lg">
     <Column gap="$sm">
       <Heading level={4}>{product.name}</Heading>
       <Text color="$textSecondary">{product.category}</Text>
@@ -2952,7 +2355,7 @@ When generating new code:
 
 ```tsx
 <Row gap="$lg" flexWrap="wrap">
-  <Card variant="filled" padding="lg" flex={1}>
+  <Card variant="filled" padding="$lg" flex={1}>
     <Column gap="$sm">
       <Row alignItems="center" gap="$sm">
         <Badge variant="success" dot />
@@ -2965,7 +2368,7 @@ When generating new code:
     </Column>
   </Card>
 
-  <Card variant="filled" padding="lg" flex={1}>
+  <Card variant="filled" padding="$lg" flex={1}>
     <Column gap="$sm">
       <Row alignItems="center" gap="$sm">
         <Badge variant="info" dot />
@@ -2983,7 +2386,7 @@ When generating new code:
 ### Loading State
 
 ```tsx
-<Card variant="elevated" padding="lg">
+<Card variant="elevated" padding="$lg">
   <Column gap="$md" alignItems="center">
     <Spinner size="lg" color="$primary" />
     <Text color="$textSecondary">Loading content...</Text>
@@ -2994,7 +2397,7 @@ When generating new code:
 ### Alert/Notification
 
 ```tsx
-<Card variant="outlined" padding="md">
+<Card variant="outlined" padding="$md">
   <Row gap="$md" alignItems="flex-start">
     <Badge variant="error" size="sm" />
     <Column gap="$xs" flex={1}>
@@ -3183,83 +2586,3 @@ When adding or modifying pages:
 - Check Team ID and package names match exactly
 - Test on physical device (simulators have limitations)
 - Review Android logcat for App Links verification
-
-## Tamagui Documentation
-
-If you want all docs as a single document, see docs/TAMAGUI_DOCUMENTATION.md.
-
-> Tamagui is a complete UI solution for React Native and Web, with a fully-featured UI kit, styling engine, and optimizing compiler.
-
-This documentation covers all aspects of using Tamagui, from installation to advanced usage.
-
-## Core
-
-Core documentation covers the fundamental styling and configuration aspects of Tamagui:
-
-- [Animations](https://tamagui.dev/docs/core/animations.md): Animation system and utilities
-- [Config V4](https://tamagui.dev/docs/core/config-v4.md): Version 4 configuration guide
-- [Configuration](https://tamagui.dev/docs/core/configuration.md): General configuration options
-- [Exports](https://tamagui.dev/docs/core/exports.md): Available exports and utilities
-- [Font Language](https://tamagui.dev/docs/core/font-language.md): Font and language settings
-- [Stack and Text](https://tamagui.dev/docs/core/stack-and-text.md): Basic layout components
-- [Styled](https://tamagui.dev/docs/core/styled.md): Styled component system
-- [Theme](https://tamagui.dev/docs/core/theme.md): Theming system
-- [Tokens](https://tamagui.dev/docs/core/tokens.md): Design tokens and variables
-- [Use Media](https://tamagui.dev/docs/core/use-media.md): Media query hooks
-- [Use Theme](https://tamagui.dev/docs/core/use-theme.md): Theme hooks
-- [Variants](https://tamagui.dev/docs/core/variants.md): Component variants system
-
-## Compiler
-
-Documentation about Tamagui's optimizing compiler:
-
-- [Compiler Installation](https://tamagui.dev/docs/intro/compiler-install.md): How to install and setup the compiler
-- [Why a Compiler?](https://tamagui.dev/docs/intro/why-a-compiler.md): Benefits and reasoning behind the compiler
-- [Benchmarks](https://tamagui.dev/docs/intro/benchmarks.md): Performance benchmarks and comparisons
-
-## Components
-
-All component documentation can be accessed at https://tamagui.dev/ui/[component-name]
-
-Available components:
-
-- [Accordion](https://tamagui.dev/ui/accordion.md): Expandable content sections
-- [AlertDialog](https://tamagui.dev/ui/alert-dialog.md): Modal dialog for important actions
-- [Anchor](https://tamagui.dev/ui/anchor.md): Link component with styling options
-- [Avatar](https://tamagui.dev/ui/avatar.md): User avatar display component
-- [Button](https://tamagui.dev/ui/button.md): A customizable button component with variants and themes
-- [Card](https://tamagui.dev/ui/card.md): Container component for grouped content
-- [Checkbox](https://tamagui.dev/ui/checkbox.md): Selection control component
-- [Dialog](https://tamagui.dev/ui/dialog.md): Modal dialog component
-- [Form](https://tamagui.dev/ui/form.md): Form components and validation
-- [Group](https://tamagui.dev/ui/group.md): Component grouping utilities
-- [Headings](https://tamagui.dev/ui/headings.md): Typography heading components
-- [HTML Elements](https://tamagui.dev/ui/html-elements.md): Basic HTML element components
-- [Image](https://tamagui.dev/ui/image.md): Image display component
-- [Inputs](https://tamagui.dev/ui/inputs.md): Text input components
-- [Label](https://tamagui.dev/ui/label.md): Accessible label components
-- [LinearGradient](https://tamagui.dev/ui/linear-gradient.md): Gradient background component
-- [ListItem](https://tamagui.dev/ui/list-item.md): List item component
-- [LucideIcons](https://tamagui.dev/ui/lucide-icons.md): Icon component library
-- [NewInputs](https://tamagui.dev/ui/new-inputs.md): Enhanced input components
-- [Popover](https://tamagui.dev/ui/popover.md): Floating content component
-- [Portal](https://tamagui.dev/ui/portal.md): Render content in different DOM locations
-- [Progress](https://tamagui.dev/ui/progress.md): Progress indicators
-- [RadioGroup](https://tamagui.dev/ui/radio-group.md): Radio button selection group
-- [ScrollView](https://tamagui.dev/ui/scroll-view.md): Scrollable container component
-- [Select](https://tamagui.dev/ui/select.md): Dropdown selection component
-- [Separator](https://tamagui.dev/ui/separator.md): Visual separators
-- [Shapes](https://tamagui.dev/ui/shapes.md): Basic shape components
-- [Sheet](https://tamagui.dev/ui/sheet.md): Bottom sheet and modal components
-- [Slider](https://tamagui.dev/ui/slider.md): Range input components
-- [Spinner](https://tamagui.dev/ui/spinner.md): Loading indicator component
-- [Stacks](https://tamagui.dev/ui/stacks.md): Layout stack components
-- [Switch](https://tamagui.dev/ui/switch.md): Toggle switch components
-- [Tabs](https://tamagui.dev/ui/tabs.md): Tabbed interface components
-- [TamaguiImage](https://tamagui.dev/ui/tamagui-image.md): Enhanced image component
-- [Text](https://tamagui.dev/ui/text.md): Text display component
-- [Toast](https://tamagui.dev/ui/toast.md): Notification component
-- [ToggleGroup](https://tamagui.dev/ui/toggle-group.md): Group of toggle buttons
-- [Tooltip](https://tamagui.dev/ui/tooltip.md): Informational tooltips
-- [Unspaced](https://tamagui.dev/ui/unspaced.md): Remove spacing utilities
-- [VisuallyHidden](https://tamagui.dev/ui/visually-hidden.md): Hide content visually while keeping it accessible

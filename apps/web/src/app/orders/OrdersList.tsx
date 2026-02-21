@@ -1,7 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Row, Column, Text, Card, Badge, Heading, Container } from "@buttergolf/ui";
+import {
+  Button,
+  Row,
+  Column,
+  Text,
+  Card,
+  Badge,
+  Heading,
+  Container,
+  SegmentedTabs,
+} from "@buttergolf/ui";
 import { View } from "tamagui";
 import Link from "next/link";
 import Image from "next/image";
@@ -124,59 +134,30 @@ export function OrdersList({ orders }: Readonly<OrdersListProps>) {
         <Heading level={1}>My Orders</Heading>
 
         {/* Filter Tabs */}
-        <Row gap="$sm" borderBottomWidth={1} borderBottomColor="$border">
-          <Button
-            chromeless
-            onPress={() => setFilter("all")}
-            paddingHorizontal="$md"
-            paddingVertical="$sm"
-            borderBottomWidth={filter === "all" ? 2 : 0}
-            borderBottomColor="$primary"
-            borderRadius={0}
-          >
-            <Text fontWeight="500" color={filter === "all" ? "$primary" : "$textSecondary"}>
-              All Orders ({orders.length})
-            </Text>
-          </Button>
-          <Button
-            chromeless
-            onPress={() => setFilter("buyer")}
-            paddingHorizontal="$md"
-            paddingVertical="$sm"
-            borderBottomWidth={filter === "buyer" ? 2 : 0}
-            borderBottomColor="$primary"
-            borderRadius={0}
-            icon={
-              <ShoppingBag
-                size={16}
-                color={filter === "buyer" ? "var(--color-primary)" : "var(--color-textSecondary)"}
-              />
-            }
-          >
-            <Text fontWeight="500" color={filter === "buyer" ? "$primary" : "$textSecondary"}>
-              Purchases ({purchasesCount})
-            </Text>
-          </Button>
-          <Button
-            chromeless
-            onPress={() => setFilter("seller")}
-            paddingHorizontal="$md"
-            paddingVertical="$sm"
-            borderBottomWidth={filter === "seller" ? 2 : 0}
-            borderBottomColor="$primary"
-            borderRadius={0}
-            icon={
-              <Package
-                size={16}
-                color={filter === "seller" ? "var(--color-primary)" : "var(--color-textSecondary)"}
-              />
-            }
-          >
-            <Text fontWeight="500" color={filter === "seller" ? "$primary" : "$textSecondary"}>
-              Sales ({salesCount})
-            </Text>
-          </Button>
-        </Row>
+        <SegmentedTabs
+          value={filter}
+          onValueChange={(val) => setFilter(val as "all" | "buyer" | "seller")}
+        >
+          <SegmentedTabs.List activeValue={filter}>
+            <SegmentedTabs.Tab value="all" count={orders.length}>
+              All Orders
+            </SegmentedTabs.Tab>
+            <SegmentedTabs.Tab
+              value="buyer"
+              icon={<ShoppingBag size={16} color="$textSecondary" />}
+              count={purchasesCount}
+            >
+              Purchases
+            </SegmentedTabs.Tab>
+            <SegmentedTabs.Tab
+              value="seller"
+              icon={<Package size={16} color="$textSecondary" />}
+              count={salesCount}
+            >
+              Sales
+            </SegmentedTabs.Tab>
+          </SegmentedTabs.List>
+        </SegmentedTabs>
 
         {/* Orders List */}
         {filteredOrders.length === 0 ? (

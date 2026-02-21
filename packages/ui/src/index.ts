@@ -81,6 +81,12 @@ export { Spinner } from "./components/Spinner";
 export type { SpinnerProps } from "./components/Spinner";
 
 // Navigation Components
+export { SegmentedTabs } from "./components/SegmentedTabs";
+export type {
+  SegmentedTabsProps,
+  SegmentedTabListProps,
+  SegmentedTabTriggerProps,
+} from "./components/SegmentedTabs";
 export { CategorySelector } from "./components/CategorySelector";
 export type { CategorySelectorProps_Type, Category } from "./components/CategorySelector";
 
