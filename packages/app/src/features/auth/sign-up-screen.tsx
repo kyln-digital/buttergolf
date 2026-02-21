@@ -243,8 +243,7 @@ export function SignUpScreen({
               autoCapitalize="words"
               error={fieldErrors.firstName}
               editable={!isSubmitting}
-              textContentType="givenName"
-              autoComplete="name-given"
+              autoComplete="given-name"
             />
 
             <AuthFormInput
@@ -255,8 +254,7 @@ export function SignUpScreen({
               autoCapitalize="words"
               error={fieldErrors.lastName}
               editable={!isSubmitting}
-              textContentType="familyName"
-              autoComplete="name-family"
+              autoComplete="family-name"
             />
 
             <AuthFormInput
@@ -264,10 +262,9 @@ export function SignUpScreen({
               value={formData.email}
               onChangeText={handleEmailChange}
               placeholder="your@email.com"
-              keyboardType="email-address"
+              type="email"
               error={fieldErrors.email}
               editable={!isSubmitting}
-              textContentType="emailAddress"
               autoComplete="email"
             />
 
@@ -277,11 +274,10 @@ export function SignUpScreen({
                 value={formData.password}
                 onChangeText={handlePasswordChange}
                 placeholder="••••••••"
-                secureTextEntry
+                type="password"
                 error={fieldErrors.password}
                 editable={!isSubmitting}
-                textContentType="newPassword"
-                autoComplete="password-new"
+                autoComplete="new-password"
               />
 
               {/* Password Strength Indicator */}
@@ -328,11 +324,10 @@ export function SignUpScreen({
               value={formData.confirmPassword}
               onChangeText={handleConfirmPasswordChange}
               placeholder="••••••••"
-              secureTextEntry
+              type="password"
               error={fieldErrors.confirmPassword}
               editable={!isSubmitting}
-              textContentType="newPassword"
-              autoComplete="password-new"
+              autoComplete="new-password"
             />
           </Column>
 

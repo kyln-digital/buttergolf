@@ -279,7 +279,8 @@ export function MessagesScreen({
                   {/* Product Image */}
                   {conversation.productImage && (
                     <Image
-                      source={{ uri: conversation.productImage }}
+                      src={conversation.productImage}
+                      alt={conversation.productTitle}
                       width={64}
                       height={64}
                       borderRadius="$md"

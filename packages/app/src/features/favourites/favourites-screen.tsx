@@ -352,11 +352,11 @@ function FavouriteProductCard({
           backgroundColor="$border"
         >
           <Image
-            source={{ uri: product.imageUrl || PLACEHOLDER_IMAGE_URL }}
+            src={product.imageUrl || PLACEHOLDER_IMAGE_URL}
             alt={product.title}
             width={120}
             height={90}
-            resizeMode={product.imageUrl ? "cover" : "contain"}
+            objectFit={product.imageUrl ? "cover" : "contain"}
           />
         </Column>
 

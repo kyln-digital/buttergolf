@@ -154,7 +154,7 @@ export function HomeScreen({
                 source={images.clubs.club1}
                 width="100%"
                 height="100%"
-                resizeMode="cover"
+                objectFit="cover"
                 position="absolute"
                 alt="Woods category"
               />
@@ -186,7 +186,7 @@ export function HomeScreen({
                 source={images.clubs.club3}
                 width="100%"
                 height="100%"
-                resizeMode="cover"
+                objectFit="cover"
                 position="absolute"
                 alt="Irons category"
               />
@@ -221,7 +221,7 @@ export function HomeScreen({
                 source={images.clubs.club4}
                 width="100%"
                 height="100%"
-                resizeMode="cover"
+                objectFit="cover"
                 position="absolute"
                 alt="Wedges category"
               />
@@ -253,7 +253,7 @@ export function HomeScreen({
                 source={images.clubs.club5}
                 width="100%"
                 height="100%"
-                resizeMode="cover"
+                objectFit="cover"
                 position="absolute"
                 alt="Putters category"
               />

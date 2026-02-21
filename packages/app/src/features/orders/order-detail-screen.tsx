@@ -558,7 +558,8 @@ export function OrderDetailScreen({
           <Row gap="$3" alignItems="flex-start">
             {productImage ? (
               <Image
-                source={{ uri: productImage }}
+                src={productImage}
+                alt={order.product.title || "Product image"}
                 width={90}
                 height={90}
                 borderRadius="$md"

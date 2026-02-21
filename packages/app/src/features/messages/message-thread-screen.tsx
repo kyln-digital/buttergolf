@@ -332,7 +332,8 @@ export function MessageThreadScreen({
                 {/* Avatar */}
                 {!message.isOwnMessage && otherUserImage && (
                   <Image
-                    source={{ uri: otherUserImage }}
+                    src={otherUserImage}
+                    alt={otherUserName ? `${otherUserName}'s avatar` : "User avatar"}
                     width={32}
                     height={32}
                     borderRadius={16}

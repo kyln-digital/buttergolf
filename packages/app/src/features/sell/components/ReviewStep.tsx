@@ -151,7 +151,8 @@ export function ReviewStep({ formData, onEdit, direction }: Readonly<ReviewStepP
                     position="relative"
                   >
                     <Image
-                      source={{ uri: image.uri }}
+                      src={image.uri}
+                      alt={`Photo ${index + 1}`}
                       width="100%"
                       height="100%"
                       objectFit="cover"

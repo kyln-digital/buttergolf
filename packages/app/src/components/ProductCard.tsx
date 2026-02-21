@@ -102,7 +102,7 @@ export function ProductCard({
       {/* Image Area - 4:3 aspect ratio */}
       <Column position="relative" width="100%" aspectRatio={4 / 3} overflow="hidden">
         <Image
-          source={{ uri: product.imageUrl }}
+          src={product.imageUrl}
           alt={product.title}
           width="100%"
           height="100%"

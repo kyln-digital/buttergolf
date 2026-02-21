@@ -263,7 +263,7 @@ export function ListingStep({ formData, onUpdate, direction }: Readonly<ListingS
                 onBlur={() => setPriceFocused(false)}
                 placeholder="0.00"
                 placeholderTextColor="$textSecondary"
-                keyboardType="decimal-pad"
+                inputMode="decimal"
                 borderWidth={0}
                 backgroundColor="transparent"
                 paddingHorizontal="$4"
