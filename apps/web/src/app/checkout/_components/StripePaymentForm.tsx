@@ -201,11 +201,16 @@ export function StripePaymentForm({
         </Card>
 
         {/* Payment Hold Info Banner */}
-        <Card variant="outlined" padding="$sm" borderColor="$info" backgroundColor="$infoLight">
+        <Card
+          variant="outlined"
+          padding="$sm"
+          borderColor="$success"
+          backgroundColor="$successLight"
+        >
           <Row gap="$sm" alignItems="center">
-            <Lock size={16} color="$info" />
+            <Lock size={16} color="$success" />
             <Column gap="$xs" flex={1}>
-              <Text size="$3" color="$info" fontWeight="600">
+              <Text size="$3" color="$success" fontWeight="600">
                 Payment held securely
               </Text>
               <Text size="$2" color="$textSecondary">
