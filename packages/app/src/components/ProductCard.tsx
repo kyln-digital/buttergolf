@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTheme } from "tamagui";
 import { Platform } from "react-native";
 import {
   Card,
@@ -25,29 +24,8 @@ export interface ProductCardProps {
   onQuickView?: (productId: string) => void;
 }
 
-// Heart icon component that works on both platforms
+// Heart icon component — uses Tamagui lucide icon which is cross-platform
 function HeartIcon({ filled }: Readonly<{ filled: boolean }>) {
-  const theme = useTheme();
-
-  if (Platform.OS === "web") {
-    // SVG requires a resolved hex value, not a token string
-    const primaryColor = theme.primary.val;
-    return (
-      <svg
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        fill={filled ? primaryColor : "none"}
-        stroke={primaryColor}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-      </svg>
-    );
-  }
-  // For native, use Tamagui token strings so the icon system resolves the color correctly
   return (
     <Heart
       size={18}

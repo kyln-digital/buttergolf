@@ -3,7 +3,7 @@
 import { useState, useEffect, useSyncExternalStore } from "react";
 import { Column, Row, Text, Heading, Button, Card, Spinner, View } from "@buttergolf/ui";
 import { X, Zap, Star, CheckCircle } from "@tamagui/lucide-icons";
-import { useTheme } from "tamagui";
+import { useTheme, getTokenValue } from "tamagui";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 
@@ -355,6 +355,7 @@ const getServerSnapshot = () => false;
 export function PromotionPurchaseSheet(props: PromotionPurchaseSheetProps) {
   // Use useSyncExternalStore to handle SSR/client mismatch safely
   const isMounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const theme = useTheme();
 
   // Handle body scroll when sheet is open
   useEffect(() => {
@@ -383,12 +384,8 @@ export function PromotionPurchaseSheet(props: PromotionPurchaseSheetProps) {
         onPress={props.onClose}
       />
 
-      {/* Sheet */}
+      {/* Sheet — web-only fixed positioning requires style prop */}
       <View
-        backgroundColor="$surface"
-        borderTopLeftRadius="$xl"
-        borderTopRightRadius="$xl"
-        padding="$lg"
         style={{
           position: "fixed",
           bottom: 0,
@@ -397,6 +394,10 @@ export function PromotionPurchaseSheet(props: PromotionPurchaseSheetProps) {
           zIndex: 1050,
           maxHeight: "90vh",
           overflowY: "auto",
+          backgroundColor: theme.surface.val,
+          borderTopLeftRadius: getTokenValue("$xl", "radius"),
+          borderTopRightRadius: getTokenValue("$xl", "radius"),
+          padding: getTokenValue("$lg", "space"),
         }}
       >
         <PromotionPurchaseContent {...props} />

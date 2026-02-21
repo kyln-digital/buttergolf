@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Column, Row, Text, Heading, Button, Card, Spinner } from "@buttergolf/ui";
+import type { ColorTokens } from "tamagui";
 import {
   Package,
   Truck,
@@ -89,7 +90,7 @@ interface SalesOrdersListProps {
   stats: Stats;
 }
 
-const STATUS_CONFIG: Record<OrderStatus, { label: string; fg: string; bg: string }> = {
+const STATUS_CONFIG: Record<OrderStatus, { label: string; fg: ColorTokens; bg: ColorTokens }> = {
   PAYMENT_CONFIRMED: { label: "Awaiting Label", fg: "$primary", bg: "$primaryLight" },
   LABEL_GENERATED: { label: "Ready to Ship", fg: "$info", bg: "$infoLight" },
   SHIPPED: { label: "Shipped", fg: "$primary", bg: "$primaryLight" },
@@ -100,7 +101,7 @@ const STATUS_CONFIG: Record<OrderStatus, { label: string; fg: string; bg: string
 
 const PAYMENT_STATUS_CONFIG: Record<
   PaymentHoldStatus,
-  { label: string; fg: string; bg: string; icon: typeof Clock }
+  { label: string; fg: ColorTokens; bg: ColorTokens; icon: typeof Clock }
 > = {
   HELD: { label: "Payment Held", fg: "$primary", bg: "$primaryLight", icon: Clock },
   PENDING_SELLER_ONBOARDING: {
@@ -114,22 +115,21 @@ const PAYMENT_STATUS_CONFIG: Record<
   REFUNDED: { label: "Refunded", fg: "$textSecondary", bg: "$border", icon: AlertCircle },
 };
 
-function getStatusIcon(status: OrderStatus, color: string = "$text") {
-  const c = color as "$text";
+function getStatusIcon(status: OrderStatus, color: ColorTokens = "$text") {
   switch (status) {
     case "PAYMENT_CONFIRMED":
-      return <Clock size={16} color={c} />;
+      return <Clock size={16} color={color} />;
     case "LABEL_GENERATED":
-      return <Package size={16} color={c} />;
+      return <Package size={16} color={color} />;
     case "SHIPPED":
-      return <Truck size={16} color={c} />;
+      return <Truck size={16} color={color} />;
     case "DELIVERED":
-      return <CheckCircle size={16} color={c} />;
+      return <CheckCircle size={16} color={color} />;
     case "CANCELLED":
     case "REFUNDED":
-      return <AlertCircle size={16} color={c} />;
+      return <AlertCircle size={16} color={color} />;
     default:
-      return <Clock size={16} color={c} />;
+      return <Clock size={16} color={color} />;
   }
 }
 
@@ -244,7 +244,7 @@ function OrderCard({ order }: { order: Order }) {
               {order.product.title}
             </Text>
             <Row
-              backgroundColor={statusConfig.bg as "$primaryLight"}
+              backgroundColor={statusConfig.bg}
               paddingHorizontal="$sm"
               paddingVertical="$xs"
               borderRadius="$full"
@@ -253,7 +253,7 @@ function OrderCard({ order }: { order: Order }) {
               alignSelf="flex-start"
             >
               {getStatusIcon(status, statusConfig.fg)}
-              <Text size="$2" color={statusConfig.fg as "$primary"} fontWeight="500">
+              <Text size="$2" color={statusConfig.fg} fontWeight="500">
                 {statusConfig.label}
               </Text>
             </Row>
@@ -297,7 +297,7 @@ function OrderCard({ order }: { order: Order }) {
               </Text>
               {paymentStatusConfig && (
                 <Row
-                  backgroundColor={paymentStatusConfig.bg as "$primaryLight"}
+                  backgroundColor={paymentStatusConfig.bg}
                   paddingHorizontal="$xs"
                   paddingVertical={2}
                   borderRadius="$full"
@@ -306,8 +306,8 @@ function OrderCard({ order }: { order: Order }) {
                   alignSelf="flex-start"
                   marginTop="$xs"
                 >
-                  <PaymentIcon size={12} color={paymentStatusConfig.fg as "$primary"} />
-                  <Text size="$1" color={paymentStatusConfig.fg as "$primary"} fontWeight="500">
+                  <PaymentIcon size={12} color={paymentStatusConfig.fg} />
+                  <Text size="$1" color={paymentStatusConfig.fg} fontWeight="500">
                     {paymentStatusConfig.label}
                   </Text>
                 </Row>
