@@ -33,10 +33,10 @@ const InputContainer = styled(View, {
 
   gap: "$md",
   paddingHorizontal: "$md",
-  paddingVertical: "$md",
+  paddingVertical: "$sm",
   borderTopWidth: 1,
   borderTopColor: "$border",
-  backgroundColor: "$background",
+  backgroundColor: "$surface",
 });
 
 const SendButton = styled(Button, {
@@ -133,8 +133,12 @@ export function ChatInput({
             maxLength={maxLength + 100}
             error={isOverLimit}
             disabled={sending || disabled}
-            borderRadius="$xl"
+            borderRadius="$full"
             minHeight={44}
+            focusStyle={{
+              borderColor: "$primary",
+              borderWidth: 2,
+            }}
           />
           {showCounter && (
             <Row justifyContent="flex-end" paddingHorizontal="$sm">

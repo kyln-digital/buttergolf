@@ -189,17 +189,38 @@ export function ChatMessageList({
         {dateGroups.map((group) => (
           <Column key={group.date} gap="$sm">
             <DateSeparator label={formatDateSeparator(group.messages[0]?.createdAt ?? "")} />
-            {group.messages.map((message) => (
-              <ChatBubble
-                key={message.id}
-                isOwnMessage={message.senderId === currentUserId}
-                content={message.content}
-                timestamp={formatTimestamp(message.createdAt)}
-                avatarUrl={message.senderId !== currentUserId ? otherUserImage : undefined}
-                avatarName={message.senderId !== currentUserId ? otherUserName : undefined}
-                animated={!message.id.startsWith("temp-")}
-              />
-            ))}
+            {group.messages.map((message, idx) => {
+              const isOwn = message.senderId === currentUserId;
+              const prev = group.messages[idx - 1];
+              const next = group.messages[idx + 1];
+
+              // Group consecutive messages from the same sender within 2 minutes
+              const sameSenderAsPrev =
+                prev &&
+                prev.senderId === message.senderId &&
+                new Date(message.createdAt).getTime() - new Date(prev.createdAt).getTime() <
+                  120_000;
+              const sameSenderAsNext =
+                next &&
+                next.senderId === message.senderId &&
+                new Date(next.createdAt).getTime() - new Date(message.createdAt).getTime() <
+                  120_000;
+
+              return (
+                <ChatBubble
+                  key={message.id}
+                  isOwnMessage={isOwn}
+                  content={message.content}
+                  timestamp={formatTimestamp(message.createdAt)}
+                  avatarUrl={!isOwn ? otherUserImage : undefined}
+                  avatarName={!isOwn ? otherUserName : undefined}
+                  animated={!message.id.startsWith("temp-")}
+                  isGrouped={!!sameSenderAsPrev}
+                  isLastInGroup={!sameSenderAsNext}
+                  isRead={isOwn ? message.isRead : undefined}
+                />
+              );
+            })}
           </Column>
         ))}
       </Column>
