@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useTheme } from "tamagui";
 import { Column, Row, Text, Button, Heading, Popover } from "@buttergolf/ui";
+import { Heart, Info } from "@tamagui/lucide-icons";
 import type { Product } from "../ProductDetailClient";
 
 interface User {
@@ -25,6 +27,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
   const [offerError, setOfferError] = useState("");
   const [submittingOffer, setSubmittingOffer] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const theme = useTheme();
 
   const handleSubmitOffer = async () => {
     const amount = Number.parseFloat(offerAmount);
@@ -62,7 +65,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
 
   return (
     <Column
-      backgroundColor="$cloudMist"
+      backgroundColor="$surface"
       borderRadius="$xl"
       padding="$lg"
       gap="$md"
@@ -75,180 +78,148 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
       {/* Header: Title, Price, Favourite */}
       <Row justifyContent="space-between" alignItems="flex-start" gap="$sm">
         <Column gap="$xs" flex={1}>
-          <Heading level={2} size="$7" color="$ironstone">
+          <Heading level={2} size="$7" color="$text">
             {product.title}
           </Heading>
           <Row alignItems="baseline" gap="$sm">
-            <Text fontSize={20} fontWeight="700" color="$spicedClementine">
+            <Text size="$7" fontWeight="700" color="$primary">
               £{product.price.toFixed(2)}
             </Text>
-            <div
-              style={{
-                width: 16,
-                height: 16,
-                borderRadius: "50%",
-                border: "2px solid #545454",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                fontSize: "10px",
-                color: "#545454",
-              }}
+            <Column
+              width={16}
+              height={16}
+              borderRadius="$full"
+              borderWidth={2}
+              borderColor="$textSecondary"
+              alignItems="center"
+              justifyContent="center"
+              cursor="pointer"
               title="Price information"
             >
-              i
-            </div>
+              <Info size={10} color="$textSecondary" />
+            </Column>
           </Row>
         </Column>
-        <button
-          onClick={() => setIsFavourite(!isFavourite)}
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: "50%",
-            backgroundColor: "white",
-            border: "none",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            transition: "all 0.2s ease",
-            padding: 0,
-            flexShrink: 0,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "scale(1.1)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "scale(1)";
-          }}
+        <Button
+          circular
+          chromeless
+          backgroundColor="$card"
+          width={40}
+          height={40}
+          padding={0}
+          onPress={() => setIsFavourite(!isFavourite)}
+          hoverStyle={{ scale: 1.1 }}
+          pressStyle={{ scale: 0.95 }}
           aria-label={isFavourite ? "Remove from favourites" : "Add to favourites"}
         >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill={isFavourite ? "#F45314" : "none"}
-            stroke={isFavourite ? "#F45314" : "#323232"}
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            style={{ flexShrink: 0 }}
-          >
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-          </svg>
-        </button>
+          <Heart
+            size={20}
+            fill={isFavourite ? theme.primary.val : "none"}
+            color={isFavourite ? "$primary" : "$text"}
+          />
+        </Button>
       </Row>
 
       {/* Divider */}
-      <div style={{ height: 1, backgroundColor: "#CCCCCC", width: "100%" }} />
+      <Column height={1} backgroundColor="$border" width="100%" />
 
       {/* Seller Info */}
       <Column gap="$sm">
         <Row justifyContent="space-between" alignItems="center">
           <Column gap="$xs" flex={1}>
-            <Text size="$3" color="$slateSmoke" weight="bold">
+            <Text size="$3" color="$textSecondary" weight="bold">
               Posted by {`${product.user.firstName} ${product.user.lastName}`.trim() || "Unknown"}
             </Text>
-            <Text size="$2" color="$slateSmoke">
+            <Text size="$2" color="$textSecondary">
               Member for 3 years
             </Text>
             {ratingCount > 0 && (
               <Row gap="$xs" alignItems="center">
-                <span style={{ color: "#F45314", fontSize: "14px" }}>★</span>
-                <Text size="$3" color="$ironstone" weight="semibold">
+                <Text size="$3" color="$primary">
+                  ★
+                </Text>
+                <Text size="$3" color="$text" weight="semibold">
                   {averageRating.toFixed(1)}
                 </Text>
-                <Text size="$2" color="$slateSmoke">
+                <Text size="$2" color="$textSecondary">
                   ({ratingCount})
                 </Text>
               </Row>
             )}
           </Column>
-          <Button
-            size="$4"
-            backgroundColor="$spicedClementine"
-            color="$vanillaCream"
-            borderRadius="$full"
-            paddingHorizontal="$5"
-            hoverStyle={{ backgroundColor: "$spicedClementineHover" }}
-          >
+          <Button butterVariant="primary" size="$4" borderRadius="$full" paddingHorizontal="$5">
             View profile
           </Button>
         </Row>
       </Column>
 
       {/* Divider */}
-      <div style={{ height: 1, backgroundColor: "#CCCCCC", width: "100%" }} />
+      <Column height={1} backgroundColor="$border" width="100%" />
 
       {/* Product Specifications */}
       <Row gap="$md">
         <Column gap="$sm" flex={1}>
-          <Text size="$3" color="$ironstone" weight="bold" lineHeight="$3">
+          <Text size="$3" color="$text" weight="bold" lineHeight="$3">
             Category
           </Text>
-          <Text size="$3" color="$ironstone" weight="bold" lineHeight="$3">
+          <Text size="$3" color="$text" weight="bold" lineHeight="$3">
             Brand
           </Text>
-          <Text size="$3" color="$ironstone" weight="bold" lineHeight="$3">
+          <Text size="$3" color="$text" weight="bold" lineHeight="$3">
             Product
           </Text>
-          <Text size="$3" color="$ironstone" weight="bold" lineHeight="$3">
+          <Text size="$3" color="$text" weight="bold" lineHeight="$3">
             Product
           </Text>
-          <Text size="$3" color="$ironstone" weight="bold" lineHeight="$3">
+          <Text size="$3" color="$text" weight="bold" lineHeight="$3">
             Condition
           </Text>
         </Column>
         <Column gap="$sm" flex={1}>
-          <Text size="$3" color="$ironstone" lineHeight="$3">
+          <Text size="$3" color="$text" lineHeight="$3">
             {product.category.name}
           </Text>
-          <Text size="$3" color="$ironstone" lineHeight="$3">
+          <Text size="$3" color="$text" lineHeight="$3">
             {product.brand || "N/A"}
           </Text>
-          <Text size="$3" color="$ironstone" lineHeight="$3">
+          <Text size="$3" color="$text" lineHeight="$3">
             {product.model || "N/A"}
           </Text>
-          <Text size="$3" color="$ironstone" lineHeight="$3">
+          <Text size="$3" color="$text" lineHeight="$3">
             {product.model || "N/A"}
           </Text>
-          <Text size="$3" color="$ironstone" lineHeight="$3">
+          <Text size="$3" color="$text" lineHeight="$3">
             {formatCondition(product.condition)}
           </Text>
         </Column>
       </Row>
 
       {/* Divider */}
-      <div style={{ height: 1, backgroundColor: "#CCCCCC", width: "100%" }} />
+      <Column height={1} backgroundColor="$border" width="100%" />
 
       {/* Product Description */}
       <Column gap="$md">
-        <Text size="$3" color="$ironstone" weight="bold">
+        <Text size="$3" color="$text" weight="bold">
           Product Description
         </Text>
-        <Text size="$3" color="$ironstone">
+        <Text size="$3" color="$text">
           {product.description}
         </Text>
       </Column>
 
       {/* Divider */}
-      <div style={{ height: 1, backgroundColor: "#CCCCCC", width: "100%" }} />
+      <Column height={1} backgroundColor="$border" width="100%" />
 
       {/* CTA Buttons */}
       <Column gap="$md" width="100%">
         <Button
+          butterVariant="primary"
           size="$5"
           width="100%"
-          backgroundColor="$spicedClementine"
-          color="$vanillaCream"
           borderRadius="$full"
           height={56}
           disabled={product.isSold}
           onPress={onBuyNow}
-          pressStyle={{ backgroundColor: "$spicedClementinePress" }}
-          hoverStyle={{ backgroundColor: "$spicedClementineHover" }}
         >
           {product.isSold ? "Sold Out" : "Buy now"}
         </Button>
@@ -312,7 +283,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
                     top: "50%",
                     transform: "translateY(-50%)",
                     fontSize: "16px",
-                    color: "#323232",
+                    color: theme.text.val,
                     fontWeight: 500,
                     zIndex: 1,
                   }}
@@ -335,21 +306,22 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
                     width: "100%",
                     padding: "12px 14px 12px 30px",
                     fontSize: "16px",
-                    border: `1px solid ${offerError ? "#dc2626" : "#EDEDED"}`,
+                    border: `1px solid ${offerError ? theme.error.val : theme.border.val}`,
                     borderRadius: "8px",
                     outline: "none",
                     fontFamily: "var(--font-urbanist)",
-                    backgroundColor: "white",
+                    backgroundColor: theme.surface.val,
+                    color: theme.text.val,
                     boxSizing: "border-box",
                   }}
                   onFocus={(e) => {
                     if (!offerError) {
-                      e.target.style.borderColor = "#F45314";
+                      e.target.style.borderColor = theme.primary.val;
                     }
                   }}
                   onBlur={(e) => {
                     if (!offerError) {
-                      e.target.style.borderColor = "#EDEDED";
+                      e.target.style.borderColor = theme.border.val;
                     }
                   }}
                   onKeyDown={(e) => {
@@ -394,23 +366,6 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
           </Popover.Content>
         </Popover>
       </Column>
-
-      {/* View Price Breakdown Link */}
-      <Row justifyContent="center" width="100%">
-        <button
-          style={{
-            background: "transparent",
-            border: "none",
-            color: "#545454",
-            fontSize: "14px",
-            textDecoration: "underline",
-            cursor: "pointer",
-            padding: 0,
-          }}
-        >
-          View price breakdown
-        </button>
-      </Row>
     </Column>
   );
 }

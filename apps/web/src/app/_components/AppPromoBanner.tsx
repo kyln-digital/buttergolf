@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTheme } from "tamagui";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -112,6 +113,8 @@ export function AppPromoBanner() {
     setShowBanner(false);
   };
 
+  const theme = useTheme();
+
   if (!showBanner || isStandalone) {
     return null;
   }
@@ -124,8 +127,8 @@ export function AppPromoBanner() {
         left: 0,
         right: 0,
         zIndex: 1000,
-        backgroundColor: "white",
-        borderTop: "1px solid #e5e7eb",
+        backgroundColor: theme.surface.val,
+        borderTop: `1px solid ${theme.border.val}`,
         padding: "12px 16px",
         boxShadow: "0 -2px 8px rgba(0, 0, 0, 0.1)",
       }}
@@ -146,7 +149,7 @@ export function AppPromoBanner() {
             width: "48px",
             height: "48px",
             borderRadius: "8px",
-            backgroundColor: "#E25F2F", // Pure Butter orange
+            backgroundColor: theme.primary.val,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -159,18 +162,20 @@ export function AppPromoBanner() {
 
         {/* Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: "14px", fontWeight: "600", color: "#111827" }}>
+          <div style={{ fontSize: "14px", fontWeight: "600", color: theme.text.val }}>
             ButterGolf App
           </div>
-          <div style={{ fontSize: "12px", color: "#6b7280" }}>Get the full experience</div>
+          <div style={{ fontSize: "12px", color: theme.textSecondary.val }}>
+            Get the full experience
+          </div>
         </div>
 
         {/* CTA Button */}
         <button
           onClick={handleInstall}
           style={{
-            backgroundColor: "#E25F2F", // Pure Butter orange
-            color: "white",
+            backgroundColor: theme.primary.val,
+            color: theme.textInverse.val,
             border: "none",
             borderRadius: "8px",
             padding: "8px 16px",
@@ -196,7 +201,7 @@ export function AppPromoBanner() {
             justifyContent: "center",
             flexShrink: 0,
             fontSize: "20px",
-            color: "#6b7280",
+            color: theme.textSecondary.val,
           }}
           aria-label="Dismiss"
         >

@@ -22,8 +22,9 @@ updates:
       # ── Group 1: Platform-core (FRAGILE — security-only) ──────────────
       # Tamagui, Expo, React Native, Solito, React Navigation are deeply
       # intertwined. Even minor bumps regularly break builds.
-      # update-types limits this group to security patches only.
+      # applies-to limits this group to security patches only.
       platform-core:
+        applies-to: security-updates
         patterns:
           - "tamagui"
           - "@tamagui/*"
@@ -34,8 +35,6 @@ updates:
           - "react-native-*"
           - "solito"
           - "@react-navigation/*"
-        update-types:
-          - "security"
 
       # ── Group 2: Infrastructure (one combined PR) ─────────────────────
       # Services and SDKs that need version alignment within their ecosystem

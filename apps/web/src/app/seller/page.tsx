@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Column, Row, Heading, Text, Card, Spinner, Button } from "@buttergolf/ui";
-import { Package, Eye, Heart, DollarSign, TrendingUp, AlertCircle } from "lucide-react";
+import { Package, Eye, Heart, DollarSign, TrendingUp, AlertCircle } from "@tamagui/lucide-icons";
 import Link from "next/link";
 
 interface SellerStats {
@@ -63,7 +63,7 @@ export default function SellerDashboardPage() {
   if (error) {
     return (
       <Column fullWidth alignItems="center" justifyContent="center" minHeight={400}>
-        <AlertCircle size={48} color="#dc2626" />
+        <AlertCircle size={48} color="$error" />
         <Text color="$error" marginTop="$md">
           {error}
         </Text>
@@ -91,23 +91,23 @@ export default function SellerDashboardPage() {
         <StatCard
           title="Active Listings"
           value={stats?.activeListings ?? 0}
-          icon={<Package size={24} color="#F45314" />}
+          icon={<Package size={24} color="$primary" />}
           href="/seller/listings"
         />
         <StatCard
           title="Total Views"
           value={stats?.totalViews ?? 0}
-          icon={<Eye size={24} color="#3b82f6" />}
+          icon={<Eye size={24} color="$info" />}
         />
         <StatCard
           title="Favorites"
           value={stats?.totalFavourites ?? 0}
-          icon={<Heart size={24} color="#dc2626" />}
+          icon={<Heart size={24} color="$error" />}
         />
         <StatCard
           title="Pending Offers"
           value={stats?.pendingOffers ?? 0}
-          icon={<DollarSign size={24} color="#22c55e" />}
+          icon={<DollarSign size={24} color="$success" />}
           href="/offers"
         />
       </Row>

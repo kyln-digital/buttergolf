@@ -118,8 +118,8 @@ function CheckoutPageContent() {
       {/* Page Hero */}
       <PageHero />
 
-      {/* Main Content - Two Column Layout with White Background for Stripe */}
-      <div style={{ backgroundColor: "#FFFFFF" }}>
+      {/* Main Content - Two Column Layout */}
+      <Column backgroundColor="$background">
         <Container size="xl" paddingVertical="$2xl">
           <Row
             gap="$xl"
@@ -209,7 +209,7 @@ function CheckoutPageContent() {
             </Column>
           </Row>
         </Container>
-      </div>
+      </Column>
 
       {/* Trust Section */}
       <TrustSection />

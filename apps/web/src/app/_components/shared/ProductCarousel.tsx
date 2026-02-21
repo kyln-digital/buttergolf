@@ -5,6 +5,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import { useRouter } from "next/navigation";
 import { Column, Row } from "@buttergolf/ui";
+import { useTheme } from "tamagui";
 import { ProductCard } from "@/components/ProductCard";
 import type { ProductCardData } from "@buttergolf/app";
 
@@ -20,6 +21,7 @@ export function ProductCarousel({
   autoplayDelay = 5000,
 }: ProductCarouselProps) {
   const router = useRouter();
+  const theme = useTheme();
   const [isDesktop, setIsDesktop] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
@@ -114,7 +116,8 @@ export function ProductCarousel({
               height: "10px",
               borderRadius: "5px",
               border: "none",
-              backgroundColor: selectedIndex === index ? "#F45314" : "rgba(244, 83, 20, 0.5)",
+              backgroundColor: theme.primary.val,
+              opacity: selectedIndex === index ? 1 : 0.5,
               cursor: "pointer",
               transition: "all 0.3s ease",
               padding: 0,
