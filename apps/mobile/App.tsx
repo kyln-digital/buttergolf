@@ -86,6 +86,7 @@ import {
   setupNotificationHandlers,
 } from "./lib/notifications";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { PortalProvider } from "@tamagui/portal";
 import { Button, Text } from "@buttergolf/ui";
 import { useState, useEffect, useCallback } from "react";
@@ -2089,44 +2090,47 @@ export default function App() {
     if (!stripePublishableKey) missingKeys.push("EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY");
 
     return (
-      <SafeAreaProvider>
-        <RNView
-          style={{
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: "#fbfbf9",
-            padding: 20,
-          }}
-        >
-          <RNText style={{ fontSize: 24, fontWeight: "bold", marginBottom: 16, color: "#dc2626" }}>
-            Configuration Error
-          </RNText>
-          <RNText style={{ fontSize: 16, marginBottom: 12, textAlign: "center" }}>
-            Missing required environment variables:
-          </RNText>
-          {missingKeys.map((key) => (
-            <RNText
-              key={key}
-              style={{ fontSize: 14, fontFamily: "monospace", marginBottom: 4, color: "#ef4444" }}
-            >
-              • {key}
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <RNView
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "#fbfbf9",
+              padding: 20,
+            }}
+          >
+            <RNText style={{ fontSize: 24, fontWeight: "bold", marginBottom: 16, color: "#dc2626" }}>
+              Configuration Error
             </RNText>
-          ))}
-          <RNText style={{ fontSize: 14, marginTop: 16, textAlign: "center", color: "#666" }}>
-            Please configure these in EAS secrets and rebuild the app.
-          </RNText>
-        </RNView>
-      </SafeAreaProvider>
+            <RNText style={{ fontSize: 16, marginBottom: 12, textAlign: "center" }}>
+              Missing required environment variables:
+            </RNText>
+            {missingKeys.map((key) => (
+              <RNText
+                key={key}
+                style={{ fontSize: 14, fontFamily: "monospace", marginBottom: 4, color: "#ef4444" }}
+              >
+                • {key}
+              </RNText>
+            ))}
+            <RNText style={{ fontSize: 14, marginTop: 16, textAlign: "center", color: "#666" }}>
+              Please configure these in EAS secrets and rebuild the app.
+            </RNText>
+          </RNView>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
     );
   }
 
   return (
-    <SafeAreaProvider>
-      <StripeProvider publishableKey={stripePublishableKey}>
-        <ClerkProvider tokenCache={tokenCache} publishableKey={clerkPublishableKey}>
-          {/* Official Tamagui Expo pattern: use useColorScheme() for theme */}
-          <PortalProvider shouldAddRootHost>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <StripeProvider publishableKey={stripePublishableKey}>
+          <ClerkProvider tokenCache={tokenCache} publishableKey={clerkPublishableKey}>
+            {/* Official Tamagui Expo pattern: use useColorScheme() for theme */}
+            <PortalProvider shouldAddRootHost>
             <Provider defaultTheme={validColorScheme}>
               <ClerkLoaded>
                 <SignedIn>
@@ -2350,7 +2354,8 @@ export default function App() {
           </PortalProvider>
         </ClerkProvider>
       </StripeProvider>
-    </SafeAreaProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
