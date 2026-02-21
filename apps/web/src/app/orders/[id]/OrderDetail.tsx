@@ -337,11 +337,14 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
       }
 
       setConfirmReceiptSuccess(true);
-      // Update local order state
+
+      const nextHoldStatus = (data.paymentHoldStatus || "RELEASED") as PaymentHoldStatus;
+
+      // Update local order state based on actual backend status.
       setOrder((prev) => ({
         ...prev,
-        paymentHoldStatus: "RELEASED" as const,
-        paymentReleasedAt: new Date(),
+        paymentHoldStatus: nextHoldStatus,
+        paymentReleasedAt: nextHoldStatus === "RELEASED" ? new Date() : prev.paymentReleasedAt,
         buyerConfirmedAt: new Date(),
       }));
     } catch (error) {

@@ -180,20 +180,26 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // source_transaction links this transfer to the original charge, ensuring:
     // 1. Transfer succeeds even if platform balance hasn't settled
     // 2. Automatic payouts don't drain funds before transfer
-    const transfer = await stripe.transfers.create({
-      amount: transferAmountInPence,
-      currency: "gbp",
-      destination: order.seller.stripeConnectId!,
-      transfer_group: order.id,
-      source_transaction: order.stripeChargeId!,
-      metadata: {
-        orderId: order.id,
-        productId: order.productId,
-        buyerId: buyer.id,
-        sellerId: order.sellerId,
-        reason: "buyer_confirmed_receipt",
+    const transfer = await stripe.transfers.create(
+      {
+        amount: transferAmountInPence,
+        currency: "gbp",
+        destination: order.seller.stripeConnectId!,
+        transfer_group: order.id,
+        source_transaction: order.stripeChargeId!,
+        metadata: {
+          orderId: order.id,
+          productId: order.productId,
+          buyerId: buyer.id,
+          sellerId: order.sellerId,
+          reason: "buyer_confirmed_receipt",
+        },
       },
-    });
+      {
+        // Prevent duplicate payouts if we retry after a partial failure.
+        idempotencyKey: `confirm-receipt:${order.id}`,
+      }
+    );
 
     console.log("Transfer created successfully:", {
       transferId: transfer.id,
