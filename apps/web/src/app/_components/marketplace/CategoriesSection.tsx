@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { CATEGORIES } from "@buttergolf/db";
 import Link from "next/link";
 import Image from "next/image";
-import { Column } from "@buttergolf/ui";
+import { Column, Heading, Text } from "@buttergolf/ui";
 
 export function CategoriesSection() {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -35,32 +35,12 @@ export function CategoriesSection() {
       <Column maxWidth={1200} marginHorizontal="auto" paddingHorizontal="$md" marginBottom="$2xl">
         {/* Headings */}
         <Column gap="$sm" alignItems="center">
-          <h2
-            style={{
-              fontFamily: "var(--font-urbanist)",
-              fontSize: "clamp(24px, 5vw, 32px)",
-              fontWeight: 600,
-              lineHeight: 1.2,
-              color: "var(--text-primary, #323232)",
-              margin: 0,
-            }}
-            className="text-heading"
-          >
+          <Heading level={2} size="$8" $gtMd={{ size: "$9" }} color="$text" textAlign="center">
             Shop by category
-          </h2>
-          <p
-            style={{
-              fontFamily: "var(--font-urbanist)",
-              fontSize: "clamp(16px, 3vw, 18px)",
-              fontWeight: 400,
-              lineHeight: 1.5,
-              color: "var(--text-primary, #323232)",
-              margin: 0,
-            }}
-            className="text-primary"
-          >
+          </Heading>
+          <Text size="$5" $gtMd={{ size: "$6" }} color="$textSecondary" textAlign="center">
             Find exactly what you need - faster.
-          </p>
+          </Text>
         </Column>
       </Column>
 
