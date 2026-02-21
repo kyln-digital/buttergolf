@@ -120,7 +120,8 @@ const SheetContents = memo(function SheetContents({
         width="100%"
         maxWidth={540}
         alignSelf="center"
-        $gtMd={{ paddingHorizontal: "$xl" }}
+        $gtMd={{ paddingHorizontal: "$xl", maxWidth: "65%", width: "65%" }}
+        $gtLg={{ maxWidth: "60%", width: "60%" }}
       >
         {/* Header */}
         <Row justifyContent="space-between" alignItems="center">
