@@ -223,7 +223,7 @@ function AddressBlock({ title, address }: { title: string; address: Order["fromA
   return (
     <Column gap="$sm" flex={1} minWidth={200}>
       <Row gap="$xs" alignItems="center">
-        <MapPin size={16} color="var(--color-textSecondary)" />
+        <MapPin size={16} color="$textSecondary" />
         <Text fontWeight="600" size="$5">
           {title}
         </Text>
@@ -262,7 +262,7 @@ function ParticipantCard({ title, user }: { title: string; user: Order["seller"]
   return (
     <Column gap="$sm" flex={1} minWidth={200}>
       <Row gap="$xs" alignItems="center">
-        <User size={16} color="var(--color-textSecondary)" />
+        <User size={16} color="$textSecondary" />
         <Text fontWeight="600" size="$5">
           {title}
         </Text>
@@ -413,7 +413,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
         {/* Back Link */}
         <Link href="/orders" style={{ textDecoration: "none" }}>
           <Row gap="$xs" alignItems="center" hoverStyle={{ opacity: 0.7 }}>
-            <ArrowLeft size={18} color="var(--color-primary)" />
+            <ArrowLeft size={18} color="$primary" />
             <Text color="$primary" fontWeight="500">
               Back to Orders
             </Text>
@@ -442,7 +442,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
         <Card variant="elevated" padding="$lg">
           <Column gap="$md">
             <Row gap="$xs" alignItems="center">
-              <Package size={20} color="var(--color-text)" />
+              <Package size={20} color="$text" />
               <Heading level={3}>Product</Heading>
             </Row>
 
@@ -536,7 +536,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
         <Card variant="elevated" padding="$lg">
           <Column gap="$md">
             <Row gap="$xs" alignItems="center">
-              <Truck size={20} color="var(--color-text)" />
+              <Truck size={20} color="$text" />
               <Heading level={3}>Shipping Information</Heading>
             </Row>
 
@@ -593,7 +593,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                       icon={
                         <RefreshCw
                           size={14}
-                          color="var(--color-primary)"
+                          color="$primary"
                           style={
                             {
                               animation: isLoadingTracking ? "spin 1s linear infinite" : "none",
@@ -661,7 +661,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                 <Row justifyContent="space-between">
                   <Row gap="$xs" alignItems="center">
                     <Text size="$5">Buyer Protection</Text>
-                    <Shield size={14} color="var(--color-textSecondary)" />
+                    <Shield size={14} color="$textSecondary" />
                   </Row>
                   <Text size="$5">£{order.buyerProtectionFee.toFixed(2)}</Text>
                 </Row>
@@ -730,7 +730,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
         <Card variant="elevated" padding="$lg">
           <Column gap="$md">
             <Row gap="$xs" alignItems="center">
-              <DollarSign size={20} color="var(--color-text)" />
+              <DollarSign size={20} color="$text" />
               <Heading level={3}>Payment Status</Heading>
             </Row>
 
@@ -785,7 +785,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                     </Text>
                     {order.autoReleaseAt && (
                       <Row gap="$xs" alignItems="center">
-                        <Clock size={14} color="var(--color-textSecondary)" />
+                        <Clock size={14} color="$textSecondary" />
                         <Text size="$3" color="$textMuted">
                           Auto-releases in {getDaysUntilAutoRelease()} days (
                           {new Date(order.autoReleaseAt).toLocaleDateString("en-GB", {
@@ -813,7 +813,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                     {confirmReceiptSuccess ? (
                       <View backgroundColor="$successLight" borderRadius="$md" padding="$md">
                         <Row gap="$sm" alignItems="center">
-                          <CheckCircle size={20} color="var(--color-success)" />
+                          <CheckCircle size={20} color="$success" />
                           <Column gap="$xs">
                             <Text fontWeight="600" color="$success">
                               Receipt Confirmed!
@@ -857,7 +857,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                     borderColor="$border"
                   >
                     <Row gap="$sm" alignItems="center">
-                      <Package size={20} color="var(--color-textSecondary)" />
+                      <Package size={20} color="$textSecondary" />
                       <Text size="$4" color="$textSecondary">
                         You can confirm receipt once your package is delivered.
                       </Text>
@@ -910,7 +910,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                       </Text>
                       {order.stripeSellerPayout && (
                         <Row gap="$xs" alignItems="center">
-                          <DollarSign size={14} color="var(--color-success)" />
+                          <DollarSign size={14} color="$success" />
                           <Text size="$5" fontWeight="600" color="$success">
                             You&apos;ll receive: £{order.stripeSellerPayout.toFixed(2)}
                           </Text>
@@ -918,7 +918,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                       )}
                       {order.autoReleaseAt && (
                         <Row gap="$xs" alignItems="center">
-                          <Clock size={14} color="var(--color-textSecondary)" />
+                          <Clock size={14} color="$textSecondary" />
                           <Text size="$3" color="$textMuted">
                             Auto-releases:{" "}
                             {new Date(order.autoReleaseAt).toLocaleDateString("en-GB", {
@@ -951,7 +951,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                       </Text>
                       {order.stripeSellerPayout && (
                         <Row gap="$xs" alignItems="center">
-                          <DollarSign size={14} color="var(--color-success)" />
+                          <DollarSign size={14} color="$success" />
                           <Text size="$5" fontWeight="600" color="$success">
                             Pending payout: £{order.stripeSellerPayout.toFixed(2)}
                           </Text>
@@ -978,7 +978,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                   >
                     <Column gap="$sm">
                       <Row gap="$sm" alignItems="center">
-                        <CheckCircle size={20} color="var(--color-success)" />
+                        <CheckCircle size={20} color="$success" />
                         <Text fontWeight="600" color="$success">
                           Payment released
                         </Text>

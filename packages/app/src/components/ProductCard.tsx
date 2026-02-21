@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTheme } from "tamagui";
 import { Platform } from "react-native";
 import {
   Card,
@@ -26,14 +27,17 @@ export interface ProductCardProps {
 
 // Heart icon component that works on both platforms
 function HeartIcon({ filled }: Readonly<{ filled: boolean }>) {
+  const theme = useTheme();
+  const primaryColor = theme.primary.val;
+
   if (Platform.OS === "web") {
     return (
       <svg
         width="18"
         height="18"
         viewBox="0 0 24 24"
-        fill={filled ? "#F45314" : "none"}
-        stroke="#F45314"
+        fill={filled ? primaryColor : "none"}
+        stroke={primaryColor}
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -44,7 +48,12 @@ function HeartIcon({ filled }: Readonly<{ filled: boolean }>) {
   }
   // For native, use lucide Heart icon with proper styling
   return (
-    <Heart size={18} color="#F45314" fill={filled ? "#F45314" : "transparent"} strokeWidth={2.5} />
+    <Heart
+      size={18}
+      color={primaryColor}
+      fill={filled ? primaryColor : "transparent"}
+      strokeWidth={2.5}
+    />
   );
 }
 
@@ -117,7 +126,7 @@ export function ProductCard({
             position="absolute"
             top={10}
             left={10}
-            backgroundColor={product.activePromotion.type === "BUMP" ? "$primary" : "#02aaa4"}
+            backgroundColor={product.activePromotion.type === "BUMP" ? "$primary" : "$success"}
             paddingHorizontal={10}
             paddingVertical={4}
             borderRadius={12}

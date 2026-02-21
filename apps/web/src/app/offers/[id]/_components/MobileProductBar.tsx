@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Column, Row, Text, Badge, Image, Button, View } from "@buttergolf/ui";
-import { X } from "@tamagui/lucide-icons";
+import { X, ChevronDown } from "@tamagui/lucide-icons";
 
 interface MobileProductBarProps {
   product: {
@@ -114,18 +114,7 @@ export function MobileProductBar({
           </Row>
         </Column>
         {/* Chevron down icon */}
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#323232"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
+        <ChevronDown size={24} color="$text" />
       </Row>
 
       {/* Expandable modal overlay */}
@@ -210,7 +199,7 @@ export function MobileProductBar({
               </Column>
 
               {/* Divider */}
-              <div style={{ height: 1, backgroundColor: "#EDEDED", width: "100%" }} />
+              <View height={1} backgroundColor="$border" width="100%" />
 
               {/* Seller */}
               <Column gap="$xs">
@@ -223,7 +212,7 @@ export function MobileProductBar({
                   </Text>
                   {product.user.ratingCount > 0 && (
                     <>
-                      <span style={{ color: "#F45314" }}>★</span>
+                      <Text color="$primary">★</Text>
                       <Text size="$4" fontWeight="600">
                         {product.user.averageRating.toFixed(1)}
                       </Text>
@@ -236,7 +225,7 @@ export function MobileProductBar({
               </Column>
 
               {/* Divider */}
-              <div style={{ height: 1, backgroundColor: "#EDEDED", width: "100%" }} />
+              <View height={1} backgroundColor="$border" width="100%" />
 
               {/* Specifications */}
               <Column gap="$sm">
@@ -272,13 +261,7 @@ export function MobileProductBar({
               {/* Action Buttons (seller only on mobile) */}
               {isOfferActive && isUserSeller && (
                 <>
-                  <div
-                    style={{
-                      height: 1,
-                      backgroundColor: "#EDEDED",
-                      width: "100%",
-                    }}
-                  />
+                  <View height={1} backgroundColor="$border" width="100%" />
                   <Column gap="$sm">
                     <Button
                       size="$5"

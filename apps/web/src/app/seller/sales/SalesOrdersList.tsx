@@ -14,7 +14,7 @@ import {
   AlertCircle,
   DollarSign,
   Shield,
-} from "lucide-react";
+} from "@tamagui/lucide-icons";
 
 type OrderStatus =
   | "PAYMENT_CONFIRMED"
@@ -89,87 +89,46 @@ interface SalesOrdersListProps {
   stats: Stats;
 }
 
-const STATUS_CONFIG = {
-  PAYMENT_CONFIRMED: {
-    label: "Awaiting Label",
-    color: "#F45314",
-    bgColor: "#FFFAD2",
-  },
-  LABEL_GENERATED: {
-    label: "Ready to Ship",
-    color: "#3c50e0",
-    bgColor: "#e8ebfc",
-  },
-  SHIPPED: {
-    label: "Shipped",
-    color: "#F45314",
-    bgColor: "#FFFAD2",
-  },
-  DELIVERED: {
-    label: "Delivered",
-    color: "#02aaa4",
-    bgColor: "#e5f7f6",
-  },
-  CANCELLED: {
-    label: "Cancelled",
-    color: "#545454",
-    bgColor: "#EDEDED",
-  },
-  REFUNDED: {
-    label: "Refunded",
-    color: "#dc2626",
-    bgColor: "#fce8e8",
-  },
-} as const;
+const STATUS_CONFIG: Record<OrderStatus, { label: string; fg: string; bg: string }> = {
+  PAYMENT_CONFIRMED: { label: "Awaiting Label", fg: "$primary", bg: "$primaryLight" },
+  LABEL_GENERATED: { label: "Ready to Ship", fg: "$info", bg: "$infoLight" },
+  SHIPPED: { label: "Shipped", fg: "$primary", bg: "$primaryLight" },
+  DELIVERED: { label: "Delivered", fg: "$success", bg: "$successLight" },
+  CANCELLED: { label: "Cancelled", fg: "$textSecondary", bg: "$border" },
+  REFUNDED: { label: "Refunded", fg: "$error", bg: "$errorLight" },
+};
 
-const PAYMENT_STATUS_CONFIG = {
-  HELD: {
-    label: "Payment Held",
-    color: "#F45314",
-    bgColor: "#FFFAD2",
-    icon: Clock,
-  },
+const PAYMENT_STATUS_CONFIG: Record<
+  PaymentHoldStatus,
+  { label: string; fg: string; bg: string; icon: typeof Clock }
+> = {
+  HELD: { label: "Payment Held", fg: "$primary", bg: "$primaryLight", icon: Clock },
   PENDING_SELLER_ONBOARDING: {
     label: "Complete Verification",
-    color: "#3c50e0",
-    bgColor: "#e8eeff",
+    fg: "$info",
+    bg: "$infoLight",
     icon: AlertCircle,
   },
-  RELEASED: {
-    label: "Payment Released",
-    color: "#02aaa4",
-    bgColor: "#e5f7f6",
-    icon: CheckCircle,
-  },
-  DISPUTED: {
-    label: "Disputed",
-    color: "#dc2626",
-    bgColor: "#fce8e8",
-    icon: AlertCircle,
-  },
-  REFUNDED: {
-    label: "Refunded",
-    color: "#545454",
-    bgColor: "#EDEDED",
-    icon: AlertCircle,
-  },
-} as const;
+  RELEASED: { label: "Payment Released", fg: "$success", bg: "$successLight", icon: CheckCircle },
+  DISPUTED: { label: "Disputed", fg: "$error", bg: "$errorLight", icon: AlertCircle },
+  REFUNDED: { label: "Refunded", fg: "$textSecondary", bg: "$border", icon: AlertCircle },
+};
 
-function getStatusIcon(status: OrderStatus) {
+function getStatusIcon(status: OrderStatus, color: string = "$text") {
   switch (status) {
     case "PAYMENT_CONFIRMED":
-      return <Clock size={16} />;
+      return <Clock size={16} color={color} />;
     case "LABEL_GENERATED":
-      return <Package size={16} />;
+      return <Package size={16} color={color} />;
     case "SHIPPED":
-      return <Truck size={16} />;
+      return <Truck size={16} color={color} />;
     case "DELIVERED":
-      return <CheckCircle size={16} />;
+      return <CheckCircle size={16} color={color} />;
     case "CANCELLED":
     case "REFUNDED":
-      return <AlertCircle size={16} />;
+      return <AlertCircle size={16} color={color} />;
     default:
-      return <Clock size={16} />;
+      return <Clock size={16} color={color} />;
   }
 }
 
@@ -272,7 +231,7 @@ function OrderCard({ order }: { order: Order }) {
               alignItems="center"
               justifyContent="center"
             >
-              <Package size={24} color="#545454" />
+              <Package size={24} color="$textSecondary" />
             </Column>
           )}
         </Column>
@@ -283,23 +242,20 @@ function OrderCard({ order }: { order: Order }) {
             <Text size="$4" fontWeight="600" numberOfLines={1}>
               {order.product.title}
             </Text>
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-                paddingLeft: "8px",
-                paddingRight: "8px",
-                paddingTop: "4px",
-                paddingBottom: "4px",
-                borderRadius: "9999px",
-                backgroundColor: statusConfig.bgColor,
-                color: statusConfig.color,
-              }}
+            <Row
+              backgroundColor={statusConfig.bg as "$primaryLight"}
+              paddingHorizontal="$sm"
+              paddingVertical="$xs"
+              borderRadius="$full"
+              alignItems="center"
+              gap="$xs"
+              alignSelf="flex-start"
             >
-              {getStatusIcon(status)}
-              <span style={{ fontSize: "12px", fontWeight: 500 }}>{statusConfig.label}</span>
-            </div>
+              {getStatusIcon(status, statusConfig.fg)}
+              <Text size="$2" color={statusConfig.fg as "$primary"} fontWeight="500">
+                {statusConfig.label}
+              </Text>
+            </Row>
           </Row>
 
           <Row gap="$lg" flexWrap="wrap">
@@ -339,26 +295,21 @@ function OrderCard({ order }: { order: Order }) {
                 £{(order.stripeSellerPayout || 0).toFixed(2)}
               </Text>
               {paymentStatusConfig && (
-                <div
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    paddingLeft: "6px",
-                    paddingRight: "6px",
-                    paddingTop: "2px",
-                    paddingBottom: "2px",
-                    borderRadius: "9999px",
-                    backgroundColor: paymentStatusConfig.bgColor,
-                    color: paymentStatusConfig.color,
-                    marginTop: "4px",
-                  }}
+                <Row
+                  backgroundColor={paymentStatusConfig.bg as "$primaryLight"}
+                  paddingHorizontal="$xs"
+                  paddingVertical={2}
+                  borderRadius="$full"
+                  alignItems="center"
+                  gap="$xs"
+                  alignSelf="flex-start"
+                  marginTop="$xs"
                 >
-                  <PaymentIcon size={12} />
-                  <span style={{ fontSize: "11px", fontWeight: 500 }}>
+                  <PaymentIcon size={12} color={paymentStatusConfig.fg} />
+                  <Text size="$1" color={paymentStatusConfig.fg as "$primary"} fontWeight="500">
                     {paymentStatusConfig.label}
-                  </span>
-                </div>
+                  </Text>
+                </Row>
               )}
               {order.paymentHoldStatus === "HELD" && daysUntilRelease !== null && (
                 <Text size="$2" color="$textMuted">
@@ -497,27 +448,23 @@ export function SalesOrdersList({ orders, stats }: SalesOrdersListProps) {
         <StatCard
           label="Total Orders"
           value={stats.total}
-          icon={<Package size={20} color="#F45314" />}
+          icon={<Package size={20} color="$primary" />}
         />
         <StatCard
           label="Awaiting Label"
           value={stats.awaitingLabel}
-          icon={<Clock size={20} color="#F45314" />}
+          icon={<Clock size={20} color="$primary" />}
         />
-        <StatCard
-          label="Shipped"
-          value={stats.shipped}
-          icon={<Truck size={20} color="#3c50e0" />}
-        />
+        <StatCard label="Shipped" value={stats.shipped} icon={<Truck size={20} color="$info" />} />
         <StatCard
           label="Delivered"
           value={stats.delivered}
-          icon={<CheckCircle size={20} color="#02aaa4" />}
+          icon={<CheckCircle size={20} color="$success" />}
         />
         <StatCard
           label="Total Revenue"
           value={`£${stats.revenue.toFixed(2)}`}
-          icon={<CheckCircle size={20} color="#02aaa4" />}
+          icon={<CheckCircle size={20} color="$success" />}
         />
       </Row>
 
@@ -549,7 +496,7 @@ export function SalesOrdersList({ orders, stats }: SalesOrdersListProps) {
       {filteredOrders.length === 0 ? (
         <Card variant="outlined" padding="$xl">
           <Column alignItems="center" gap="$md">
-            <Package size={48} color="#545454" />
+            <Package size={48} color="$textMuted" />
             <Text color="$textSecondary" textAlign="center">
               {filter === "all"
                 ? "No orders yet. Once you make a sale, it will appear here."

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useSyncExternalStore } from "react";
-import { Column, Row, Text, Heading, Button, Card, Spinner } from "@buttergolf/ui";
+import { Column, Row, Text, Heading, Button, Card, Spinner, View } from "@buttergolf/ui";
 import { X, Zap, Star, CheckCircle } from "@tamagui/lucide-icons";
+import { useTheme } from "tamagui";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 
@@ -101,19 +102,16 @@ function PromotionPaymentForm({
         {/* Selected Promotion Summary */}
         <Card variant="outlined" padding="$md">
           <Row gap="$md" alignItems="center">
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: "50%",
-                backgroundColor: "#FFFAD2",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+            <View
+              width={40}
+              height={40}
+              borderRadius="$full"
+              backgroundColor="$primaryLight"
+              alignItems="center"
+              justifyContent="center"
             >
-              <selectedPromotion.icon size={20} color="#F45314" />
-            </div>
+              <selectedPromotion.icon size={20} color="$primary" />
+            </View>
             <Column flex={1}>
               <Text size="$5" fontWeight="600">
                 {selectedPromotion.name}
@@ -183,6 +181,7 @@ function PromotionPurchaseContent({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const theme = useTheme();
 
   const handleSelectPromotion = async (promotion: PromotionOption) => {
     setSelectedPromotion(promotion);
@@ -229,19 +228,16 @@ function PromotionPurchaseContent({
   if (paymentSuccess) {
     return (
       <Column gap="$lg" alignItems="center" padding="$xl">
-        <div
-          style={{
-            width: 80,
-            height: 80,
-            borderRadius: "50%",
-            backgroundColor: "#e5f7f6",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+        <View
+          width={80}
+          height={80}
+          borderRadius="$full"
+          backgroundColor="$successLight"
+          alignItems="center"
+          justifyContent="center"
         >
-          <CheckCircle size={40} color="#02aaa4" />
-        </div>
+          <CheckCircle size={40} color="$success" />
+        </View>
         <Heading level={3} textAlign="center">
           Promotion Activated!
         </Heading>
@@ -290,19 +286,16 @@ function PromotionPurchaseContent({
               hoverStyle={{ borderColor: "$primary" }}
             >
               <Row gap="$md" alignItems="center">
-                <div
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: "50%",
-                    backgroundColor: "#FFFAD2",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
+                <View
+                  width={48}
+                  height={48}
+                  borderRadius="$full"
+                  backgroundColor="$primaryLight"
+                  alignItems="center"
+                  justifyContent="center"
                 >
-                  <promotion.icon size={24} color="#F45314" />
-                </div>
+                  <promotion.icon size={24} color="$primary" />
+                </View>
                 <Column flex={1} gap="$xs">
                   <Row justifyContent="space-between" alignItems="center">
                     <Text size="$5" fontWeight="600">
@@ -336,7 +329,7 @@ function PromotionPurchaseContent({
             appearance: {
               theme: "stripe",
               variables: {
-                colorPrimary: "#F45314",
+                colorPrimary: theme.primary.val,
                 borderRadius: "8px",
               },
             },
@@ -377,7 +370,7 @@ export function PromotionPurchaseSheet(props: PromotionPurchaseSheetProps) {
   return (
     <>
       {/* Backdrop */}
-      <div
+      <View
         style={{
           position: "fixed",
           top: 0,
@@ -387,27 +380,27 @@ export function PromotionPurchaseSheet(props: PromotionPurchaseSheetProps) {
           backgroundColor: "rgba(0, 0, 0, 0.5)",
           zIndex: 1040,
         }}
-        onClick={props.onClose}
+        onPress={props.onClose}
       />
 
       {/* Sheet */}
-      <div
+      <View
+        backgroundColor="$surface"
+        borderTopLeftRadius="$xl"
+        borderTopRightRadius="$xl"
+        padding="$lg"
         style={{
           position: "fixed",
           bottom: 0,
           left: 0,
           right: 0,
-          backgroundColor: "white",
-          borderTopLeftRadius: "16px",
-          borderTopRightRadius: "16px",
-          padding: "24px",
           zIndex: 1050,
           maxHeight: "90vh",
-          overflow: "auto",
+          overflowY: "auto",
         }}
       >
         <PromotionPurchaseContent {...props} />
-      </div>
+      </View>
     </>
   );
 }
