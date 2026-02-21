@@ -343,7 +343,6 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
             butterVariant="primary"
             size="$5"
             borderRadius="$full"
-            fontWeight="600"
             onPress={() => {
               if (currentOtp.length === CODE_LENGTH) {
                 handleVerify(currentOtp);

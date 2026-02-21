@@ -47,8 +47,8 @@ const ButtonBase = styled(TamaguiButton, {
   name: "Button",
 
   // Base styles for all buttons
-  fontFamily: "$body",
-  fontWeight: "700",
+  // Note: In Tamagui v2, font-related props (fontFamily, fontWeight) are not valid on the Button
+  // frame (which extends Stack, not Text). To style button text, use <Button.Text> explicitly.
   cursor: "pointer",
   borderRadius: "$full",
 

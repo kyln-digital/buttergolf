@@ -205,7 +205,6 @@ export function SignInScreen({
               chromeless
               size="$4"
               color="$primary"
-              fontWeight="600"
               onPress={onNavigateToForgotPassword}
               disabled={isSubmitting}
               alignSelf="flex-start"
@@ -222,7 +221,6 @@ export function SignInScreen({
               butterVariant="primary"
               size="$5"
               borderRadius="$full"
-              fontWeight="600"
               onPress={handleSubmit}
               disabled={isSubmitting || !isLoaded}
               opacity={isSubmitting ? 0.7 : 1}
@@ -256,7 +254,6 @@ export function SignInScreen({
               chromeless
               size="$5"
               color="$primary"
-              fontWeight="600"
               onPress={onNavigateToSignUp}
               disabled={isSubmitting}
               paddingVertical="$2"

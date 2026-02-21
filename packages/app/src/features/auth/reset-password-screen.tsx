@@ -260,7 +260,6 @@ export function ResetPasswordScreen({
             butterVariant="primary"
             size="$5"
             borderRadius="$full"
-            fontWeight="600"
             onPress={handleSubmit}
             disabled={isSubmitting || !isLoaded || code.length !== 6}
             opacity={isSubmitting || code.length !== 6 ? 0.7 : 1}
@@ -273,7 +272,6 @@ export function ResetPasswordScreen({
             chromeless
             size="$4"
             color="$primary"
-            fontWeight="600"
             onPress={onNavigateBack}
             disabled={isSubmitting}
             marginTop="$4"

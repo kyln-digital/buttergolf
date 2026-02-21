@@ -17,7 +17,6 @@ export function CategoryButton({ label, active = false, onPress }: Readonly<Cate
       backgroundColor={active ? "$primary" : "$backgroundPress"}
       borderColor={active ? "$primary" : "$border"}
       color={active ? "$textInverse" : "$text"}
-      fontWeight={active ? "600" : "400"}
       hoverStyle={{
         backgroundColor: active ? "$primaryHover" : "$backgroundHover",
         borderColor: active ? "$primaryHover" : "$borderHover",
