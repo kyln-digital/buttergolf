@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { Row, Input } from "@buttergolf/ui";
 import { Search as SearchIcon } from "@tamagui/lucide-icons";
-import { useTheme } from "tamagui";
 
 export interface SearchInputFieldProps {
   /** Current search query value */
@@ -36,9 +35,6 @@ export function SearchInputField({
   isFocused = false,
 }: Readonly<SearchInputFieldProps>) {
   const [internalFocused, setInternalFocused] = useState(false);
-  const theme = useTheme();
-
-  const placeholderTextColour = theme.textSecondary?.val ?? "#545454";
   const focused = showFocusState ? isFocused : internalFocused;
 
   const handleFocus = () => {
@@ -75,7 +71,7 @@ export function SearchInputField({
         onFocus={handleFocus}
         onBlur={handleBlur}
         placeholder={placeholder}
-        placeholderTextColor={placeholderTextColour}
+        placeholderTextColor="$textSecondary"
         size="$5"
         color="$text"
         borderWidth={0}

@@ -66,11 +66,11 @@ export function AuthFormInput({
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor="rgba(84, 84, 84, 0.7)"
+          placeholderTextColor="$slateSmoke"
           type={resolvedType}
           autoCapitalize={autoCapitalize}
           inputMode={inputMode}
-          editable={editable}
+          disabled={!editable}
           multiline={multiline}
           numberOfLines={numberOfLines}
           error={!!error}

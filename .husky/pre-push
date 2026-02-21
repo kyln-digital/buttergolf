@@ -1,7 +1,6 @@
 export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
-# Run type checks only on packages that are clean under Tamagui v2.
-# @buttergolf/app, web, and mobile have known Tamagui v2 type-level breaks that
-# are intentionally left unfixed in this migration baseline PR and are fully
-# documented in docs/tamagui-v2-migration.md.
+# Run type checks on all packages that are clean under Tamagui v2.
+# web and mobile still have known Tamagui v2 type-level breaks (children/Variable<any>,
+# CSS-only props in hoverStyle, etc.) that are documented in docs/tamagui-v2-migration.md.
 # TODO: restore full `pnpm check-types` once all v2 break buckets are resolved.
-pnpm turbo run check-types --filter=@buttergolf/db --filter=@buttergolf/config --filter=@buttergolf/ui
+pnpm turbo run check-types --filter=@buttergolf/db --filter=@buttergolf/config --filter=@buttergolf/ui --filter=@buttergolf/app

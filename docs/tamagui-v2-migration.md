@@ -57,24 +57,15 @@ animation helpers compile with no errors under v2.
 
 ---
 
-### `@buttergolf/app` — ❌ **~35 error locations** across many files
+### `@buttergolf/app` — ✅ **0 errors** (fixed in migration PR #411)
 
-Same break categories as the `web` app. Root causes:
+Root causes resolved:
 
-| Error code | Root cause                                                                                                |
-| ---------- | --------------------------------------------------------------------------------------------------------- |
-| TS2322     | `children` type change; `color`/`animation` props removed from Button/Stack                               |
-| TS2747     | `children` typed as `Variable<any>` not `ReactNode`                                                       |
-| TS2578     | Context-dependent: some `@ts-expect-error` directives become unused in certain module resolution contexts |
-
-Representative affected files:
-
-- `src/components/CategoryButton.tsx`
-- `src/components/HeroSection.tsx`
-- `src/features/auth/sign-in-screen.tsx`, `sign-up-screen.tsx`, `forgot-password-screen.tsx`
-- `src/features/sell/components/DetailsStep.tsx`, `ListingStep.tsx`, `PhotoStep.tsx`, `ReviewStep.tsx`
-- `src/features/messages/message-thread-screen.tsx`, `messages-screen.tsx`
-- `src/features/onboarding/screen.tsx`
+| Error code | Root cause                                                                     | Fix applied                                                                                          |
+| ---------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| TS2322     | `color` prop removed from `Button` / `TamaguiButton` frame type               | `Button` re-exported with `color?: ColorTokens \| string` type cast; direct `TamaguiButton` usages migrated to `TamaguiButton.Text` / icon-level color |
+| TS2322     | `editable` removed from Tamagui v2 `Input`/`TextArea` props                   | Replaced `editable={false}` with `disabled`; `editable={!x}` collapsed into existing `disabled={x}` |
+| TS2322     | `placeholderTextColor` typed as `ColorTokens` only (not raw strings)           | Replaced raw rgba/hex strings with semantic token references (`$slateSmoke`, `$textSecondary`)       |
 
 ---
 

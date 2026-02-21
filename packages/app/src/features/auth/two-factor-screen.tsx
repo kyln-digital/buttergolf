@@ -229,8 +229,7 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
             <TamaguiButton
               chromeless
               size="$4"
-              icon={<ArrowLeft size={20} />}
-              color="$primary"
+              icon={<ArrowLeft size={20} color="$primary" />}
               alignSelf="flex-start"
               onPress={onNavigateBack}
               paddingHorizontal={0}
@@ -366,12 +365,13 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
                 <TamaguiButton
                   chromeless
                   size="$4"
-                  color="$primary"
                   onPress={sendEmailCode}
                   disabled={isSendingCode}
                   opacity={isSendingCode ? 0.5 : 1}
                 >
-                  {isSendingCode ? "Sending..." : "Resend Code"}
+                  <TamaguiButton.Text color="$primary">
+                    {isSendingCode ? "Sending..." : "Resend Code"}
+                  </TamaguiButton.Text>
                 </TamaguiButton>
               </>
             ) : (

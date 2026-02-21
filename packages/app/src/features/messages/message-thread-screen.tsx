@@ -392,7 +392,6 @@ export function MessageThreadScreen({
               size="md"
               rows={2}
               maxLength={MESSAGE_LIMITS.MAX_LENGTH + 100}
-              editable={!sending}
               disabled={sending}
             />
             <Row justifyContent="space-between" alignItems="center">

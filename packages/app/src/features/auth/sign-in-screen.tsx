@@ -153,8 +153,7 @@ export function SignInScreen({
             <TamaguiButton
               chromeless
               size="$4"
-              icon={<ArrowLeft size={20} />}
-              color="$primary"
+              icon={<ArrowLeft size={20} color="$primary" />}
               alignSelf="flex-start"
               onPress={onNavigateBack}
               paddingHorizontal={0}
@@ -202,14 +201,13 @@ export function SignInScreen({
             <TamaguiButton
               chromeless
               size="$4"
-              color="$primary"
               onPress={onNavigateToForgotPassword}
               disabled={isSubmitting}
               alignSelf="flex-start"
               paddingVertical={0}
               paddingHorizontal="$2"
             >
-              Forgot password?
+              <TamaguiButton.Text color="$primary">Forgot password?</TamaguiButton.Text>
             </TamaguiButton>
           </Column>
 
@@ -251,13 +249,12 @@ export function SignInScreen({
             <TamaguiButton
               chromeless
               size="$5"
-              color="$primary"
               onPress={onNavigateToSignUp}
               disabled={isSubmitting}
               paddingVertical="$2"
               paddingHorizontal="$3"
             >
-              Sign Up
+              <TamaguiButton.Text color="$primary">Sign Up</TamaguiButton.Text>
             </TamaguiButton>
           </Row>
         </Column>

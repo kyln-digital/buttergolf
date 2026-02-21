@@ -151,8 +151,7 @@ export function VerifyEmailScreen({
             <TamaguiButton
               chromeless
               size="$4"
-              icon={<ArrowLeft size={20} />}
-              color="$primary"
+              icon={<ArrowLeft size={20} color="$primary" />}
               alignSelf="flex-start"
               onPress={onNavigateBack}
               paddingHorizontal={0}
@@ -263,7 +262,6 @@ export function VerifyEmailScreen({
             <TamaguiButton
               chromeless
               size="$4"
-              color={resendCountdown > 0 ? "$textMuted" : "$primary"}
               onPress={handleResendCode}
               disabled={resendCountdown > 0 || isResending}
               opacity={resendCountdown > 0 || isResending ? 0.5 : 1}
@@ -273,9 +271,9 @@ export function VerifyEmailScreen({
               {isResending ? (
                 <Spinner size="sm" color="$primary" />
               ) : resendCountdown > 0 ? (
-                `Resend in ${resendCountdown}s`
+                <TamaguiButton.Text color="$textMuted">{`Resend in ${resendCountdown}s`}</TamaguiButton.Text>
               ) : (
-                "Resend Code"
+                <TamaguiButton.Text color="$primary">Resend Code</TamaguiButton.Text>
               )}
             </TamaguiButton>
 

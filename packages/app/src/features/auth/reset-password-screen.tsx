@@ -273,14 +273,13 @@ export function ResetPasswordScreen({
           <TamaguiButton
             chromeless
             size="$4"
-            color="$primary"
             onPress={onNavigateBack}
             disabled={isSubmitting}
             marginTop="$4"
             paddingVertical={0}
             paddingHorizontal="$2"
           >
-            Back
+            <TamaguiButton.Text color="$primary">Back</TamaguiButton.Text>
           </TamaguiButton>
         </Column>
       </ScrollView>

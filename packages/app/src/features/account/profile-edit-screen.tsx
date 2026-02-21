@@ -233,7 +233,7 @@ export function ProfileEditScreen({
             <Input
               size="$5"
               value={user?.email || ""}
-              editable={false}
+              disabled
               backgroundColor="$gray100"
               color="$textSecondary"
             />
