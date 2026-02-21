@@ -69,7 +69,7 @@ export function ProductCard({ product, onPress, showHoverActions = true }: Produ
           }}
         >
           <Card variant="elevated" padding="$md" backgroundColor="$secondary" borderRadius="$md">
-            <Text fontSize="$4" color="$textInverse" fontWeight="500">
+            <Text size="$4" color="$textInverse" fontWeight="500">
               Please sign in to add favourites
             </Text>
           </Card>

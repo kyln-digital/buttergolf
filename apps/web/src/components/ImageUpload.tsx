@@ -128,7 +128,7 @@ export function ImageUpload({
               alignItems="center"
               justifyContent="center"
             >
-              <Text fontSize={32}>+</Text>
+              <Text size="$12">+</Text>
             </Column>
             <Column gap="$xs" alignItems="center">
               <Text size="$6" weight="semibold" textAlign="center" color="$text">
