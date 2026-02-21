@@ -312,7 +312,11 @@ export function OrdersScreen({
                     {productImage ? (
                       <Image
                         src={productImage}
-                        alt="Product image"
+                        alt={
+                          order.product.title
+                            ? `${order.product.title} product image`
+                            : "Product image"
+                        }
                         width={80}
                         height={80}
                         borderRadius="$md"

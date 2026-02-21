@@ -333,7 +333,7 @@ export function MessageThreadScreen({
                 {!message.isOwnMessage && otherUserImage && (
                   <Image
                     src={otherUserImage}
-                    alt="User avatar"
+                    alt={otherUserName ? `${otherUserName}'s avatar` : "User avatar"}
                     width={32}
                     height={32}
                     borderRadius={16}
