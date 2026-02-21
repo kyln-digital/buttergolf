@@ -115,20 +115,21 @@ const PAYMENT_STATUS_CONFIG: Record<
 };
 
 function getStatusIcon(status: OrderStatus, color: string = "$text") {
+  const c = color as "$text";
   switch (status) {
     case "PAYMENT_CONFIRMED":
-      return <Clock size={16} color={color} />;
+      return <Clock size={16} color={c} />;
     case "LABEL_GENERATED":
-      return <Package size={16} color={color} />;
+      return <Package size={16} color={c} />;
     case "SHIPPED":
-      return <Truck size={16} color={color} />;
+      return <Truck size={16} color={c} />;
     case "DELIVERED":
-      return <CheckCircle size={16} color={color} />;
+      return <CheckCircle size={16} color={c} />;
     case "CANCELLED":
     case "REFUNDED":
-      return <AlertCircle size={16} color={color} />;
+      return <AlertCircle size={16} color={c} />;
     default:
-      return <Clock size={16} color={color} />;
+      return <Clock size={16} color={c} />;
   }
 }
 
@@ -305,7 +306,7 @@ function OrderCard({ order }: { order: Order }) {
                   alignSelf="flex-start"
                   marginTop="$xs"
                 >
-                  <PaymentIcon size={12} color={paymentStatusConfig.fg} />
+                  <PaymentIcon size={12} color={paymentStatusConfig.fg as "$primary"} />
                   <Text size="$1" color={paymentStatusConfig.fg as "$primary"} fontWeight="500">
                     {paymentStatusConfig.label}
                   </Text>
