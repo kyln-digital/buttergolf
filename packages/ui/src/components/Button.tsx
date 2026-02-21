@@ -20,8 +20,7 @@
  * ```
  */
 
-import React from "react";
-import { Button as TamaguiButton, styled, GetProps, type ColorTokens } from "tamagui";
+import { Button as TamaguiButton, styled, GetProps, withStaticProperties } from "tamagui";
 import { Platform } from "react-native";
 
 /**
@@ -113,31 +112,13 @@ const ButtonBase = styled(TamaguiButton, {
   },
 });
 
-
-export type ButtonProps = GetProps<typeof ButtonBase> & { color?: ColorTokens | string };
-
 /**
- * In Tamagui v2 the Button frame (which extends Stack/View) no longer exposes
- * `color` in its TypeScript type surface. The `color` prop is functional at
- * runtime via the shared ButtonContext — it flows to inner Button.Text children
- * — but the TS compiler reports "Property 'color' does not exist".
- *
- * The intersection cast below:
- *   1. Keeps `typeof ButtonBase` so all static sub-components (Apply, Text,
- *      Icon, Frame), styled-component helpers, and existing variant props are
- *      preserved exactly as-is.
- *   2. Overloads the call signature with `ButtonProps` which re-adds the
- *      `color` prop, making call-site usage type-safe.
- *   3. Uses `as unknown as` because TypeScript does not allow widening a
- *      forwardRef component's props via a direct cast; the double-hop through
- *      `unknown` is the established pattern for safe widening (not narrowing)
- *      when the runtime already supports the wider type.
- *
- * If Tamagui upstream restores `color` to the Button frame type this cast can
- * be removed without any call-site changes.
+ * Tamagui's `styled()` doesn't carry over sub-components from compound
+ * components like Button. The documented pattern (from the "How to Build
+ * a Button" guide) is to re-compose with `withStaticProperties`.
  */
-export const Button = ButtonBase as unknown as typeof ButtonBase & {
-  (
-    props: ButtonProps & React.RefAttributes<React.ElementRef<typeof ButtonBase>>
-  ): React.ReactElement | null;
-};
+export const Button = withStaticProperties(ButtonBase, {
+  Text: TamaguiButton.Text,
+  Icon: TamaguiButton.Icon,
+});
+export type ButtonProps = GetProps<typeof ButtonBase>;
