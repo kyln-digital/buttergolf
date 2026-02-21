@@ -490,7 +490,7 @@ function CheckoutSuccessContent() {
                 borderTopColor="$border"
               >
                 <Text color="$textSecondary">Est. Delivery</Text>
-                <Text weight="semibold" color="$info">
+                <Text weight="semibold" color="$success">
                   {new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString("en-GB", {
                     weekday: "short",
                     month: "short",
@@ -512,14 +512,14 @@ function CheckoutSuccessContent() {
             <Card
               variant="outlined"
               padding="$md"
-              borderColor="$info"
-              backgroundColor="$infoLight"
+              borderColor="$success"
+              backgroundColor="$successLight"
               fullWidth
             >
               <Column gap="$sm">
                 <Row gap="$sm" alignItems="center">
-                  <Lock size={18} color="$info" />
-                  <Text fontWeight="600" color="$info">
+                  <Lock size={18} color="$success" />
+                  <Text fontWeight="600" color="$success">
                     Payment Held Securely
                   </Text>
                 </Row>
