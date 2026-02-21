@@ -425,9 +425,6 @@ function CheckoutForm({
 
         {/* Email - using LinkAuthenticationElement for Stripe Link support */}
         <Column gap="$xs">
-          <Text fontWeight="500" color="$text">
-            Email
-          </Text>
           <LinkAuthenticationElement
             options={{
               defaultValues: { email: "" },
