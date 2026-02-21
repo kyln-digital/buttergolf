@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Column, Row, Text, Heading, Badge, Container, ConversationListItem } from "@buttergolf/ui";
 import { MessageSquare } from "@tamagui/lucide-icons";
 import { formatDistanceToNow } from "date-fns";
@@ -24,8 +23,6 @@ interface MessagesInboxProps {
 }
 
 export function MessagesInbox({ conversations }: MessagesInboxProps) {
-  const router = useRouter();
-
   if (conversations.length === 0) {
     return (
       <Container size="lg" paddingVertical="$3xl">
@@ -69,20 +66,23 @@ export function MessagesInbox({ conversations }: MessagesInboxProps) {
         </Row>
 
         <Column gap="$md">
-          {conversations.map((conversation, index) => (
-            <ConversationListItem
+          {conversations.map((conversation) => (
+            <Link
               key={conversation.orderId}
-              productImage={conversation.productImage}
-              productTitle={conversation.productTitle}
-              otherUserName={conversation.otherUserName}
-              lastMessage={conversation.lastMessagePreview}
-              timestamp={formatDistanceToNow(new Date(conversation.lastMessageAt), {
-                addSuffix: true,
-              })}
-              unreadCount={conversation.unreadCount}
-              onPress={() => router.push(`/messages/${conversation.orderId}`)}
-              index={index}
-            />
+              href={`/messages/${conversation.orderId}`}
+              style={{ textDecoration: "none" }}
+            >
+              <ConversationListItem
+                productImage={conversation.productImage}
+                productTitle={conversation.productTitle}
+                otherUserName={conversation.otherUserName}
+                lastMessage={conversation.lastMessagePreview}
+                timestamp={formatDistanceToNow(new Date(conversation.lastMessageAt), {
+                  addSuffix: true,
+                })}
+                unreadCount={conversation.unreadCount}
+              />
+            </Link>
           ))}
         </Column>
       </Column>

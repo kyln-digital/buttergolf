@@ -18,7 +18,7 @@
  * ```
  */
 
-import { styled, GetProps, View, Image } from "tamagui";
+import { styled, View, Image } from "tamagui";
 import { Text } from "./Text";
 import { Row, Column } from "./Layout";
 import { Card } from "./Card";
@@ -78,8 +78,6 @@ interface ConversationListItemProps {
   unreadCount?: number;
   /** Press handler */
   onPress?: () => void;
-  /** Stagger index for entrance animation */
-  index?: number;
 }
 
 export function ConversationListItem({
@@ -90,7 +88,6 @@ export function ConversationListItem({
   timestamp,
   unreadCount = 0,
   onPress,
-  index = 0,
 }: Readonly<ConversationListItemProps>) {
   return (
     <ListItemCard

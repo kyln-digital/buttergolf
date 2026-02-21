@@ -8,6 +8,7 @@ import {
   Spinner,
   Button,
   View,
+  Image,
   ChatMessageList,
   ChatInput,
 } from "@buttergolf/ui";
@@ -33,6 +34,10 @@ interface MessageThreadScreenProps {
   otherUserImage: string | null;
   /** Product title */
   productTitle?: string;
+  /** Product image URL (shown in header) */
+  productImage?: string | null;
+  /** Pre-loaded messages (skips loading state) */
+  initialMessages?: ChatMessage[];
   /** Callback to fetch messages for this order */
   onFetchMessages?: (orderId: string) => Promise<{
     messages: Array<{
@@ -75,15 +80,17 @@ export function MessageThreadScreen({
   otherUserName,
   otherUserImage,
   productTitle = "Order",
+  productImage,
+  initialMessages,
   onFetchMessages,
   onSendMessage,
   onMarkAsRead,
   onBack,
 }: Readonly<MessageThreadScreenProps>) {
   const insets = useSafeAreaInsets();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
   const [newMessage, setNewMessage] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialMessages);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -97,7 +104,7 @@ export function MessageThreadScreen({
 
     const fetchAndSetup = async () => {
       try {
-        if (onFetchMessages) {
+        if (onFetchMessages && !initialMessages) {
           const data = await onFetchMessages(orderId);
           if (!cancelled) {
             setMessages(
@@ -175,7 +182,7 @@ export function MessageThreadScreen({
       cancelled = true;
       eventSource?.close();
     };
-  }, [orderId, currentUserId, onFetchMessages, onMarkAsRead]);
+  }, [orderId, currentUserId, initialMessages, onFetchMessages, onMarkAsRead]);
 
   const handleSend = useCallback(async () => {
     if (!newMessage.trim() || sending || isOverLimit) return;
@@ -242,6 +249,17 @@ export function MessageThreadScreen({
         >
           <ArrowLeft size={24} color="$text" />
         </Button>
+
+        {productImage && (
+          <Image
+            source={{ uri: productImage }}
+            width={40}
+            height={40}
+            borderRadius="$md"
+            alt={productTitle}
+          />
+        )}
+
         <Column flex={1} gap="$xs">
           <Row alignItems="center" gap="$sm">
             <Text size="$6" weight="bold" numberOfLines={1} flex={1}>
@@ -293,6 +311,15 @@ export function MessageThreadScreen({
         >
           <Text size="$3" color="$error" flex={1}>
             {error}
+          </Text>
+          <Text
+            size="$3"
+            color="$error"
+            weight="semibold"
+            cursor="pointer"
+            onPress={() => setError(null)}
+          >
+            Dismiss
           </Text>
         </Row>
       )}

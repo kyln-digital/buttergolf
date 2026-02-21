@@ -20,7 +20,7 @@
  * ```
  */
 
-import { styled, GetProps, View, Image } from "tamagui";
+import { styled, View, Image } from "tamagui";
 import { Text } from "./Text";
 import { Row } from "./Layout";
 

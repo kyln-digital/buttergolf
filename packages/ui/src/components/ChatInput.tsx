@@ -16,8 +16,9 @@
  * ```
  */
 
-import { useState, useCallback } from "react";
-import { styled, GetProps, View } from "tamagui";
+import { useCallback, useRef, useEffect } from "react";
+import { Platform, type TextInput } from "react-native";
+import { styled, View } from "tamagui";
 import { Text } from "./Text";
 import { Button } from "./Button";
 import { TextArea } from "./TextArea";
@@ -88,27 +89,42 @@ export function ChatInput({
   const isOverLimit = value.length > maxLength;
   const showCounter = value.length > maxLength * 0.8;
   const canSend = value.trim().length > 0 && !isOverLimit && !sending && !disabled;
+  const canSendRef = useRef(canSend);
+  canSendRef.current = canSend;
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
+  const onSendRef = useRef(onSend);
+  onSendRef.current = onSend;
+
+  const textAreaRef = useRef<TextInput>(null);
+
+  // Attach web-only keydown listener for Enter-to-send
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    // On web, the underlying element is an HTMLTextAreaElement
+    const el = (textAreaRef.current as unknown as HTMLTextAreaElement) ?? null;
+    if (!el) return;
+
+    const handler = (e: KeyboardEvent) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        if (canSend) {
-          onSend();
+        if (canSendRef.current) {
+          onSendRef.current();
         }
       }
-    },
-    [canSend, onSend]
-  );
+    };
+    el.addEventListener("keydown", handler);
+    return () => el.removeEventListener("keydown", handler);
+  }, []);
 
   return (
     <InputContainer>
       <Row alignItems="flex-end" gap="$sm">
         <Column flex={1} gap="$xs">
           <TextArea
+            ref={textAreaRef}
             value={value}
             onChangeText={onChangeText}
-            {...(typeof window !== "undefined" ? { onKeyPress: handleKeyDown as any } : {})}
+            onSubmitEditing={canSend ? onSend : undefined}
             placeholder={placeholder}
             size="md"
             rows={1}
@@ -128,7 +144,11 @@ export function ChatInput({
         </Column>
 
         <SendButton onPress={onSend} disabled={!canSend} aria-label="Send message">
-          {sending ? <Spinner size="sm" color="$textInverse" /> : <Send size={20} color="white" />}
+          {sending ? (
+            <Spinner size="sm" color="$textInverse" />
+          ) : (
+            <Send size={20} color="$textInverse" />
+          )}
         </SendButton>
       </Row>
     </InputContainer>

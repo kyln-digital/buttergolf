@@ -5,13 +5,10 @@ import { MessageThread } from "./MessageThread";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ params }: { params: Promise<{ orderId: string }> }) {
-  const { orderId } = await params;
-  return {
-    title: "Messages | ButterGolf",
-    description: `Conversation for order ${orderId}`,
-  };
-}
+export const metadata = {
+  title: "Messages | ButterGolf",
+  description: "View your conversation",
+};
 
 export default async function MessageThreadPage({
   params,

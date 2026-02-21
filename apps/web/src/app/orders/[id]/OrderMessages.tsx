@@ -56,6 +56,10 @@ export function OrderMessages({
 
   useEffect(() => {
     fetchMessages();
+
+    // Poll every 30s to keep the preview fresh
+    const interval = setInterval(fetchMessages, 30_000);
+    return () => clearInterval(interval);
   }, [fetchMessages]);
 
   // Show only the last 3 messages as a preview
@@ -67,7 +71,7 @@ export function OrderMessages({
       <Card.Header noBorder>
         <Row justifyContent="space-between" alignItems="center">
           <Row gap="$sm" alignItems="center">
-            <MessageSquare size={20} color="var(--color-text)" />
+            <MessageSquare size={20} color="$text" />
             <Heading level={3}>Messages</Heading>
             {unreadCount > 0 && (
               <Badge variant="primary" size="sm">
@@ -129,7 +133,7 @@ export function OrderMessages({
             <Text color="$primary" weight="semibold" size="$5">
               {messages.length > 0 ? "View full conversation" : "Start a conversation"}
             </Text>
-            <ArrowRight size={18} color="var(--color-primary)" />
+            <ArrowRight size={18} color="$primary" />
           </Row>
         </Link>
       </Card.Footer>
