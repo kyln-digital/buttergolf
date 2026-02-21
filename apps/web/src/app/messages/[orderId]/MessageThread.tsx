@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useMedia } from "tamagui";
 import { Column } from "@buttergolf/ui";
 import type { ChatMessage } from "@buttergolf/ui";
 import { MessageThreadScreen } from "@buttergolf/app/src/features/messages/message-thread-screen";
@@ -26,6 +27,8 @@ export function MessageThread({
   initialMessages,
 }: Readonly<MessageThreadProps>) {
   const router = useRouter();
+  const media = useMedia();
+  const isMobile = !media.gtMd;
 
   const handleSendMessage = useCallback(async (oid: string, content: string) => {
     const response = await fetch(`/api/orders/${oid}/messages`, {
@@ -50,7 +53,7 @@ export function MessageThread({
   }, []);
 
   return (
-    <Column width="100%" flex={1} minHeight="100dvh" style={{ maxHeight: "100dvh" }}>
+    <Column width="100%" height="100%">
       <MessageThreadScreen
         orderId={orderId}
         currentUserId={currentUserId}
@@ -61,7 +64,7 @@ export function MessageThread({
         initialMessages={initialMessages}
         onSendMessage={handleSendMessage}
         onMarkAsRead={handleMarkAsRead}
-        onBack={() => router.push("/messages")}
+        onBack={isMobile ? () => router.push("/messages") : undefined}
       />
     </Column>
   );

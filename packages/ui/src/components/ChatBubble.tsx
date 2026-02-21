@@ -6,6 +6,8 @@
  *
  * - Own messages: right-aligned, primary background, slide from right
  * - Other messages: left-aligned, surface background, slide from left
+ * - Supports message grouping (consecutive same-sender messages collapse avatars)
+ * - Shows read receipts on own messages
  * - Respects prefers-reduced-motion when available
  *
  * @example
@@ -16,6 +18,9 @@
  *   timestamp="2 min ago"
  *   avatarUrl="https://example.com/avatar.jpg"
  *   avatarName="Josh"
+ *   isGrouped={false}
+ *   isLastInGroup={true}
+ *   isRead={true}
  * />
  * ```
  */
@@ -25,6 +30,7 @@ import { Platform } from "react-native";
 import { styled, View, Image } from "tamagui";
 import { Text } from "./Text";
 import { Row } from "./Layout";
+import { Check, CheckCheck } from "@tamagui/lucide-icons";
 
 const BubbleContainer = styled(View, {
   name: "BubbleContainer",
@@ -57,9 +63,9 @@ const BubbleContainer = styled(View, {
 
 const Avatar = styled(Image, {
   name: "ChatAvatar",
-  width: 32,
-  height: 32,
-  borderRadius: 16,
+  width: 28,
+  height: 28,
+  borderRadius: 14,
   backgroundColor: "$surface",
 });
 
@@ -76,6 +82,12 @@ interface ChatBubbleProps {
   avatarName?: string;
   /** Whether to animate the entrance */
   animated?: boolean;
+  /** Whether this message is grouped with the previous (same sender, close timestamp) */
+  isGrouped?: boolean;
+  /** Whether this is the last message in a consecutive group */
+  isLastInGroup?: boolean;
+  /** Whether this message has been read by the recipient */
+  isRead?: boolean;
 }
 
 export function ChatBubble({
@@ -85,6 +97,9 @@ export function ChatBubble({
   avatarUrl,
   avatarName,
   animated = true,
+  isGrouped = false,
+  isLastInGroup = true,
+  isRead,
 }: Readonly<ChatBubbleProps>) {
   const prefersReducedMotion = useMemo(() => {
     if (Platform.OS !== "web" || typeof globalThis.window === "undefined") return false;
@@ -93,32 +108,52 @@ export function ChatBubble({
 
   const shouldAnimate = animated && !prefersReducedMotion;
 
+  // Grouped messages: only show avatar on last message, tighter spacing
+  const showAvatar = !isOwnMessage && isLastInGroup;
+
   return (
     <Row
       gap="$sm"
       alignItems="flex-end"
       flexDirection={isOwnMessage ? "row-reverse" : "row"}
       animation={shouldAnimate ? "medium" : undefined}
-      enterStyle={shouldAnimate ? { opacity: 0, x: isOwnMessage ? 20 : -20 } : undefined}
+      enterStyle={shouldAnimate ? { opacity: 0, x: isOwnMessage ? 12 : -12 } : undefined}
       opacity={1}
       x={0}
+      marginTop={isGrouped ? 2 : "$sm"}
     >
-      {!isOwnMessage && avatarUrl ? (
-        <Avatar
-          source={{ uri: avatarUrl }}
-          alt={avatarName ? `${avatarName}'s avatar` : "User avatar"}
-        />
-      ) : !isOwnMessage ? (
-        <View width={32} height={32} borderRadius={16} backgroundColor="$backgroundPress" />
-      ) : null}
+      {/* Avatar area: shown for other user's messages, spacer when grouped */}
+      {!isOwnMessage &&
+        (showAvatar ? (
+          avatarUrl ? (
+            <Avatar
+              source={{ uri: avatarUrl }}
+              alt={avatarName ? `${avatarName}'s avatar` : "User avatar"}
+            />
+          ) : (
+            <View width={28} height={28} borderRadius={14} backgroundColor="$backgroundPress" />
+          )
+        ) : (
+          <View width={28} height={28} />
+        ))}
 
       <BubbleContainer isOwnMessage={isOwnMessage}>
         <Text size="$4" color={isOwnMessage ? "$textInverse" : "$text"} whiteSpace="pre-wrap">
           {content}
         </Text>
-        <Text size="$2" color={isOwnMessage ? "$primaryLight" : "$textTertiary"} marginTop="$xs">
-          {timestamp}
-        </Text>
+        {/* Timestamp + read receipt row */}
+        <Row alignItems="center" justifyContent="flex-end" gap="$xs" marginTop={2}>
+          <Text size="$1" color={isOwnMessage ? "$primaryLight" : "$textTertiary"}>
+            {timestamp}
+          </Text>
+          {isOwnMessage &&
+            isRead !== undefined &&
+            (isRead ? (
+              <CheckCheck size={12} color="$primaryLight" />
+            ) : (
+              <Check size={12} color="$primaryLight" />
+            ))}
+        </Row>
       </BubbleContainer>
     </Row>
   );
