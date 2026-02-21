@@ -6,7 +6,7 @@
  *
  * - Own messages: right-aligned, primary background, slide from right
  * - Other messages: left-aligned, surface background, slide from left
- * - Respects prefers-reduced-motion
+ * - Respects prefers-reduced-motion when available
  *
  * @example
  * ```tsx
@@ -20,6 +20,8 @@
  * ```
  */
 
+import { useMemo } from "react";
+import { Platform } from "react-native";
 import { styled, View, Image } from "tamagui";
 import { Text } from "./Text";
 import { Row } from "./Layout";
@@ -84,13 +86,20 @@ export function ChatBubble({
   avatarName,
   animated = true,
 }: Readonly<ChatBubbleProps>) {
+  const prefersReducedMotion = useMemo(() => {
+    if (Platform.OS !== "web" || typeof globalThis.window === "undefined") return false;
+    return globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+  }, []);
+
+  const shouldAnimate = animated && !prefersReducedMotion;
+
   return (
     <Row
       gap="$sm"
       alignItems="flex-end"
       flexDirection={isOwnMessage ? "row-reverse" : "row"}
-      animation={animated ? "medium" : undefined}
-      enterStyle={animated ? { opacity: 0, x: isOwnMessage ? 20 : -20 } : undefined}
+      animation={shouldAnimate ? "medium" : undefined}
+      enterStyle={shouldAnimate ? { opacity: 0, x: isOwnMessage ? 20 : -20 } : undefined}
       opacity={1}
       x={0}
     >

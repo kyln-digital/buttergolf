@@ -1,17 +1,7 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
-import {
-  Column,
-  Row,
-  Text,
-  Spinner,
-  Button,
-  View,
-  Image,
-  ChatMessageList,
-  ChatInput,
-} from "@buttergolf/ui";
+import { useEffect, useState, useCallback } from "react";
+import { Column, Row, Text, Button, View, Image, ChatMessageList, ChatInput } from "@buttergolf/ui";
 import type { ChatMessage } from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft } from "@tamagui/lucide-icons";

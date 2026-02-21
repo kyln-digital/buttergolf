@@ -2,17 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import {
-  Card,
-  Column,
-  Row,
-  Text,
-  Spinner,
-  Image,
-  Heading,
-  Badge,
-  ChatBubble,
-} from "@buttergolf/ui";
+import { Card, Column, Row, Text, Spinner, Heading, Badge, ChatBubble } from "@buttergolf/ui";
 import { MessageSquare, ArrowRight } from "@tamagui/lucide-icons";
 import { formatDateTime } from "@/lib/utils/format";
 

@@ -1,103 +1,10 @@
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
-import { prisma } from "@buttergolf/db";
-import { MessagesInbox } from "./MessagesInbox";
+import { EmptyConversation } from "./_components/EmptyConversation";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Messages | ButterGolf",
-  description: "View and manage your conversations with buyers and sellers",
-};
-
-export default async function MessagesPage() {
-  const { userId: clerkId } = await auth();
-
-  if (!clerkId) {
-    redirect("/sign-in");
-  }
-
-  // Get user from database
-  const user = await prisma.user.findUnique({
-    where: { clerkId },
-    select: { id: true },
-  });
-
-  if (!user) {
-    redirect("/sign-in");
-  }
-
-  // Fetch all orders where the user is buyer or seller, with messages
-  const orders = await prisma.order.findMany({
-    where: {
-      OR: [{ buyerId: user.id }, { sellerId: user.id }],
-    },
-    include: {
-      product: {
-        include: {
-          images: {
-            orderBy: { sortOrder: "asc" },
-            take: 1,
-          },
-        },
-      },
-      seller: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          imageUrl: true,
-        },
-      },
-      buyer: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          imageUrl: true,
-        },
-      },
-      messages: {
-        orderBy: { createdAt: "desc" },
-        take: 1, // Only get latest message for preview
-      },
-      _count: {
-        select: {
-          messages: {
-            where: {
-              isRead: false,
-              senderId: { not: user.id },
-            },
-          },
-        },
-      },
-    },
-    orderBy: { updatedAt: "desc" },
-  });
-
-  // Transform orders into conversation format
-  const conversations = orders.map((order) => {
-    const isBuyer = order.buyerId === user.id;
-    const otherUser = isBuyer ? order.seller : order.buyer;
-    const otherUserName =
-      `${otherUser.firstName || ""} ${otherUser.lastName || ""}`.trim() || otherUser.email;
-    const lastMessage = order.messages[0];
-
-    return {
-      orderId: order.id,
-      productTitle: order.product.title,
-      productImage: order.product.images[0]?.url || null,
-      otherUserName,
-      otherUserImage: otherUser.imageUrl,
-      lastMessagePreview: lastMessage?.content || null,
-      lastMessageAt: lastMessage?.createdAt?.toISOString() || order.createdAt.toISOString(),
-      unreadCount: order._count.messages,
-      userRole: isBuyer ? ("buyer" as const) : ("seller" as const),
-      orderStatus: order.status,
-    };
-  });
-
-  return <MessagesInbox conversations={conversations} />;
+export default function MessagesPage() {
+  // On desktop, the layout shows the thread list on the left.
+  // This page renders in the right pane as the "no conversation selected" state.
+  // On mobile, the layout shows the thread list full-width instead of this page.
+  return <EmptyConversation />;
 }

@@ -573,22 +573,6 @@ function CheckoutSuccessContent() {
                 View Order Details
               </Button>
             </Link>
-            <Link
-              href={`/orders/${order.id}#messages`}
-              style={{ textDecoration: "none", flex: 1, minWidth: 180 }}
-            >
-              <Button
-                size="$5"
-                width="100%"
-                borderWidth={2}
-                borderColor="$primary"
-                backgroundColor="transparent"
-                color="$primary"
-                borderRadius="$full"
-              >
-                Message Seller
-              </Button>
-            </Link>
             <Link href="/" style={{ textDecoration: "none", flex: 1, minWidth: 180 }}>
               <Button
                 size="$5"

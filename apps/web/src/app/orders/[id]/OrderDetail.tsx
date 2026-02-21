@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { OrderMessages } from "./OrderMessages";
 import { OrderRating } from "./OrderRating";
 import { AnimationErrorBoundary } from "@/app/_components/ErrorBoundary";
 import { TrackingTimeline } from "@/components/TrackingTimeline";
@@ -1025,28 +1024,6 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
             isDelivered={order.shipmentStatus === "DELIVERED"}
             isBuyer={order.userRole === "buyer"}
             sellerName={`${order.seller.firstName || ""} ${order.seller.lastName || ""}`.trim()}
-          />
-        </AnimationErrorBoundary>
-
-        {/* Messages Section */}
-        <AnimationErrorBoundary
-          fallback={
-            <Card variant="outlined" padding="$lg">
-              <Text color="$error">Unable to load messages. Please refresh the page.</Text>
-            </Card>
-          }
-        >
-          <OrderMessages
-            orderId={order.id}
-            currentUserId={order.currentUserId}
-            otherUserName={
-              order.userRole === "buyer"
-                ? `${order.seller.firstName || ""} ${order.seller.lastName || ""}`.trim()
-                : `${order.buyer.firstName || ""} ${order.buyer.lastName || ""}`.trim()
-            }
-            otherUserImage={
-              order.userRole === "buyer" ? order.seller.imageUrl : order.buyer.imageUrl
-            }
           />
         </AnimationErrorBoundary>
       </Column>

@@ -16,7 +16,9 @@
  * ```
  */
 
-import { useCallback, useRef, useEffect } from "react";
+"use client";
+
+import { useRef, useEffect } from "react";
 import { Platform, type TextInput } from "react-native";
 import { styled, View } from "tamagui";
 import { Text } from "./Text";

@@ -50,8 +50,7 @@ export function MessageThread({
   }, []);
 
   return (
-    /* Height accounts for ButterHeader (80px) + TrustBar (40px) = 120px */
-    <Column width="100%" style={{ height: "calc(100dvh - 120px)" }}>
+    <Column width="100%" flex={1} minHeight="100dvh" style={{ maxHeight: "100dvh" }}>
       <MessageThreadScreen
         orderId={orderId}
         currentUserId={currentUserId}

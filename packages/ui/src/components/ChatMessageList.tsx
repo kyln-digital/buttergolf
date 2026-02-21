@@ -16,7 +16,10 @@
  * ```
  */
 
+"use client";
+
 import { useEffect, useRef, useMemo } from "react";
+import type React from "react";
 import { View } from "tamagui";
 import { Text } from "./Text";
 import { Column, Row } from "./Layout";
@@ -125,7 +128,7 @@ export function ChatMessageList({
   emptyMessage,
   formatTimestamp = defaultFormatTimestamp,
 }: Readonly<ChatMessageListProps>) {
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<React.ElementRef<typeof ScrollView>>(null);
   const hasScrolledOnce = useRef(false);
 
   // Auto-scroll to bottom when messages change
