@@ -262,7 +262,6 @@ const SheetContents = memo(function SheetContents({
                 backgroundColor={parsedAmount === suggestion.amount ? "$primary" : "transparent"}
                 borderWidth={1}
                 borderColor={parsedAmount === suggestion.amount ? "$primary" : "$border"}
-                color={parsedAmount === suggestion.amount ? "$textInverse" : "$text"}
                 onPress={() => setOfferAmount(suggestion.amount.toFixed(2))}
               >
                 <Column alignItems="center">
@@ -309,11 +308,10 @@ const SheetContents = memo(function SheetContents({
             backgroundColor="transparent"
             borderWidth={2}
             borderColor="$border"
-            color="$text"
             onPress={onClose}
             disabled={isSubmitting}
           >
-            Cancel
+            <Button.Text color="$text">Cancel</Button.Text>
           </Button>
           <Button
             butterVariant="primary"

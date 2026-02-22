@@ -577,7 +577,6 @@ export function OfferDetailScreen({
             flex={1}
             size="$5"
             backgroundColor="$error"
-            color="$textInverse"
             onPress={handleReject}
             disabled={actionLoading !== null}
             opacity={actionLoading === "reject" ? 0.7 : 1}
@@ -589,13 +588,14 @@ export function OfferDetailScreen({
               )
             }
           >
-            {actionLoading === "reject" ? "Declining..." : "Decline"}
+            <Button.Text color="$textInverse">
+              {actionLoading === "reject" ? "Declining..." : "Decline"}
+            </Button.Text>
           </Button>
           <Button
             flex={1}
             size="$5"
             backgroundColor="$success"
-            color="$textInverse"
             onPress={handleAccept}
             disabled={actionLoading !== null}
             opacity={actionLoading === "accept" ? 0.7 : 1}
@@ -607,7 +607,9 @@ export function OfferDetailScreen({
               )
             }
           >
-            {actionLoading === "accept" ? "Accepting..." : "Accept"}
+            <Button.Text color="$textInverse">
+              {actionLoading === "accept" ? "Accepting..." : "Accept"}
+            </Button.Text>
           </Button>
         </Row>
       )}
