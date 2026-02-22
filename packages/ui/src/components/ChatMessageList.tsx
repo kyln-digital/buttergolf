@@ -151,7 +151,7 @@ export function ChatMessageList({
       // Small delay to allow layout to settle
       const timer = setTimeout(() => {
         scrollViewRef.current?.scrollToEnd?.({ animated: behavior === "smooth" });
-      }, 100);
+      }, 350);
       hasScrolledOnce.current = true;
       return () => clearTimeout(timer);
     }
