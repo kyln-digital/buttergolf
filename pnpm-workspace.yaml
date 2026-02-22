@@ -62,7 +62,6 @@ catalog:
   expo-updates: 29.0.16
   expo-web-browser: 15.0.10
   framer-motion: 12.23.27
-  ioredis: 5.4.1
   jose: 6.1.3
   lucide-react: 0.562.0
   next: 16.1.6
