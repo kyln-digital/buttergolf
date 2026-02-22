@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Column, Row, Text, Button, View, Image, ChatMessageList, ChatInput } from "@buttergolf/ui";
 import type { ChatMessage } from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -85,6 +85,7 @@ export function MessageThreadScreen({
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [sseError, setSSEError] = useState<string | null>(null);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isOverLimit = newMessage.length > MESSAGE_LIMITS.MAX_LENGTH;
 
@@ -134,6 +135,11 @@ export function MessageThreadScreen({
         if (!cancelled) {
           setIsConnected(true);
           setSSEError(null);
+          // Cancel any pending disconnect notification — reconnect was fast enough
+          if (reconnectTimerRef.current) {
+            clearTimeout(reconnectTimerRef.current);
+            reconnectTimerRef.current = null;
+          }
         }
       });
 
@@ -163,7 +169,14 @@ export function MessageThreadScreen({
       eventSource.addEventListener("error", () => {
         if (!cancelled) {
           setIsConnected(false);
-          setSSEError("Connection lost. Reconnecting...");
+          // Only show the banner if still disconnected after 5 seconds.
+          // Vercel-timeout-induced reconnects complete in ~1-2s, so they'll
+          // be invisible to the user. Only genuine network problems will show.
+          reconnectTimerRef.current = setTimeout(() => {
+            if (!cancelled) {
+              setSSEError("Connection lost. Reconnecting...");
+            }
+          }, 5000);
         }
       });
     }
@@ -171,6 +184,9 @@ export function MessageThreadScreen({
     return () => {
       cancelled = true;
       eventSource?.close();
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+      }
     };
   }, [orderId, currentUserId, initialMessages, onFetchMessages, onMarkAsRead]);
 

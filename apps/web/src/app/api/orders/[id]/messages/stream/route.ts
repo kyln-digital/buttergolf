@@ -4,6 +4,7 @@ import { getUserIdFromRequest } from "@/lib/auth";
 import { createRedisSubscriber } from "@/lib/redis";
 
 export const runtime = "nodejs"; // Required for Redis connections
+export const maxDuration = 300; // 5 min max (Vercel Pro) — reduces reconnect frequency
 
 /**
  * GET /api/orders/[id]/messages/stream
