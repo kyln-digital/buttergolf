@@ -90,6 +90,9 @@ catalogs:
     "@tamagui/portal":
       specifier: 2.0.0-rc.16
       version: 2.0.0-rc.16
+    "@tamagui/react-native-web-lite":
+      specifier: 2.0.0-rc.16
+      version: 2.0.0-rc.16
     "@tamagui/sheet":
       specifier: 2.0.0-rc.16
       version: 2.0.0-rc.16
@@ -287,7 +290,7 @@ importers:
     devDependencies:
       "@tamagui/cli":
         specifier: "catalog:"
-        version: 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native-svg@15.12.1(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)(vite@7.3.1(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.46.0)(tsx@4.20.6)(yaml@2.8.2))
+        version: 2.0.0-rc.16(155ff6030f61a396c8741dbe6341a471)
       check-dependency-version-consistency:
         specifier: ^5.0.1
         version: 5.0.1
@@ -520,6 +523,9 @@ importers:
       "@tamagui/polyfill-dev":
         specifier: "catalog:"
         version: 2.0.0-rc.16
+      "@tamagui/react-native-web-lite":
+        specifier: "catalog:"
+        version: 2.0.0-rc.16(dfba7a01ba29959ac8b8c16b07a7d73b)
       "@tamagui/shorthands":
         specifier: "catalog:"
         version: 2.0.0-rc.16(dfba7a01ba29959ac8b8c16b07a7d73b)
@@ -22863,29 +22869,6 @@ snapshots:
       - sf-symbols-typescript
       - zeego
 
-  "@tamagui/animations-css@2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)":
-    dependencies:
-      "@tamagui/animation-helpers": 2.0.0-rc.16
-      "@tamagui/constants": 2.0.0-rc.16(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/cubic-bezier-animator": 2.0.0-rc.16
-      "@tamagui/use-presence": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/web": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      react: 19.1.0
-      react-dom: 19.1.0(react@19.1.0)
-    transitivePeerDependencies:
-      - "@react-native-menu/menu"
-      - burnt
-      - react-native
-      - react-native-gesture-handler
-      - react-native-ios-context-menu
-      - react-native-ios-utilities
-      - react-native-keyboard-controller
-      - react-native-safe-area-context
-      - react-native-teleport
-      - react-native-worklets-core
-      - sf-symbols-typescript
-      - zeego
-
   "@tamagui/animations-motion@2.0.0-rc.16(3b439edaf41e9a11d4ae23eefd07ca45)":
     dependencies:
       "@tamagui/animation-helpers": 2.0.0-rc.16
@@ -22937,28 +22920,6 @@ snapshots:
       "@tamagui/constants": 2.0.0-rc.16(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
       "@tamagui/use-presence": 2.0.0-rc.16(dfba7a01ba29959ac8b8c16b07a7d73b)
       "@tamagui/web": 2.0.0-rc.16(dfba7a01ba29959ac8b8c16b07a7d73b)
-      react: 19.1.0
-      react-native: 0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10)
-    transitivePeerDependencies:
-      - "@react-native-menu/menu"
-      - burnt
-      - react-dom
-      - react-native-gesture-handler
-      - react-native-ios-context-menu
-      - react-native-ios-utilities
-      - react-native-keyboard-controller
-      - react-native-safe-area-context
-      - react-native-teleport
-      - react-native-worklets-core
-      - sf-symbols-typescript
-      - zeego
-
-  "@tamagui/animations-react-native@2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)":
-    dependencies:
-      "@tamagui/animation-helpers": 2.0.0-rc.16
-      "@tamagui/constants": 2.0.0-rc.16(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/use-presence": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/web": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
       react: 19.1.0
       react-native: 0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
@@ -23293,13 +23254,13 @@ snapshots:
 
   "@tamagui/cli-color@2.0.0-rc.16": {}
 
-  "@tamagui/cli@2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native-svg@15.12.1(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)(vite@7.3.1(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.46.0)(tsx@4.20.6)(yaml@2.8.2))":
+  "@tamagui/cli@2.0.0-rc.16(155ff6030f61a396c8741dbe6341a471)":
     dependencies:
-      "@tamagui/create-theme": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/generate-themes": 2.0.0-rc.16(esbuild@0.27.2)(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/static": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
+      "@tamagui/create-theme": 2.0.0-rc.16(dfba7a01ba29959ac8b8c16b07a7d73b)
+      "@tamagui/generate-themes": 2.0.0-rc.16(36347a0ce031b99acae0388f56812b75)
+      "@tamagui/static": 2.0.0-rc.16(dfba7a01ba29959ac8b8c16b07a7d73b)
       "@tamagui/types": 2.0.0-rc.16
-      "@tamagui/vite-plugin": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native-svg@15.12.1(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)(vite@7.3.1(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.46.0)(tsx@4.20.6)(yaml@2.8.2))
+      "@tamagui/vite-plugin": 2.0.0-rc.16(155ff6030f61a396c8741dbe6341a471)
       arg: 5.0.2
       chalk: 4.1.2
       change-case: 4.1.2
@@ -23492,29 +23453,6 @@ snapshots:
       - sf-symbols-typescript
       - zeego
 
-  "@tamagui/config-default@2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)":
-    dependencies:
-      "@tamagui/animations-css": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/animations-react-native": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/core": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/shorthands": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/web": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-    transitivePeerDependencies:
-      - "@react-native-menu/menu"
-      - burnt
-      - react
-      - react-dom
-      - react-native
-      - react-native-gesture-handler
-      - react-native-ios-context-menu
-      - react-native-ios-utilities
-      - react-native-keyboard-controller
-      - react-native-safe-area-context
-      - react-native-teleport
-      - react-native-worklets-core
-      - sf-symbols-typescript
-      - zeego
-
   "@tamagui/config@2.0.0-rc.16(355ae3f4b16301a9eb40e2388a233cd2)":
     dependencies:
       "@tamagui/animations-css": 2.0.0-rc.16(dfba7a01ba29959ac8b8c16b07a7d73b)
@@ -23647,30 +23585,6 @@ snapshots:
       - sf-symbols-typescript
       - zeego
 
-  "@tamagui/core@2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)":
-    dependencies:
-      "@tamagui/helpers": 2.0.0-rc.16(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/react-native-media-driver": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/react-native-use-pressable": 2.0.0-rc.16(react@19.1.0)
-      "@tamagui/use-element-layout": 2.0.0-rc.16(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/use-event": 2.0.0-rc.16(react@19.1.0)
-      "@tamagui/web": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      react: 19.1.0
-      react-native: 0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10)
-    transitivePeerDependencies:
-      - "@react-native-menu/menu"
-      - burnt
-      - react-dom
-      - react-native-gesture-handler
-      - react-native-ios-context-menu
-      - react-native-ios-utilities
-      - react-native-keyboard-controller
-      - react-native-safe-area-context
-      - react-native-teleport
-      - react-native-worklets-core
-      - sf-symbols-typescript
-      - zeego
-
   "@tamagui/create-context@2.0.0-rc.16(react@19.1.0)":
     dependencies:
       react: 19.1.0
@@ -23771,25 +23685,6 @@ snapshots:
   "@tamagui/create-theme@2.0.0-rc.16(dfba7a01ba29959ac8b8c16b07a7d73b)":
     dependencies:
       "@tamagui/web": 2.0.0-rc.16(dfba7a01ba29959ac8b8c16b07a7d73b)
-    transitivePeerDependencies:
-      - "@react-native-menu/menu"
-      - burnt
-      - react
-      - react-dom
-      - react-native
-      - react-native-gesture-handler
-      - react-native-ios-context-menu
-      - react-native-ios-utilities
-      - react-native-keyboard-controller
-      - react-native-safe-area-context
-      - react-native-teleport
-      - react-native-worklets-core
-      - sf-symbols-typescript
-      - zeego
-
-  "@tamagui/create-theme@2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)":
-    dependencies:
-      "@tamagui/web": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
     transitivePeerDependencies:
       - "@react-native-menu/menu"
       - burnt
@@ -24184,31 +24079,6 @@ snapshots:
     dependencies:
       "@tamagui/create-theme": 2.0.0-rc.16(dfba7a01ba29959ac8b8c16b07a7d73b)
       "@tamagui/theme-builder": 2.0.0-rc.16(dfba7a01ba29959ac8b8c16b07a7d73b)
-      "@tamagui/types": 2.0.0-rc.16
-      esbuild-register: 3.6.0(esbuild@0.27.2)
-      fs-extra: 11.3.3
-    transitivePeerDependencies:
-      - "@react-native-menu/menu"
-      - burnt
-      - esbuild
-      - react
-      - react-dom
-      - react-native
-      - react-native-gesture-handler
-      - react-native-ios-context-menu
-      - react-native-ios-utilities
-      - react-native-keyboard-controller
-      - react-native-safe-area-context
-      - react-native-teleport
-      - react-native-worklets-core
-      - sf-symbols-typescript
-      - supports-color
-      - zeego
-
-  "@tamagui/generate-themes@2.0.0-rc.16(esbuild@0.27.2)(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)":
-    dependencies:
-      "@tamagui/create-theme": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/theme-builder": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
       "@tamagui/types": 2.0.0-rc.16
       esbuild-register: 3.6.0(esbuild@0.27.2)
       fs-extra: 11.3.3
@@ -25248,25 +25118,6 @@ snapshots:
       - sf-symbols-typescript
       - zeego
 
-  "@tamagui/react-native-media-driver@2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)":
-    dependencies:
-      "@tamagui/web": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      react-native: 0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10)
-    transitivePeerDependencies:
-      - "@react-native-menu/menu"
-      - burnt
-      - react
-      - react-dom
-      - react-native-gesture-handler
-      - react-native-ios-context-menu
-      - react-native-ios-utilities
-      - react-native-keyboard-controller
-      - react-native-safe-area-context
-      - react-native-teleport
-      - react-native-worklets-core
-      - sf-symbols-typescript
-      - zeego
-
   "@tamagui/react-native-svg@2.0.0-rc.16(react-native-svg@15.12.1(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0))":
     optionalDependencies:
       react-native-svg: 15.12.1(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
@@ -25327,30 +25178,6 @@ snapshots:
       - sf-symbols-typescript
       - zeego
 
-  "@tamagui/react-native-web-internals@2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)":
-    dependencies:
-      "@tamagui/normalize-css-color": 2.0.0-rc.16
-      "@tamagui/react-native-use-pressable": 2.0.0-rc.16(react@19.1.0)
-      "@tamagui/react-native-use-responder-events": 2.0.0-rc.16(react@19.1.0)
-      "@tamagui/simple-hash": 2.0.0-rc.16
-      "@tamagui/use-element-layout": 2.0.0-rc.16(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/web": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      react: 19.1.0
-      react-dom: 19.1.0(react@19.1.0)
-    transitivePeerDependencies:
-      - "@react-native-menu/menu"
-      - burnt
-      - react-native
-      - react-native-gesture-handler
-      - react-native-ios-context-menu
-      - react-native-ios-utilities
-      - react-native-keyboard-controller
-      - react-native-safe-area-context
-      - react-native-teleport
-      - react-native-worklets-core
-      - sf-symbols-typescript
-      - zeego
-
   "@tamagui/react-native-web-lite@2.0.0-rc.16(2f9e704dff3eaef5fd250c4b7c2543bd)":
     dependencies:
       "@tamagui/normalize-css-color": 2.0.0-rc.16
@@ -25383,31 +25210,6 @@ snapshots:
       "@tamagui/react-native-use-responder-events": 2.0.0-rc.16(react@19.1.0)
       "@tamagui/react-native-web-internals": 2.0.0-rc.16(dfba7a01ba29959ac8b8c16b07a7d73b)
       "@tamagui/web": 2.0.0-rc.16(dfba7a01ba29959ac8b8c16b07a7d73b)
-      invariant: 2.2.4
-      memoize-one: 6.0.0
-      react: 19.1.0
-      react-dom: 19.1.0(react@19.1.0)
-    transitivePeerDependencies:
-      - "@react-native-menu/menu"
-      - burnt
-      - react-native
-      - react-native-gesture-handler
-      - react-native-ios-context-menu
-      - react-native-ios-utilities
-      - react-native-keyboard-controller
-      - react-native-safe-area-context
-      - react-native-teleport
-      - react-native-worklets-core
-      - sf-symbols-typescript
-      - zeego
-
-  "@tamagui/react-native-web-lite@2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)":
-    dependencies:
-      "@tamagui/normalize-css-color": 2.0.0-rc.16
-      "@tamagui/react-native-use-pressable": 2.0.0-rc.16(react@19.1.0)
-      "@tamagui/react-native-use-responder-events": 2.0.0-rc.16(react@19.1.0)
-      "@tamagui/react-native-web-internals": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/web": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
       invariant: 2.2.4
       memoize-one: 6.0.0
       react: 19.1.0
@@ -25806,25 +25608,6 @@ snapshots:
       - sf-symbols-typescript
       - zeego
 
-  "@tamagui/shorthands@2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)":
-    dependencies:
-      "@tamagui/web": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-    transitivePeerDependencies:
-      - "@react-native-menu/menu"
-      - burnt
-      - react
-      - react-dom
-      - react-native
-      - react-native-gesture-handler
-      - react-native-ios-context-menu
-      - react-native-ios-utilities
-      - react-native-keyboard-controller
-      - react-native-safe-area-context
-      - react-native-teleport
-      - react-native-worklets-core
-      - sf-symbols-typescript
-      - zeego
-
   "@tamagui/simple-hash@2.0.0-rc.16": {}
 
   "@tamagui/sizable-context@2.0.0-rc.16(2f9e704dff3eaef5fd250c4b7c2543bd)":
@@ -26052,29 +25835,6 @@ snapshots:
       - supports-color
       - zeego
 
-  "@tamagui/static-worker@2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)":
-    dependencies:
-      "@tamagui/static": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/types": 2.0.0-rc.16
-      piscina: 4.9.2
-    transitivePeerDependencies:
-      - "@react-native-menu/menu"
-      - burnt
-      - encoding
-      - react
-      - react-dom
-      - react-native
-      - react-native-gesture-handler
-      - react-native-ios-context-menu
-      - react-native-ios-utilities
-      - react-native-keyboard-controller
-      - react-native-safe-area-context
-      - react-native-teleport
-      - react-native-worklets-core
-      - sf-symbols-typescript
-      - supports-color
-      - zeego
-
   "@tamagui/static@2.0.0-rc.16(2f9e704dff3eaef5fd250c4b7c2543bd)":
     dependencies:
       "@babel/core": 7.29.0
@@ -26154,61 +25914,6 @@ snapshots:
       "@tamagui/shorthands": 2.0.0-rc.16(dfba7a01ba29959ac8b8c16b07a7d73b)
       "@tamagui/types": 2.0.0-rc.16
       "@tamagui/web": 2.0.0-rc.16(dfba7a01ba29959ac8b8c16b07a7d73b)
-      babel-literal-to-ast: 2.1.0(@babel/core@7.29.0)
-      browserslist: 4.28.1
-      check-dependency-version-consistency: 4.1.1
-      esbuild: 0.27.2
-      esbuild-register: 3.6.0(esbuild@0.27.2)
-      esbuild-wasm: 0.27.3
-      fast-glob: 3.3.3
-      find-cache-dir: 3.3.2
-      find-root: 1.1.0
-      fs-extra: 11.3.3
-      invariant: 2.2.4
-      js-yaml: 4.1.1
-      react: 19.1.0
-      react-native: 0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10)
-      react-native-web: 0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-    transitivePeerDependencies:
-      - "@react-native-menu/menu"
-      - burnt
-      - encoding
-      - react-dom
-      - react-native-gesture-handler
-      - react-native-ios-context-menu
-      - react-native-ios-utilities
-      - react-native-keyboard-controller
-      - react-native-safe-area-context
-      - react-native-teleport
-      - react-native-worklets-core
-      - sf-symbols-typescript
-      - supports-color
-      - zeego
-
-  "@tamagui/static@2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)":
-    dependencies:
-      "@babel/core": 7.29.0
-      "@babel/generator": 7.29.0
-      "@babel/helper-plugin-utils": 7.28.6
-      "@babel/parser": 7.29.0
-      "@babel/plugin-transform-react-jsx": 7.28.6(@babel/core@7.29.0)
-      "@babel/runtime": 7.28.6
-      "@babel/template": 7.28.6
-      "@babel/traverse": 7.29.0
-      "@babel/types": 7.29.0
-      "@tamagui/cli-color": 2.0.0-rc.16
-      "@tamagui/config-default": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/core": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/fake-react-native": 2.0.0-rc.16
-      "@tamagui/generate-themes": 2.0.0-rc.16(esbuild@0.27.2)(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/helpers": 2.0.0-rc.16(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/helpers-node": 2.0.0-rc.16
-      "@tamagui/proxy-worm": 2.0.0-rc.16
-      "@tamagui/react-native-web-internals": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/react-native-web-lite": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/shorthands": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/types": 2.0.0-rc.16
-      "@tamagui/web": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
       babel-literal-to-ast: 2.1.0(@babel/core@7.29.0)
       browserslist: 4.28.1
       check-dependency-version-consistency: 4.1.1
@@ -26475,27 +26180,6 @@ snapshots:
     dependencies:
       "@tamagui/create-theme": 2.0.0-rc.16(dfba7a01ba29959ac8b8c16b07a7d73b)
       "@tamagui/web": 2.0.0-rc.16(dfba7a01ba29959ac8b8c16b07a7d73b)
-      color2k: 2.0.3
-    transitivePeerDependencies:
-      - "@react-native-menu/menu"
-      - burnt
-      - react
-      - react-dom
-      - react-native
-      - react-native-gesture-handler
-      - react-native-ios-context-menu
-      - react-native-ios-utilities
-      - react-native-keyboard-controller
-      - react-native-safe-area-context
-      - react-native-teleport
-      - react-native-worklets-core
-      - sf-symbols-typescript
-      - zeego
-
-  "@tamagui/theme-builder@2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)":
-    dependencies:
-      "@tamagui/create-theme": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/web": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
       color2k: 2.0.3
     transitivePeerDependencies:
       - "@react-native-menu/menu"
@@ -26868,25 +26552,6 @@ snapshots:
       - sf-symbols-typescript
       - zeego
 
-  "@tamagui/use-presence@2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)":
-    dependencies:
-      "@tamagui/web": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      react: 19.1.0
-    transitivePeerDependencies:
-      - "@react-native-menu/menu"
-      - burnt
-      - react-dom
-      - react-native
-      - react-native-gesture-handler
-      - react-native-ios-context-menu
-      - react-native-ios-utilities
-      - react-native-keyboard-controller
-      - react-native-safe-area-context
-      - react-native-teleport
-      - react-native-worklets-core
-      - sf-symbols-typescript
-      - zeego
-
   "@tamagui/use-previous@2.0.0-rc.16(react@19.1.0)":
     dependencies:
       react: 19.1.0
@@ -27003,13 +26668,13 @@ snapshots:
       - sf-symbols-typescript
       - zeego
 
-  "@tamagui/vite-plugin@2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native-svg@15.12.1(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)(vite@7.3.1(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.46.0)(tsx@4.20.6)(yaml@2.8.2))":
+  "@tamagui/vite-plugin@2.0.0-rc.16(155ff6030f61a396c8741dbe6341a471)":
     dependencies:
       "@tamagui/fake-react-native": 2.0.0-rc.16
       "@tamagui/proxy-worm": 2.0.0-rc.16
       "@tamagui/react-native-svg": 2.0.0-rc.16(react-native-svg@15.12.1(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0))
-      "@tamagui/react-native-web-lite": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/static-worker": 2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
+      "@tamagui/react-native-web-lite": 2.0.0-rc.16(dfba7a01ba29959ac8b8c16b07a7d73b)
+      "@tamagui/static-worker": 2.0.0-rc.16(dfba7a01ba29959ac8b8c16b07a7d73b)
       "@tamagui/types": 2.0.0-rc.16
       esm-resolve: 1.0.11
       fs-extra: 11.3.3
@@ -27071,35 +26736,6 @@ snapshots:
       "@tamagui/helpers": 2.0.0-rc.16(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
       "@tamagui/is-equal-shallow": 2.0.0-rc.16(react@19.1.0)
       "@tamagui/native": 2.0.0-rc.16(93fe2f4d485442be47bb37ebd1aa20f6)
-      "@tamagui/normalize-css-color": 2.0.0-rc.16
-      "@tamagui/timer": 2.0.0-rc.16
-      "@tamagui/types": 2.0.0-rc.16
-      "@tamagui/use-did-finish-ssr": 2.0.0-rc.16(react@19.1.0)
-      "@tamagui/use-event": 2.0.0-rc.16(react@19.1.0)
-      "@tamagui/use-force-update": 2.0.0-rc.16(react@19.1.0)
-      react: 19.1.0
-      react-dom: 19.1.0(react@19.1.0)
-      react-native: 0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10)
-    transitivePeerDependencies:
-      - "@react-native-menu/menu"
-      - burnt
-      - react-native-gesture-handler
-      - react-native-ios-context-menu
-      - react-native-ios-utilities
-      - react-native-keyboard-controller
-      - react-native-safe-area-context
-      - react-native-teleport
-      - react-native-worklets-core
-      - sf-symbols-typescript
-      - zeego
-
-  "@tamagui/web@2.0.0-rc.16(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)":
-    dependencies:
-      "@tamagui/compose-refs": 2.0.0-rc.16(react@19.1.0)
-      "@tamagui/constants": 2.0.0-rc.16(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/helpers": 2.0.0-rc.16(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
-      "@tamagui/is-equal-shallow": 2.0.0-rc.16(react@19.1.0)
-      "@tamagui/native": 2.0.0-rc.16(a91814febeec5ed7ed6f61072cfbe4c2)
       "@tamagui/normalize-css-color": 2.0.0-rc.16
       "@tamagui/timer": 2.0.0-rc.16
       "@tamagui/types": 2.0.0-rc.16
@@ -29448,9 +29084,9 @@ snapshots:
       "@typescript-eslint/eslint-plugin": 8.53.0(@typescript-eslint/parser@8.53.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3)
       "@typescript-eslint/parser": 8.53.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3)
       eslint: 9.28.0(jiti@2.6.1)
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.53.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.28.0(jiti@2.6.1))
       eslint-plugin-expo: 1.0.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3)
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.53.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.53.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.53.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.28.0(jiti@2.6.1))
       eslint-plugin-react: 7.37.5(eslint@9.28.0(jiti@2.6.1))
       eslint-plugin-react-hooks: 5.2.0(eslint@9.28.0(jiti@2.6.1))
       globals: 16.5.0
@@ -29465,8 +29101,8 @@ snapshots:
       "@next/eslint-plugin-next": 16.1.6
       eslint: 9.28.0(jiti@2.6.1)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1))
-      eslint-plugin-import: 2.32.0(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.28.0(jiti@2.6.1))
+      eslint-plugin-import: 2.32.0(eslint-import-resolver-typescript@3.10.1)(eslint@9.28.0(jiti@2.6.1))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.28.0(jiti@2.6.1))
       eslint-plugin-react: 7.37.5(eslint@9.28.0(jiti@2.6.1))
       eslint-plugin-react-hooks: 7.0.1(eslint@9.28.0(jiti@2.6.1))
@@ -29492,7 +29128,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.53.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1)):
+  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0)(eslint@9.28.0(jiti@2.6.1)):
     dependencies:
       "@nolyfill/is-core-module": 1.0.39
       debug: 4.4.3
@@ -29503,43 +29139,18 @@ snapshots:
       tinyglobby: 0.2.15
       unrs-resolver: 1.11.1
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.53.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.53.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1))
+      eslint-plugin-import: 2.32.0(eslint-import-resolver-typescript@3.10.1)(eslint@9.28.0(jiti@2.6.1))
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1)):
-    dependencies:
-      "@nolyfill/is-core-module": 1.0.39
-      debug: 4.4.3
-      eslint: 9.28.0(jiti@2.6.1)
-      get-tsconfig: 4.13.0
-      is-bun-module: 2.0.0
-      stable-hash: 0.0.5
-      tinyglobby: 0.2.15
-      unrs-resolver: 1.11.1
-    optionalDependencies:
-      eslint-plugin-import: 2.32.0(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1))
-    transitivePeerDependencies:
-      - supports-color
-
-  eslint-module-utils@2.12.1(@typescript-eslint/parser@8.53.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.53.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1)):
+  eslint-module-utils@2.12.1(@typescript-eslint/parser@8.53.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@9.28.0(jiti@2.6.1)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
       "@typescript-eslint/parser": 8.53.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3)
       eslint: 9.28.0(jiti@2.6.1)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.53.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1))
-    transitivePeerDependencies:
-      - supports-color
-
-  eslint-module-utils@2.12.1(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1)):
-    dependencies:
-      debug: 3.2.7
-    optionalDependencies:
-      eslint: 9.28.0(jiti@2.6.1)
-      eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.28.0(jiti@2.6.1))
     transitivePeerDependencies:
       - supports-color
 
@@ -29552,7 +29163,7 @@ snapshots:
       - supports-color
       - typescript
 
-  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.53.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.53.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1)):
+  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.53.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.28.0(jiti@2.6.1)):
     dependencies:
       "@rtsao/scc": 1.1.0
       array-includes: 3.1.9
@@ -29563,7 +29174,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.28.0(jiti@2.6.1)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.53.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.53.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1))
+      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.53.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@9.28.0(jiti@2.6.1))
       hasown: 2.0.2
       is-core-module: 2.16.1
       is-glob: 4.0.3
@@ -29581,7 +29192,7 @@ snapshots:
       - eslint-import-resolver-webpack
       - supports-color
 
-  eslint-plugin-import@2.32.0(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1)):
+  eslint-plugin-import@2.32.0(eslint-import-resolver-typescript@3.10.1)(eslint@9.28.0(jiti@2.6.1)):
     dependencies:
       "@rtsao/scc": 1.1.0
       array-includes: 3.1.9
@@ -29592,7 +29203,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.28.0(jiti@2.6.1)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.1(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1)))(eslint@9.28.0(jiti@2.6.1))
+      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.53.0(eslint@9.28.0(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@9.28.0(jiti@2.6.1))
       hasown: 2.0.2
       is-core-module: 2.16.1
       is-glob: 4.0.3
