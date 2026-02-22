@@ -267,7 +267,8 @@ export function MessageThreadScreen({
 
       if (!es) return;
       currentSource = es;
-      sseConnectedRef.current = true;
+      // Don't set sseConnectedRef here — wait for the 'connected' event
+      // from the adapter, which confirms the channel is actually subscribed.
 
       es.addEventListener("message", handleMessage);
       es.addEventListener("error", () => {
