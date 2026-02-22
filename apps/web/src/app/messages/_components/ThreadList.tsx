@@ -148,14 +148,14 @@ export function ThreadList({ conversations, activeOrderId, loading }: ThreadList
                         >
                           {conversation.otherUserName}
                         </Text>
-                        <Text size="$2" color="$textTertiary">
+                        <Text size="$2" color="$textSecondary">
                           {formatDistanceToNow(new Date(conversation.lastMessageAt), {
                             addSuffix: false,
                           })}
                         </Text>
                       </Row>
 
-                      <Text size="$3" color="$textTertiary" numberOfLines={1}>
+                      <Text size="$3" color="$textSecondary" numberOfLines={1}>
                         {conversation.productTitle}
                       </Text>
 
