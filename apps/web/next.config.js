@@ -159,6 +159,20 @@ module.exports = () => {
         webpackConfig.plugins = [...webpackConfig.plugins, new PrismaPlugin()];
       }
 
+      // Fix: @tamagui/react-native-web-lite imports `unmountComponentAtNode` from
+      // 'react-dom', which was removed in React 19. We intercept that import and
+      // redirect it to a shim that re-exports all of react-dom + adds the polyfill.
+      // The shim only applies when 'react-dom' is imported from within the
+      // react-native-web-lite package — all other react-dom imports are unaffected.
+      const webpack = require("webpack");
+      webpackConfig.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(/^react-dom$/, (resource) => {
+          if (resource.context && resource.context.includes("react-native-web-lite")) {
+            resource.request = resolve(__dirname, "./src/shims/react-dom-react19-compat.js");
+          }
+        })
+      );
+
       // Alias react-native to the lighter Tamagui-maintained react-native-web-lite for
       // web builds.  This replaces full react-native-web (≈300 kB) with a targeted
       // subset, reducing the client bundle by roughly 40 %.  Components excluded from
