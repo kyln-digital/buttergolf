@@ -691,9 +691,12 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                     overflow="hidden"
                     backgroundColor="$surface"
                   >
-                    <img
+                    <Image
                       src={order.labelPngUrl}
                       alt="Shipping label preview"
+                      width={816}
+                      height={1248}
+                      unoptimized
                       style={{ width: "100%", height: "auto", display: "block" }}
                     />
                   </Column>

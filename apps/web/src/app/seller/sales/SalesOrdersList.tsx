@@ -396,15 +396,23 @@ function OrderCard({ order }: { order: Order }) {
                   width="100%"
                   backgroundColor="$surface"
                 >
-                  <img
+                  <Image
                     src={labelPngUrl}
                     alt="Shipping label preview"
+                    width={816}
+                    height={1248}
+                    unoptimized
                     style={{ width: "100%", height: "auto", display: "block" }}
                   />
                 </Column>
               )}
               {/* PDF download */}
-              <a href={labelUrl} target="_blank" rel="noopener noreferrer" style={{ width: "100%" }}>
+              <a
+                href={labelUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ width: "100%" }}
+              >
                 <Button size="$4" backgroundColor="$success" color="$textInverse" width="100%">
                   <Download size={16} />
                   <Text color="$textInverse" marginLeft="$xs">
@@ -414,7 +422,12 @@ function OrderCard({ order }: { order: Order }) {
               </a>
               {/* ZPL download for thermal printers */}
               {labelZplUrl && (
-                <a href={labelZplUrl} target="_blank" rel="noopener noreferrer" style={{ width: "100%" }}>
+                <a
+                  href={labelZplUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ width: "100%" }}
+                >
                   <Button
                     size="$4"
                     borderWidth={1}
