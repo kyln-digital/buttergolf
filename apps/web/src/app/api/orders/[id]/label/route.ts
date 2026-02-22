@@ -53,6 +53,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({
         message: "Label already generated",
         labelUrl: order.labelUrl,
+        labelPngUrl: order.labelPngUrl,
+        labelZplUrl: order.labelZplUrl,
         trackingCode: order.trackingCode,
         trackingUrl: order.trackingUrl,
       });
@@ -114,6 +116,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         sellerId: true,
         buyerId: true,
         labelUrl: true,
+        labelPngUrl: true,
+        labelZplUrl: true,
         trackingCode: true,
         trackingUrl: true,
         carrier: true,
@@ -137,6 +141,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     return NextResponse.json({
       hasLabel: !!order.labelUrl,
       labelUrl: order.labelUrl,
+      labelPngUrl: order.labelPngUrl,
+      labelZplUrl: order.labelZplUrl,
       trackingCode: order.trackingCode,
       trackingUrl: order.trackingUrl,
       carrier: order.carrier,
