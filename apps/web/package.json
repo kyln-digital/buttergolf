@@ -51,8 +51,6 @@
     "react-native-web": "catalog:",
     "react-phone-number-input": "^3.4.14",
     "resend": "catalog:",
-    "socket.io": "catalog:",
-    "socket.io-client": "catalog:",
     "solito": "catalog:",
     "stripe": "catalog:",
     "svix": "catalog:",

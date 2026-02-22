@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { useMedia } from "tamagui";
 import { Column, Row } from "@buttergolf/ui";
@@ -24,10 +25,34 @@ interface MessagesLayoutProps {
   children: React.ReactNode;
 }
 
-export function MessagesLayout({ conversations, children }: MessagesLayoutProps) {
+export function MessagesLayout({
+  conversations: initialConversations,
+  children,
+}: MessagesLayoutProps) {
   const pathname = usePathname();
   const media = useMedia();
   const isDesktop = media.gtMd;
+
+  const [conversations, setConversations] = useState(initialConversations);
+
+  // Refresh thread list every 30 seconds so unread counts / previews stay current
+  const refreshConversations = useCallback(async () => {
+    try {
+      const res = await fetch("/api/messages?limit=50");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.conversations) {
+        setConversations(data.conversations);
+      }
+    } catch {
+      // Silent — don't surface polling errors
+    }
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(refreshConversations, 30000);
+    return () => clearInterval(interval);
+  }, [refreshConversations]);
 
   // Determine if a thread is currently selected (URL is /messages/[orderId])
   const isThreadSelected = pathname !== "/messages" && pathname.startsWith("/messages/");

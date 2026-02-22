@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
+import { getRedisPublisher } from "@/lib/redis";
 
 /**
  * POST /api/orders/[id]/messages/mark-read
@@ -55,6 +56,24 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       },
       data: { isRead: true },
     });
+
+    // Publish read receipt via Redis so the other party's SSE stream
+    // updates their message bubbles to "read" in real time.
+    if (result.count > 0) {
+      const redis = getRedisPublisher();
+      const channel = `order:${orderId}:messages`;
+      redis
+        .publish(
+          channel,
+          JSON.stringify({
+            type: "messages_read",
+            readerId: user.id,
+          })
+        )
+        .catch((err) => {
+          console.error(`[Redis] Failed to publish read receipt to ${channel}:`, err);
+        });
+    }
 
     return NextResponse.json({
       success: true,

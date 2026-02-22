@@ -52,8 +52,9 @@ export function MessageThread({
     });
   }, []);
 
-  const handleFetchMessages = useCallback(async (oid: string) => {
-    const response = await fetch(`/api/orders/${oid}/messages`);
+  const handleFetchMessages = useCallback(async (oid: string, cursor?: string) => {
+    const qs = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
+    const response = await fetch(`/api/orders/${oid}/messages${qs}`);
     if (!response.ok) throw new Error("Failed to fetch messages");
     return response.json();
   }, []);

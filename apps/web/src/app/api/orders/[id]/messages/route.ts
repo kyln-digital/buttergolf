@@ -9,7 +9,11 @@ import { sendMessageNotification } from "@/lib/push-notifications";
 
 /**
  * GET /api/orders/[id]/messages
- * Get all messages for an order
+ * Get messages for an order (cursor-paginated)
+ *
+ * Query params:
+ *   cursor - Message ID to paginate from (fetch older messages before this)
+ *   limit  - Number of messages to fetch (default 50, max 100)
  */
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -49,7 +53,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Get messages
+    // Parse pagination params
+    const url = new URL(req.url);
+    const cursor = url.searchParams.get("cursor");
+    const limitParam = parseInt(url.searchParams.get("limit") ?? "50", 10);
+    const limit = Math.min(Math.max(limitParam, 1), 100);
+
+    // Fetch one extra to determine if more exist
     const messages = await prisma.message.findMany({
       where: { orderId },
       include: {
@@ -62,8 +72,18 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
           },
         },
       },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
+
+    const hasMore = messages.length > limit;
+    if (hasMore) messages.pop();
+
+    // Reverse to chronological order (oldest first)
+    messages.reverse();
+
+    const nextCursor = hasMore ? (messages[0]?.id ?? null) : null;
 
     // Add role info to messages
     const messagesWithRole = messages.map((msg) => ({
@@ -75,6 +95,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     return NextResponse.json({
       messages: messagesWithRole,
       userRole: user.id === order.buyerId ? "buyer" : "seller",
+      nextCursor,
+      hasMore,
     });
   } catch (error) {
     console.error("Error fetching messages:", error);
@@ -104,7 +126,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
 
     // Rate limiting: 10 messages per minute
-    const rateLimit = checkRateLimit(user.id, {
+    const rateLimit = await checkRateLimit(user.id, {
       maxRequests: RATE_LIMITS.MESSAGES_PER_MINUTE,
       windowMs: 60000,
       keyFn: (userId) => `messages:${userId}`,

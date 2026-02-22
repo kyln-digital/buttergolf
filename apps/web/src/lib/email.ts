@@ -30,6 +30,19 @@ const FROM_EMAIL = "ButterGolf <notifications@notifications.buttergolf.com>";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://buttergolf.co.uk";
 
+/**
+ * Escape HTML special characters to prevent XSS in email templates.
+ * Applied to all user-generated strings before interpolation into HTML.
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 interface EmailResult {
   success: boolean;
   id?: string;
@@ -82,13 +95,16 @@ export async function sendOrderConfirmationEmail(params: {
   amountTotal: number;
   sellerName: string;
 }): Promise<EmailResult> {
-  const { buyerEmail, buyerName, orderId, productTitle, amountTotal, sellerName } = params;
+  const { buyerEmail, orderId, amountTotal } = params;
+  const buyerName = escapeHtml(params.buyerName);
+  const productTitle = escapeHtml(params.productTitle);
+  const sellerName = escapeHtml(params.sellerName);
 
   try {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: buyerEmail,
-      subject: `Order Confirmed: ${productTitle}`,
+      subject: `Order Confirmed: ${params.productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -170,22 +186,16 @@ export async function sendNewSaleEmail(params: {
     zip: string;
   };
 }): Promise<EmailResult> {
-  const {
-    sellerEmail,
-    sellerName,
-    orderId,
-    productTitle,
-    buyerName,
-    amountTotal,
-    sellerPayout,
-    shippingAddress,
-  } = params;
+  const { sellerEmail, orderId, amountTotal, sellerPayout, shippingAddress } = params;
+  const sellerName = escapeHtml(params.sellerName);
+  const productTitle = escapeHtml(params.productTitle);
+  const buyerName = escapeHtml(params.buyerName);
 
   try {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: sellerEmail,
-      subject: `You made a sale! ${productTitle}`,
+      subject: `You made a sale! ${params.productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -221,7 +231,7 @@ export async function sendNewSaleEmail(params: {
                 <p><strong>Order ID:</strong> ${orderId.slice(0, 8).toUpperCase()}</p>
                 <p><strong>Product:</strong> ${productTitle}</p>
                 <p><strong>Buyer:</strong> ${buyerName}</p>
-                <p><strong>Ship To:</strong> ${shippingAddress.city}, ${shippingAddress.zip}</p>
+                <p><strong>Ship To:</strong> ${escapeHtml(shippingAddress.city)}, ${escapeHtml(shippingAddress.zip)}</p>
                 <p><strong>Order Total:</strong> £${amountTotal.toFixed(2)}</p>
               </div>
               
@@ -271,22 +281,17 @@ export async function sendShippedEmail(params: {
   carrier: string;
   estimatedDelivery?: string;
 }): Promise<EmailResult> {
-  const {
-    buyerEmail,
-    buyerName,
-    orderId,
-    productTitle,
-    trackingCode,
-    trackingUrl,
-    carrier,
-    estimatedDelivery,
-  } = params;
+  const { buyerEmail, orderId, trackingUrl, estimatedDelivery } = params;
+  const buyerName = escapeHtml(params.buyerName);
+  const productTitle = escapeHtml(params.productTitle);
+  const trackingCode = escapeHtml(params.trackingCode);
+  const carrier = escapeHtml(params.carrier);
 
   try {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: buyerEmail,
-      subject: `Your order is on its way! ${productTitle}`,
+      subject: `Your order is on its way! ${params.productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -362,14 +367,17 @@ export async function sendNewMessageEmail(params: {
   productTitle: string;
   messagePreview: string;
 }): Promise<EmailResult> {
-  const { recipientEmail, recipientName, senderName, orderId, productTitle, messagePreview } =
-    params;
+  const { recipientEmail, orderId } = params;
+  const recipientName = escapeHtml(params.recipientName);
+  const senderName = escapeHtml(params.senderName);
+  const productTitle = escapeHtml(params.productTitle);
+  const messagePreview = escapeHtml(params.messagePreview);
 
   try {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: recipientEmail,
-      subject: `New message about your order: ${productTitle}`,
+      subject: `New message about your order: ${params.productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -435,11 +443,13 @@ export async function sendDeliveredEmail(params: {
   productTitle: string;
   isBuyer: boolean;
 }): Promise<EmailResult> {
-  const { email, name, orderId, productTitle, isBuyer } = params;
+  const { email, orderId, isBuyer } = params;
+  const name = escapeHtml(params.name);
+  const productTitle = escapeHtml(params.productTitle);
 
   const subject = isBuyer
-    ? `Your order has been delivered! ${productTitle}`
-    : `Your sale has been delivered! ${productTitle}`;
+    ? `Your order has been delivered! ${params.productTitle}`
+    : `Your sale has been delivered! ${params.productTitle}`;
 
   const message = isBuyer
     ? "Your package has been delivered! We hope you love your new golf gear."
@@ -524,13 +534,16 @@ export async function sendLabelGeneratedEmail(params: {
   estimatedDelivery?: string;
   carrier?: string | null;
 }): Promise<EmailResult> {
-  const { buyerEmail, buyerName, orderId, productTitle, estimatedDelivery, carrier } = params;
+  const { buyerEmail, orderId, estimatedDelivery } = params;
+  const buyerName = escapeHtml(params.buyerName);
+  const productTitle = escapeHtml(params.productTitle);
+  const carrier = params.carrier ? escapeHtml(params.carrier) : null;
 
   try {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: buyerEmail,
-      subject: `Shipping label created for: ${productTitle}`,
+      subject: `Shipping label created for: ${params.productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -610,23 +623,19 @@ export async function sendInTransitEmail(params: {
   currentLocation?: string;
   estimatedDelivery?: string;
 }): Promise<EmailResult> {
-  const {
-    buyerEmail,
-    buyerName,
-    orderId,
-    productTitle,
-    trackingCode,
-    trackingUrl,
-    carrier,
-    currentLocation,
-    estimatedDelivery,
-  } = params;
+  const { buyerEmail, orderId, estimatedDelivery } = params;
+  const buyerName = escapeHtml(params.buyerName);
+  const productTitle = escapeHtml(params.productTitle);
+  const trackingCode = params.trackingCode ? escapeHtml(params.trackingCode) : null;
+  const trackingUrl = params.trackingUrl ? escapeHtml(params.trackingUrl) : null;
+  const carrier = params.carrier ? escapeHtml(params.carrier) : null;
+  const currentLocation = params.currentLocation ? escapeHtml(params.currentLocation) : undefined;
 
   try {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: buyerEmail,
-      subject: `Your package is on the move! ${productTitle}`,
+      subject: `Your package is on the move! ${params.productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -720,13 +729,17 @@ export async function sendOutForDeliveryEmail(params: {
   trackingCode: string | null;
   trackingUrl: string | null;
 }): Promise<EmailResult> {
-  const { buyerEmail, buyerName, orderId, productTitle, trackingCode, trackingUrl } = params;
+  const { buyerEmail, orderId } = params;
+  const buyerName = escapeHtml(params.buyerName);
+  const productTitle = escapeHtml(params.productTitle);
+  const trackingCode = params.trackingCode ? escapeHtml(params.trackingCode) : null;
+  const trackingUrl = params.trackingUrl ? escapeHtml(params.trackingUrl) : null;
 
   try {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: buyerEmail,
-      subject: `Your package arrives TODAY! ${productTitle}`,
+      subject: `Your package arrives TODAY! ${params.productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -819,21 +832,15 @@ export async function sendAutoReleaseReminderEmail(params: {
   autoReleaseDate: Date;
   sellerPayout: number;
 }): Promise<EmailResult> {
-  const {
-    buyerEmail,
-    buyerName,
-    orderId,
-    productTitle,
-    daysUntilRelease,
-    autoReleaseDate,
-    sellerPayout,
-  } = params;
+  const { buyerEmail, orderId, daysUntilRelease, autoReleaseDate, sellerPayout } = params;
+  const buyerName = escapeHtml(params.buyerName);
+  const productTitle = escapeHtml(params.productTitle);
 
   try {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: buyerEmail,
-      subject: `⏰ ${daysUntilRelease} days left to confirm receipt: ${productTitle}`,
+      subject: `⏰ ${daysUntilRelease} days left to confirm receipt: ${params.productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -917,7 +924,9 @@ export async function sendPaymentReleasedEmail(params: {
   payoutAmount: number;
   releaseReason: "buyer_confirmed" | "auto_released";
 }): Promise<EmailResult> {
-  const { sellerEmail, sellerName, orderId, productTitle, payoutAmount, releaseReason } = params;
+  const { sellerEmail, orderId, payoutAmount, releaseReason } = params;
+  const sellerName = escapeHtml(params.sellerName);
+  const productTitle = escapeHtml(params.productTitle);
 
   const reasonText =
     releaseReason === "buyer_confirmed"
@@ -928,7 +937,7 @@ export async function sendPaymentReleasedEmail(params: {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: sellerEmail,
-      subject: `Payment released! £${payoutAmount.toFixed(2)} for ${productTitle}`,
+      subject: `Payment released! £${payoutAmount.toFixed(2)} for ${params.productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -1006,13 +1015,15 @@ export async function sendPaymentOnHoldEmail(params: {
   productTitle: string;
   autoReleaseDate: Date;
 }): Promise<EmailResult> {
-  const { buyerEmail, buyerName, orderId, productTitle, autoReleaseDate } = params;
+  const { buyerEmail, orderId, autoReleaseDate } = params;
+  const buyerName = escapeHtml(params.buyerName);
+  const productTitle = escapeHtml(params.productTitle);
 
   try {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: buyerEmail,
-      subject: `Your payment is protected: ${productTitle}`,
+      subject: `Your payment is protected: ${params.productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>

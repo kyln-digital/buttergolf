@@ -1,14 +1,13 @@
 /**
  * Rate Limiting Middleware
  *
- * Provides in-memory rate limiting with sliding window algorithm.
- * Protects API endpoints from abuse and spam.
- *
- * NOTE: In production, consider using Redis/Upstash for distributed rate limiting
- * across multiple server instances.
+ * Uses Redis INCR + EXPIRE for distributed rate limiting across
+ * multiple serverless instances. Falls back to in-memory Map when
+ * Redis is unavailable.
  */
 
 import { NextResponse } from "next/server";
+import { getRedisPublisher } from "@/lib/redis";
 
 /**
  * Rate limit configuration
@@ -36,84 +35,41 @@ export interface RateLimitResult {
   headers: Record<string, string>;
 }
 
-/**
- * Rate limit entry stored in memory
- */
+// ─── In-memory fallback (used when Redis is unavailable) ─────────────
+
 interface RateLimitEntry {
-  /** Number of requests made in current window */
   count: number;
-  /** When the current window expires */
   resetAt: Date;
 }
 
-/**
- * In-memory store for rate limit data
- * Key: user-specific key (e.g., "messages:userId")
- * Value: request count and reset time
- *
- * NOTE: This is cleared on server restart. For production,
- * use Redis/Upstash for persistence.
- */
-const store = new Map<string, RateLimitEntry>();
+const fallbackStore = new Map<string, RateLimitEntry>();
 
-/**
- * Cleanup expired entries periodically
- * Runs every 5 minutes to prevent memory leaks
- */
 setInterval(
   () => {
     const now = Date.now();
-    for (const [key, value] of store.entries()) {
+    for (const [key, value] of fallbackStore.entries()) {
       if (value.resetAt.getTime() < now) {
-        store.delete(key);
+        fallbackStore.delete(key);
       }
     }
   },
   5 * 60 * 1000
 );
 
-/**
- * Check if request should be rate limited
- *
- * Uses sliding window algorithm:
- * - Each user gets a fixed number of requests per time window
- * - Window resets after specified time
- * - Returns headers for client to track their usage
- *
- * @param userId - User ID to check rate limit for
- * @param config - Rate limit configuration
- * @returns Rate limit result with isLimited flag and headers
- *
- * @example
- * const rateLimit = checkRateLimit(user.id, {
- *   maxRequests: 10,
- *   windowMs: 60000, // 1 minute
- *   keyFn: (userId) => `messages:${userId}`
- * });
- *
- * if (rateLimit.isLimited) {
- *   return rateLimitResponse(rateLimit.resetAt);
- * }
- */
-export function checkRateLimit(userId: string, config: RateLimitConfig): RateLimitResult {
+function checkRateLimitInMemory(userId: string, config: RateLimitConfig): RateLimitResult {
   const key = config.keyFn(userId);
   const now = Date.now();
 
-  let entry = store.get(key);
+  let entry = fallbackStore.get(key);
 
-  // Create new entry or reset if window expired
   if (!entry || entry.resetAt.getTime() < now) {
-    entry = {
-      count: 0,
-      resetAt: new Date(now + config.windowMs),
-    };
-    store.set(key, entry);
+    entry = { count: 0, resetAt: new Date(now + config.windowMs) };
+    fallbackStore.set(key, entry);
   }
 
   const isLimited = entry.count >= config.maxRequests;
   const remaining = Math.max(0, config.maxRequests - entry.count);
 
-  // Increment counter if not limited
   if (!isLimited) {
     entry.count++;
   }
@@ -130,18 +86,60 @@ export function checkRateLimit(userId: string, config: RateLimitConfig): RateLim
   };
 }
 
+// ─── Primary: Redis-backed rate limiting ──────────────────────────────
+
+/**
+ * Check if request should be rate limited.
+ *
+ * Uses Redis INCR + EXPIRE for distributed counting across serverless
+ * instances. Falls back to in-memory when Redis is unavailable.
+ */
+export async function checkRateLimit(
+  userId: string,
+  config: RateLimitConfig
+): Promise<RateLimitResult> {
+  const key = `ratelimit:${config.keyFn(userId)}`;
+  const windowSeconds = Math.ceil(config.windowMs / 1000);
+
+  try {
+    const redis = getRedisPublisher();
+
+    // INCR atomically increments and returns the new count.
+    // On first call the key is created with value 1.
+    const count = await redis.incr(key);
+
+    // Set expiry only on first increment (count === 1) to avoid
+    // resetting the window on subsequent requests.
+    if (count === 1) {
+      await redis.expire(key, windowSeconds);
+    }
+
+    // Read the remaining TTL so the reset time is accurate
+    const ttl = await redis.ttl(key);
+    const resetAt = new Date(Date.now() + (ttl > 0 ? ttl * 1000 : config.windowMs));
+
+    const isLimited = count > config.maxRequests;
+    const remaining = Math.max(0, config.maxRequests - count);
+
+    return {
+      isLimited,
+      remaining,
+      resetAt,
+      headers: {
+        "X-RateLimit-Limit": config.maxRequests.toString(),
+        "X-RateLimit-Remaining": remaining.toString(),
+        "X-RateLimit-Reset": resetAt.toISOString(),
+      },
+    };
+  } catch (err) {
+    // Redis unavailable — degrade to in-memory
+    console.warn("[RateLimit] Redis unavailable, using in-memory fallback:", err);
+    return checkRateLimitInMemory(userId, config);
+  }
+}
+
 /**
  * Create HTTP 429 (Too Many Requests) response
- *
- * Includes Retry-After header indicating when to retry
- *
- * @param resetAt - When the rate limit will reset
- * @returns NextResponse with 429 status and appropriate headers
- *
- * @example
- * if (rateLimit.isLimited) {
- *   return rateLimitResponse(rateLimit.resetAt);
- * }
  */
 export function rateLimitResponse(resetAt: Date): NextResponse {
   const retryAfterSeconds = Math.ceil((resetAt.getTime() - Date.now()) / 1000);

@@ -4,7 +4,11 @@ import { getUserIdFromRequest } from "@/lib/auth";
 
 /**
  * GET /api/messages
- * Get all conversations (inbox) for the current user
+ * Get conversations (inbox) for the current user (paginated)
+ *
+ * Query params:
+ *   page  - Page number (default 1)
+ *   limit - Items per page (default 20, max 50)
  *
  * ★ Insight ─────────────────────────────────────
  * - Aggregates all orders where user is buyer or seller
@@ -31,7 +35,14 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Fetch all orders where user is buyer or seller
+    // Parse pagination params
+    const url = new URL(req.url);
+    const page = Math.max(parseInt(url.searchParams.get("page") ?? "1", 10), 1);
+    const limitParam = parseInt(url.searchParams.get("limit") ?? "20", 10);
+    const limit = Math.min(Math.max(limitParam, 1), 50);
+    const skip = (page - 1) * limit;
+
+    // Fetch orders where user is buyer or seller (paginated)
     const orders = await prisma.order.findMany({
       where: {
         OR: [{ buyerId: user.id }, { sellerId: user.id }],
@@ -62,19 +73,34 @@ export async function GET(req: Request) {
             imageUrl: true,
           },
         },
+        // Only fetch the latest message for preview (not ALL messages)
         messages: {
           select: {
-            id: true,
             content: true,
             createdAt: true,
-            isRead: true,
-            senderId: true,
           },
           orderBy: { createdAt: "desc" },
+          take: 1,
+        },
+        // Efficient unread count via DB aggregation
+        _count: {
+          select: {
+            messages: {
+              where: {
+                isRead: false,
+                senderId: { not: user.id },
+              },
+            },
+          },
         },
       },
       orderBy: { updatedAt: "desc" },
+      skip,
+      take: limit + 1,
     });
+
+    const hasMore = orders.length > limit;
+    if (hasMore) orders.pop();
 
     // Transform to conversation format
     interface Conversation {
@@ -95,11 +121,6 @@ export async function GET(req: Request) {
       const otherUser = isBuyer ? order.seller : order.buyer;
       const lastMessage = order.messages[0];
 
-      // Count unread messages (messages not from current user that are unread)
-      const unreadCount = order.messages.filter(
-        (msg) => !msg.isRead && msg.senderId !== user.id
-      ).length;
-
       return {
         orderId: order.id,
         productTitle: order.product.title,
@@ -110,13 +131,13 @@ export async function GET(req: Request) {
         lastMessageAt: lastMessage?.createdAt
           ? lastMessage.createdAt.toISOString()
           : order.updatedAt.toISOString(),
-        unreadCount,
+        unreadCount: order._count.messages,
         userRole: isBuyer ? "buyer" : "seller",
         orderStatus: order.status,
       };
     });
 
-    return NextResponse.json({ conversations });
+    return NextResponse.json({ conversations, hasMore, page });
   } catch (error) {
     console.error("Error fetching messages:", error);
     // Log more details for debugging

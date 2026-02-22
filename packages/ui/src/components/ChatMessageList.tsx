@@ -26,6 +26,7 @@ import { Column, Row } from "./Layout";
 import { Spinner } from "./Spinner";
 import { ScrollView } from "./ScrollView";
 import { ChatBubble } from "./ChatBubble";
+import { Button } from "./Button";
 import { MessageSquare } from "@tamagui/lucide-icons";
 
 interface ChatMessage {
@@ -55,6 +56,10 @@ interface ChatMessageListProps {
    *  unmount/remount when an optimistic temp ID is swapped to the
    *  server-assigned ID). Falls back to `message.id` when omitted. */
   getStableKey?: (message: ChatMessage) => string;
+  /** Called when the user wants to load older messages (cursor pagination) */
+  onLoadMore?: () => void;
+  /** Whether older messages are currently loading */
+  loadingMore?: boolean;
 }
 
 function defaultFormatTimestamp(dateString: string): string {
@@ -132,6 +137,8 @@ export function ChatMessageList({
   emptyMessage,
   formatTimestamp = defaultFormatTimestamp,
   getStableKey,
+  onLoadMore,
+  loadingMore = false,
 }: Readonly<ChatMessageListProps>) {
   const scrollViewRef = useRef<React.ElementRef<typeof ScrollView>>(null);
   const hasScrolledOnce = useRef(false);
@@ -191,6 +198,19 @@ export function ChatMessageList({
       paddingVertical="$md"
     >
       <Column gap="$sm" paddingBottom="$md">
+        {onLoadMore && (
+          <Column alignItems="center" paddingVertical="$sm">
+            {loadingMore ? (
+              <Spinner size="sm" color="$textSecondary" />
+            ) : (
+              <Button chromeless size="$3" onPress={onLoadMore}>
+                <Text size="$3" color="$primary">
+                  Load older messages
+                </Text>
+              </Button>
+            )}
+          </Column>
+        )}
         {dateGroups.map((group) => (
           <Column key={group.date} gap="$sm">
             <DateSeparator label={formatDateSeparator(group.messages[0]?.createdAt ?? "")} />
