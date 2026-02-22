@@ -49,6 +49,7 @@ const SendButton = styled(Button, {
   padding: 0,
   alignItems: "center",
   justifyContent: "center",
+  noTextWrap: true,
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore — animation in styled() base works at runtime; TS types for styled config don't include it

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
+import { broadcastToOrder } from "@/lib/supabase-realtime";
 
 /**
  * POST /api/orders/[id]/messages/mark-read
@@ -55,6 +56,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       },
       data: { isRead: true },
     });
+
+    // Broadcast read receipt via Supabase Realtime so the other party's
+    // UI updates message bubbles to "read" in real time.
+    if (result.count > 0) {
+      broadcastToOrder(orderId, "messages_read", {
+        type: "messages_read",
+        readerId: user.id,
+      }).catch((err) => {
+        console.warn(`[Supabase] Read receipt broadcast failed for order ${orderId}:`, err);
+      });
+    }
 
     return NextResponse.json({
       success: true,

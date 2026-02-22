@@ -84,7 +84,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
 
     // Rate limiting: 5 ratings per hour
-    const rateLimit = checkRateLimit(user.id, {
+    const rateLimit = await checkRateLimit(user.id, {
       maxRequests: RATE_LIMITS.RATINGS_PER_HOUR,
       windowMs: 60 * 60 * 1000,
       keyFn: (userId) => `ratings:${userId}`,

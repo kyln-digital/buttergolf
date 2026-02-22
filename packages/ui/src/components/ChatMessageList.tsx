@@ -26,6 +26,7 @@ import { Column, Row } from "./Layout";
 import { Spinner } from "./Spinner";
 import { ScrollView } from "./ScrollView";
 import { ChatBubble } from "./ChatBubble";
+import { Button } from "./Button";
 import { MessageSquare } from "@tamagui/lucide-icons";
 
 interface ChatMessage {
@@ -55,6 +56,10 @@ interface ChatMessageListProps {
    *  unmount/remount when an optimistic temp ID is swapped to the
    *  server-assigned ID). Falls back to `message.id` when omitted. */
   getStableKey?: (message: ChatMessage) => string;
+  /** Called when the user wants to load older messages (cursor pagination) */
+  onLoadMore?: () => void;
+  /** Whether older messages are currently loading */
+  loadingMore?: boolean;
 }
 
 function defaultFormatTimestamp(dateString: string): string {
@@ -132,21 +137,25 @@ export function ChatMessageList({
   emptyMessage,
   formatTimestamp = defaultFormatTimestamp,
   getStableKey,
+  onLoadMore,
+  loadingMore = false,
 }: Readonly<ChatMessageListProps>) {
   const scrollViewRef = useRef<React.ElementRef<typeof ScrollView>>(null);
   const hasScrolledOnce = useRef(false);
+  const isLoadingOlderRef = useRef(false);
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when messages change (skip when loading older messages)
   useEffect(() => {
-    if (messages.length > 0) {
+    if (messages.length > 0 && !isLoadingOlderRef.current) {
       const behavior = hasScrolledOnce.current ? "smooth" : "auto";
       // Small delay to allow layout to settle
       const timer = setTimeout(() => {
         scrollViewRef.current?.scrollToEnd?.({ animated: behavior === "smooth" });
-      }, 100);
+      }, 350);
       hasScrolledOnce.current = true;
       return () => clearTimeout(timer);
     }
+    isLoadingOlderRef.current = false;
   }, [messages.length]);
 
   const dateGroups = useMemo(() => groupByDate(messages), [messages]);
@@ -191,6 +200,26 @@ export function ChatMessageList({
       paddingVertical="$md"
     >
       <Column gap="$sm" paddingBottom="$md">
+        {onLoadMore && (
+          <Column alignItems="center" paddingVertical="$sm">
+            {loadingMore ? (
+              <Spinner size="sm" color="$textSecondary" />
+            ) : (
+              <Button
+                chromeless
+                size="$3"
+                onPress={() => {
+                  isLoadingOlderRef.current = true;
+                  onLoadMore();
+                }}
+              >
+                <Text size="$3" color="$primary">
+                  Load older messages
+                </Text>
+              </Button>
+            )}
+          </Column>
+        )}
         {dateGroups.map((group) => (
           <Column key={group.date} gap="$sm">
             <DateSeparator label={formatDateSeparator(group.messages[0]?.createdAt ?? "")} />
@@ -219,7 +248,7 @@ export function ChatMessageList({
                   timestamp={formatTimestamp(message.createdAt)}
                   avatarUrl={!isOwn ? otherUserImage : undefined}
                   avatarName={!isOwn ? otherUserName : undefined}
-                  animated={!message.id.startsWith("temp-")}
+                  animated={message.id.startsWith("temp-")}
                   isGrouped={!!sameSenderAsPrev}
                   isLastInGroup={!sameSenderAsNext}
                   isRead={isOwn ? message.isRead : undefined}

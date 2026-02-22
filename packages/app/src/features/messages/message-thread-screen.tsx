@@ -16,6 +16,13 @@ const MESSAGE_LIMITS = {
  *  unmount/remount and re-trigger its entrance animation. */
 type TempIdMap = Map<string, string>;
 
+/** Minimal interface for an EventSource-compatible connection.
+ *  Web uses the native EventSource; mobile can provide react-native-sse. */
+export interface EventSourceLike {
+  addEventListener(type: string, listener: (event: { data: string }) => void): void;
+  close(): void;
+}
+
 interface MessageThreadScreenProps {
   /** Order ID for this conversation */
   orderId: string;
@@ -33,8 +40,12 @@ interface MessageThreadScreenProps {
   productImage?: string | null;
   /** Pre-loaded messages (skips loading state) */
   initialMessages?: ChatMessage[];
-  /** Callback to fetch messages for this order */
-  onFetchMessages?: (orderId: string) => Promise<{
+  /** Callback to fetch messages for this order.
+   *  Accepts an optional cursor for pagination (load older messages). */
+  onFetchMessages?: (
+    orderId: string,
+    cursor?: string
+  ) => Promise<{
     messages: Array<{
       id: string;
       orderId: string;
@@ -48,6 +59,8 @@ interface MessageThreadScreenProps {
       isOwnMessage?: boolean;
     }>;
     userRole?: "buyer" | "seller";
+    nextCursor?: string | null;
+    hasMore?: boolean;
   }>;
   /** Callback to send a message */
   onSendMessage?: (
@@ -67,6 +80,9 @@ interface MessageThreadScreenProps {
   onMarkAsRead?: (orderId: string) => Promise<void>;
   /** Navigate back */
   onBack?: () => void;
+  /** Factory to create a realtime connection. Defaults to native EventSource on web.
+   *  Mobile should pass a factory using react-native-sse with auth headers. */
+  createEventSource?: (url: string) => EventSourceLike;
 }
 
 export function MessageThreadScreen({
@@ -81,6 +97,7 @@ export function MessageThreadScreen({
   onSendMessage,
   onMarkAsRead,
   onBack,
+  createEventSource: createEventSourceProp,
 }: Readonly<MessageThreadScreenProps>) {
   const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
@@ -88,6 +105,11 @@ export function MessageThreadScreen({
   const [loading, setLoading] = useState(!initialMessages);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Cursor pagination state
+  const [hasMore, setHasMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Failed-send state: keep the optimistic message visible, allow retry
   const [failedContent, setFailedContent] = useState<string | null>(null);
@@ -97,8 +119,8 @@ export function MessageThreadScreen({
   // unmount/remount when the optimistic temp ID is replaced with the server ID.
   const stableKeyMapRef = useRef<TempIdMap>(new Map());
 
-  // Ref to avoid re-running the setup effect when initialMessages reference changes
-  const initialMessagesRef = useRef(initialMessages);
+  // Tracks whether Realtime is currently connected (diagnostics only)
+  const realtimeConnectedRef = useRef(false);
 
   const isOverLimit = newMessage.length > MESSAGE_LIMITS.MAX_LENGTH;
 
@@ -108,14 +130,70 @@ export function MessageThreadScreen({
     return stableKeyMapRef.current.get(msg.id) ?? msg.id;
   }, []);
 
-  // Merge incoming messages from polling/SSE — deduplicates by ID
+  // Merge incoming messages from polling/SSE with id-based upsert semantics.
+  // This ensures DB refreshes can repair state after remounts while preserving
+  // optimistic temp rows that have not been confirmed yet.
   const mergeMessages = useCallback((incoming: ChatMessage[]) => {
     setMessages((prev) => {
-      const existingIds = new Set(prev.map((m) => m.id));
-      const newOnes = incoming.filter((m) => !existingIds.has(m.id));
-      return newOnes.length === 0 ? prev : [...prev, ...newOnes];
+      if (incoming.length === 0) return prev;
+
+      const byId = new Map(prev.map((m) => [m.id, m]));
+      let changed = false;
+
+      for (const msg of incoming) {
+        const existing = byId.get(msg.id);
+        if (!existing) {
+          byId.set(msg.id, msg);
+          changed = true;
+          continue;
+        }
+
+        if (
+          existing.content !== msg.content ||
+          existing.isRead !== msg.isRead ||
+          existing.createdAt !== msg.createdAt ||
+          existing.senderId !== msg.senderId
+        ) {
+          byId.set(msg.id, msg);
+          changed = true;
+        }
+      }
+
+      if (!changed) return prev;
+
+      return Array.from(byId.values()).sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
     });
   }, []);
+
+  // Load older messages (cursor pagination)
+  const loadOlderMessages = useCallback(async () => {
+    if (!onFetchMessages || !nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const data = await onFetchMessages(orderId, nextCursor);
+      const older = data.messages.map((msg) => ({
+        id: msg.id,
+        senderId: msg.senderId,
+        content: msg.content,
+        createdAt: msg.createdAt,
+        isRead: msg.isRead,
+      }));
+      // Prepend older messages
+      setMessages((prev) => {
+        const existingIds = new Set(prev.map((m) => m.id));
+        const unique = older.filter((m) => !existingIds.has(m.id));
+        return unique.length === 0 ? prev : [...unique, ...prev];
+      });
+      setHasMore(data.hasMore ?? false);
+      setNextCursor(data.nextCursor ?? null);
+    } catch {
+      // Silent — don't surface pagination errors to the user
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [onFetchMessages, orderId, nextCursor, loadingMore]);
 
   // Fetch initial messages and setup SSE
   useEffect(() => {
@@ -123,10 +201,12 @@ export function MessageThreadScreen({
 
     const fetchAndSetup = async () => {
       try {
-        if (onFetchMessages && !initialMessagesRef.current) {
+        // Always re-sync from DB on mount, even when initialMessages were
+        // server-rendered, because layout remounts can provide stale props.
+        if (onFetchMessages) {
           const data = await onFetchMessages(orderId);
           if (!cancelled) {
-            setMessages(
+            mergeMessages(
               data.messages.map((msg) => ({
                 id: msg.id,
                 senderId: msg.senderId,
@@ -135,6 +215,8 @@ export function MessageThreadScreen({
                 isRead: msg.isRead,
               }))
             );
+            setHasMore(data.hasMore ?? false);
+            setNextCursor(data.nextCursor ?? null);
           }
         }
 
@@ -154,52 +236,96 @@ export function MessageThreadScreen({
 
     fetchAndSetup();
 
-    // Setup SSE stream for real-time messages (web-only).
-    // The stream now runs in heartbeat-only mode when Redis is unavailable,
-    // so it will never fail with a 500 or cause a reconnect loop.
-    let eventSource: EventSource | null = null;
-    if (typeof window !== "undefined" && window.EventSource) {
-      eventSource = new EventSource(`/api/orders/${orderId}/messages/stream`);
+    // Setup realtime stream for messages with auto-reconnect.
+    // Uses createEventSource factory if provided (mobile/Supabase), falls back
+    // to native EventSource (web). Reconnects with exponential backoff on failure.
+    const channelUrl = `/api/orders/${orderId}/messages/stream`;
+    let currentSource: EventSourceLike | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let reconnectDelay = 1000; // Start at 1s, double each attempt, cap at 30s
+    const MAX_RECONNECT_DELAY = 30000;
 
-      eventSource.addEventListener("message", (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === "new_message" && data.message && !cancelled) {
-            // Skip self-echoed messages — our optimistic update already
-            // handles the sender's own messages. Without this guard the
-            // SSE-delivered copy (with the real server ID) creates a
-            // duplicate of the temp-ID optimistic message, and the
-            // subsequent temp→real ID replacement leaves two items with
-            // the same key which confuses React's reconciliation.
-            if (data.message.senderId === currentUserId) return;
+    const handleMessage = (event: { data: string }) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "new_message" && data.message && !cancelled) {
+          // Skip self-echoed messages — our optimistic update already
+          // handles the sender's own messages.
+          if (data.message.senderId === currentUserId) return;
 
-            mergeMessages([
-              {
-                id: data.message.id,
-                senderId: data.message.senderId,
-                content: data.message.content,
-                createdAt: data.message.createdAt,
-                isRead: data.message.isRead,
-              },
-            ]);
+          mergeMessages([
+            {
+              id: data.message.id,
+              senderId: data.message.senderId,
+              content: data.message.content,
+              createdAt: data.message.createdAt,
+              isRead: data.message.isRead,
+            },
+          ]);
+        } else if (data.type === "messages_read" && !cancelled) {
+          // The other party read our messages — update isRead for all
+          // messages we sent that are still marked unread.
+          if (data.readerId !== currentUserId) {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.senderId === currentUserId && !m.isRead ? { ...m, isRead: true } : m
+              )
+            );
           }
-        } catch {
-          // Ignore heartbeat comments and malformed events
         }
+        // Any successful message resets the backoff
+        reconnectDelay = 1000;
+        realtimeConnectedRef.current = true;
+      } catch {
+        // Ignore heartbeat comments and malformed events
+      }
+    };
+
+    const connect = () => {
+      if (cancelled) return;
+      currentSource?.close();
+
+      let es: EventSourceLike | null = null;
+      if (createEventSourceProp) {
+        es = createEventSourceProp(channelUrl);
+      } else if (typeof window !== "undefined" && window.EventSource) {
+        es = new EventSource(channelUrl);
+      }
+
+      if (!es) return;
+      currentSource = es;
+      // Don't set realtimeConnectedRef here — wait for the 'connected' event
+      // from the adapter, which confirms the channel is actually subscribed.
+
+      es.addEventListener("message", handleMessage);
+      es.addEventListener("error", () => {
+        if (cancelled) return;
+        realtimeConnectedRef.current = false;
+        currentSource?.close();
+        currentSource = null;
+        // Schedule reconnect with exponential backoff
+        reconnectDelay = Math.min(reconnectDelay * 2, MAX_RECONNECT_DELAY);
+        reconnectTimer = setTimeout(() => {
+          connect();
+        }, reconnectDelay);
       });
-    }
+    };
+
+    connect();
 
     return () => {
       cancelled = true;
-      eventSource?.close();
+      realtimeConnectedRef.current = false;
+      currentSource?.close();
+      if (reconnectTimer) clearTimeout(reconnectTimer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- initialMessages
     // is intentionally read from a ref so that a new server-side array
-    // reference does not tear down and recreate the SSE connection.
-  }, [orderId, currentUserId, onFetchMessages, onMarkAsRead, mergeMessages]);
+    // reference does not tear down and recreate the realtime connection.
+  }, [orderId, currentUserId, onFetchMessages, onMarkAsRead, mergeMessages, createEventSourceProp]);
 
-  // 10-second polling fallback — delivers messages when SSE/Redis is unavailable.
-  // Also runs alongside SSE when Redis is healthy (deduplication prevents duplicates).
+  // 10-second polling sync — always enabled to guarantee eventual consistency
+  // from database state across remounts/network mode changes.
   useEffect(() => {
     if (!onFetchMessages) return;
 
@@ -260,18 +386,35 @@ export function MessageThreadScreen({
             return prev.filter((m) => m.id !== tempId);
           }
 
+          const tempStillExists = prev.some((m) => m.id === tempId);
+
           // Normal path — swap the temp placeholder with confirmed data.
-          return prev.map((m) =>
-            m.id === tempId
-              ? {
-                  id: message.id,
-                  senderId: message.senderId,
-                  content: message.content,
-                  createdAt: message.createdAt,
-                  isRead: message.isRead,
-                }
-              : m
-          );
+          if (tempStillExists) {
+            return prev.map((m) =>
+              m.id === tempId
+                ? {
+                    id: message.id,
+                    senderId: message.senderId,
+                    content: message.content,
+                    createdAt: message.createdAt,
+                    isRead: message.isRead,
+                  }
+                : m
+            );
+          }
+
+          // Component may have remounted before POST resolved (e.g. layout/media
+          // switch). In that case the temp row is gone — append confirmed message.
+          return [
+            ...prev,
+            {
+              id: message.id,
+              senderId: message.senderId,
+              content: message.content,
+              createdAt: message.createdAt,
+              isRead: message.isRead,
+            },
+          ];
         });
       }
     } catch (err) {
@@ -376,6 +519,8 @@ export function MessageThreadScreen({
         loading={loading}
         emptyMessage={`Start a conversation with ${otherUserName}`}
         getStableKey={getStableKey}
+        onLoadMore={hasMore ? loadOlderMessages : undefined}
+        loadingMore={loadingMore}
       />
 
       {/* Input */}

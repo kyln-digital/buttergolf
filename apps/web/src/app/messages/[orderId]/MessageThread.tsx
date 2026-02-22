@@ -6,6 +6,7 @@ import { useMedia } from "tamagui";
 import { Column } from "@buttergolf/ui";
 import type { ChatMessage } from "@buttergolf/ui";
 import { MessageThreadScreen } from "@buttergolf/app/src/features/messages/message-thread-screen";
+import { createSupabaseEventSource } from "@/lib/supabase-realtime";
 
 interface MessageThreadProps {
   orderId: string;
@@ -52,8 +53,9 @@ export function MessageThread({
     });
   }, []);
 
-  const handleFetchMessages = useCallback(async (oid: string) => {
-    const response = await fetch(`/api/orders/${oid}/messages`);
+  const handleFetchMessages = useCallback(async (oid: string, cursor?: string) => {
+    const qs = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
+    const response = await fetch(`/api/orders/${oid}/messages${qs}`);
     if (!response.ok) throw new Error("Failed to fetch messages");
     return response.json();
   }, []);
@@ -72,6 +74,7 @@ export function MessageThread({
         onSendMessage={handleSendMessage}
         onMarkAsRead={handleMarkAsRead}
         onBack={isMobile ? () => router.push("/messages") : undefined}
+        createEventSource={createSupabaseEventSource}
       />
     </Column>
   );

@@ -323,7 +323,6 @@ export function ButterHeader() {
               Selling
             </Text>
           </Link>
-
           {/* Visual Divider */}
           <Row height={1} backgroundColor="$border" marginVertical="$4" width="100%" />
 

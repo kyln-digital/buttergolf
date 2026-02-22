@@ -35,9 +35,11 @@ export interface Conversation {
 interface MessagesScreenProps {
   /** Whether user is authenticated */
   isAuthenticated?: boolean;
-  /** Callback to fetch all conversations */
-  onFetchConversations?: () => Promise<{
+  /** Callback to fetch conversations. Accepts an optional page number. */
+  onFetchConversations?: (page?: number) => Promise<{
     conversations: Conversation[];
+    hasMore?: boolean;
+    page?: number;
   }>;
   /** Callback when conversation is tapped - passes full conversation data */
   onConversationPress?: (conversation: Conversation) => void;
@@ -69,6 +71,9 @@ export function MessagesScreen({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Fetch conversations on mount
   useEffect(() => {
@@ -85,6 +90,8 @@ export function MessagesScreen({
         const data = await onFetchConversations();
         if (!cancelled) {
           setConversations(data.conversations);
+          setHasMore(data.hasMore ?? false);
+          setCurrentPage(1);
         }
       } catch (err) {
         if (!cancelled) {
@@ -128,6 +135,8 @@ export function MessagesScreen({
     try {
       const data = await onFetchConversations();
       setConversations(data.conversations);
+      setHasMore(data.hasMore ?? false);
+      setCurrentPage(1);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to refresh");
@@ -135,6 +144,23 @@ export function MessagesScreen({
       setRefreshing(false);
     }
   }, [onFetchConversations]);
+
+  const handleLoadMore = useCallback(async () => {
+    if (!onFetchConversations || !hasMore || loadingMore) return;
+
+    setLoadingMore(true);
+    try {
+      const nextPage = currentPage + 1;
+      const data = await onFetchConversations(nextPage);
+      setConversations((prev) => [...prev, ...data.conversations]);
+      setHasMore(data.hasMore ?? false);
+      setCurrentPage(nextPage);
+    } catch {
+      // Silent — pagination errors don't surface
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [onFetchConversations, hasMore, loadingMore, currentPage]);
 
   const totalUnread = conversations.reduce((sum, conv) => sum + conv.unreadCount, 0);
 
@@ -328,6 +354,19 @@ export function MessagesScreen({
                 </Row>
               </Card>
             ))}
+            {hasMore && (
+              <Column alignItems="center" paddingVertical="$md">
+                {loadingMore ? (
+                  <Spinner size="sm" color="$primary" />
+                ) : (
+                  <Button chromeless size="$4" onPress={handleLoadMore}>
+                    <Text size="$4" color="$primary">
+                      Load more
+                    </Text>
+                  </Button>
+                )}
+              </Column>
+            )}
           </Column>
         </ScrollView>
       )}

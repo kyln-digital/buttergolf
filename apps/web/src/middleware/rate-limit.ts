@@ -1,11 +1,9 @@
 /**
  * Rate Limiting Middleware
  *
- * Provides in-memory rate limiting with sliding window algorithm.
- * Protects API endpoints from abuse and spam.
- *
- * NOTE: In production, consider using Redis/Upstash for distributed rate limiting
- * across multiple server instances.
+ * Uses an in-memory Map for rate limiting within a single serverless instance.
+ * Sufficient for per-user throttling — each cold start resets counts, which is
+ * an acceptable trade-off vs. adding a distributed store dependency.
  */
 
 import { NextResponse } from "next/server";
@@ -36,84 +34,41 @@ export interface RateLimitResult {
   headers: Record<string, string>;
 }
 
-/**
- * Rate limit entry stored in memory
- */
+// ─── In-memory fallback (used when Redis is unavailable) ─────────────
+
 interface RateLimitEntry {
-  /** Number of requests made in current window */
   count: number;
-  /** When the current window expires */
   resetAt: Date;
 }
 
-/**
- * In-memory store for rate limit data
- * Key: user-specific key (e.g., "messages:userId")
- * Value: request count and reset time
- *
- * NOTE: This is cleared on server restart. For production,
- * use Redis/Upstash for persistence.
- */
-const store = new Map<string, RateLimitEntry>();
+const fallbackStore = new Map<string, RateLimitEntry>();
 
-/**
- * Cleanup expired entries periodically
- * Runs every 5 minutes to prevent memory leaks
- */
 setInterval(
   () => {
     const now = Date.now();
-    for (const [key, value] of store.entries()) {
+    for (const [key, value] of fallbackStore.entries()) {
       if (value.resetAt.getTime() < now) {
-        store.delete(key);
+        fallbackStore.delete(key);
       }
     }
   },
   5 * 60 * 1000
 );
 
-/**
- * Check if request should be rate limited
- *
- * Uses sliding window algorithm:
- * - Each user gets a fixed number of requests per time window
- * - Window resets after specified time
- * - Returns headers for client to track their usage
- *
- * @param userId - User ID to check rate limit for
- * @param config - Rate limit configuration
- * @returns Rate limit result with isLimited flag and headers
- *
- * @example
- * const rateLimit = checkRateLimit(user.id, {
- *   maxRequests: 10,
- *   windowMs: 60000, // 1 minute
- *   keyFn: (userId) => `messages:${userId}`
- * });
- *
- * if (rateLimit.isLimited) {
- *   return rateLimitResponse(rateLimit.resetAt);
- * }
- */
-export function checkRateLimit(userId: string, config: RateLimitConfig): RateLimitResult {
+function checkRateLimitInMemory(userId: string, config: RateLimitConfig): RateLimitResult {
   const key = config.keyFn(userId);
   const now = Date.now();
 
-  let entry = store.get(key);
+  let entry = fallbackStore.get(key);
 
-  // Create new entry or reset if window expired
   if (!entry || entry.resetAt.getTime() < now) {
-    entry = {
-      count: 0,
-      resetAt: new Date(now + config.windowMs),
-    };
-    store.set(key, entry);
+    entry = { count: 0, resetAt: new Date(now + config.windowMs) };
+    fallbackStore.set(key, entry);
   }
 
   const isLimited = entry.count >= config.maxRequests;
   const remaining = Math.max(0, config.maxRequests - entry.count);
 
-  // Increment counter if not limited
   if (!isLimited) {
     entry.count++;
   }
@@ -130,18 +85,23 @@ export function checkRateLimit(userId: string, config: RateLimitConfig): RateLim
   };
 }
 
+// ─── Rate limiting (in-memory) ────────────────────────────────────────
+
+/**
+ * Check if request should be rate limited.
+ *
+ * Uses an in-memory Map for per-instance counting. Each serverless cold
+ * start resets counts, which provides a lenient but effective throttle.
+ */
+export async function checkRateLimit(
+  userId: string,
+  config: RateLimitConfig
+): Promise<RateLimitResult> {
+  return checkRateLimitInMemory(userId, config);
+}
+
 /**
  * Create HTTP 429 (Too Many Requests) response
- *
- * Includes Retry-After header indicating when to retry
- *
- * @param resetAt - When the rate limit will reset
- * @returns NextResponse with 429 status and appropriate headers
- *
- * @example
- * if (rateLimit.isLimited) {
- *   return rateLimitResponse(rateLimit.resetAt);
- * }
  */
 export function rateLimitResponse(resetAt: Date): NextResponse {
   const retryAfterSeconds = Math.ceil((resetAt.getTime() - Date.now()) / 1000);

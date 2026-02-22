@@ -54,6 +54,7 @@ import {
   OfferDetailScreen,
 } from "./components";
 import { SellerStatusProvider, useSellerStatusContext } from "./context";
+import RNEventSource from "react-native-sse";
 import {
   View as RNView,
   Text as RNText,
@@ -88,7 +89,7 @@ import {
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { PortalProvider } from "@tamagui/portal";
 import { Button, Text } from "@buttergolf/ui";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useFonts } from "expo-font";
 import * as ImagePicker from "expo-image-picker";
 import {
@@ -1508,23 +1509,27 @@ function MessagesScreenWrapper({
 
   // Memoize fetchConversations to prevent re-renders from triggering useEffect loops
   // and to avoid race conditions with screen transitions. Uses deferredFetch for TurboModule safety.
-  const fetchConversations = useCallback(async () => {
-    console.log("[MessagesScreenWrapper] Fetching conversations");
+  const fetchConversations = useCallback(
+    async (page?: number) => {
+      console.log("[MessagesScreenWrapper] Fetching conversations", { page });
 
-    const response = await deferredFetch(`${apiUrl}/api/messages`, { getToken });
+      const qs = page && page > 1 ? `?page=${page}` : "";
+      const response = await deferredFetch(`${apiUrl}/api/messages${qs}`, { getToken });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("[MessagesScreenWrapper] API error:", {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorText,
-      });
-      throw new Error(`Failed to fetch conversations: ${response.status} - ${errorText}`);
-    }
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[MessagesScreenWrapper] API error:", {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText,
+        });
+        throw new Error(`Failed to fetch conversations: ${response.status} - ${errorText}`);
+      }
 
-    return response.json();
-  }, [getToken, apiUrl]);
+      return response.json();
+    },
+    [getToken, apiUrl]
+  );
 
   return (
     <MessagesScreen
@@ -1574,10 +1579,13 @@ function MessageThreadScreenWrapper({
   // Memoize all fetch functions to prevent re-render issues during navigation
   // Uses deferredFetch for TurboModule safety
   const fetchMessages = useCallback(
-    async (id: string) => {
-      console.log("[MessageThreadScreenWrapper] Fetching messages:", { id });
+    async (id: string, cursor?: string) => {
+      console.log("[MessageThreadScreenWrapper] Fetching messages:", { id, cursor });
 
-      const response = await deferredFetch(`${apiUrl}/api/orders/${id}/messages`, { getToken });
+      const qs = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
+      const response = await deferredFetch(`${apiUrl}/api/orders/${id}/messages${qs}`, {
+        getToken,
+      });
 
       if (!response.ok) {
         throw new Error("Failed to fetch messages");
@@ -1610,6 +1618,28 @@ function MessageThreadScreenWrapper({
     [getToken, apiUrl]
   );
 
+  // Pre-fetch auth token so the SSE factory can use it synchronously.
+  // When authToken transitions from null→string the createEventSource prop
+  // changes, causing the shared screen's SSE effect to (re-)connect.
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  useEffect(() => {
+    getToken().then((t) => setAuthToken(t));
+  }, [getToken]);
+
+  // Factory that creates an SSE connection with auth headers for mobile.
+  // Only defined once we have a valid token; undefined means "no SSE yet"
+  // and the shared screen falls back to polling until the token arrives.
+  const createEventSource = useMemo(() => {
+    if (!authToken) return undefined;
+    return (url: string) => {
+      const fullUrl = url.startsWith("http") ? url : `${apiUrl}${url}`;
+      const es = new RNEventSource(fullUrl, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      return es as unknown as import("@buttergolf/app").EventSourceLike;
+    };
+  }, [apiUrl, authToken]);
+
   return (
     <MessageThreadScreen
       orderId={orderId}
@@ -1622,6 +1652,7 @@ function MessageThreadScreenWrapper({
       onSendMessage={sendMessage}
       onMarkAsRead={markAsRead}
       onBack={() => navigation.goBack()}
+      createEventSource={createEventSource}
     />
   );
 }
