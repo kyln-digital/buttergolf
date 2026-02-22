@@ -104,7 +104,7 @@ export async function sendOrderConfirmationEmail(params: {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: buyerEmail,
-      subject: `Order Confirmed: ${params.productTitle}`,
+      subject: `Order Confirmed: ${productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -195,7 +195,7 @@ export async function sendNewSaleEmail(params: {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: sellerEmail,
-      subject: `You made a sale! ${params.productTitle}`,
+      subject: `You made a sale! ${productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -291,7 +291,7 @@ export async function sendShippedEmail(params: {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: buyerEmail,
-      subject: `Your order is on its way! ${params.productTitle}`,
+      subject: `Your order is on its way! ${productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -377,7 +377,7 @@ export async function sendNewMessageEmail(params: {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: recipientEmail,
-      subject: `New message about your order: ${params.productTitle}`,
+      subject: `New message about your order: ${productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -543,7 +543,7 @@ export async function sendLabelGeneratedEmail(params: {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: buyerEmail,
-      subject: `Shipping label created for: ${params.productTitle}`,
+      subject: `Shipping label created for: ${productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -635,7 +635,7 @@ export async function sendInTransitEmail(params: {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: buyerEmail,
-      subject: `Your package is on the move! ${params.productTitle}`,
+      subject: `Your package is on the move! ${productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -739,7 +739,7 @@ export async function sendOutForDeliveryEmail(params: {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: buyerEmail,
-      subject: `Your package arrives TODAY! ${params.productTitle}`,
+      subject: `Your package arrives TODAY! ${productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -840,7 +840,7 @@ export async function sendAutoReleaseReminderEmail(params: {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: buyerEmail,
-      subject: `⏰ ${daysUntilRelease} days left to confirm receipt: ${params.productTitle}`,
+      subject: `⏰ ${daysUntilRelease} days left to confirm receipt: ${productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -937,7 +937,7 @@ export async function sendPaymentReleasedEmail(params: {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: sellerEmail,
-      subject: `Payment released! £${payoutAmount.toFixed(2)} for ${params.productTitle}`,
+      subject: `Payment released! £${payoutAmount.toFixed(2)} for ${productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -1023,7 +1023,7 @@ export async function sendPaymentOnHoldEmail(params: {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to: buyerEmail,
-      subject: `Your payment is protected: ${params.productTitle}`,
+      subject: `Your payment is protected: ${productTitle}`,
       html: `
         <!DOCTYPE html>
         <html>

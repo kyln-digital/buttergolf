@@ -142,10 +142,11 @@ export function ChatMessageList({
 }: Readonly<ChatMessageListProps>) {
   const scrollViewRef = useRef<React.ElementRef<typeof ScrollView>>(null);
   const hasScrolledOnce = useRef(false);
+  const isLoadingOlderRef = useRef(false);
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when messages change (skip when loading older messages)
   useEffect(() => {
-    if (messages.length > 0) {
+    if (messages.length > 0 && !isLoadingOlderRef.current) {
       const behavior = hasScrolledOnce.current ? "smooth" : "auto";
       // Small delay to allow layout to settle
       const timer = setTimeout(() => {
@@ -154,6 +155,7 @@ export function ChatMessageList({
       hasScrolledOnce.current = true;
       return () => clearTimeout(timer);
     }
+    isLoadingOlderRef.current = false;
   }, [messages.length]);
 
   const dateGroups = useMemo(() => groupByDate(messages), [messages]);
@@ -203,7 +205,14 @@ export function ChatMessageList({
             {loadingMore ? (
               <Spinner size="sm" color="$textSecondary" />
             ) : (
-              <Button chromeless size="$3" onPress={onLoadMore}>
+              <Button
+                chromeless
+                size="$3"
+                onPress={() => {
+                  isLoadingOlderRef.current = true;
+                  onLoadMore();
+                }}
+              >
                 <Text size="$3" color="$primary">
                   Load older messages
                 </Text>

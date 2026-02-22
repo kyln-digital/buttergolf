@@ -80,10 +80,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const hasMore = messages.length > limit;
     if (hasMore) messages.pop();
 
+    // Determine next cursor from the oldest message in this batch (before reversing)
+    const nextCursor = hasMore ? (messages[messages.length - 1]?.id ?? null) : null;
+
     // Reverse to chronological order (oldest first)
     messages.reverse();
-
-    const nextCursor = hasMore ? (messages[0]?.id ?? null) : null;
 
     // Add role info to messages
     const messagesWithRole = messages.map((msg) => ({

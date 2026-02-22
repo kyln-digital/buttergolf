@@ -132,8 +132,12 @@ export async function checkRateLimit(
       },
     };
   } catch (err) {
-    // Redis unavailable — degrade to in-memory
-    console.warn("[RateLimit] Redis unavailable, using in-memory fallback:", err);
+    // Redis error — degrade to in-memory. Distinguish configuration vs availability.
+    if (!process.env.REDIS_URL) {
+      console.info("[RateLimit] Redis not configured, using in-memory fallback.");
+    } else {
+      console.warn("[RateLimit] Redis unavailable, using in-memory fallback:", err);
+    }
     return checkRateLimitInMemory(userId, config);
   }
 }

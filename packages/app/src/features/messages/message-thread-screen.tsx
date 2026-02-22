@@ -276,9 +276,9 @@ export function MessageThreadScreen({
         currentSource?.close();
         currentSource = null;
         // Schedule reconnect with exponential backoff
+        reconnectDelay = Math.min(reconnectDelay * 2, MAX_RECONNECT_DELAY);
         reconnectTimer = setTimeout(() => {
           connect();
-          reconnectDelay = Math.min(reconnectDelay * 2, MAX_RECONNECT_DELAY);
         }, reconnectDelay);
       });
     };

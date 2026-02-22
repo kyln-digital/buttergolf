@@ -35,6 +35,11 @@ export function MessagesLayout({
 
   const [conversations, setConversations] = useState(initialConversations);
 
+  // Keep local conversations state in sync when the parent prop changes
+  useEffect(() => {
+    setConversations(initialConversations);
+  }, [initialConversations]);
+
   // Refresh thread list every 30 seconds so unread counts / previews stay current
   const refreshConversations = useCallback(async () => {
     try {

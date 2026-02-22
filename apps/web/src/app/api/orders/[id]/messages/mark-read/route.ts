@@ -60,19 +60,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     // Publish read receipt via Redis so the other party's SSE stream
     // updates their message bubbles to "read" in real time.
     if (result.count > 0) {
-      const redis = getRedisPublisher();
-      const channel = `order:${orderId}:messages`;
-      redis
-        .publish(
+      try {
+        const redis = getRedisPublisher();
+        const channel = `order:${orderId}:messages`;
+        await redis.publish(
           channel,
           JSON.stringify({
             type: "messages_read",
             readerId: user.id,
           })
-        )
-        .catch((err) => {
-          console.error(`[Redis] Failed to publish read receipt to ${channel}:`, err);
-        });
+        );
+      } catch (err) {
+        // Redis unavailable — read receipts won't propagate via SSE but
+        // the database update succeeded. Log and continue.
+        console.warn(`[Redis] Read receipt publish failed for order ${orderId}:`, err);
+      }
     }
 
     return NextResponse.json({
