@@ -12,7 +12,9 @@ if (process.env.NODE_ENV === "production") {
   require("../../public/tamagui.css");
 }
 import { ButterHeader } from "./_components/header/ButterHeader";
-import { AppPromoBanner } from "./_components/AppPromoBanner";
+// TODO: Uncomment when App Store / Play Store IDs are available and the app is publicly published.
+// The AppPromoBanner renders broken on iOS unless a valid apple-itunes-app meta app-id is set.
+// import { AppPromoBanner } from "./_components/AppPromoBanner";
 import { ConditionalLayout } from "./_components/ConditionalLayout";
 import { MobileInterstitial } from "./_components/MobileInterstitial";
 import { CartProvider } from "../context/CartContext";
@@ -69,10 +71,10 @@ export const metadata: Metadata = {
     description: "Buy and sell golf equipment with fellow golfers",
   },
   other: {
-    // TODO: Replace with actual App Store ID when app is publicly available on the App Store
-    // Note: Smart App Banners only work for public App Store apps, NOT TestFlight
-    // The banner will appear broken in iOS Safari until this is set to a valid app-id
-    "apple-itunes-app": "app-id=YOUR_APP_ID",
+    // TODO: Re-enable apple-itunes-app meta tag once the app has a real App Store ID.
+    // Smart App Banners only work for publicly listed App Store apps — NOT TestFlight.
+    // Setting a placeholder app-id causes a broken/invisible banner in iOS Safari.
+    // "apple-itunes-app": "app-id=YOUR_APP_STORE_ID",
     "mobile-web-app-capable": "yes",
   },
 };
@@ -98,7 +100,7 @@ export default function RootLayout({
               >
                 <ButterHeader />
               </ErrorBoundary>
-              <AppPromoBanner />
+              {/* TODO: Restore <AppPromoBanner /> once App Store / Play Store IDs are confirmed and app is publicly published. */}
             </ConditionalLayout>
             {/* Main content wrapper */}
             <main className="bg-white">{children}</main>
