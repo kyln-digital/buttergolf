@@ -216,8 +216,10 @@ module.exports = withSentryConfig(module.exports, {
   // For all available options, see:
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-  // Upload a larger set of source maps for prettier stack traces (increases build time)
-  widenClientFileUpload: true,
+  // Disabled: Next.js does not emit client-side .map files in production by default,
+  // so widening the upload only produces "could not determine a source map reference"
+  // warnings for every chunk without suppressing any real errors.
+  widenClientFileUpload: false,
 
   // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
   // This can increase your server load as well as your hosting bill.
