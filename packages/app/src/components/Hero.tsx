@@ -446,7 +446,13 @@ function HeroImage({ source }: HeroImageProps) {
           }}
         />
       ) : (
-        <Image src={source} width="100%" height="100%" objectFit="contain" marginBottom={0} />
+        <Image
+          src={typeof source === "object" && "uri" in source ? source.uri : undefined}
+          width="100%"
+          height="100%"
+          objectFit="contain"
+          marginBottom={0}
+        />
       )}
     </Column>
   );
