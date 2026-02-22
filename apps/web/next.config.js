@@ -122,7 +122,6 @@ module.exports = () => {
       "@tamagui/animations-react-native",
       "@tamagui/animations-css",
       "@tamagui/card",
-      "@tamagui/toast",
       "@tamagui/next-theme",
       "@tamagui/sheet",
       "@tamagui/portal",

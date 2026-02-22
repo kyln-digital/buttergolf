@@ -40,7 +40,6 @@ function TamaguiProviderInner({ children }: { children: ReactNode }) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       config={config as any}
       defaultTheme={theme ?? "light"}
-      disableRootThemeClass // NextThemeProvider handles the class
     >
       {children}
     </TamaguiProvider>

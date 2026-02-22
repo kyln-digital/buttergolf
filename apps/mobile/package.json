@@ -26,8 +26,6 @@
     "@tamagui/native": "catalog:",
     "@tamagui/portal": "catalog:",
     "@tamagui/sheet": "catalog:",
-    "@tamagui/toast": "catalog:",
-    "burnt": "^0.13.0",
     "expo": "catalog:",
     "expo-auth-session": "catalog:",
     "expo-font": "catalog:",

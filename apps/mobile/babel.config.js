@@ -1,28 +1,28 @@
 module.exports = function (api) {
-  api.cache(true)
+  api.cache(true);
   return {
-    presets: ['babel-preset-expo'],
+    presets: ["babel-preset-expo"],
     plugins: [
       [
-        'module-resolver',
+        "module-resolver",
         {
-          root: ['./'],
+          root: ["./"],
           alias: {
-            '@buttergolf/ui': '../../packages/ui/src',
+            "@buttergolf/ui": "../../packages/ui/src",
           },
         },
       ],
       // Tamagui babel plugin for native optimizations
       [
-        '@tamagui/babel-plugin',
+        "tamagui/babel",
         {
-          components: ['tamagui', '@buttergolf/ui'],
+          components: ["tamagui", "@buttergolf/ui"],
           // Use the shared Tamagui config used by both Web (Next plugin) and Mobile
-          config: '../../packages/config/src/tamagui.config.ts',
+          config: "../../packages/config/src/tamagui.config.ts",
           logTimings: true,
-          disableExtraction: process.env.NODE_ENV === 'development',
+          disableExtraction: process.env.NODE_ENV === "development",
         },
       ],
     ],
-  }
-}
+  };
+};

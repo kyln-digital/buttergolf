@@ -806,6 +806,7 @@ export const config = createTamagui({
   settings: {
     ...defaultConfig.settings,
     onlyAllowShorthands: false,
+    disableRootThemeClass: true,
     // Stable SSR defaults derived from canonical media keys for a mobile-first viewport.
     mediaQueryDefaultActive,
   },
