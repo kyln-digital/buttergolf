@@ -102,8 +102,12 @@ export default async function MessagesLayoutPage({ children }: { children: React
       style={{
         display: "flex",
         flexDirection: "column",
-        height: "calc(100dvh - 120px)",
-        overflow: "hidden",
+        height: "calc(100dvh - 168px)",
+        maxWidth: 1200,
+        margin: "0 auto",
+        padding: "24px 16px",
+        width: "100%",
+        boxSizing: "border-box" as const,
       }}
     >
       <MessagesLayout conversations={conversations}>{children}</MessagesLayout>

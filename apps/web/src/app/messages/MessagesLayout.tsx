@@ -32,18 +32,37 @@ export function MessagesLayout({ conversations, children }: MessagesLayoutProps)
   // Determine if a thread is currently selected (URL is /messages/[orderId])
   const isThreadSelected = pathname !== "/messages" && pathname.startsWith("/messages/");
 
+  const containerStyle = {
+    overflow: "hidden" as const,
+    boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+  };
+
   // On mobile, show either the thread list or the conversation, not both
   if (!isDesktop) {
     if (isThreadSelected) {
       return (
-        <Column width="100%" height="100%">
+        <Column
+          width="100%"
+          height="100%"
+          borderRadius="$lg"
+          borderWidth={1}
+          borderColor="$border"
+          style={containerStyle}
+        >
           {children}
         </Column>
       );
     }
 
     return (
-      <Column width="100%" height="100%">
+      <Column
+        width="100%"
+        height="100%"
+        borderRadius="$lg"
+        borderWidth={1}
+        borderColor="$border"
+        style={containerStyle}
+      >
         <ThreadList conversations={conversations} activeOrderId={null} />
       </Column>
     );
@@ -51,7 +70,14 @@ export function MessagesLayout({ conversations, children }: MessagesLayoutProps)
 
   // Desktop: split-pane layout
   return (
-    <Row width="100%" height="100%">
+    <Row
+      width="100%"
+      height="100%"
+      borderRadius="$lg"
+      borderWidth={1}
+      borderColor="$border"
+      style={containerStyle}
+    >
       {/* Left pane — Thread list */}
       <Column
         width={360}
