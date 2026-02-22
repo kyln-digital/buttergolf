@@ -22,7 +22,7 @@ pnpm lint
 pnpm format
 
 # Type check
-pnpm check-types
+pnpm typecheck
 ```
 
 ### Tamagui and Design System
@@ -80,7 +80,7 @@ Before submitting a PR:
 
 ```bash
 # Run type checking
-pnpm check-types
+pnpm typecheck
 
 # Run linting
 pnpm lint
@@ -111,7 +111,7 @@ buttergolf/
 1. **Create a feature branch** from `main`
 2. **Make your changes** following the guidelines above
 3. **Test thoroughly** on both web and mobile (if UI changes)
-4. **Run checks**: `pnpm check-types && pnpm lint`
+4. **Run checks**: `pnpm typecheck && pnpm lint`
 5. **Write clear commit messages** describing your changes
 6. **Submit a PR** with a clear description of what and why
 
@@ -119,7 +119,7 @@ buttergolf/
 
 - [ ] Code follows style guidelines
 - [ ] No hardcoded colors or spacing (uses Tamagui tokens)
-- [ ] Type checking passes (`pnpm check-types`)
+- [ ] Type checking passes (`pnpm typecheck`)
 - [ ] Linting passes (`pnpm lint`)
 - [ ] Tested on web (if applicable)
 - [ ] Tested on mobile (if applicable)
@@ -147,7 +147,7 @@ buttergolf/
 1. Edit `packages/config/src/tamagui.config.ts`
 2. Add new color tokens to the `butterGolfColors` object
 3. Document new tokens in [TAMAGUI_BEST_PRACTICES.md](./docs/TAMAGUI_BEST_PRACTICES.md)
-4. Run `pnpm check-types` to ensure no errors
+4. Run `pnpm typecheck` to ensure no errors
 
 ## Questions?
 

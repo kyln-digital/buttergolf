@@ -136,7 +136,7 @@ pnpm build:web     # Build web app only
 pnpm build:mobile  # Build mobile app only
 
 # Type checking
-pnpm check-types   # Run TypeScript compiler across workspace
+pnpm typecheck   # Run TypeScript compiler across workspace
 
 # Cleaning
 pnpm clean-install # Remove node_modules and reinstall dependencies
@@ -1391,7 +1391,7 @@ Each app extends this base configuration.
 
 ### Type Checking
 
-- Run `pnpm check-types` before committing
+- Run `pnpm typecheck` before committing
 - Strict mode is enabled across the workspace
 - No implicit any, unused locals, or unused parameters allowed
 
@@ -1480,7 +1480,7 @@ Located at `/turbo.json`:
 1. Create cross-platform UI components in `packages/ui`
 2. Use components in both `apps/web` and `apps/mobile`
 3. Test on both platforms before committing
-4. Run type checking: `pnpm check-types`
+4. Run type checking: `pnpm typecheck`
 
 ### Adding Dependencies
 
