@@ -127,6 +127,7 @@ module.exports = () => {
       "@tamagui/portal",
       "@tamagui/polyfill-dev",
       "@tamagui/form",
+      "react-native-safe-area-context",
     ],
     experimental: {
       scrollRestoration: true,
