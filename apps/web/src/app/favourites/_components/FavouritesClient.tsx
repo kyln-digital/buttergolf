@@ -5,9 +5,10 @@ import { Column, Row, Text, Heading, Button, View, Card } from "@buttergolf/ui";
 import type { ProductCardData } from "@buttergolf/app";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Heart, Check, ChevronDown } from "@tamagui/lucide-icons";
-import { Select, Adapt, Sheet, useTheme } from "tamagui";
+import { Heart } from "@tamagui/lucide-icons";
 import { ProductCard } from "@/components/ProductCard";
+import { DotPagination } from "@/components/DotPagination";
+import { SortDropdown } from "@/app/listings/_components/SortDropdown";
 import { useFavouritesContext } from "@/providers/FavouritesProvider";
 import { FooterSection } from "../../_components/marketplace/FooterSection";
 
@@ -25,9 +26,7 @@ interface FavouritesResponse {
   };
 }
 
-type SortOption = "recent" | "price-asc" | "price-desc" | "name-az";
-
-const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+const FAVOURITES_SORT_OPTIONS = [
   { value: "recent", label: "Recently Added" },
   { value: "price-asc", label: "Price: Low to High" },
   { value: "price-desc", label: "Price: High to Low" },
@@ -52,127 +51,6 @@ function LoadingSkeleton() {
   );
 }
 
-function FavouritesSortDropdown({
-  value,
-  onChange,
-}: Readonly<{ value: SortOption; onChange: (v: SortOption) => void }>) {
-  const selectedLabel = useMemo(
-    () => SORT_OPTIONS.find((o) => o.value === value)?.label ?? "Sort by",
-    [value]
-  );
-
-  return (
-    <Select
-      value={value}
-      onValueChange={(v: string) => onChange(v as SortOption)}
-      disablePreventBodyScroll
-    >
-      <Select.Trigger
-        minWidth={200}
-        height={40}
-        paddingHorizontal="$3"
-        borderRadius={10}
-        borderWidth={1}
-        borderColor="$border"
-        backgroundColor="$surface"
-        hoverStyle={{ borderColor: "$borderHover" }}
-        focusStyle={{ borderColor: "$primary", outlineWidth: 0 }}
-        iconAfter={ChevronDown}
-      >
-        <Select.Value placeholder="Sort by">{selectedLabel}</Select.Value>
-      </Select.Trigger>
-
-      <Adapt when="sm" platform="touch">
-        <Sheet
-          modal
-          dismissOnSnapToBottom
-          animationConfig={{ type: "spring", damping: 20, mass: 1.2, stiffness: 250 }}
-        >
-          <Sheet.Frame>
-            <Sheet.ScrollView>
-              <Adapt.Contents />
-            </Sheet.ScrollView>
-          </Sheet.Frame>
-          <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
-        </Sheet>
-      </Adapt>
-
-      <Select.Content zIndex={200000}>
-        <Select.Viewport minWidth={200}>
-          <Select.Group>
-            {SORT_OPTIONS.map((option, index) => (
-              <Select.Item
-                key={option.value}
-                index={index}
-                value={option.value}
-                cursor="pointer"
-                hoverStyle={{ backgroundColor: "$backgroundHover" }}
-              >
-                <Select.ItemText>{option.label}</Select.ItemText>
-                <Select.ItemIndicator marginLeft="auto">
-                  <Check size={16} />
-                </Select.ItemIndicator>
-              </Select.Item>
-            ))}
-          </Select.Group>
-        </Select.Viewport>
-      </Select.Content>
-    </Select>
-  );
-}
-
-function DotPagination({
-  currentPage,
-  totalPages,
-  onPageChange,
-  disabled = false,
-}: Readonly<{
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-  disabled?: boolean;
-}>) {
-  const theme = useTheme();
-  const primaryColor = theme.primary.val;
-
-  const visiblePages = useMemo(() => {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-    const start = Math.max(1, currentPage - 2);
-    const end = Math.min(totalPages, currentPage + 2);
-    const pages: number[] = [];
-    for (let i = start; i <= end; i++) pages.push(i);
-    return pages;
-  }, [totalPages, currentPage]);
-
-  return (
-    <Row alignItems="center" justifyContent="center" gap="$sm" paddingVertical="$xl">
-      {visiblePages.map((pg) => {
-        const isActive = pg === currentPage;
-        return (
-          <button
-            key={pg}
-            onClick={() => !disabled && onPageChange(pg)}
-            disabled={disabled}
-            aria-label={`Go to page ${pg}`}
-            aria-current={isActive ? "page" : undefined}
-            style={{
-              width: isActive ? 48 : 10,
-              height: 10,
-              borderRadius: 5,
-              border: "none",
-              backgroundColor: primaryColor,
-              opacity: isActive ? 1 : disabled ? 0.3 : 0.5,
-              cursor: disabled ? "wait" : "pointer",
-              transition: "all 0.3s ease",
-              padding: 0,
-            }}
-          />
-        );
-      })}
-    </Row>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
@@ -180,7 +58,7 @@ function DotPagination({
 export function FavouritesClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { removeFromFavourites, isFavourited: isGloballyFavourited } = useFavouritesContext();
+  const { addToFavourites, isFavourited: isGloballyFavourited } = useFavouritesContext();
 
   const [products, setProducts] = useState<FavouritesResponse["products"]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -188,9 +66,7 @@ export function FavouritesClient() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [sort, setSort] = useState<SortOption>(
-    (searchParams.get("sort") as SortOption) || "recent"
-  );
+  const [sort, setSort] = useState(searchParams.get("sort") || "recent");
 
   // Track items being removed (for fade-out animation)
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
@@ -247,14 +123,21 @@ export function FavouritesClient() {
   useEffect(() => {
     if (loading || products.length === 0) return;
 
-    const unfavouritedIds = products.filter(
+    const unfavouritedProducts = products.filter(
       (p) => !isGloballyFavourited(p.id) && !removingIds.has(p.id)
     );
 
-    for (const product of unfavouritedIds) {
-      // Trigger animated removal (same flow as handleRemove but without API call —
-      // useFavouriteToggle already made the DELETE request).
+    for (const product of unfavouritedProducts) {
+      // Trigger animated removal (useFavouriteToggle already made the DELETE request).
       setRemovingIds((prev) => new Set(prev).add(product.id));
+
+      // Show undo toast for the most recently removed item
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+      setUndoProduct(product);
+      undoTimerRef.current = setTimeout(() => {
+        setUndoProduct(null);
+      }, 4000);
+
       setTimeout(() => {
         setProducts((prev) => prev.filter((p) => p.id !== product.id));
         setTotalCount((c) => Math.max(0, c - 1));
@@ -288,7 +171,7 @@ export function FavouritesClient() {
 
   // Update URL when sort changes
   const handleSortChange = useCallback(
-    (newSort: SortOption) => {
+    (newSort: string) => {
       setSort(newSort);
       const params = new URLSearchParams(searchParams.toString());
       if (newSort === "recent") {
@@ -312,6 +195,9 @@ export function FavouritesClient() {
     setTotalCount((c) => c + 1);
     setUndoProduct(null);
 
+    // Re-add in global favourites context
+    addToFavourites(undoProduct.id);
+
     // Re-add via API
     try {
       await fetch("/api/favourites", {
@@ -322,7 +208,7 @@ export function FavouritesClient() {
     } catch (err) {
       console.error("Error restoring favourite:", err);
     }
-  }, [undoProduct]);
+  }, [undoProduct, addToFavourites]);
 
   return (
     <>
@@ -449,7 +335,11 @@ export function FavouritesClient() {
               <Text size="$6" fontWeight="600" color="$text">
                 {totalCount === 1 ? "1 Favourite" : `${totalCount} Favourites`}
               </Text>
-              <FavouritesSortDropdown value={sort} onChange={handleSortChange} />
+              <SortDropdown
+                value={sort}
+                onChange={handleSortChange}
+                options={FAVOURITES_SORT_OPTIONS}
+              />
             </Row>
 
             {/* Responsive Product Grid — 2 → 3 → 4 columns */}
@@ -488,15 +378,13 @@ export function FavouritesClient() {
 
       {/* Undo Toast */}
       {undoProduct && (
-        <div
-          style={{
-            position: "fixed",
-            bottom: 24,
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 9999,
-            animation: "fadeInUp 200ms ease-out",
-          }}
+        <View
+          style={{ position: "fixed", bottom: 24, left: "50%", zIndex: 9999 }}
+          animation="medium"
+          enterStyle={{ opacity: 0, y: 10 }}
+          opacity={1}
+          y={0}
+          x="-50%"
         >
           <Card variant="elevated" padding="$md" backgroundColor="$secondary" borderRadius="$lg">
             <Row alignItems="center" gap="$md">
@@ -508,7 +396,7 @@ export function FavouritesClient() {
               </Button>
             </Row>
           </Card>
-        </div>
+        </View>
       )}
 
       <FooterSection />
