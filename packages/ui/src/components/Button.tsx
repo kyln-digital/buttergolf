@@ -52,6 +52,7 @@ const ButtonBase = styled(TamaguiButton, {
   name: "Button",
 
   // Base styles for all buttons
+  fontFamily: "$body",
   fontWeight: "700",
   cursor: "pointer",
   borderRadius: "$full",
