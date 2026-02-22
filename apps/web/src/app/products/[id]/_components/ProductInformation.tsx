@@ -101,21 +101,22 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
           </Row>
         </Column>
         <Button
+          butterVariant="icon"
           circular
-          chromeless
-          backgroundColor="$card"
-          width={40}
-          height={40}
+          width={44}
+          height={44}
           padding={0}
+          borderColor={isFavourite ? "$primary" : "$border"}
+          backgroundColor={isFavourite ? "$primaryLight" : "transparent"}
           onPress={() => setIsFavourite(!isFavourite)}
-          hoverStyle={{ scale: 1.1 }}
-          pressStyle={{ scale: 0.95 }}
+          animation="quick"
           aria-label={isFavourite ? "Remove from favourites" : "Add to favourites"}
         >
           <Heart
-            size={20}
+            size={22}
             fill={isFavourite ? theme.primary.val : "none"}
-            color={isFavourite ? "$primary" : "$text"}
+            color={isFavourite ? "$primary" : "$textSecondary"}
+            strokeWidth={1.5}
           />
         </Button>
       </Row>

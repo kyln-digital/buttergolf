@@ -31,6 +31,8 @@ const ListItemCard = styled(Card, {
   padding: "$md",
   cursor: "pointer",
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore — animation in styled() base works at runtime; TS types for styled config don't include it
   animation: "fast",
 
   hoverStyle: {

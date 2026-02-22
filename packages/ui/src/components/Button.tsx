@@ -7,8 +7,10 @@
  * Variants (via butterVariant prop):
  * - primary: Spiced Clementine (#F45314) - Main CTA, vibrant orange
  * - secondary: Light grey (#EDEDED) - Secondary actions, "Shop now", "Cancel"
+ * - icon: Neutral flat icon button - no shadow, grey border, orange on hover/active
  *
- * Both variants share the same pill shape and drop shadow for visual consistency.
+ * Both primary and secondary variants share the same pill shape and drop shadow.
+ * The icon variant is shadow-free and intended for circular icon-only buttons.
  *
  * Note: Uses `butterVariant` prop instead of `variant` to avoid conflicts
  * with Tamagui's built-in Button variants.
@@ -17,6 +19,9 @@
  * ```tsx
  * <Button butterVariant="primary">Sell now</Button>
  * <Button butterVariant="secondary">Shop now</Button>
+ * <Button butterVariant="icon" circular width={44} height={44} padding={0}>
+ *   <Heart size={22} />
+ * </Button>
  * ```
  */
 
@@ -96,6 +101,31 @@ const ButtonBase = styled(TamaguiButton, {
           backgroundColor: "$cloudMistPress",
           borderColor: "$border",
           scale: 0.98,
+        },
+
+        focusStyle: {
+          borderColor: "$borderFocus",
+          outlineColor: "$borderFocus",
+          outlineWidth: 2,
+        },
+      },
+
+      icon: {
+        // Neutral flat icon button - no shadow, reveals brand colour on interaction
+        backgroundColor: "transparent",
+        borderWidth: 1.5,
+        borderColor: "$border",
+        color: "$textSecondary",
+        // No shadow - icon buttons are secondary controls, not elevated CTAs
+
+        hoverStyle: {
+          borderColor: "$primary",
+          backgroundColor: "$primaryLight",
+        },
+
+        pressStyle: {
+          scale: 0.95,
+          opacity: 0.85,
         },
 
         focusStyle: {

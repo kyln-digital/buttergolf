@@ -11,6 +11,11 @@ const MESSAGE_LIMITS = {
   MIN_LENGTH: 1,
 };
 
+/** Map of real server IDs → temp IDs, used to keep React keys stable during
+ *  the optimistic → confirmed transition so the ChatBubble doesn't
+ *  unmount/remount and re-trigger its entrance animation. */
+type TempIdMap = Map<string, string>;
+
 interface MessageThreadScreenProps {
   /** Order ID for this conversation */
   orderId: string;
@@ -88,7 +93,20 @@ export function MessageThreadScreen({
   const [failedContent, setFailedContent] = useState<string | null>(null);
   const failedTempIdRef = useRef<string | null>(null);
 
+  // Stable React key map: realId → tempId, so the ChatBubble doesn't
+  // unmount/remount when the optimistic temp ID is replaced with the server ID.
+  const stableKeyMapRef = useRef<TempIdMap>(new Map());
+
+  // Ref to avoid re-running the setup effect when initialMessages reference changes
+  const initialMessagesRef = useRef(initialMessages);
+
   const isOverLimit = newMessage.length > MESSAGE_LIMITS.MAX_LENGTH;
+
+  /** Look up the stable React key for a message. Optimistic messages keep
+   *  their original temp-based key even after the server ID is swapped in. */
+  const getStableKey = useCallback((msg: ChatMessage) => {
+    return stableKeyMapRef.current.get(msg.id) ?? msg.id;
+  }, []);
 
   // Merge incoming messages from polling/SSE — deduplicates by ID
   const mergeMessages = useCallback((incoming: ChatMessage[]) => {
@@ -105,7 +123,7 @@ export function MessageThreadScreen({
 
     const fetchAndSetup = async () => {
       try {
-        if (onFetchMessages && !initialMessages) {
+        if (onFetchMessages && !initialMessagesRef.current) {
           const data = await onFetchMessages(orderId);
           if (!cancelled) {
             setMessages(
@@ -147,6 +165,14 @@ export function MessageThreadScreen({
         try {
           const data = JSON.parse(event.data);
           if (data.type === "new_message" && data.message && !cancelled) {
+            // Skip self-echoed messages — our optimistic update already
+            // handles the sender's own messages. Without this guard the
+            // SSE-delivered copy (with the real server ID) creates a
+            // duplicate of the temp-ID optimistic message, and the
+            // subsequent temp→real ID replacement leaves two items with
+            // the same key which confuses React's reconciliation.
+            if (data.message.senderId === currentUserId) return;
+
             mergeMessages([
               {
                 id: data.message.id,
@@ -167,7 +193,10 @@ export function MessageThreadScreen({
       cancelled = true;
       eventSource?.close();
     };
-  }, [orderId, initialMessages, onFetchMessages, onMarkAsRead, mergeMessages]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initialMessages
+    // is intentionally read from a ref so that a new server-side array
+    // reference does not tear down and recreate the SSE connection.
+  }, [orderId, currentUserId, onFetchMessages, onMarkAsRead, mergeMessages]);
 
   // 10-second polling fallback — delivers messages when SSE/Redis is unavailable.
   // Also runs alongside SSE when Redis is healthy (deduplication prevents duplicates).
@@ -218,8 +247,21 @@ export function MessageThreadScreen({
     try {
       if (onSendMessage) {
         const message = await onSendMessage(orderId, content);
-        setMessages((prev) =>
-          prev.map((m) =>
+
+        // Record the stable key so ChatMessageList keeps the same React key
+        // for this message (avoids unmount/remount animation glitch).
+        stableKeyMapRef.current.set(message.id, tempId);
+
+        setMessages((prev) => {
+          // If SSE or polling already delivered this message (race condition),
+          // just remove the temp entry instead of creating a duplicate.
+          const realAlreadyExists = prev.some((m) => m.id === message.id);
+          if (realAlreadyExists) {
+            return prev.filter((m) => m.id !== tempId);
+          }
+
+          // Normal path — swap the temp placeholder with confirmed data.
+          return prev.map((m) =>
             m.id === tempId
               ? {
                   id: message.id,
@@ -229,8 +271,8 @@ export function MessageThreadScreen({
                   isRead: message.isRead,
                 }
               : m
-          )
-        );
+          );
+        });
       }
     } catch (err) {
       // Keep the optimistic message visible — never remove it on failure.
@@ -333,6 +375,7 @@ export function MessageThreadScreen({
         otherUserImage={otherUserImage}
         loading={loading}
         emptyMessage={`Start a conversation with ${otherUserName}`}
+        getStableKey={getStableKey}
       />
 
       {/* Input */}

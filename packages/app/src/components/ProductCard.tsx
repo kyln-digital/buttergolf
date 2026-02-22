@@ -30,10 +30,10 @@ function HeartIcon({ filled }: Readonly<{ filled: boolean }>) {
   const theme = useTheme();
   return (
     <Heart
-      size={18}
-      color="$primary"
+      size={20}
+      color={filled ? "$primary" : "rgba(255,255,255,0.9)"}
       fill={filled ? theme.primary.val : "transparent"}
-      strokeWidth={2.5}
+      strokeWidth={2}
     />
   );
 }

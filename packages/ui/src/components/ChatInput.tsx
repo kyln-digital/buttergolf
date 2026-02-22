@@ -50,6 +50,8 @@ const SendButton = styled(Button, {
   alignItems: "center",
   justifyContent: "center",
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore — animation in styled() base works at runtime; TS types for styled config don't include it
   animation: "quick",
 
   pressStyle: {
@@ -92,9 +94,11 @@ export function ChatInput({
   const showCounter = value.length > maxLength * 0.8;
   const canSend = value.trim().length > 0 && !isOverLimit && !sending && !disabled;
   const canSendRef = useRef(canSend);
+  // eslint-disable-next-line react-hooks/refs -- "latest ref" pattern: intentional sync during render to avoid stale closures in effects
   canSendRef.current = canSend;
 
   const onSendRef = useRef(onSend);
+  // eslint-disable-next-line react-hooks/refs -- "latest ref" pattern: intentional sync during render to avoid stale closures in effects
   onSendRef.current = onSend;
 
   const textAreaRef = useRef<TextInput>(null);

@@ -51,6 +51,10 @@ interface ChatMessageListProps {
   emptyMessage?: string;
   /** Format a timestamp string for display */
   formatTimestamp?: (dateString: string) => string;
+  /** Return a stable React key for a message (used to prevent
+   *  unmount/remount when an optimistic temp ID is swapped to the
+   *  server-assigned ID). Falls back to `message.id` when omitted. */
+  getStableKey?: (message: ChatMessage) => string;
 }
 
 function defaultFormatTimestamp(dateString: string): string {
@@ -127,6 +131,7 @@ export function ChatMessageList({
   loading = false,
   emptyMessage,
   formatTimestamp = defaultFormatTimestamp,
+  getStableKey,
 }: Readonly<ChatMessageListProps>) {
   const scrollViewRef = useRef<React.ElementRef<typeof ScrollView>>(null);
   const hasScrolledOnce = useRef(false);
@@ -208,7 +213,7 @@ export function ChatMessageList({
 
               return (
                 <ChatBubble
-                  key={message.id}
+                  key={getStableKey ? getStableKey(message) : message.id}
                   isOwnMessage={isOwn}
                   content={message.content}
                   timestamp={formatTimestamp(message.createdAt)}

@@ -167,6 +167,7 @@ export function ThemeToggleButton({
   // server/client mismatch (Fixes BUTTERGOLF-1, BUTTERGOLF-4)
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- SSR hydration pattern: single mount-only state update
     setMounted(true);
   }, []);
 
