@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTheme } from "tamagui";
-import { Column, Row, Text, Button, Heading, Popover } from "@buttergolf/ui";
+import { Column, Row, Text, Button, Heading, Popover, View } from "@buttergolf/ui";
 import { Heart, Info } from "@tamagui/lucide-icons";
 import type { Product } from "../ProductDetailClient";
 
@@ -100,24 +100,33 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
             </Column>
           </Row>
         </Column>
-        <Button
-          circular
-          chromeless
-          backgroundColor="$card"
-          width={40}
-          height={40}
-          padding={0}
+        <View
+          width={44}
+          height={44}
+          borderRadius="$full"
+          borderWidth={1.5}
+          borderColor={isFavourite ? "$primary" : "$border"}
+          backgroundColor={isFavourite ? "$primaryLight" : "transparent"}
+          alignItems="center"
+          justifyContent="center"
+          cursor="pointer"
           onPress={() => setIsFavourite(!isFavourite)}
-          hoverStyle={{ scale: 1.1 }}
-          pressStyle={{ scale: 0.95 }}
+          hoverStyle={{
+            borderColor: "$primary",
+            backgroundColor: "$primaryLight",
+          }}
+          pressStyle={{ scale: 0.95, opacity: 0.85 }}
+          animation="quick"
           aria-label={isFavourite ? "Remove from favourites" : "Add to favourites"}
+          role="button"
         >
           <Heart
-            size={20}
+            size={22}
             fill={isFavourite ? theme.primary.val : "none"}
-            color={isFavourite ? "$primary" : "$text"}
+            color={isFavourite ? "$primary" : "$textSecondary"}
+            strokeWidth={1.5}
           />
-        </Button>
+        </View>
       </Row>
 
       {/* Divider */}
