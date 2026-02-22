@@ -157,8 +157,7 @@ export function MessagesScreen({
           </Text>
           <Button
             size="$5"
-            backgroundColor="$primary"
-            color="$textInverse"
+            butterVariant="primary"
             paddingHorizontal="$6"
             borderRadius="$full"
             onPress={onLoginPress}
@@ -253,8 +252,7 @@ export function MessagesScreen({
           </Text>
           <Button
             size="$5"
-            backgroundColor="$primary"
-            color="$textInverse"
+            butterVariant="primary"
             paddingHorizontal="$6"
             borderRadius="$full"
             onPress={onBrowseListings}
