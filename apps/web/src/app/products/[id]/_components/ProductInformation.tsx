@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTheme } from "tamagui";
-import { Column, Row, Text, Button, Heading, Popover, View } from "@buttergolf/ui";
+import { Column, Row, Text, Button, Heading, Popover } from "@buttergolf/ui";
 import { Heart, Info } from "@tamagui/lucide-icons";
 import type { Product } from "../ProductDetailClient";
 
