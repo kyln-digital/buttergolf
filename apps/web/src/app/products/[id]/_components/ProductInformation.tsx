@@ -100,25 +100,17 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
             </Column>
           </Row>
         </Column>
-        <View
+        <Button
+          butterVariant="icon"
+          circular
           width={44}
           height={44}
-          borderRadius="$full"
-          borderWidth={1.5}
+          padding={0}
           borderColor={isFavourite ? "$primary" : "$border"}
           backgroundColor={isFavourite ? "$primaryLight" : "transparent"}
-          alignItems="center"
-          justifyContent="center"
-          cursor="pointer"
           onPress={() => setIsFavourite(!isFavourite)}
-          hoverStyle={{
-            borderColor: "$primary",
-            backgroundColor: "$primaryLight",
-          }}
-          pressStyle={{ scale: 0.95, opacity: 0.85 }}
           animation="quick"
           aria-label={isFavourite ? "Remove from favourites" : "Add to favourites"}
-          role="button"
         >
           <Heart
             size={22}
@@ -126,7 +118,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
             color={isFavourite ? "$primary" : "$textSecondary"}
             strokeWidth={1.5}
           />
-        </View>
+        </Button>
       </Row>
 
       {/* Divider */}
