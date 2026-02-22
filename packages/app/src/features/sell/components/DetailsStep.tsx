@@ -438,7 +438,7 @@ export function DetailsStep({
               <Input
                 flex={1}
                 value={searchQuery}
-                onChangeText={setSearchQuery}
+                onChange={(e: any) => setSearchQuery(e.nativeEvent?.text ?? e.target?.value ?? "")}
                 placeholder={`Search ${title.toLowerCase()}...`}
                 placeholderTextColor="$textSecondary"
                 borderWidth={0}

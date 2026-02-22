@@ -98,7 +98,7 @@ export function OffersSidebar({ offers, currentUserId }: OffersSidebarProps) {
           fontWeight="600"
           size="$4"
           onPress={() => setActiveTab("buying")}
-          animation="quick"
+          transition="quick"
         >
           Buying
         </Button>
@@ -110,7 +110,7 @@ export function OffersSidebar({ offers, currentUserId }: OffersSidebarProps) {
           fontWeight="600"
           size="$4"
           onPress={() => setActiveTab("selling")}
-          animation="quick"
+          transition="quick"
         >
           Selling
         </Button>
@@ -151,11 +151,11 @@ export function OffersSidebar({ offers, currentUserId }: OffersSidebarProps) {
                 <Row gap="$sm" alignItems="flex-start">
                   {/* Product thumbnail */}
                   <Image
-                    source={{ uri: offer.product.images[0]?.url }}
+                    src={offer.product.images[0]?.url}
                     width={50}
                     height={50}
                     borderRadius="$md"
-                    resizeMode="cover"
+                    objectFit="cover"
                     alt={offer.product.title}
                   />
 

@@ -172,7 +172,7 @@ export function OnboardingScreen({
         <View width={SCREEN_W * 0.5} height={Math.round(SCREEN_W * 0.5 * (79 / 209))}>
           {isDark ? (
             <Image
-              source={LogoCreamPng}
+              src={LogoCreamPng}
               width="100%"
               height="100%"
               objectFit="contain"
@@ -230,7 +230,7 @@ export function OnboardingScreen({
               }}
             >
               <Image
-                source={item.source}
+                src={item.source}
                 width={CARD_WIDTH}
                 height={CARD_HEIGHT}
                 objectFit="contain"
@@ -267,7 +267,7 @@ export function OnboardingScreen({
               }}
             >
               <Image
-                source={item.source}
+                src={item.source}
                 width={CARD_WIDTH}
                 height={CARD_HEIGHT}
                 objectFit="contain"

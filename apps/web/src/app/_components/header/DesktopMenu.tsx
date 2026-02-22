@@ -17,7 +17,7 @@ export function DesktopMenu({ menuData }: Readonly<DesktopMenuProps>) {
   const pathname = usePathname();
 
   return (
-    <Row tag="nav" gap="$6" alignItems="center" flexWrap="wrap" justifyContent="center">
+    <Row render="nav" gap="$6" alignItems="center" flexWrap="wrap" justifyContent="center">
       {menuData.map((menuItem) => {
         const hasSubmenu = Boolean(menuItem.submenu);
         const isActive = menuItem.path && pathname.split("?")[0] === menuItem.path.split("?")[0];
@@ -34,7 +34,7 @@ export function DesktopMenu({ menuData }: Readonly<DesktopMenuProps>) {
               <>
                 <Theme name={isActive ? "active" : null}>
                   <Row
-                    tag="button"
+                    render="button"
                     alignItems="center"
                     gap="$xs"
                     cursor="pointer"

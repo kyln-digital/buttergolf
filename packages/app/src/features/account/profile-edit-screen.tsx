@@ -205,7 +205,7 @@ export function ProfileEditScreen({
             <Input
               size="$5"
               value={firstName}
-              onChangeText={setFirstName}
+              onChange={(e: any) => setFirstName(e.nativeEvent?.text ?? e.target?.value ?? "")}
               placeholder="Enter your first name"
               autoCapitalize="words"
               autoCorrect={false}
@@ -219,7 +219,7 @@ export function ProfileEditScreen({
             <Input
               size="$5"
               value={lastName}
-              onChangeText={setLastName}
+              onChange={(e: any) => setLastName(e.nativeEvent?.text ?? e.target?.value ?? "")}
               placeholder="Enter your last name"
               autoCapitalize="words"
               autoCorrect={false}

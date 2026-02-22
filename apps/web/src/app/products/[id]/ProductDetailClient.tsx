@@ -195,7 +195,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                         position="relative"
                       >
                         <Image
-                          source={{ uri: img.url }}
+                          src={img.url}
                           width="100%"
                           height="100%"
                           objectFit="cover"
@@ -221,7 +221,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   $md={{ height: 650 }}
                 >
                   <Image
-                    source={{ uri: selectedImage.url }}
+                    src={selectedImage.url}
                     width="100%"
                     height="100%"
                     objectFit="contain"

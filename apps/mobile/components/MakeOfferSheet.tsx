@@ -225,7 +225,7 @@ const SheetContents = memo(function SheetContents({
               placeholder="0.00"
               inputMode="decimal"
               value={offerAmount}
-              onChangeText={setOfferAmount}
+              onChange={(e: any) => setOfferAmount(e.nativeEvent?.text ?? e.target?.value ?? "")}
               error={!!(isTooLow || isTooHigh)}
             />
           </Row>

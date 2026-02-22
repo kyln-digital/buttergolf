@@ -117,7 +117,7 @@ export function CounterOfferForm({
                 size="md"
                 placeholder="0.00"
                 value={amount}
-                onChangeText={setAmount}
+                onChange={(e) => setAmount(e.target.value)}
                 inputMode="decimal"
                 fullWidth
                 disabled={submitting}
@@ -137,7 +137,7 @@ export function CounterOfferForm({
               size="md"
               placeholder="Add a message..."
               value={message}
-              onChangeText={setMessage}
+              onChange={(e) => setMessage(e.target.value)}
               fullWidth
               disabled={submitting}
               multiline

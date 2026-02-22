@@ -48,7 +48,7 @@ export function HorizontalProductCard({
     >
       {/* Product Image - Left (clickable) - 4:3 aspect ratio */}
       <Image
-        source={{ uri: product.imageUrl || PLACEHOLDER_IMAGE_URL }}
+        src={product.imageUrl || PLACEHOLDER_IMAGE_URL}
         alt={product.title}
         width={160}
         height={120}

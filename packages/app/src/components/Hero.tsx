@@ -219,7 +219,7 @@ export function Hero({
         >
           {/* Background Image */}
           <Image
-            source={images.hero.butterBackground}
+            src={images.hero.butterBackground}
             position="absolute"
             top={0}
             left={0}
@@ -446,13 +446,7 @@ function HeroImage({ source }: HeroImageProps) {
           }}
         />
       ) : (
-        <Image
-          source={source as Parameters<typeof Image>[0]["source"]}
-          width="100%"
-          height="100%"
-          objectFit="contain"
-          marginBottom={0}
-        />
+        <Image src={source} width="100%" height="100%" objectFit="contain" marginBottom={0} />
       )}
     </Column>
   );

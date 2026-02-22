@@ -387,7 +387,7 @@ export function MessageThreadScreen({
           <Column flex={1} gap="$xs">
             <TextArea
               value={newMessage}
-              onChangeText={setNewMessage}
+              onChange={(e: any) => setNewMessage(e.nativeEvent?.text ?? e.target?.value ?? "")}
               placeholder="Type a message..."
               size="md"
               rows={2}

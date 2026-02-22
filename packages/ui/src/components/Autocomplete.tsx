@@ -156,7 +156,7 @@ export function Autocomplete({
       <div onKeyDown={handleKeyDown}>
         <Input
           value={value}
-          onChangeText={handleInputChange}
+          onChange={(e: any) => handleInputChange(e.nativeEvent?.text ?? e.target?.value ?? "")}
           onFocus={handleFocus}
           placeholder={placeholder}
           autoComplete="off"

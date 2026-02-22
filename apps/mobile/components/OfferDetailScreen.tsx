@@ -387,7 +387,7 @@ export function OfferDetailScreen({
           <Row gap="$md" alignItems="flex-start">
             {productImage ? (
               <Image
-                source={{ uri: productImage }}
+                src={productImage}
                 width={100}
                 height={100}
                 borderRadius="$md"
@@ -447,12 +447,7 @@ export function OfferDetailScreen({
           <Column gap="$md">
             <Row alignItems="center" gap="$md">
               {offer.buyer.imageUrl ? (
-                <Image
-                  source={{ uri: offer.buyer.imageUrl }}
-                  width={40}
-                  height={40}
-                  borderRadius="$full"
-                />
+                <Image src={offer.buyer.imageUrl} width={40} height={40} borderRadius="$full" />
               ) : (
                 <View
                   width={40}
@@ -480,12 +475,7 @@ export function OfferDetailScreen({
 
             <Row alignItems="center" gap="$md">
               {offer.seller.imageUrl ? (
-                <Image
-                  source={{ uri: offer.seller.imageUrl }}
-                  width={40}
-                  height={40}
-                  borderRadius="$full"
-                />
+                <Image src={offer.seller.imageUrl} width={40} height={40} borderRadius="$full" />
               ) : (
                 <View
                   width={40}

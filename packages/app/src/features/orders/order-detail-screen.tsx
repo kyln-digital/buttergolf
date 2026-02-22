@@ -946,7 +946,7 @@ export function OrderDetailScreen({
             <TextArea
               placeholder="Add a comment (optional)"
               value={ratingComment}
-              onChangeText={setRatingComment}
+              onChange={(e: any) => setRatingComment(e.nativeEvent?.text ?? e.target?.value ?? "")}
               minHeight={80}
               maxLength={500}
             />

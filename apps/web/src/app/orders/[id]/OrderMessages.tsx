@@ -248,7 +248,7 @@ export function OrderMessages({
                 >
                   {!isOwnMessage && otherUserImage && (
                     <Image
-                      source={{ uri: otherUserImage }}
+                      src={otherUserImage}
                       width={32}
                       height={32}
                       borderRadius={16}
@@ -302,7 +302,7 @@ export function OrderMessages({
             <Column flex={1} gap="$xs">
               <TextArea
                 value={newMessage}
-                onChangeText={setNewMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Type your message..."
                 size="md"

@@ -115,7 +115,7 @@ export function MobileInterstitial() {
         <Column alignItems="center" gap="$sm" width="100%" maxWidth={300}>
           {APP_STORE_URL ? (
             <Button
-              tag="a"
+              render="a"
               href={APP_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
@@ -141,7 +141,7 @@ export function MobileInterstitial() {
 
           {PLAY_STORE_URL ? (
             <Button
-              tag="a"
+              render="a"
               href={PLAY_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"

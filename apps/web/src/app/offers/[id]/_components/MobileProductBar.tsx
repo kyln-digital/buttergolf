@@ -91,11 +91,11 @@ export function MobileProductBar({
         }}
       >
         <Image
-          source={{ uri: primaryImage }}
+          src={primaryImage}
           width={60}
           height={60}
           borderRadius="$md"
-          resizeMode="cover"
+          objectFit="cover"
           alt={product.title}
         />
         <Column gap="$xs" flex={1} minWidth={0}>
@@ -160,11 +160,11 @@ export function MobileProductBar({
             <Column gap="$md" paddingTop="$md">
               {/* Product Image */}
               <Image
-                source={{ uri: primaryImage }}
+                src={primaryImage}
                 width="100%"
                 height={250}
                 borderRadius="$lg"
-                resizeMode="cover"
+                objectFit="cover"
                 alt={product.title}
               />
 

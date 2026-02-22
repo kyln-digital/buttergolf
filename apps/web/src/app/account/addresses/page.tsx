@@ -291,7 +291,7 @@ export default function AddressesPage() {
                     <FormLabel required>First Name</FormLabel>
                     <Input
                       value={formData.firstName}
-                      onChangeText={(value) => setFormData({ ...formData, firstName: value })}
+                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                       placeholder="John"
                       size="$4"
                       autoComplete="given-name"
@@ -301,7 +301,7 @@ export default function AddressesPage() {
                     <FormLabel required>Last Name</FormLabel>
                     <Input
                       value={formData.lastName}
-                      onChangeText={(value) => setFormData({ ...formData, lastName: value })}
+                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                       placeholder="Smith"
                       size="$4"
                       autoComplete="family-name"
@@ -314,7 +314,7 @@ export default function AddressesPage() {
                   <FormLabel required>Address Line 1</FormLabel>
                   <Input
                     value={formData.street1}
-                    onChangeText={(value) => setFormData({ ...formData, street1: value })}
+                    onChange={(e) => setFormData({ ...formData, street1: e.target.value })}
                     placeholder="10 Downing Street"
                     size="$4"
                     autoComplete="address-line1"
@@ -326,7 +326,7 @@ export default function AddressesPage() {
                   <FormLabel>Address Line 2 (Optional)</FormLabel>
                   <Input
                     value={formData.street2}
-                    onChangeText={(value) => setFormData({ ...formData, street2: value })}
+                    onChange={(e) => setFormData({ ...formData, street2: e.target.value })}
                     placeholder="Flat 2B"
                     size="$4"
                     autoComplete="address-line2"
@@ -339,7 +339,7 @@ export default function AddressesPage() {
                     <FormLabel required>Town/City</FormLabel>
                     <Input
                       value={formData.city}
-                      onChangeText={(value) => setFormData({ ...formData, city: value })}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                       placeholder="London"
                       size="$4"
                       autoComplete="address-level2"
@@ -349,7 +349,7 @@ export default function AddressesPage() {
                     <FormLabel>County</FormLabel>
                     <Input
                       value={formData.county}
-                      onChangeText={(value) => setFormData({ ...formData, county: value })}
+                      onChange={(e) => setFormData({ ...formData, county: e.target.value })}
                       placeholder="Greater London"
                       size="$4"
                       autoComplete="address-level1"
@@ -362,8 +362,8 @@ export default function AddressesPage() {
                   <FormLabel required>Postcode</FormLabel>
                   <Input
                     value={formData.postcode}
-                    onChangeText={(value) => {
-                      setFormData({ ...formData, postcode: value });
+                    onChange={(e) => {
+                      setFormData({ ...formData, postcode: e.target.value });
                       setPostcodeError(null);
                     }}
                     placeholder="SW1A 1AA"
@@ -382,7 +382,7 @@ export default function AddressesPage() {
                   <FormLabel>Phone Number</FormLabel>
                   <Input
                     value={formData.phone}
-                    onChangeText={(value) => setFormData({ ...formData, phone: value })}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="+44 7700 900000"
                     size="$4"
                     inputMode="tel"

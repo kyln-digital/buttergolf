@@ -222,7 +222,12 @@ export function AddressesScreen({
               <Input
                 size="$5"
                 value={formData.name}
-                onChangeText={(text) => setFormData((prev) => ({ ...prev, name: text }))}
+                onChange={(e: any) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    name: e.nativeEvent?.text ?? e.target?.value ?? "",
+                  }))
+                }
                 placeholder="e.g. Home, Work, etc."
               />
             </Column>
@@ -234,7 +239,12 @@ export function AddressesScreen({
               <Input
                 size="$5"
                 value={formData.street1}
-                onChangeText={(text) => setFormData((prev) => ({ ...prev, street1: text }))}
+                onChange={(e: any) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    street1: e.nativeEvent?.text ?? e.target?.value ?? "",
+                  }))
+                }
                 placeholder="House number and street"
               />
             </Column>
@@ -246,7 +256,12 @@ export function AddressesScreen({
               <Input
                 size="$5"
                 value={formData.street2}
-                onChangeText={(text) => setFormData((prev) => ({ ...prev, street2: text }))}
+                onChange={(e: any) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    street2: e.nativeEvent?.text ?? e.target?.value ?? "",
+                  }))
+                }
                 placeholder="Apartment, suite, unit, etc. (optional)"
               />
             </Column>
@@ -259,7 +274,12 @@ export function AddressesScreen({
                 <Input
                   size="$5"
                   value={formData.city}
-                  onChangeText={(text) => setFormData((prev) => ({ ...prev, city: text }))}
+                  onChange={(e: any) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      city: e.nativeEvent?.text ?? e.target?.value ?? "",
+                    }))
+                  }
                   placeholder="City"
                 />
               </Column>
@@ -271,7 +291,12 @@ export function AddressesScreen({
                 <Input
                   size="$5"
                   value={formData.state}
-                  onChangeText={(text) => setFormData((prev) => ({ ...prev, state: text }))}
+                  onChange={(e: any) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      state: e.nativeEvent?.text ?? e.target?.value ?? "",
+                    }))
+                  }
                   placeholder="County"
                 />
               </Column>
@@ -285,7 +310,12 @@ export function AddressesScreen({
                 <Input
                   size="$5"
                   value={formData.postalCode}
-                  onChangeText={(text) => setFormData((prev) => ({ ...prev, postalCode: text }))}
+                  onChange={(e: any) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      postalCode: e.nativeEvent?.text ?? e.target?.value ?? "",
+                    }))
+                  }
                   placeholder="Postal code"
                   autoCapitalize="characters"
                 />
@@ -298,7 +328,12 @@ export function AddressesScreen({
                 <Input
                   size="$5"
                   value={formData.country}
-                  onChangeText={(text) => setFormData((prev) => ({ ...prev, country: text }))}
+                  onChange={(e: any) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      country: e.nativeEvent?.text ?? e.target?.value ?? "",
+                    }))
+                  }
                   placeholder="GB"
                   autoCapitalize="characters"
                 />
@@ -312,7 +347,12 @@ export function AddressesScreen({
               <Input
                 size="$5"
                 value={formData.phone}
-                onChangeText={(text) => setFormData((prev) => ({ ...prev, phone: text }))}
+                onChange={(e: any) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    phone: e.nativeEvent?.text ?? e.target?.value ?? "",
+                  }))
+                }
                 placeholder="For delivery updates (optional)"
                 inputMode="tel"
               />

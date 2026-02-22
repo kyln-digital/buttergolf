@@ -151,7 +151,7 @@ export function HomeScreen({
               aria-label="Browse woods category"
             >
               <Image
-                source={images.clubs.club1}
+                src={images.clubs.club1}
                 width="100%"
                 height="100%"
                 objectFit="cover"
@@ -183,7 +183,7 @@ export function HomeScreen({
               aria-label="Browse irons category"
             >
               <Image
-                source={images.clubs.club3}
+                src={images.clubs.club3}
                 width="100%"
                 height="100%"
                 objectFit="cover"
@@ -218,7 +218,7 @@ export function HomeScreen({
               aria-label="Browse wedges category"
             >
               <Image
-                source={images.clubs.club4}
+                src={images.clubs.club4}
                 width="100%"
                 height="100%"
                 objectFit="cover"
@@ -250,7 +250,7 @@ export function HomeScreen({
               aria-label="Browse putters category"
             >
               <Image
-                source={images.clubs.club5}
+                src={images.clubs.club5}
                 width="100%"
                 height="100%"
                 objectFit="cover"

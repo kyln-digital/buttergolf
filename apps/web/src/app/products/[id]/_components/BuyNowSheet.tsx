@@ -122,8 +122,8 @@ const SheetContents = memo(function SheetContents({
         width="100%"
         maxWidth={540}
         alignSelf="center"
-        $gtMd={{ paddingHorizontal: "$xl", maxWidth: "65%", width: "65%" }}
-        $gtLg={{ maxWidth: "60%", width: "60%" }}
+        $lg={{ paddingHorizontal: "$xl", maxWidth: "65%", width: "65%" }}
+        $xl={{ maxWidth: "60%", width: "60%" }}
       >
         {/* Header */}
         <Row justifyContent="space-between" alignItems="center">
@@ -142,7 +142,7 @@ const SheetContents = memo(function SheetContents({
           <Row gap="$md" alignItems="flex-start">
             {productImageUrl && (
               <Image
-                source={{ uri: productImageUrl }}
+                src={productImageUrl}
                 width={80}
                 height={80}
                 borderRadius="$md"

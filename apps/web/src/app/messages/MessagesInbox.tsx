@@ -85,7 +85,7 @@ export function MessagesInbox({ conversations }: MessagesInboxProps) {
                   {/* Product Image */}
                   {conversation.productImage ? (
                     <Image
-                      source={{ uri: conversation.productImage }}
+                      src={conversation.productImage}
                       width={60}
                       height={60}
                       borderRadius="$md"

@@ -99,11 +99,11 @@ export function ProductSummaryCard({
     >
       {/* Product Image */}
       <Image
-        source={{ uri: primaryImage }}
+        src={primaryImage}
         width="100%"
         height={300}
         borderRadius="$lg"
-        resizeMode="cover"
+        objectFit="cover"
         alt={product.title}
       />
 

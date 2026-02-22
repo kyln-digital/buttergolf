@@ -171,7 +171,7 @@ export function ImageUpload({
                 }}
               >
                 <Image
-                  source={{ uri: url }}
+                  src={url}
                   width={140}
                   height={140}
                   objectFit="cover"

@@ -22,7 +22,7 @@ export function SearchResultItem({ product, onSelect }: SearchResultItemProps) {
       >
         {/* Product Thumbnail */}
         <Image
-          source={{ uri: product.imageUrl }}
+          src={product.imageUrl}
           width={60}
           height={60}
           borderRadius="$sm"

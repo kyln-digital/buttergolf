@@ -176,7 +176,7 @@ export function OffersListScreen({
             {/* Product Image */}
             {productImage ? (
               <Image
-                source={{ uri: productImage }}
+                src={productImage}
                 width={80}
                 height={80}
                 borderRadius="$md"

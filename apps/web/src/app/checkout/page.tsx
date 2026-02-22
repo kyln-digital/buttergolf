@@ -143,7 +143,7 @@ function CheckoutPageContent() {
                   <Row gap="$md" alignItems="flex-start">
                     {product.imageUrl && (
                       <Image
-                        source={{ uri: product.imageUrl }}
+                        src={product.imageUrl}
                         width={80}
                         height={80}
                         borderRadius="$md"

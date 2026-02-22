@@ -47,7 +47,7 @@ export function TrustBar() {
       <Row
         position="absolute"
         right="$md"
-        tag="button"
+        render="button"
         cursor="pointer"
         padding="$1"
         backgroundColor="transparent"
