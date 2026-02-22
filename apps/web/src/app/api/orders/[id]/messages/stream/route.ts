@@ -87,9 +87,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           // Attempt to set up Redis pub/sub. If Redis is unavailable (REDIS_URL unset
           // or connection refused), fall through to heartbeat-only mode — the client
           // will still receive new messages via its 10-second polling fallback.
+          let subscriber: Redis | null = null;
           try {
-            redis = createRedisSubscriber();
-            await redis.subscribe(channel);
+            subscriber = createRedisSubscriber();
+            await subscriber.subscribe(channel);
+            redis = subscriber;
             console.log(`[SSE] User ${user.id} subscribed to channel: ${channel}`);
 
             // Listen for messages published to this order's channel
@@ -106,14 +108,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             });
 
             redis.on("error", (err) => {
-              console.error(`[SSE] Redis error for user ${user.id}:`, err);
+              console.error(`[SSE] Redis error for user ${user.id}:`, err.message);
               // Don't close the stream on Redis error — heartbeat keeps it alive
               // and the client's polling fallback handles message delivery.
             });
           } catch (redisErr) {
+            // Disconnect the failed subscriber to stop reconnect loop
+            if (subscriber) {
+              subscriber.disconnect();
+              subscriber = null;
+            }
             console.warn(
-              `[SSE] Redis unavailable for user ${user.id}, running heartbeat-only mode:`,
-              redisErr
+              `[SSE] Redis unavailable for user ${user.id}, running heartbeat-only mode`
             );
             // redis stays null — heartbeat-only, no pub/sub
           }
