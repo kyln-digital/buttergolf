@@ -41,11 +41,10 @@ export function MobileCategoryPills({
           backgroundColor="$background"
           borderWidth={1}
           borderColor={selectedCategory === "All" ? "$primary" : "$border"}
-          color={selectedCategory === "All" ? "$primary" : "$text"}
           onPress={() => onCategorySelect("All")}
           pressStyle={{ scale: 0.95 }}
         >
-          All
+          <Button.Text color={selectedCategory === "All" ? "$primary" : "$text"}>All</Button.Text>
         </Button>
       )}
 
@@ -59,11 +58,12 @@ export function MobileCategoryPills({
           backgroundColor="$background"
           borderWidth={1}
           borderColor={selectedCategory === category.name ? "$primary" : "$border"}
-          color={selectedCategory === category.name ? "$primary" : "$text"}
           onPress={() => onCategorySelect(category.name)}
           pressStyle={{ scale: 0.95 }}
         >
-          {category.name}
+          <Button.Text color={selectedCategory === category.name ? "$primary" : "$text"}>
+            {category.name}
+          </Button.Text>
         </Button>
       ))}
     </ScrollView>

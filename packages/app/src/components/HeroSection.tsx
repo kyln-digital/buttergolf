@@ -29,22 +29,20 @@ export function HeroSection() {
         <Button
           size="$4"
           backgroundColor="$background"
-          color="$textInverse"
           borderRadius="$10"
           hoverStyle={{ backgroundColor: "$primaryHover" }}
           pressStyle={{ backgroundColor: "$primaryPress" }}
         >
-          Sell now
+          <Button.Text color="$textInverse">Sell now</Button.Text>
         </Button>
         <Button
           size="$4"
           backgroundColor="$background"
-          color="$text"
           borderRadius="$10"
           hoverStyle={{ backgroundColor: "$secondaryHover" }}
           pressStyle={{ backgroundColor: "$secondaryPress" }}
         >
-          Learn how it works
+          <Button.Text color="$text">Learn how it works</Button.Text>
         </Button>
       </Row>
     </Column>

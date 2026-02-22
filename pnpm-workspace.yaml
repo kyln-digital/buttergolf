@@ -21,6 +21,7 @@ catalog:
   "@tamagui/babel-plugin": 2.0.0-rc.16
   "@tamagui/card": 2.0.0-rc.16
   "@tamagui/cli": 2.0.0-rc.16
+  "@tamagui/react-native-web-lite": 2.0.0-rc.16
   "@tamagui/config": 2.0.0-rc.16
   "@tamagui/core": 2.0.0-rc.16
   "@tamagui/font-inter": 2.0.0-rc.16

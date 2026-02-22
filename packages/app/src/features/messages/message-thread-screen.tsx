@@ -408,8 +408,7 @@ export function MessageThreadScreen({
 
           <Button
             size="$5"
-            backgroundColor="$primary"
-            color="$textInverse"
+            butterVariant="primary"
             borderRadius="$full"
             onPress={handleSend}
             disabled={sending || !newMessage.trim() || isOverLimit}

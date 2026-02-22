@@ -307,17 +307,15 @@ export function OnboardingScreen({
             }}
             {...(isDark && {
               backgroundColor: "$vanillaCream",
-              color: "$primary",
             })}
           >
-            Create account
+            <Button.Text color={isDark ? "$primary" : "$white"}>Create account</Button.Text>
           </Button>
 
           {/* Secondary Button - Pill-shaped, theme-aware colors */}
           <Button
             size="$4"
             backgroundColor={isDark ? "transparent" : "$vanillaCream"}
-            color={isDark ? "$vanillaCream" : "$primary"}
             borderWidth={2}
             borderColor={isDark ? "$vanillaCream" : "$primary"}
             borderRadius="$full"
@@ -330,7 +328,9 @@ export function OnboardingScreen({
               backgroundColor: isDark ? "rgba(255, 250, 210, 0.1)" : "$vanillaCreamHover",
             }}
           >
-            I already have an account
+            <Button.Text color={isDark ? "$vanillaCream" : "$primary"}>
+              I already have an account
+            </Button.Text>
           </Button>
         </YStack>
 

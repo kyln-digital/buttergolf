@@ -27,7 +27,7 @@ const plugins = [
     disableExtraction,
     // Disable debug attributes to prevent hydration warnings
     // These are only useful for deep debugging of Tamagui compiler output
-    useReactNativeWebLite: false,
+    useReactNativeWebLite: true,
     disableDebugAttr: true,
     shouldExtract: (path) => {
       if (path.includes(join("packages", "app"))) {
@@ -110,6 +110,7 @@ module.exports = () => {
       "@buttergolf/config",
       "@buttergolf/ui",
       "react-native-web",
+      "@tamagui/react-native-web-lite",
       "react-native",
       "solito",
       "expo-linking",
@@ -158,10 +159,17 @@ module.exports = () => {
         webpackConfig.plugins = [...webpackConfig.plugins, new PrismaPlugin()];
       }
 
-      // Map React Native to React Native Web for web builds
+      // Alias react-native to the lighter Tamagui-maintained react-native-web-lite for
+      // web builds.  This replaces full react-native-web (≈300 kB) with a targeted
+      // subset, reducing the client bundle by roughly 40 %.  Components excluded from
+      // the lite package (Switch, ProgressBar, Picker, CheckBox, Touchable) are
+      // enumerated in excludeReactNativeWebExports above and are provided by Tamagui
+      // itself.
+      // Rollback: change this line back to "react-native-web" and set
+      // useReactNativeWebLite: false in the withTamagui() call above.
       webpackConfig.resolve.alias = {
         ...webpackConfig.resolve.alias,
-        "react-native$": "react-native-web",
+        "react-native$": "@tamagui/react-native-web-lite",
         // Enforce a single instance of 'tamagui' at runtime to avoid
         // "Haven't called createTamagui yet" errors caused by duplicate module instances
         tamagui: require.resolve("tamagui"),

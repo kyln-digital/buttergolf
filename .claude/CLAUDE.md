@@ -714,7 +714,7 @@ pnpm dev:mobile       # Start Expo dev server
 
 # Building
 pnpm build            # Build all apps
-pnpm check-types      # TypeScript validation
+pnpm typecheck        # TypeScript validation
 
 # Database
 pnpm db:generate      # Generate Prisma Client

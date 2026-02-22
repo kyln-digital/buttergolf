@@ -8,7 +8,7 @@
     "postbuild": "next-sitemap",
     "start": "next start",
     "lint": "eslint --fix",
-    "check-types": "tsc --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@buttergolf/app": "workspace:*",
@@ -23,6 +23,7 @@
     "@stripe/stripe-js": "catalog:",
     "@tamagui/card": "catalog:",
     "@tamagui/config": "catalog:",
+    "@tamagui/react-native-web-lite": "catalog:",
     "@tamagui/core": "catalog:",
     "@tamagui/lucide-icons": "catalog:",
     "@tamagui/polyfill-dev": "catalog:",

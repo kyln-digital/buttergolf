@@ -34,7 +34,7 @@ unchanged:
 
 ---
 
-## `pnpm check-types` result
+## `pnpm typecheck` result
 
 ### `@buttergolf/config` — ✅ **PASSES** (0 errors)
 
@@ -61,11 +61,11 @@ animation helpers compile with no errors under v2.
 
 Root causes resolved:
 
-| Error code | Root cause                                                                     | Fix applied                                                                                          |
-| ---------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| TS2322     | `color` prop removed from `Button` / `TamaguiButton` frame type               | `Button` re-exported with `color?: ColorTokens \| string` type cast; direct `TamaguiButton` usages migrated to `TamaguiButton.Text` / icon-level color |
-| TS2322     | `editable` removed from Tamagui v2 `Input`/`TextArea` props                   | Replaced `editable={false}` with `disabled`; `editable={!x}` collapsed into existing `disabled={x}` |
-| TS2322     | `placeholderTextColor` typed as `ColorTokens` only (not raw strings)           | Replaced raw rgba/hex strings with semantic token references (`$slateSmoke`, `$textSecondary`)       |
+| Error code | Root cause                                                           | Fix applied                                                                                                                                            |
+| ---------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| TS2322     | `color` prop removed from `Button` / `TamaguiButton` frame type      | `Button` re-exported with `color?: ColorTokens \| string` type cast; direct `TamaguiButton` usages migrated to `TamaguiButton.Text` / icon-level color |
+| TS2322     | `editable` removed from Tamagui v2 `Input`/`TextArea` props          | Replaced `editable={false}` with `disabled`; `editable={!x}` collapsed into existing `disabled={x}`                                                    |
+| TS2322     | `placeholderTextColor` typed as `ColorTokens` only (not raw strings) | Replaced raw rgba/hex strings with semantic token references (`$slateSmoke`, `$textSecondary`)                                                         |
 
 ---
 
@@ -207,7 +207,7 @@ and avoid declaring non-style-token props inside a `styled()` prop block.
 
 ## Pre-push hook scope reduction
 
-`.husky/pre-push` was narrowed to run `pnpm turbo run check-types` only for
+`.husky/pre-push` was narrowed to run `pnpm turbo run typecheck` only for
 `@buttergolf/db`, `@buttergolf/config`, and `@buttergolf/ui` (all three pass
 with 0 errors). The full workspace check is restored once the follow-up
 migration PRs resolve all break buckets. The TODO comment in the hook file
