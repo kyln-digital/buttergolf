@@ -83,11 +83,21 @@ export function MessageThreadScreen({
   const [loading, setLoading] = useState(!initialMessages);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [sseError, setSSEError] = useState<string | null>(null);
-  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Failed-send state: keep the optimistic message visible, allow retry
+  const [failedContent, setFailedContent] = useState<string | null>(null);
+  const failedTempIdRef = useRef<string | null>(null);
 
   const isOverLimit = newMessage.length > MESSAGE_LIMITS.MAX_LENGTH;
+
+  // Merge incoming messages from polling/SSE — deduplicates by ID
+  const mergeMessages = useCallback((incoming: ChatMessage[]) => {
+    setMessages((prev) => {
+      const existingIds = new Set(prev.map((m) => m.id));
+      const newOnes = incoming.filter((m) => !existingIds.has(m.id));
+      return newOnes.length === 0 ? prev : [...prev, ...newOnes];
+    });
+  }, []);
 
   // Fetch initial messages and setup SSE
   useEffect(() => {
@@ -126,57 +136,29 @@ export function MessageThreadScreen({
 
     fetchAndSetup();
 
-    // Setup SSE stream for real-time messages (web-only)
+    // Setup SSE stream for real-time messages (web-only).
+    // The stream now runs in heartbeat-only mode when Redis is unavailable,
+    // so it will never fail with a 500 or cause a reconnect loop.
     let eventSource: EventSource | null = null;
     if (typeof window !== "undefined" && window.EventSource) {
       eventSource = new EventSource(`/api/orders/${orderId}/messages/stream`);
-
-      eventSource.addEventListener("open", () => {
-        if (!cancelled) {
-          setIsConnected(true);
-          setSSEError(null);
-          // Cancel any pending disconnect notification — reconnect was fast enough
-          if (reconnectTimerRef.current) {
-            clearTimeout(reconnectTimerRef.current);
-            reconnectTimerRef.current = null;
-          }
-        }
-      });
 
       eventSource.addEventListener("message", (event) => {
         try {
           const data = JSON.parse(event.data);
           if (data.type === "new_message" && data.message && !cancelled) {
-            setMessages((prev) => {
-              if (prev.some((m) => m.id === data.message.id)) return prev;
-              return [
-                ...prev,
-                {
-                  id: data.message.id,
-                  senderId: data.message.senderId,
-                  content: data.message.content,
-                  createdAt: data.message.createdAt,
-                  isRead: data.message.isRead,
-                },
-              ];
-            });
+            mergeMessages([
+              {
+                id: data.message.id,
+                senderId: data.message.senderId,
+                content: data.message.content,
+                createdAt: data.message.createdAt,
+                isRead: data.message.isRead,
+              },
+            ]);
           }
         } catch {
-          // Ignore heartbeat parse errors
-        }
-      });
-
-      eventSource.addEventListener("error", () => {
-        if (!cancelled) {
-          setIsConnected(false);
-          // Only show the banner if still disconnected after 5 seconds.
-          // Vercel-timeout-induced reconnects complete in ~1-2s, so they'll
-          // be invisible to the user. Only genuine network problems will show.
-          reconnectTimerRef.current = setTimeout(() => {
-            if (!cancelled) {
-              setSSEError("Connection lost. Reconnecting...");
-            }
-          }, 5000);
+          // Ignore heartbeat comments and malformed events
         }
       });
     }
@@ -184,17 +166,41 @@ export function MessageThreadScreen({
     return () => {
       cancelled = true;
       eventSource?.close();
-      if (reconnectTimerRef.current) {
-        clearTimeout(reconnectTimerRef.current);
-      }
     };
-  }, [orderId, currentUserId, initialMessages, onFetchMessages, onMarkAsRead]);
+  }, [orderId, initialMessages, onFetchMessages, onMarkAsRead, mergeMessages]);
+
+  // 10-second polling fallback — delivers messages when SSE/Redis is unavailable.
+  // Also runs alongside SSE when Redis is healthy (deduplication prevents duplicates).
+  useEffect(() => {
+    if (!onFetchMessages) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const data = await onFetchMessages(orderId);
+        mergeMessages(
+          data.messages.map((msg) => ({
+            id: msg.id,
+            senderId: msg.senderId,
+            content: msg.content,
+            createdAt: msg.createdAt,
+            isRead: msg.isRead,
+          }))
+        );
+      } catch {
+        // Silent — polling failures don't surface to the user
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [orderId, onFetchMessages, mergeMessages]);
 
   const handleSend = useCallback(async () => {
     if (!newMessage.trim() || sending || isOverLimit) return;
 
     setSending(true);
     setError(null);
+    setFailedContent(null);
+    failedTempIdRef.current = null;
 
     const content = newMessage.trim();
     const tempId = `temp-${Date.now()}`;
@@ -227,12 +233,25 @@ export function MessageThreadScreen({
         );
       }
     } catch (err) {
-      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      // Keep the optimistic message visible — never remove it on failure.
+      // Store what failed so the user can retry without retyping.
+      failedTempIdRef.current = tempId;
+      setFailedContent(content);
       setError(err instanceof Error ? err.message : "Failed to send message");
     } finally {
       setSending(false);
     }
   }, [newMessage, sending, isOverLimit, orderId, currentUserId, onSendMessage]);
+
+  const handleRetry = useCallback(() => {
+    if (!failedContent) return;
+    // Remove the stuck optimistic message and re-populate the input
+    setMessages((prev) => prev.filter((m) => m.id !== failedTempIdRef.current));
+    setNewMessage(failedContent);
+    setFailedContent(null);
+    failedTempIdRef.current = null;
+    setError(null);
+  }, [failedContent]);
 
   return (
     <Column width="100%" height="100%" paddingTop={insets.top} backgroundColor="$background">
@@ -267,46 +286,16 @@ export function MessageThreadScreen({
         )}
 
         <Column flex={1} gap="$xs">
-          <Row alignItems="center" gap="$sm">
-            <Text size="$6" weight="bold" numberOfLines={1} flex={1}>
-              {productTitle}
-            </Text>
-            {typeof window !== "undefined" && window.EventSource && (
-              <Row alignItems="center" gap="$xs">
-                <View
-                  width={8}
-                  height={8}
-                  borderRadius="$full"
-                  backgroundColor={isConnected ? "$success" : "$warning"}
-                />
-                <Text size="$2" color="$textTertiary">
-                  {isConnected ? "Live" : "Offline"}
-                </Text>
-              </Row>
-            )}
-          </Row>
+          <Text size="$6" weight="bold" numberOfLines={1}>
+            {productTitle}
+          </Text>
           <Text size="$4" color="$textSecondary" numberOfLines={1}>
             {otherUserName}
           </Text>
         </Column>
       </Row>
 
-      {/* SSE Error Banner */}
-      {sseError && (
-        <Row
-          backgroundColor="$warningLight"
-          paddingHorizontal="$md"
-          paddingVertical="$sm"
-          alignItems="center"
-          gap="$sm"
-        >
-          <Text size="$3" color="$warning">
-            {sseError}
-          </Text>
-        </Row>
-      )}
-
-      {/* Error Banner */}
+      {/* Error / Retry Banner */}
       {error && (
         <Row
           backgroundColor="$errorLight"
@@ -318,15 +307,21 @@ export function MessageThreadScreen({
           <Text size="$3" color="$error" flex={1}>
             {error}
           </Text>
-          <Text
-            size="$3"
-            color="$error"
-            weight="semibold"
-            cursor="pointer"
-            onPress={() => setError(null)}
-          >
-            Dismiss
-          </Text>
+          {failedContent ? (
+            <Text size="$3" color="$error" weight="semibold" cursor="pointer" onPress={handleRetry}>
+              Retry
+            </Text>
+          ) : (
+            <Text
+              size="$3"
+              color="$error"
+              weight="semibold"
+              cursor="pointer"
+              onPress={() => setError(null)}
+            >
+              Dismiss
+            </Text>
+          )}
         </Row>
       )}
 

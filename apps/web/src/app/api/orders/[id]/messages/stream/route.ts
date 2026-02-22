@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
 import { createRedisSubscriber } from "@/lib/redis";
+import type { Redis } from "ioredis";
 
 export const runtime = "nodejs"; // Required for Redis connections
 export const maxDuration = 300; // 5 min max (Vercel Pro) — reduces reconnect frequency
@@ -15,6 +16,8 @@ export const maxDuration = 300; // 5 min max (Vercel Pro) — reduces reconnect 
  * - Uses Redis Pub/Sub to broadcast across Vercel's distributed functions
  * - Each SSE connection subscribes to order-specific Redis channel
  * - Sends heartbeat every 30s to keep connection alive (prevents proxies from closing)
+ * - If Redis is unavailable, runs in heartbeat-only mode (no 500, no reconnect loop)
+ *   — messages are still delivered via the client's 10-second polling fallback
  * ─────────────────────────────────────────────────
  */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -60,69 +63,80 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const stream = new ReadableStream({
       async start(controller) {
-        // Declare heartbeat interval at outer scope for cleanup
         let heartbeat: ReturnType<typeof setInterval> | null = null;
+        let redis: Redis | null = null;
+        const channel = `order:${orderId}:messages`;
+
+        // Cleanup helper — called on both disconnect and error
+        const cleanup = () => {
+          if (heartbeat) {
+            clearInterval(heartbeat);
+            heartbeat = null;
+          }
+          if (redis) {
+            redis.unsubscribe(channel).catch(() => {});
+            redis.disconnect();
+            redis = null;
+          }
+        };
 
         try {
-          // Create Redis subscriber (new instance for this SSE connection)
-          const redis = createRedisSubscriber();
-          const channel = `order:${orderId}:messages`;
-
-          // Subscribe to order's message channel
-          await redis.subscribe(channel);
-          console.log(`[SSE] User ${user.id} subscribed to channel: ${channel}`);
-
           // Send initial connection event
-          const initEvent = `data: ${JSON.stringify({ type: "connected" })}\n\n`;
-          controller.enqueue(encoder.encode(initEvent));
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "connected" })}\n\n`));
 
-          // Heartbeat every 30 seconds to keep connection alive
-          // (some proxies/load balancers close idle connections)
-          heartbeat = setInterval(() => {
-            const event = `:heartbeat\n\n`;
-            controller.enqueue(encoder.encode(event));
-          }, 30000);
+          // Attempt to set up Redis pub/sub. If Redis is unavailable (REDIS_URL unset
+          // or connection refused), fall through to heartbeat-only mode — the client
+          // will still receive new messages via its 10-second polling fallback.
+          try {
+            redis = createRedisSubscriber();
+            await redis.subscribe(channel);
+            console.log(`[SSE] User ${user.id} subscribed to channel: ${channel}`);
 
-          // Listen for messages published to this order's channel
-          redis.on("message", (receivedChannel: string, message: string) => {
-            if (receivedChannel === channel) {
-              try {
-                // Verify it's valid JSON before sending
-                JSON.parse(message);
-                const event = `data: ${message}\n\n`;
-                controller.enqueue(encoder.encode(event));
-                console.log(`[SSE] Sent message to user ${user.id}`);
-              } catch (err) {
-                console.error(`[SSE] Invalid JSON message: ${message}`, err);
+            // Listen for messages published to this order's channel
+            redis.on("message", (receivedChannel: string, message: string) => {
+              if (receivedChannel === channel) {
+                try {
+                  JSON.parse(message); // Verify valid JSON before sending
+                  controller.enqueue(encoder.encode(`data: ${message}\n\n`));
+                  console.log(`[SSE] Sent message to user ${user.id}`);
+                } catch (err) {
+                  console.error(`[SSE] Invalid JSON message: ${message}`, err);
+                }
               }
-            }
-          });
+            });
 
-          redis.on("error", (err) => {
-            console.error(`[SSE] Redis error for user ${user.id}:`, err);
-            // Clear heartbeat on error to prevent it continuing
-            if (heartbeat) {
-              clearInterval(heartbeat);
+            redis.on("error", (err) => {
+              console.error(`[SSE] Redis error for user ${user.id}:`, err);
+              // Don't close the stream on Redis error — heartbeat keeps it alive
+              // and the client's polling fallback handles message delivery.
+            });
+          } catch (redisErr) {
+            console.warn(
+              `[SSE] Redis unavailable for user ${user.id}, running heartbeat-only mode:`,
+              redisErr
+            );
+            // redis stays null — heartbeat-only, no pub/sub
+          }
+
+          // Heartbeat every 30 seconds — runs regardless of Redis availability.
+          // Prevents proxies/load-balancers from closing idle connections.
+          heartbeat = setInterval(() => {
+            try {
+              controller.enqueue(encoder.encode(`:heartbeat\n\n`));
+            } catch {
+              // Stream may already be closed — ignore
             }
-            controller.error(err);
-          });
+          }, 30000);
 
           // Cleanup when client disconnects
           req.signal.addEventListener("abort", () => {
             console.log(`[SSE] User ${user.id} disconnected from channel: ${channel}`);
-            if (heartbeat) {
-              clearInterval(heartbeat);
-            }
-            redis.unsubscribe(channel);
-            redis.disconnect();
+            cleanup();
             controller.close();
           });
         } catch (err) {
           console.error("[SSE] Error starting stream:", err);
-          // Clear heartbeat if it was set before error
-          if (heartbeat) {
-            clearInterval(heartbeat);
-          }
+          cleanup();
           controller.error(err);
         }
       },

@@ -52,6 +52,12 @@ export function MessageThread({
     });
   }, []);
 
+  const handleFetchMessages = useCallback(async (oid: string) => {
+    const response = await fetch(`/api/orders/${oid}/messages`);
+    if (!response.ok) throw new Error("Failed to fetch messages");
+    return response.json();
+  }, []);
+
   return (
     <Column width="100%" height="100%">
       <MessageThreadScreen
@@ -62,6 +68,7 @@ export function MessageThread({
         productTitle={productTitle}
         productImage={productImage}
         initialMessages={initialMessages}
+        onFetchMessages={handleFetchMessages}
         onSendMessage={handleSendMessage}
         onMarkAsRead={handleMarkAsRead}
         onBack={isMobile ? () => router.push("/messages") : undefined}
