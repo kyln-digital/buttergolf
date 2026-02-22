@@ -151,8 +151,12 @@ export function Autocomplete({
     [key: string]: unknown;
   };
 
+  // HTMLDivElement vs TamaguiElement cross-platform ref mismatch — cast required
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const containerRefForTamagui = containerRef as any;
+
   return (
-    <Column ref={containerRef as any} position="relative" width="100%">
+    <Column ref={containerRefForTamagui} position="relative" width="100%">
       <div onKeyDown={handleKeyDown}>
         <Input
           value={value}

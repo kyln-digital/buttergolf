@@ -173,8 +173,12 @@ export function CategorySelector({
     }
   }, [activeIndex, updateUnderlinePosition]);
 
+  // HTMLDivElement vs TamaguiElement cross-platform ref mismatch — cast required
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const containerRefForTamagui = containerRef as any;
+
   return (
-    <CategorySelectorContainer ref={containerRef as any}>
+    <CategorySelectorContainer ref={containerRefForTamagui}>
       {categories.map((category, index) => {
         const isActive = category.href === activeCategory;
         const isHovered = hoveredIndex === index;

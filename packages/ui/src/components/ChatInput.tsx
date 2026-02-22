@@ -94,9 +94,11 @@ export function ChatInput({
   const showCounter = value.length > maxLength * 0.8;
   const canSend = value.trim().length > 0 && !isOverLimit && !sending && !disabled;
   const canSendRef = useRef(canSend);
+  // eslint-disable-next-line react-compiler/react-compiler -- intentional "latest ref" pattern to avoid stale closures in effects
   canSendRef.current = canSend;
 
   const onSendRef = useRef(onSend);
+  // eslint-disable-next-line react-compiler/react-compiler -- intentional "latest ref" pattern to avoid stale closures in effects
   onSendRef.current = onSend;
 
   const textAreaRef = useRef<TextInput>(null);
