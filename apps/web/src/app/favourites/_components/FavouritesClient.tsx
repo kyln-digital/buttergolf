@@ -31,7 +31,7 @@ const FAVOURITES_SORT_OPTIONS = [
   { value: "price-asc", label: "Price: Low to High" },
   { value: "price-desc", label: "Price: High to Low" },
   { value: "name-az", label: "Name: A–Z" },
-] as const;
+];
 
 const VALID_SORT_VALUES = new Set(FAVOURITES_SORT_OPTIONS.map((o) => o.value));
 
