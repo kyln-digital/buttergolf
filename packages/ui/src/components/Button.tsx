@@ -21,6 +21,7 @@
  */
 
 import { Button as TamaguiButton, styled, GetProps, withStaticProperties } from "tamagui";
+import { ButtonContext } from "@tamagui/button";
 import { Platform } from "react-native";
 
 /**
@@ -45,6 +46,7 @@ const buttonShadow =
 
 const ButtonBase = styled(TamaguiButton, {
   name: "Button",
+  context: ButtonContext,
 
   // Base styles for all buttons
   // Note: In Tamagui v2, font-related props (fontFamily, fontWeight) are not valid on the Button
