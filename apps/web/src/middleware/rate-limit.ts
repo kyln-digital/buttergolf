@@ -1,13 +1,12 @@
 /**
  * Rate Limiting Middleware
  *
- * Uses Redis INCR + EXPIRE for distributed rate limiting across
- * multiple serverless instances. Falls back to in-memory Map when
- * Redis is unavailable.
+ * Uses an in-memory Map for rate limiting within a single serverless instance.
+ * Sufficient for per-user throttling — each cold start resets counts, which is
+ * an acceptable trade-off vs. adding a distributed store dependency.
  */
 
 import { NextResponse } from "next/server";
-import { getRedisPublisher } from "@/lib/redis";
 
 /**
  * Rate limit configuration
@@ -43,7 +42,6 @@ interface RateLimitEntry {
 }
 
 const fallbackStore = new Map<string, RateLimitEntry>();
-let redisFallbackLogged = false;
 
 setInterval(
   () => {
@@ -87,79 +85,19 @@ function checkRateLimitInMemory(userId: string, config: RateLimitConfig): RateLi
   };
 }
 
-// ─── Primary: Redis-backed rate limiting ──────────────────────────────
+// ─── Rate limiting (in-memory) ────────────────────────────────────────
 
 /**
  * Check if request should be rate limited.
  *
- * Uses Redis INCR + EXPIRE for distributed counting across serverless
- * instances. Falls back to in-memory when Redis is unavailable.
+ * Uses an in-memory Map for per-instance counting. Each serverless cold
+ * start resets counts, which provides a lenient but effective throttle.
  */
 export async function checkRateLimit(
   userId: string,
   config: RateLimitConfig
 ): Promise<RateLimitResult> {
-  const key = `ratelimit:${config.keyFn(userId)}`;
-  const windowSeconds = Math.ceil(config.windowMs / 1000);
-
-  if (!process.env.REDIS_URL) {
-    return checkRateLimitInMemory(userId, config);
-  }
-
-  try {
-    const redis = getRedisPublisher();
-
-    // Avoid command attempts until the socket is truly ready.
-    // With enableOfflineQueue=false, issuing commands too early throws
-    // "Stream isn't writeable" and creates noisy logs.
-    if (redis.status !== "ready") {
-      if (!redisFallbackLogged) {
-        console.warn(
-          `[RateLimit] Redis not ready (status: ${redis.status}), using in-memory fallback.`
-        );
-        redisFallbackLogged = true;
-      }
-      return checkRateLimitInMemory(userId, config);
-    }
-
-    // INCR atomically increments and returns the new count.
-    // On first call the key is created with value 1.
-    const count = await redis.incr(key);
-
-    // Set expiry only on first increment (count === 1) to avoid
-    // resetting the window on subsequent requests.
-    if (count === 1) {
-      await redis.expire(key, windowSeconds);
-    }
-
-    // Read the remaining TTL so the reset time is accurate
-    const ttl = await redis.ttl(key);
-    const resetAt = new Date(Date.now() + (ttl > 0 ? ttl * 1000 : config.windowMs));
-
-    const isLimited = count > config.maxRequests;
-    const remaining = Math.max(0, config.maxRequests - count);
-
-    // Redis recovered and is serving traffic again.
-    redisFallbackLogged = false;
-
-    return {
-      isLimited,
-      remaining,
-      resetAt,
-      headers: {
-        "X-RateLimit-Limit": config.maxRequests.toString(),
-        "X-RateLimit-Remaining": remaining.toString(),
-        "X-RateLimit-Reset": resetAt.toISOString(),
-      },
-    };
-  } catch (err) {
-    // Redis error — degrade to in-memory.
-    if (!redisFallbackLogged) {
-      console.warn("[RateLimit] Redis unavailable, using in-memory fallback:", err);
-      redisFallbackLogged = true;
-    }
-    return checkRateLimitInMemory(userId, config);
-  }
+  return checkRateLimitInMemory(userId, config);
 }
 
 /**

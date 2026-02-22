@@ -1,5 +1,24 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { EventSourceLike } from "@buttergolf/app/src/features/messages/message-thread-screen";
+
+// Module-level singleton — reused across reconnects to avoid leaking
+// WebSocket transports. Each call to `createSupabaseEventSource` creates
+// a new *channel* on this shared client.
+let _supabase: SupabaseClient | null = null;
+
+function getSupabaseClient(): SupabaseClient {
+  if (_supabase) return _supabase;
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Supabase environment variables not configured");
+  }
+
+  _supabase = createClient(supabaseUrl, supabaseKey);
+  return _supabase;
+}
 
 // ============================================================================
 // CLIENT-SIDE: Supabase Realtime subscription (EventSourceLike adapter)
@@ -9,9 +28,7 @@ import type { EventSourceLike } from "@buttergolf/app/src/features/messages/mess
  * Create a Supabase Realtime channel subscription that implements the
  * EventSourceLike interface consumed by MessageThreadScreen.
  *
- * Replaces the previous SSE + Redis pub/sub approach with Supabase Broadcast
- * channels. Uses only the anon key — no Supabase Auth required.
- *
+ * Uses Supabase Broadcast channels with a shared client singleton.
  * Channel per order for isolation. Supabase handles reconnection internally.
  */
 export function createSupabaseEventSource(url: string): EventSourceLike {
@@ -22,14 +39,7 @@ export function createSupabaseEventSource(url: string): EventSourceLike {
     throw new Error(`Cannot extract orderId from URL: ${url}`);
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error("Supabase environment variables not configured");
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = getSupabaseClient();
   const channelName = `order-messages:${orderId}`;
 
   type Listener = (event: { data: string }) => void;

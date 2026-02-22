@@ -80,7 +80,7 @@ interface MessageThreadScreenProps {
   onMarkAsRead?: (orderId: string) => Promise<void>;
   /** Navigate back */
   onBack?: () => void;
-  /** Factory to create an SSE connection. Defaults to native EventSource on web.
+  /** Factory to create a realtime connection. Defaults to native EventSource on web.
    *  Mobile should pass a factory using react-native-sse with auth headers. */
   createEventSource?: (url: string) => EventSourceLike;
 }
@@ -119,8 +119,8 @@ export function MessageThreadScreen({
   // unmount/remount when the optimistic temp ID is replaced with the server ID.
   const stableKeyMapRef = useRef<TempIdMap>(new Map());
 
-  // Tracks whether SSE is currently connected (diagnostics only)
-  const sseConnectedRef = useRef(false);
+  // Tracks whether Realtime is currently connected (diagnostics only)
+  const realtimeConnectedRef = useRef(false);
 
   const isOverLimit = newMessage.length > MESSAGE_LIMITS.MAX_LENGTH;
 
@@ -236,10 +236,10 @@ export function MessageThreadScreen({
 
     fetchAndSetup();
 
-    // Setup SSE stream for real-time messages with auto-reconnect.
-    // Uses createEventSource factory if provided (mobile), falls back to
-    // native EventSource (web). Reconnects with exponential backoff on failure.
-    const sseUrl = `/api/orders/${orderId}/messages/stream`;
+    // Setup realtime stream for messages with auto-reconnect.
+    // Uses createEventSource factory if provided (mobile/Supabase), falls back
+    // to native EventSource (web). Reconnects with exponential backoff on failure.
+    const channelUrl = `/api/orders/${orderId}/messages/stream`;
     let currentSource: EventSourceLike | null = null;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     let reconnectDelay = 1000; // Start at 1s, double each attempt, cap at 30s
@@ -275,7 +275,7 @@ export function MessageThreadScreen({
         }
         // Any successful message resets the backoff
         reconnectDelay = 1000;
-        sseConnectedRef.current = true;
+        realtimeConnectedRef.current = true;
       } catch {
         // Ignore heartbeat comments and malformed events
       }
@@ -287,20 +287,20 @@ export function MessageThreadScreen({
 
       let es: EventSourceLike | null = null;
       if (createEventSourceProp) {
-        es = createEventSourceProp(sseUrl);
+        es = createEventSourceProp(channelUrl);
       } else if (typeof window !== "undefined" && window.EventSource) {
-        es = new EventSource(sseUrl);
+        es = new EventSource(channelUrl);
       }
 
       if (!es) return;
       currentSource = es;
-      // Don't set sseConnectedRef here — wait for the 'connected' event
+      // Don't set realtimeConnectedRef here — wait for the 'connected' event
       // from the adapter, which confirms the channel is actually subscribed.
 
       es.addEventListener("message", handleMessage);
       es.addEventListener("error", () => {
         if (cancelled) return;
-        sseConnectedRef.current = false;
+        realtimeConnectedRef.current = false;
         currentSource?.close();
         currentSource = null;
         // Schedule reconnect with exponential backoff
@@ -315,13 +315,13 @@ export function MessageThreadScreen({
 
     return () => {
       cancelled = true;
-      sseConnectedRef.current = false;
+      realtimeConnectedRef.current = false;
       currentSource?.close();
       if (reconnectTimer) clearTimeout(reconnectTimer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- initialMessages
     // is intentionally read from a ref so that a new server-side array
-    // reference does not tear down and recreate the SSE connection.
+    // reference does not tear down and recreate the realtime connection.
   }, [orderId, currentUserId, onFetchMessages, onMarkAsRead, mergeMessages, createEventSourceProp]);
 
   // 10-second polling sync — always enabled to guarantee eventual consistency
