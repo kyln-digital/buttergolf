@@ -546,6 +546,8 @@ export interface LabelGenerationResult {
   trackingNumber: string;
   trackingUrl: string;
   labelUrl: string;
+  labelPngUrl: string | null;
+  labelZplUrl: string | null;
   carrier: string;
   service: string;
   estimatedDelivery?: string;
@@ -709,11 +711,14 @@ export async function generateShippingLabel(params: {
     );
   }
 
-  // Create the label using the selected rate
+  // Create the label using the selected rate.
+  // ShipEngine always returns PDF, PNG, and ZPL URLs in label_download regardless
+  // of label_format. label_format only controls which URL label_download.href points to.
   const labelRequest = {
     rate_id: selectedRate.rate_id,
     label_format: "pdf",
     label_layout: "4x6",
+    label_download_type: "url",
   };
 
   const labelResponse = await shipEngineRequest<ShipEngineLabelResponse>(
@@ -728,14 +733,16 @@ export async function generateShippingLabel(params: {
     labelResponse.tracking_number
   );
 
-  // Update order in database
+  // Update order in database with all label format URLs (PDF, PNG, ZPL)
   await prisma.order.update({
     where: { id: orderId },
     data: {
       shipEngineShipmentId: labelResponse.shipment_id,
       shipEngineRateId: selectedRate.rate_id,
       labelUrl: labelResponse.label_download.pdf,
-      labelFormat: "pdf",
+      labelPngUrl: labelResponse.label_download?.png ?? null,
+      labelZplUrl: labelResponse.label_download?.zpl ?? null,
+      labelFormat: "pdf", // Primary label URL is PDF; PNG/ZPL stored separately
       trackingCode: labelResponse.tracking_number,
       trackingUrl: trackingUrl,
       carrier: selectedRate.carrier_friendly_name,
@@ -782,6 +789,8 @@ export async function generateShippingLabel(params: {
     trackingNumber: labelResponse.tracking_number,
     trackingUrl,
     labelUrl: labelResponse.label_download.pdf,
+    labelPngUrl: labelResponse.label_download?.png ?? null,
+    labelZplUrl: labelResponse.label_download?.zpl ?? null,
     carrier: selectedRate.carrier_friendly_name,
     service: selectedRate.service_type,
     estimatedDelivery: selectedRate.estimated_delivery_date,
