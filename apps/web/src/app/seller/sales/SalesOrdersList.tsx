@@ -53,6 +53,8 @@ interface Order {
   trackingCode: string | null;
   trackingUrl: string | null;
   labelUrl: string | null;
+  labelPngUrl: string | null;
+  labelZplUrl: string | null;
   carrier: string | null;
   paymentHoldStatus: PaymentHoldStatus | null;
   autoReleaseAt: Date | null;
@@ -163,6 +165,8 @@ function OrderCard({ order }: { order: Order }) {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [labelUrl, setLabelUrl] = useState(order.labelUrl);
+  const [labelPngUrl, setLabelPngUrl] = useState(order.labelPngUrl);
+  const [labelZplUrl, setLabelZplUrl] = useState(order.labelZplUrl);
   const [trackingCode, setTrackingCode] = useState(order.trackingCode);
   const [trackingUrl, setTrackingUrl] = useState(order.trackingUrl);
   const [status, setStatus] = useState(order.status);
@@ -201,6 +205,8 @@ function OrderCard({ order }: { order: Order }) {
       }
 
       setLabelUrl(data.labelUrl);
+      setLabelPngUrl(data.labelPngUrl ?? null);
+      setLabelZplUrl(data.labelZplUrl ?? null);
       setTrackingCode(data.trackingNumber);
       setTrackingUrl(data.trackingUrl);
       setStatus("LABEL_GENERATED");
@@ -379,14 +385,65 @@ function OrderCard({ order }: { order: Order }) {
           )}
 
           {labelUrl && (
-            <a href={labelUrl} target="_blank" rel="noopener noreferrer" style={{ width: "100%" }}>
-              <Button size="$4" backgroundColor="$success" width="100%">
-                <Download size={16} color="$textInverse" />
-                <Text color="$textInverse" marginLeft="$xs">
-                  Download Label
-                </Text>
-              </Button>
-            </a>
+            <Column gap="$xs" width="100%">
+              {/* Inline PNG label preview */}
+              {labelPngUrl && (
+                <Column
+                  borderWidth={1}
+                  borderColor="$border"
+                  borderRadius="$md"
+                  overflow="hidden"
+                  width="100%"
+                  backgroundColor="$surface"
+                >
+                  <Image
+                    src={labelPngUrl}
+                    alt="Shipping label preview"
+                    width={816}
+                    height={1248}
+                    unoptimized
+                    style={{ width: "100%", height: "auto", display: "block" }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                </Column>
+              )}
+              {/* PDF download */}
+              <a
+                href={labelUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ width: "100%" }}
+              >
+                <Button size="$4" backgroundColor="$success" color="$textInverse" width="100%">
+                  <Download size={16} />
+                  <Text color="$textInverse" marginLeft="$xs">
+                    Download PDF Label
+                  </Text>
+                </Button>
+              </a>
+              {/* ZPL download for thermal printers */}
+              {labelZplUrl && (
+                <a
+                  href={labelZplUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ width: "100%" }}
+                >
+                  <Button
+                    size="$4"
+                    borderWidth={1}
+                    borderColor="$border"
+                    backgroundColor="transparent"
+                    width="100%"
+                  >
+                    <Download size={16} />
+                    <Text marginLeft="$xs">ZPL (Thermal Printer)</Text>
+                  </Button>
+                </a>
+              )}
+            </Column>
           )}
 
           {trackingUrl && (

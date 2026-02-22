@@ -21,6 +21,7 @@ import { useServerInsertedHTML } from "next/navigation";
 import { NextThemeProvider, useRootTheme } from "@tamagui/next-theme";
 import { TamaguiProvider } from "tamagui";
 import { config } from "@buttergolf/config";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 /**
  * Inner provider that uses useRootTheme inside NextThemeProvider context
@@ -77,7 +78,9 @@ export function NextTamaguiProvider({ children }: Readonly<{ children: ReactNode
       enableSystem // Enable system preference detection
       defaultTheme="system" // Default to system preference
     >
-      <TamaguiProviderInner>{children}</TamaguiProviderInner>
+      <TamaguiProviderInner>
+        <SafeAreaProvider>{children}</SafeAreaProvider>
+      </TamaguiProviderInner>
     </NextThemeProvider>
   );
 }

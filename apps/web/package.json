@@ -62,7 +62,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "catalog:",
-    "@prisma/nextjs-monorepo-workaround-plugin": "7.1.0",
+    "@prisma/nextjs-monorepo-workaround-plugin": "7.4.1",
     "@tailwindcss/postcss": "^4",
     "@tamagui/next-plugin": "catalog:",
     "@types/canvas-confetti": "catalog:",
