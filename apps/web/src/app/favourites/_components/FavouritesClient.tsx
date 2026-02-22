@@ -180,7 +180,7 @@ function DotPagination({
 export function FavouritesClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { removeFromFavourites } = useFavouritesContext();
+  const { removeFromFavourites, isFavourited: isGloballyFavourited } = useFavouritesContext();
 
   const [products, setProducts] = useState<FavouritesResponse["products"]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -242,6 +242,32 @@ export function FavouritesClient() {
     };
   }, [page, router]);
 
+  // Sync local list when a heart is toggled via ProductCard's useFavouriteToggle.
+  // When the global favourites Set drops a product we still show, animate it out.
+  useEffect(() => {
+    if (loading || products.length === 0) return;
+
+    const unfavouritedIds = products.filter(
+      (p) => !isGloballyFavourited(p.id) && !removingIds.has(p.id)
+    );
+
+    for (const product of unfavouritedIds) {
+      // Trigger animated removal (same flow as handleRemove but without API call —
+      // useFavouriteToggle already made the DELETE request).
+      setRemovingIds((prev) => new Set(prev).add(product.id));
+      setTimeout(() => {
+        setProducts((prev) => prev.filter((p) => p.id !== product.id));
+        setTotalCount((c) => Math.max(0, c - 1));
+        setRemovingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(product.id);
+          return next;
+        });
+      }, 250);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isGloballyFavourited, loading]);
+
   // Client-side sort
   const sortedProducts = useMemo(() => {
     const items = [...products];
@@ -276,51 +302,6 @@ export function FavouritesClient() {
     [router, searchParams]
   );
 
-  // Remove with animation + undo
-  const handleRemove = useCallback(
-    async (productId: string) => {
-      // Start fade-out animation
-      setRemovingIds((prev) => new Set(prev).add(productId));
-
-      // Wait for animation
-      await new Promise((r) => setTimeout(r, 250));
-
-      // Optimistically remove from local state
-      const removed = products.find((p) => p.id === productId);
-      setProducts((prev) => prev.filter((p) => p.id !== productId));
-      setTotalCount((c) => Math.max(0, c - 1));
-      setRemovingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(productId);
-        return next;
-      });
-
-      // Update global favourites context
-      removeFromFavourites(productId);
-
-      // Show undo toast
-      if (removed) {
-        if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-        setUndoProduct(removed as ProductCardData & { favouritedAt: string });
-        undoTimerRef.current = setTimeout(() => setUndoProduct(null), 4000);
-      }
-
-      // Fire API call
-      try {
-        const response = await fetch(`/api/favourites/${productId}`, { method: "DELETE" });
-        if (!response.ok) throw new Error("Failed to remove favourite");
-      } catch (err) {
-        console.error("Error removing favourite:", err);
-        // Restore on failure
-        if (removed) {
-          setProducts((prev) => [...prev, removed]);
-          setTotalCount((c) => c + 1);
-        }
-      }
-    },
-    [products, removeFromFavourites]
-  );
-
   // Undo handler
   const handleUndo = useCallback(async () => {
     if (!undoProduct) return;
@@ -342,16 +323,6 @@ export function FavouritesClient() {
       console.error("Error restoring favourite:", err);
     }
   }, [undoProduct]);
-
-  // Listen for unfavourite events from ProductCard heart clicks
-  // The useFavouriteToggle hook handles the API call, so we just need to
-  // sync the local list when a heart is toggled
-  useEffect(() => {
-    // Poll favourites context to detect removals — ProductCard handles
-    // its own toggle, but we need to reflect it in this page's local state.
-    // We do this by checking if any product in our list is no longer favourited.
-    // This is lightweight since it's a Set lookup.
-  }, []);
 
   return (
     <>
