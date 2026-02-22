@@ -359,18 +359,35 @@ export function MessageThreadScreen({
             return prev.filter((m) => m.id !== tempId);
           }
 
+          const tempStillExists = prev.some((m) => m.id === tempId);
+
           // Normal path — swap the temp placeholder with confirmed data.
-          return prev.map((m) =>
-            m.id === tempId
-              ? {
-                  id: message.id,
-                  senderId: message.senderId,
-                  content: message.content,
-                  createdAt: message.createdAt,
-                  isRead: message.isRead,
-                }
-              : m
-          );
+          if (tempStillExists) {
+            return prev.map((m) =>
+              m.id === tempId
+                ? {
+                    id: message.id,
+                    senderId: message.senderId,
+                    content: message.content,
+                    createdAt: message.createdAt,
+                    isRead: message.isRead,
+                  }
+                : m
+            );
+          }
+
+          // Component may have remounted before POST resolved (e.g. layout/media
+          // switch). In that case the temp row is gone — append confirmed message.
+          return [
+            ...prev,
+            {
+              id: message.id,
+              senderId: message.senderId,
+              content: message.content,
+              createdAt: message.createdAt,
+              isRead: message.isRead,
+            },
+          ];
         });
       }
     } catch (err) {
