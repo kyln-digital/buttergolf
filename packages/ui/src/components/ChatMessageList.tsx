@@ -248,7 +248,7 @@ export function ChatMessageList({
                   timestamp={formatTimestamp(message.createdAt)}
                   avatarUrl={!isOwn ? otherUserImage : undefined}
                   avatarName={!isOwn ? otherUserName : undefined}
-                  animated={!message.id.startsWith("temp-")}
+                  animated={message.id.startsWith("temp-")}
                   isGrouped={!!sameSenderAsPrev}
                   isLastInGroup={!sameSenderAsNext}
                   isRead={isOwn ? message.isRead : undefined}
