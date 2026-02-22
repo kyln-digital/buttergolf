@@ -143,7 +143,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 backgroundColor="transparent"
                 borderWidth={2}
                 borderColor="$border"
-                color="$text"
+                {...({ color: "$text" } as {})}
                 onPress={() => {
                   // Navigate to home or reload page
                   if (globalThis.window !== undefined) {

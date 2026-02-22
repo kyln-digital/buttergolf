@@ -116,8 +116,9 @@ export function ChatBubble({
       gap="$sm"
       alignItems="flex-end"
       flexDirection={isOwnMessage ? "row-reverse" : "row"}
-      animation={shouldAnimate ? "medium" : undefined}
-      enterStyle={shouldAnimate ? { opacity: 0, x: isOwnMessage ? 12 : -12 } : undefined}
+      {...(shouldAnimate
+        ? ({ animation: "medium", enterStyle: { opacity: 0, x: isOwnMessage ? 12 : -12 } } as {})
+        : {})}
       opacity={1}
       x={0}
       marginTop={isGrouped ? 2 : "$sm"}

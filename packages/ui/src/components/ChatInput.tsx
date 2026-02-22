@@ -50,6 +50,8 @@ const SendButton = styled(Button, {
   alignItems: "center",
   justifyContent: "center",
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore — animation in styled() base works at runtime; TS types for styled config don't include it
   animation: "quick",
 
   pressStyle: {
