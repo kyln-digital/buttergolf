@@ -546,8 +546,8 @@ export interface LabelGenerationResult {
   trackingNumber: string;
   trackingUrl: string;
   labelUrl: string;
-  labelPngUrl: string;
-  labelZplUrl: string;
+  labelPngUrl: string | null;
+  labelZplUrl: string | null;
   carrier: string;
   service: string;
   estimatedDelivery?: string;
@@ -740,9 +740,9 @@ export async function generateShippingLabel(params: {
       shipEngineShipmentId: labelResponse.shipment_id,
       shipEngineRateId: selectedRate.rate_id,
       labelUrl: labelResponse.label_download.pdf,
-      labelPngUrl: labelResponse.label_download.png,
-      labelZplUrl: labelResponse.label_download.zpl,
-      labelFormat: "multi", // PDF/PNG/ZPL all available
+      labelPngUrl: labelResponse.label_download?.png ?? null,
+      labelZplUrl: labelResponse.label_download?.zpl ?? null,
+      labelFormat: "pdf", // Primary label URL is PDF; PNG/ZPL stored separately
       trackingCode: labelResponse.tracking_number,
       trackingUrl: trackingUrl,
       carrier: selectedRate.carrier_friendly_name,
@@ -789,8 +789,8 @@ export async function generateShippingLabel(params: {
     trackingNumber: labelResponse.tracking_number,
     trackingUrl,
     labelUrl: labelResponse.label_download.pdf,
-    labelPngUrl: labelResponse.label_download.png,
-    labelZplUrl: labelResponse.label_download.zpl,
+    labelPngUrl: labelResponse.label_download?.png ?? null,
+    labelZplUrl: labelResponse.label_download?.zpl ?? null,
     carrier: selectedRate.carrier_friendly_name,
     service: selectedRate.service_type,
     estimatedDelivery: selectedRate.estimated_delivery_date,

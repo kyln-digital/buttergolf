@@ -698,6 +698,9 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                       height={1248}
                       unoptimized
                       style={{ width: "100%", height: "auto", display: "block" }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
                     />
                   </Column>
                 )}
