@@ -23,7 +23,10 @@ This guide also documents our authentication setup using Clerk for both platform
 
 ### Technology Stack
 
-- **UI Framework**: Tamagui 1.135.7 for cross-platform UI components and theming
+- **UI Framework**: Tamagui 2.0.0-rc.16 for cross-platform UI components and theming
+  - Migrated from v1 (1.144.3 → 2.0.0-rc.16) — see `docs/tamagui-v2-migration.md` for full changelog and break-fix guide
+  - v2 API changes to be aware of: `Stack` removed (use `YStack`/`XStack`), `children` typed as `Variable<any>` (upstream RC issue), CSS-only props (`transition`, `overflow`) must move to the `style` prop, `editable` replaced by `disabled` on Input/TextArea, `placeholderTextColor` accepts only token strings
+  - Web bundle uses `@tamagui/react-native-web-lite` alias for ~40 % payload reduction (see `docs/web-bundle-optimisation.md`)
 - **Database**: Prisma 6.x with PostgreSQL
 - **React**: 19.x (aligned across web and mobile)
 - **React Native**: 0.81.5
@@ -171,7 +174,7 @@ All internal packages use the `@buttergolf/` namespace:
 
 - **Config Package**: `packages/config` - Dedicated package for Tamagui configuration
 - **Config File**: `packages/config/src/tamagui.config.ts` (source of truth)
-- **Base Config**: Extends `@tamagui/config/v4` (using latest v4)
+- **Base Config**: Extends `@tamagui/config/v4` (Tamagui v2 package, config schema is still named v4)
 - **Re-export**: `packages/ui/tamagui.config.ts` - Thin re-export for backward compatibility
 - **TypeScript Paths**: Defined in `/tsconfig.base.json`
 

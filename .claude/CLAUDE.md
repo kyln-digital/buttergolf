@@ -29,7 +29,8 @@ buttergolf/
 
 - **Build System**: Turborepo 2.6.0 for orchestration and caching
 - **Package Manager**: pnpm 10.20.0 with workspace protocol
-- **UI Framework**: Tamagui 1.135.7 for cross-platform UI
+- **UI Framework**: Tamagui 2.0.0-rc.16 for cross-platform UI
+  - Migrated from v1 — see `docs/tamagui-v2-migration.md` for changelog and break-fix guide
 - **Database**: Prisma 6.x with PostgreSQL
 - **React**: 19.1.0 (aligned across web and mobile)
 - **TypeScript**: 5.9.2 (strict mode enabled)
@@ -155,7 +156,7 @@ export default async function Layout({ children }) {
 ### Core Configuration
 
 - **Config Package**: `packages/config/src/tamagui.config.ts` (source of truth)
-- **Base Config**: Extends `@tamagui/config/v4`
+- **Base Config**: Extends `@tamagui/config/v4` (Tamagui v2 package — config schema is still named v4)
 - **Re-export**: `packages/ui/tamagui.config.ts` for backward compatibility
 
 ### Color Tokens
