@@ -199,29 +199,32 @@ export function getRedisPublisher(): Redis {
     publisherClient = new Redis(process.env.REDIS_URL, {
       maxRetriesPerRequest: 3,
       enableReadyCheck: false,
-      enableOfflineQueue: true,
+      enableOfflineQueue: false,
+      connectTimeout: 5000,
       retryStrategy: (times) => {
         if (times > 3) {
           console.error("Redis publisher connection failed after 3 retries");
           return null; // Stop retrying after 3 attempts
         }
-        // Linear backoff with 3s cap: 100ms, 200ms, 300ms, ... capped at 3000ms
-        const delay = Math.min(times * 100, 3000);
-        console.warn(`Redis publisher reconnecting in ${delay}ms (attempt ${times})`);
+        const delay = Math.min(times * 200, 3000);
+        if (times === 1) {
+          console.warn(`Redis publisher reconnecting in ${delay}ms (attempt ${times})`);
+        }
         return delay;
       },
     });
 
+    let publisherErrorLogged = false;
     publisherClient.on("error", (err) => {
-      console.error("Redis Publisher Error:", err);
+      if (!publisherErrorLogged) {
+        console.error("Redis Publisher Error:", err.message);
+        publisherErrorLogged = true;
+      }
     });
 
     publisherClient.on("connect", () => {
+      publisherErrorLogged = false;
       console.log("Redis publisher connected");
-    });
-
-    publisherClient.on("reconnecting", (info) => {
-      console.log(`Redis publisher reconnecting: ${JSON.stringify(info)}`);
     });
   }
 
@@ -244,21 +247,33 @@ export function createRedisSubscriber(): Redis {
   }
 
   const subscriber = new Redis(process.env.REDIS_URL, {
-    maxRetriesPerRequest: null, // Never stop retrying for subscribers
+    maxRetriesPerRequest: null,
     enableReadyCheck: false,
     enableOfflineQueue: false,
+    connectTimeout: 5000,
     retryStrategy: (times) => {
-      const delay = Math.min(times * 100, 3000);
-      console.warn(`Redis subscriber reconnecting in ${delay}ms (attempt ${times})`);
+      if (times > 5) {
+        console.error(`Redis subscriber giving up after ${times} attempts`);
+        return null; // Stop retrying
+      }
+      const delay = Math.min(times * 200, 3000);
+      if (times === 1) {
+        console.warn(`Redis subscriber reconnecting in ${delay}ms (attempt ${times})`);
+      }
       return delay;
     },
   });
 
+  let errorLogged = false;
   subscriber.on("error", (err) => {
-    console.error("Redis Subscriber Error:", err);
+    if (!errorLogged) {
+      console.error("Redis Subscriber Error:", err.message);
+      errorLogged = true;
+    }
   });
 
   subscriber.on("connect", () => {
+    errorLogged = false;
     console.log("Redis subscriber connected");
   });
 

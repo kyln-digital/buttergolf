@@ -43,6 +43,7 @@ interface RateLimitEntry {
 }
 
 const fallbackStore = new Map<string, RateLimitEntry>();
+let redisFallbackLogged = false;
 
 setInterval(
   () => {
@@ -101,8 +102,25 @@ export async function checkRateLimit(
   const key = `ratelimit:${config.keyFn(userId)}`;
   const windowSeconds = Math.ceil(config.windowMs / 1000);
 
+  if (!process.env.REDIS_URL) {
+    return checkRateLimitInMemory(userId, config);
+  }
+
   try {
     const redis = getRedisPublisher();
+
+    // Avoid command attempts until the socket is truly ready.
+    // With enableOfflineQueue=false, issuing commands too early throws
+    // "Stream isn't writeable" and creates noisy logs.
+    if (redis.status !== "ready") {
+      if (!redisFallbackLogged) {
+        console.warn(
+          `[RateLimit] Redis not ready (status: ${redis.status}), using in-memory fallback.`
+        );
+        redisFallbackLogged = true;
+      }
+      return checkRateLimitInMemory(userId, config);
+    }
 
     // INCR atomically increments and returns the new count.
     // On first call the key is created with value 1.
@@ -121,6 +139,9 @@ export async function checkRateLimit(
     const isLimited = count > config.maxRequests;
     const remaining = Math.max(0, config.maxRequests - count);
 
+    // Redis recovered and is serving traffic again.
+    redisFallbackLogged = false;
+
     return {
       isLimited,
       remaining,
@@ -132,11 +153,10 @@ export async function checkRateLimit(
       },
     };
   } catch (err) {
-    // Redis error — degrade to in-memory. Distinguish configuration vs availability.
-    if (!process.env.REDIS_URL) {
-      console.info("[RateLimit] Redis not configured, using in-memory fallback.");
-    } else {
+    // Redis error — degrade to in-memory.
+    if (!redisFallbackLogged) {
       console.warn("[RateLimit] Redis unavailable, using in-memory fallback:", err);
+      redisFallbackLogged = true;
     }
     return checkRateLimitInMemory(userId, config);
   }

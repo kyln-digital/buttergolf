@@ -25,7 +25,6 @@ import {
 import { useThemeName } from "tamagui";
 import { CATEGORIES } from "@buttergolf/db";
 import { MenuIcon } from "./icons";
-import { MessagesBadge } from "./MessagesBadge";
 
 // Build navigation from single source of truth
 const NAV_CATEGORIES: Category[] = [
@@ -188,9 +187,6 @@ export function ButterHeader() {
               {/* Theme Toggle */}
               <ThemeToggleButton />
 
-              {/* Messages */}
-              <MessagesBadge />
-
               <AuthButtonsSection>
                 <LazySignedOut>
                   <Button
@@ -327,20 +323,6 @@ export function ButterHeader() {
               Selling
             </Text>
           </Link>
-          <Link
-            href="/messages"
-            style={{ textDecoration: "none" }}
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            <Text
-              size="$7"
-              weight={isActive("/messages") ? "bold" : "normal"}
-              color={isActive("/messages") ? "$primary" : "$text"}
-            >
-              Messages
-            </Text>
-          </Link>
-
           {/* Visual Divider */}
           <Row height={1} backgroundColor="$border" marginVertical="$4" width="100%" />
 

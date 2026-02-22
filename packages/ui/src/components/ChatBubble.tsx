@@ -25,8 +25,6 @@
  * ```
  */
 
-import { useMemo } from "react";
-import { Platform } from "react-native";
 import { styled, View, Image } from "tamagui";
 import { Text } from "./Text";
 import { Row } from "./Layout";
@@ -96,18 +94,11 @@ export function ChatBubble({
   timestamp,
   avatarUrl,
   avatarName,
-  animated = true,
+  animated = false,
   isGrouped = false,
   isLastInGroup = true,
   isRead,
 }: Readonly<ChatBubbleProps>) {
-  const prefersReducedMotion = useMemo(() => {
-    if (Platform.OS !== "web" || typeof globalThis.window === "undefined") return false;
-    return globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-  }, []);
-
-  const shouldAnimate = animated && !prefersReducedMotion;
-
   // Grouped messages: only show avatar on last message, tighter spacing
   const showAvatar = !isOwnMessage && isLastInGroup;
 
@@ -116,9 +107,8 @@ export function ChatBubble({
       gap="$sm"
       alignItems="flex-end"
       flexDirection={isOwnMessage ? "row-reverse" : "row"}
-      animation={shouldAnimate ? "medium" : undefined}
-      enterStyle={shouldAnimate ? { opacity: 0, x: isOwnMessage ? 12 : -12 } : undefined}
-      opacity={1}
+      animation={animated ? "quick" : undefined}
+      enterStyle={animated ? { x: isOwnMessage ? 20 : -20 } : undefined}
       x={0}
       marginTop={isGrouped ? 2 : "$sm"}
     >

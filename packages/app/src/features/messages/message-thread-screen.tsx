@@ -119,10 +119,7 @@ export function MessageThreadScreen({
   // unmount/remount when the optimistic temp ID is replaced with the server ID.
   const stableKeyMapRef = useRef<TempIdMap>(new Map());
 
-  // Ref to avoid re-running the setup effect when initialMessages reference changes
-  const initialMessagesRef = useRef(initialMessages);
-
-  // Tracks whether SSE is currently connected (used by polling to skip when SSE is active)
+  // Tracks whether SSE is currently connected (diagnostics only)
   const sseConnectedRef = useRef(false);
 
   const isOverLimit = newMessage.length > MESSAGE_LIMITS.MAX_LENGTH;
@@ -133,12 +130,40 @@ export function MessageThreadScreen({
     return stableKeyMapRef.current.get(msg.id) ?? msg.id;
   }, []);
 
-  // Merge incoming messages from polling/SSE — deduplicates by ID
+  // Merge incoming messages from polling/SSE with id-based upsert semantics.
+  // This ensures DB refreshes can repair state after remounts while preserving
+  // optimistic temp rows that have not been confirmed yet.
   const mergeMessages = useCallback((incoming: ChatMessage[]) => {
     setMessages((prev) => {
-      const existingIds = new Set(prev.map((m) => m.id));
-      const newOnes = incoming.filter((m) => !existingIds.has(m.id));
-      return newOnes.length === 0 ? prev : [...prev, ...newOnes];
+      if (incoming.length === 0) return prev;
+
+      const byId = new Map(prev.map((m) => [m.id, m]));
+      let changed = false;
+
+      for (const msg of incoming) {
+        const existing = byId.get(msg.id);
+        if (!existing) {
+          byId.set(msg.id, msg);
+          changed = true;
+          continue;
+        }
+
+        if (
+          existing.content !== msg.content ||
+          existing.isRead !== msg.isRead ||
+          existing.createdAt !== msg.createdAt ||
+          existing.senderId !== msg.senderId
+        ) {
+          byId.set(msg.id, msg);
+          changed = true;
+        }
+      }
+
+      if (!changed) return prev;
+
+      return Array.from(byId.values()).sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
     });
   }, []);
 
@@ -176,10 +201,12 @@ export function MessageThreadScreen({
 
     const fetchAndSetup = async () => {
       try {
-        if (onFetchMessages && !initialMessagesRef.current) {
+        // Always re-sync from DB on mount, even when initialMessages were
+        // server-rendered, because layout remounts can provide stale props.
+        if (onFetchMessages) {
           const data = await onFetchMessages(orderId);
           if (!cancelled) {
-            setMessages(
+            mergeMessages(
               data.messages.map((msg) => ({
                 id: msg.id,
                 senderId: msg.senderId,
@@ -297,13 +324,12 @@ export function MessageThreadScreen({
     // reference does not tear down and recreate the SSE connection.
   }, [orderId, currentUserId, onFetchMessages, onMarkAsRead, mergeMessages, createEventSourceProp]);
 
-  // 10-second polling fallback — delivers messages when SSE/Redis is unavailable.
-  // Skipped when SSE is active (sseConnectedRef) to avoid redundant network requests.
+  // 10-second polling sync — always enabled to guarantee eventual consistency
+  // from database state across remounts/network mode changes.
   useEffect(() => {
     if (!onFetchMessages) return;
 
     const interval = setInterval(async () => {
-      if (sseConnectedRef.current) return; // SSE is handling real-time delivery
       try {
         const data = await onFetchMessages(orderId);
         mergeMessages(
@@ -360,18 +386,35 @@ export function MessageThreadScreen({
             return prev.filter((m) => m.id !== tempId);
           }
 
+          const tempStillExists = prev.some((m) => m.id === tempId);
+
           // Normal path — swap the temp placeholder with confirmed data.
-          return prev.map((m) =>
-            m.id === tempId
-              ? {
-                  id: message.id,
-                  senderId: message.senderId,
-                  content: message.content,
-                  createdAt: message.createdAt,
-                  isRead: message.isRead,
-                }
-              : m
-          );
+          if (tempStillExists) {
+            return prev.map((m) =>
+              m.id === tempId
+                ? {
+                    id: message.id,
+                    senderId: message.senderId,
+                    content: message.content,
+                    createdAt: message.createdAt,
+                    isRead: message.isRead,
+                  }
+                : m
+            );
+          }
+
+          // Component may have remounted before POST resolved (e.g. layout/media
+          // switch). In that case the temp row is gone — append confirmed message.
+          return [
+            ...prev,
+            {
+              id: message.id,
+              senderId: message.senderId,
+              content: message.content,
+              createdAt: message.createdAt,
+              isRead: message.isRead,
+            },
+          ];
         });
       }
     } catch (err) {
