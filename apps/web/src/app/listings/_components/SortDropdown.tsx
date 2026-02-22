@@ -32,7 +32,14 @@ export function SortDropdown({
   }, [value, options]);
 
   return (
-    <Select value={value} onValueChange={onChange} disablePreventBodyScroll>
+    <Select
+      value={value}
+      onValueChange={(v: string) => {
+        const valid = options.find((opt) => opt.value === v);
+        onChange(valid ? v : (options[0]?.value ?? v));
+      }}
+      disablePreventBodyScroll
+    >
       <Select.Trigger
         minWidth={200}
         height={40}

@@ -31,7 +31,13 @@ const FAVOURITES_SORT_OPTIONS = [
   { value: "price-asc", label: "Price: Low to High" },
   { value: "price-desc", label: "Price: High to Low" },
   { value: "name-az", label: "Name: A–Z" },
-];
+] as const;
+
+const VALID_SORT_VALUES = new Set(FAVOURITES_SORT_OPTIONS.map((o) => o.value));
+
+function validSort(value: string | null): string {
+  return value && VALID_SORT_VALUES.has(value) ? value : "recent";
+}
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -58,7 +64,11 @@ function LoadingSkeleton() {
 export function FavouritesClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { addToFavourites, isFavourited: isGloballyFavourited } = useFavouritesContext();
+  const {
+    addToFavourites,
+    isFavourited: isGloballyFavourited,
+    loading: contextLoading,
+  } = useFavouritesContext();
 
   const [products, setProducts] = useState<FavouritesResponse["products"]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -66,7 +76,13 @@ export function FavouritesClient() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [sort, setSort] = useState(searchParams.get("sort") || "recent");
+  const [sort, setSort] = useState(() => validSort(searchParams.get("sort")));
+
+  // Sync sort state when URL changes via back/forward navigation
+  useEffect(() => {
+    const paramSort = validSort(searchParams.get("sort"));
+    setSort(paramSort);
+  }, [searchParams]);
 
   // Track items being removed (for fade-out animation)
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
@@ -120,8 +136,11 @@ export function FavouritesClient() {
 
   // Sync local list when a heart is toggled via ProductCard's useFavouriteToggle.
   // When the global favourites Set drops a product we still show, animate it out.
+  // Gate on contextLoading to avoid false-positive removals while the Set is empty.
   useEffect(() => {
-    if (loading || products.length === 0) return;
+    if (loading || contextLoading || products.length === 0) return;
+
+    const removalTimeouts: ReturnType<typeof setTimeout>[] = [];
 
     const unfavouritedProducts = products.filter(
       (p) => !isGloballyFavourited(p.id) && !removingIds.has(p.id)
@@ -138,7 +157,7 @@ export function FavouritesClient() {
         setUndoProduct(null);
       }, 4000);
 
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         setProducts((prev) => prev.filter((p) => p.id !== product.id));
         setTotalCount((c) => Math.max(0, c - 1));
         setRemovingIds((prev) => {
@@ -147,9 +166,13 @@ export function FavouritesClient() {
           return next;
         });
       }, 250);
+      removalTimeouts.push(timeout);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isGloballyFavourited, loading]);
+
+    return () => {
+      removalTimeouts.forEach(clearTimeout);
+    };
+  }, [isGloballyFavourited, loading, contextLoading, products, removingIds]);
 
   // Client-side sort
   const sortedProducts = useMemo(() => {
@@ -172,12 +195,13 @@ export function FavouritesClient() {
   // Update URL when sort changes
   const handleSortChange = useCallback(
     (newSort: string) => {
-      setSort(newSort);
+      const validated = validSort(newSort);
+      setSort(validated);
       const params = new URLSearchParams(searchParams.toString());
-      if (newSort === "recent") {
+      if (validated === "recent") {
         params.delete("sort");
       } else {
-        params.set("sort", newSort);
+        params.set("sort", validated);
       }
       const qs = params.toString();
       router.replace(`/favourites${qs ? `?${qs}` : ""}`, { scroll: false });
@@ -209,6 +233,13 @@ export function FavouritesClient() {
       console.error("Error restoring favourite:", err);
     }
   }, [undoProduct, addToFavourites]);
+
+  // Clean up timers on unmount
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    };
+  }, []);
 
   return (
     <>
