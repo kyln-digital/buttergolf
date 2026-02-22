@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
-import { getRedisPublisher } from "@/lib/redis";
+import { broadcastToOrder } from "@/lib/supabase-realtime";
 
 /**
  * POST /api/orders/[id]/messages/mark-read
@@ -57,24 +57,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       data: { isRead: true },
     });
 
-    // Publish read receipt via Redis so the other party's SSE stream
-    // updates their message bubbles to "read" in real time.
+    // Broadcast read receipt via Supabase Realtime so the other party's
+    // UI updates message bubbles to "read" in real time.
     if (result.count > 0) {
-      try {
-        const redis = getRedisPublisher();
-        const channel = `order:${orderId}:messages`;
-        await redis.publish(
-          channel,
-          JSON.stringify({
-            type: "messages_read",
-            readerId: user.id,
-          })
-        );
-      } catch (err) {
-        // Redis unavailable — read receipts won't propagate via SSE but
-        // the database update succeeded. Log and continue.
-        console.warn(`[Redis] Read receipt publish failed for order ${orderId}:`, err);
-      }
+      broadcastToOrder(orderId, "messages_read", {
+        type: "messages_read",
+        readerId: user.id,
+      }).catch((err) => {
+        console.warn(`[Supabase] Read receipt broadcast failed for order ${orderId}:`, err);
+      });
     }
 
     return NextResponse.json({

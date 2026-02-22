@@ -21,6 +21,7 @@
     "@stripe/react-connect-js": "catalog:",
     "@stripe/react-stripe-js": "catalog:",
     "@stripe/stripe-js": "catalog:",
+    "@supabase/supabase-js": "^2.97.0",
     "@tamagui/card": "catalog:",
     "@tamagui/config": "catalog:",
     "@tamagui/core": "catalog:",

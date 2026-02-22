@@ -6,6 +6,7 @@ import { useMedia } from "tamagui";
 import { Column } from "@buttergolf/ui";
 import type { ChatMessage } from "@buttergolf/ui";
 import { MessageThreadScreen } from "@buttergolf/app/src/features/messages/message-thread-screen";
+import { createSupabaseEventSource } from "@/lib/supabase-realtime";
 
 interface MessageThreadProps {
   orderId: string;
@@ -73,6 +74,7 @@ export function MessageThread({
         onSendMessage={handleSendMessage}
         onMarkAsRead={handleMarkAsRead}
         onBack={isMobile ? () => router.push("/messages") : undefined}
+        createEventSource={createSupabaseEventSource}
       />
     </Column>
   );

@@ -4,7 +4,7 @@ import { checkRateLimit, rateLimitResponse } from "@/middleware/rate-limit";
 import { RATE_LIMITS } from "@/lib/constants";
 import { sendNewMessageEmail } from "@/lib/email";
 import { getUserIdFromRequest } from "@/lib/auth";
-import { getRedisPublisher } from "@/lib/redis";
+import { broadcastToOrder } from "@/lib/supabase-realtime";
 import { sendMessageNotification } from "@/lib/push-notifications";
 
 /**
@@ -228,9 +228,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       // Don't fail the request if email fails
     }
 
-    // Publish message to Redis for real-time SSE delivery (async, non-blocking)
-    const redis = getRedisPublisher();
-    const channel = `order:${orderId}:messages`;
+    // Broadcast message via Supabase Realtime for instant delivery (async, non-blocking)
     const messageEvent = {
       type: "new_message",
       message: {
@@ -245,9 +243,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       },
     };
 
-    redis.publish(channel, JSON.stringify(messageEvent)).catch((err) => {
-      console.error(`[Redis] Failed to publish message to ${channel}:`, err);
-      // Don't fail the request if Redis publish fails
+    broadcastToOrder(orderId, "new_message", messageEvent).catch((err) => {
+      console.error(`[Supabase] Failed to broadcast message for order ${orderId}:`, err);
+      // Don't fail the request if broadcast fails
     });
 
     // Send push notification to recipient (async, non-blocking)
