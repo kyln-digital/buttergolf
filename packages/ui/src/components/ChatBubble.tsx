@@ -117,7 +117,10 @@ export function ChatBubble({
       alignItems="flex-end"
       flexDirection={isOwnMessage ? "row-reverse" : "row"}
       {...(shouldAnimate
-        ? ({ animation: "medium", enterStyle: { opacity: 0, x: isOwnMessage ? 12 : -12 } } as {})
+        ? ({
+            animation: "medium",
+            enterStyle: { opacity: 0, x: isOwnMessage ? 12 : -12 },
+          } as object)
         : {})}
       opacity={1}
       x={0}

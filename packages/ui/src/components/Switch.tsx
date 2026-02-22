@@ -108,7 +108,7 @@ export function SwitchWithLabel({
         onCheckedChange={onCheckedChange}
         disabled={disabled}
       >
-        <Switch.Thumb {...({ animation: "bouncy" } as {})} />
+        <Switch.Thumb {...({ animation: "bouncy" } as object)} />
       </Switch>
       <Label
         htmlFor={switchId}

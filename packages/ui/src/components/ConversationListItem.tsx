@@ -94,7 +94,7 @@ export function ConversationListItem({
   return (
     <ListItemCard
       onPress={onPress}
-      {...({ animation: "medium", enterStyle: { opacity: 0, y: 10 } } as {})}
+      {...({ animation: "medium", enterStyle: { opacity: 0, y: 10 } } as object)}
       opacity={1}
       y={0}
     >
