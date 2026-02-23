@@ -14,6 +14,15 @@ interface SellerStats {
   pendingOffers: number;
 }
 
+const EMPTY_SELLER_STATS: SellerStats = {
+  totalListings: 0,
+  activeListings: 0,
+  soldListings: 0,
+  totalViews: 0,
+  totalFavourites: 0,
+  pendingOffers: 0,
+};
+
 /**
  * Seller Dashboard Overview
  *
@@ -31,13 +40,19 @@ export default function SellerDashboardPage() {
     async function fetchStats() {
       try {
         setLoading(true);
+        setError(null);
         const response = await fetch("/api/seller/listings?limit=1");
+        const data = await response.json().catch(() => null);
 
         if (!response.ok) {
-          throw new Error("Failed to fetch seller stats");
+          if (response.status === 404 && data?.error === "User not found") {
+            setStats(EMPTY_SELLER_STATS);
+            return;
+          }
+
+          throw new Error(data?.error || "Failed to fetch seller stats");
         }
 
-        const data = await response.json();
         setStats(data.stats);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load stats");

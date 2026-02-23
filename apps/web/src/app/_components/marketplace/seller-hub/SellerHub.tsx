@@ -31,6 +31,25 @@ interface SellerHubResponse {
   stats: SellerHubStats;
 }
 
+const EMPTY_SELLER_HUB_RESPONSE: SellerHubResponse = {
+  products: [],
+  pagination: {
+    page: 1,
+    limit: 12,
+    total: 0,
+    totalPages: 0,
+    hasMore: false,
+  },
+  stats: {
+    totalListings: 0,
+    activeListings: 0,
+    soldListings: 0,
+    totalViews: 0,
+    totalFavourites: 0,
+    pendingOffers: 0,
+  },
+};
+
 /**
  * SellerHub Component
  *
@@ -67,6 +86,7 @@ export function SellerHub() {
   const fetchListings = async (page = 1) => {
     try {
       setLoading(true);
+      setError(null);
       const params = new URLSearchParams({
         status: statusFilter,
         sort: sortBy,
@@ -75,12 +95,26 @@ export function SellerHub() {
       });
 
       const response = await fetch(`/api/seller/listings?${params.toString()}`);
+      const responseData = await response.json().catch(() => null);
 
       if (!response.ok) {
-        throw new Error("Failed to fetch listings");
+        // Older deployments may return 404 when the Clerk user exists but DB user sync hasn't completed yet.
+        // Treat this as an empty seller state instead of a hard error.
+        if (response.status === 404 && responseData?.error === "User not found") {
+          setData({
+            ...EMPTY_SELLER_HUB_RESPONSE,
+            pagination: {
+              ...EMPTY_SELLER_HUB_RESPONSE.pagination,
+              page,
+            },
+          });
+          setCurrentPage(page);
+          return;
+        }
+
+        throw new Error(responseData?.error || "Failed to fetch listings");
       }
 
-      const responseData = await response.json();
       setData(responseData);
       setCurrentPage(page);
     } catch (err) {
