@@ -35,7 +35,7 @@ export function useMessageStream(
   const [error, setError] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   // Store onMessage in a ref to avoid reconnections when callback changes
-  // eslint-disable-next-line react-hooks/refs
+
   const onMessageRef = useRef(onMessage);
   // eslint-disable-next-line react-hooks/refs
   onMessageRef.current = onMessage;

@@ -16,7 +16,7 @@ export function AppPromoBanner() {
 
   const trackEvent = (eventName: string, properties?: Record<string, string | boolean>) => {
     // TODO: Integrate with your analytics service
-    console.log("Analytics Event:", eventName, properties);
+    console.info("Analytics Event:", eventName, properties);
 
     // Example: window.gtag?.('event', eventName, properties)
     // Example: window.analytics?.track(eventName, properties)
@@ -171,6 +171,7 @@ export function AppPromoBanner() {
         </div>
 
         {/* CTA Button */}
+        {/* eslint-disable-next-line react/forbid-elements */}
         <button
           onClick={handleInstall}
           style={{
@@ -189,6 +190,7 @@ export function AppPromoBanner() {
         </button>
 
         {/* Close Button */}
+        {/* eslint-disable-next-line react/forbid-elements */}
         <button
           onClick={handleDismiss}
           style={{

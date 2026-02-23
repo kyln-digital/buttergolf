@@ -14,7 +14,7 @@ export function ServiceWorkerRegistration() {
       navigator.serviceWorker.getRegistrations().then((registrations) => {
         registrations.forEach((registration) => {
           registration.unregister();
-          console.log("Service Worker unregistered:", registration.scope);
+          console.info("Service Worker unregistered:", registration.scope);
         });
       });
     }

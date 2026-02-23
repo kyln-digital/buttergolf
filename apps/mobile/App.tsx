@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   NavigationContainer,
   DarkTheme,
@@ -221,7 +222,7 @@ function SignOutButton() {
   );
 }
 
-const HeaderRightComponent = () => <SignOutButton />;
+const _HeaderRightComponent = () => <SignOutButton />;
 
 // Function to fetch products from API
 async function fetchProducts(): Promise<ProductCardData[]> {
@@ -241,7 +242,7 @@ async function fetchProducts(): Promise<ProductCardData[]> {
       );
     }
 
-    console.log("Fetching products from:", apiUrl);
+    console.info("Fetching products from:", apiUrl);
     const response = await fetch(`${apiUrl}/api/products/recent`, {
       headers: {
         Accept: "application/json",
@@ -271,7 +272,7 @@ async function fetchProductsByCategory(categorySlug: string): Promise<ProductCar
       );
     }
 
-    console.log("Fetching products for category:", categorySlug, "from:", apiUrl);
+    console.info("Fetching products for category:", categorySlug, "from:", apiUrl);
     // Use /api/listings endpoint which properly:
     // - Supports category slug filtering
     // - Returns ProductCardData format
@@ -307,7 +308,7 @@ async function fetchProduct(id: string): Promise<Product | null> {
       );
     }
 
-    console.log("Fetching product:", id, "from:", apiUrl);
+    console.info("Fetching product:", id, "from:", apiUrl);
     const response = await fetch(`${apiUrl}/api/products/${id}`, {
       headers: {
         Accept: "application/json",
@@ -417,7 +418,7 @@ async function submitListingToApi(
   };
 
   // Debug: log the payload being sent
-  console.log("[Submit Listing] Payload:", JSON.stringify(payload, null, 2));
+  console.info("[Submit Listing] Payload:", JSON.stringify(payload, null, 2));
 
   const response = await fetch(`${apiUrl}/api/products`, {
     method: "POST",
@@ -439,7 +440,7 @@ async function submitListingToApi(
 }
 
 // Legacy non-auth submit (kept for parity with existing call sites)
-async function submitListing(data: SellFormData): Promise<{ id: string }> {
+async function _submitListing(data: SellFormData): Promise<{ id: string }> {
   return submitListingToApi(data, null);
 }
 
@@ -538,7 +539,7 @@ async function uploadImageToCloudinary(
   const extension = image.uri.split(".").pop() || "jpg";
   const filename = `${timestamp}-${randomStr}.${extension}`;
 
-  console.log("📤 Uploading image to Cloudinary:", {
+  console.info("📤 Uploading image to Cloudinary:", {
     uri: image.uri.substring(0, 50) + "...",
     isFirstImage,
     filename,
@@ -551,7 +552,7 @@ async function uploadImageToCloudinary(
   // Determine content type
   const contentType = blob.type || "image/jpeg";
 
-  console.log("Image blob:", {
+  console.info("Image blob:", {
     size: blob.size,
     sizeKB: Math.round(blob.size / 1024),
     type: contentType,
@@ -631,7 +632,7 @@ async function uploadImageToCloudinary(
   }
 
   const result = await uploadResponse.json();
-  console.log("Upload success:", result.url);
+  console.info("Upload success:", result.url);
 
   return result.url;
 }
@@ -930,13 +931,13 @@ function OrderDetailScreenWrapper({ navigation, orderId }: { navigation: any; or
       onGenerateLabel={generateLabel}
       onDownloadLabel={downloadLabel}
       onMarkShipped={markShipped}
-      onMessageSeller={(sellerId: string) =>
+      onMessageSeller={(_sellerId: string) =>
         navigation.navigate("MessageThread", {
           orderId,
           userRole: "buyer",
         })
       }
-      onMessageBuyer={(buyerId: string) =>
+      onMessageBuyer={(_buyerId: string) =>
         navigation.navigate("MessageThread", {
           orderId,
           userRole: "seller",
@@ -1293,7 +1294,7 @@ function FavouritesScreenWrapper({
   // Memoize fetch functions to prevent re-render issues during navigation
   // Uses deferredFetch to prevent TurboModule race conditions
   const fetchFavourites = useCallback(async () => {
-    console.log("[FavouritesScreenWrapper] Fetching favourites");
+    console.info("[FavouritesScreenWrapper] Fetching favourites");
 
     const url = `${apiUrl}/api/favourites?page=1&limit=100`;
     const response = await deferredFetch(url, { getToken });
@@ -1359,7 +1360,7 @@ function FavouritesScreenWrapper({
 
   // Handle checkout success
   const handleCheckoutSuccess = useCallback(
-    (paymentIntentId: string) => {
+    (_paymentIntentId: string) => {
       setCheckoutSheetOpen(false);
       setSelectedProduct(null);
       Alert.alert(
@@ -1427,7 +1428,7 @@ function MessagesScreenWrapper({
 
   const fetchConversations = useCallback(
     async (page?: number) => {
-      console.log("[MessagesScreenWrapper] Fetching conversations", { page });
+      console.info("[MessagesScreenWrapper] Fetching conversations", { page });
 
       const qs = page && page > 1 ? `?page=${page}` : "";
       const response = await deferredFetch(`${apiUrl}/api/conversations${qs}`, { getToken });
@@ -1673,7 +1674,7 @@ function ProductDetailScreenWrapper({
     return getToken();
   }, [getToken]);
 
-  const handleBuyNow = useCallback((id: string, price: number) => {
+  const handleBuyNow = useCallback((id: string, _price: number) => {
     fetchProduct(id)
       .then((product) => {
         if (product) {
@@ -1717,7 +1718,7 @@ function ProductDetailScreenWrapper({
   );
 
   const handleCheckoutSuccess = useCallback(
-    (paymentIntentId: string) => {
+    (_paymentIntentId: string) => {
       setCheckoutSheetOpen(false);
       setSelectedProduct(null);
       Alert.alert(
@@ -1913,7 +1914,7 @@ export default function App() {
     // Setup notification handlers
     const unsubscribe = setupNotificationHandlers(
       (notification) => {
-        console.log("[App] Notification received:", {
+        console.info("[App] Notification received:", {
           title: notification.request.content.title,
         });
       },
@@ -1921,7 +1922,7 @@ export default function App() {
         // Handle notification tap - navigate to message thread
         const orderId = response.notification.request.content.data?.orderId;
         if (orderId) {
-          console.log("[App] Navigating to message thread:", orderId);
+          console.info("[App] Navigating to message thread:", orderId);
           // Note: Navigation will be handled by deep linking
         }
       }
@@ -1971,8 +1972,8 @@ export default function App() {
   const clerkPublishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
   const stripePublishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
-  console.log("[Clerk] Publishable key:", clerkPublishableKey ? "LOADED" : "MISSING");
-  console.log("[Stripe] Publishable key:", stripePublishableKey ? "LOADED" : "MISSING");
+  console.info("[Clerk] Publishable key:", clerkPublishableKey ? "LOADED" : "MISSING");
+  console.info("[Stripe] Publishable key:", stripePublishableKey ? "LOADED" : "MISSING");
 
   // CRITICAL: If required keys are missing, show error screen
   if (!clerkPublishableKey || !stripePublishableKey) {
