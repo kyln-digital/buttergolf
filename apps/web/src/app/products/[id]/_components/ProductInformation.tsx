@@ -301,6 +301,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
                   flex={1}
                   borderWidth={0}
                   backgroundColor="transparent"
+                  focusStyle={{ borderWidth: 0, outlineWidth: 0 }}
                   onSubmitEditing={!submittingOffer ? handleSubmitOffer : undefined}
                 />
               </Row>
