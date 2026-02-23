@@ -1,10 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Column, Row, Text, Button } from "@buttergolf/ui";
+import { useEffect, useRef, useState } from "react";
+import { Column, Text, Button } from "@buttergolf/ui";
 import { AnimatedLogo } from "../coming-soon/_components/AnimatedLogo";
-
-const DISMISSED_KEY = "mobile-interstitial-dismissed";
 
 const APP_STORE_URL = process.env.NEXT_PUBLIC_APP_STORE_URL ?? "";
 const PLAY_STORE_URL = process.env.NEXT_PUBLIC_PLAY_STORE_URL ?? "";
@@ -28,13 +26,6 @@ export function MobileInterstitial() {
     // Don't show if running as installed PWA / native app WebView
     const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
 
-    // Don't show if user previously dismissed
-    const dismissed = localStorage.getItem(DISMISSED_KEY);
-    if (dismissed) {
-      const daysSinceDismiss = (Date.now() - parseInt(dismissed)) / (1000 * 60 * 60 * 24);
-      if (daysSinceDismiss < 7) return;
-    }
-
     if (isMobileDevice && !isStandalone) {
       setIsMobile(true);
     }
@@ -48,11 +39,6 @@ export function MobileInterstitial() {
     );
     if (focusable.length > 0) focusable[0].focus();
   }, [isMobile]);
-
-  const handleDismiss = useCallback(() => {
-    localStorage.setItem(DISMISSED_KEY, String(Date.now()));
-    setIsMobile(false);
-  }, []);
 
   if (!isMobile) return null;
 
@@ -93,7 +79,7 @@ export function MobileInterstitial() {
           color="$primaryLight"
           textAlign="center"
           marginBottom="$md"
-          style={{ letterSpacing: "-0.02em", lineHeight: 1.1 }}
+          letterSpacing={-0.5}
         >
           Best experienced on desktop
         </Text>
@@ -106,99 +92,62 @@ export function MobileInterstitial() {
           textAlign="center"
           marginBottom="$xl"
           maxWidth={360}
-          style={{ lineHeight: 1.5 }}
         >
           Visit buttergolf.com on a desktop browser, or download the app for the full experience.
         </Text>
 
         {/* CTA Buttons */}
         <Column alignItems="center" gap="$sm" width="100%" maxWidth={300}>
-          {APP_STORE_URL ? (
-            <Button
-              tag="a"
-              href={APP_STORE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              size="$5"
-              backgroundColor="$primaryLight"
-              color="$secondary"
-              fontWeight="600"
-              borderRadius="$full"
-              width="100%"
-              textAlign="center"
-              hoverStyle={{ opacity: 0.9 }}
-              pressStyle={{ opacity: 0.8 }}
-              focusVisibleStyle={{
-                outlineWidth: 2,
-                outlineColor: "$primaryLight",
-                outlineStyle: "solid",
-                outlineOffset: 2,
-              }}
-            >
-              Download on the App Store
-            </Button>
-          ) : null}
+          <Button
+            tag="a"
+            href={APP_STORE_URL || "#"}
+            target="_blank"
+            rel="noopener noreferrer"
+            size="$5"
+            backgroundColor="$primaryLight"
+            color="$secondary"
+            fontWeight="600"
+            borderRadius="$full"
+            width="100%"
+            textAlign="center"
+            hoverStyle={{ opacity: 0.9 }}
+            pressStyle={{ opacity: 0.8 }}
+            focusVisibleStyle={{
+              outlineWidth: 2,
+              outlineColor: "$primaryLight",
+              outlineStyle: "solid",
+              outlineOffset: 2,
+            }}
+          >
+            Download on the App Store
+          </Button>
 
-          {PLAY_STORE_URL ? (
-            <Button
-              tag="a"
-              href={PLAY_STORE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              size="$5"
-              backgroundColor="transparent"
-              color="$primaryLight"
-              fontWeight="600"
-              borderRadius="$full"
-              borderWidth={1.5}
-              borderColor="$overlayLight30"
-              width="100%"
-              textAlign="center"
-              hoverStyle={{ borderColor: "$overlayLight60" }}
-              pressStyle={{ opacity: 0.8 }}
-              focusVisibleStyle={{
-                outlineWidth: 2,
-                outlineColor: "$primaryLight",
-                outlineStyle: "solid",
-                outlineOffset: 2,
-              }}
-            >
-              Get it on Google Play
-            </Button>
-          ) : null}
+          <Button
+            tag="a"
+            href={PLAY_STORE_URL || "#"}
+            target="_blank"
+            rel="noopener noreferrer"
+            size="$5"
+            backgroundColor="transparent"
+            color="$primaryLight"
+            fontWeight="600"
+            borderRadius="$full"
+            borderWidth={1.5}
+            borderColor="$overlayLight30"
+            width="100%"
+            textAlign="center"
+            hoverStyle={{ borderColor: "$overlayLight60" }}
+            pressStyle={{ opacity: 0.8 }}
+            focusVisibleStyle={{
+              outlineWidth: 2,
+              outlineColor: "$primaryLight",
+              outlineStyle: "solid",
+              outlineOffset: 2,
+            }}
+          >
+            Get it on Google Play
+          </Button>
         </Column>
-
-        {/* Continue to mobile web — makes it dismissible */}
-        <Button
-          size="$4"
-          chromeless
-          color="$overlayLight60"
-          marginTop="$xl"
-          onPress={handleDismiss}
-          hoverStyle={{ color: "$primaryLight" }}
-          pressStyle={{ opacity: 0.8 }}
-          focusVisibleStyle={{
-            outlineWidth: 2,
-            outlineColor: "$primaryLight",
-            outlineStyle: "solid",
-            outlineOffset: 2,
-          }}
-        >
-          Continue to mobile web →
-        </Button>
-
-        {/* Desktop instruction */}
-        <Text
-          size="$2"
-          fontWeight="400"
-          color="$overlayLight40"
-          textAlign="center"
-          marginTop="$lg"
-          maxWidth={280}
-          style={{ lineHeight: 1.5 }}
-        >
-          Or open this page on your desktop browser for the full marketplace experience.
-        </Text>
       </Column>
     </div>
   );
