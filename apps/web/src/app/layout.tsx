@@ -46,7 +46,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  themeColor: "#E25F2F", // Pure Butter orange
+  themeColor: "#F45314", // Spiced Clementine (brand primary)
 };
 
 export const metadata: Metadata = {
