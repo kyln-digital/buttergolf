@@ -46,8 +46,22 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       },
       include: {
         product: true,
-        buyer: true,
-        seller: true,
+        buyer: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            pushTokens: true,
+          },
+        },
+        seller: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            pushTokens: true,
+          },
+        },
         counterOffers: {
           orderBy: { createdAt: "desc" },
           take: 1,
