@@ -57,8 +57,11 @@ export type {
   ClubKind,
   ShipmentStatus,
   OrderStatus,
-  OfferStatus,
   Order,
+  Conversation,
+  Message,
+  Offer,
+  CounterOffer,
 } from "../generated/client";
 // Re-export enums as values (not type-only) so they can be used at runtime
 export {
@@ -66,5 +69,7 @@ export {
   PaymentHoldStatus,
   PromotionType,
   PromotionStatus,
+  OfferStatus,
+  MessageType,
 } from "../generated/client";
 export * from "@buttergolf/constants";

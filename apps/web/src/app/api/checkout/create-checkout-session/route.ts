@@ -27,8 +27,8 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { productId } = body;
-    console.log("[Checkout API] productId:", productId);
+    const { productId, offerId } = body;
+    console.log("[Checkout API] productId:", productId, "offerId:", offerId || "none");
 
     if (!productId) {
       console.log("[Checkout API] ERROR: No productId - returning 400");
@@ -84,6 +84,47 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Cannot purchase your own product" }, { status: 400 });
     }
 
+    // If offerId provided, validate the accepted offer and use its price
+    let effectivePrice = product.price;
+    let validatedOfferId: string | undefined;
+
+    if (offerId) {
+      const offer = await prisma.offer.findUnique({
+        where: { id: offerId },
+        include: {
+          counterOffers: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+          },
+        },
+      });
+
+      if (!offer) {
+        return NextResponse.json({ error: "Offer not found" }, { status: 404 });
+      }
+
+      if (offer.status !== "ACCEPTED") {
+        return NextResponse.json(
+          { error: "Offer must be accepted before checkout" },
+          { status: 400 }
+        );
+      }
+
+      if (offer.buyerId !== buyer.id) {
+        return NextResponse.json({ error: "This offer does not belong to you" }, { status: 403 });
+      }
+
+      if (offer.productId !== productId) {
+        return NextResponse.json({ error: "Offer does not match product" }, { status: 400 });
+      }
+
+      // Use the accepted amount (latest counter-offer or original)
+      effectivePrice =
+        offer.counterOffers.length > 0 ? offer.counterOffers[0].amount : offer.amount;
+      validatedOfferId = offer.id;
+      console.log("[Checkout API] Using accepted offer price:", effectivePrice);
+    }
+
     // Get seller's Stripe Connect account (may be null if not yet onboarded)
     // In Vinted-style flow, we allow purchases even if seller hasn't onboarded yet
     // Funds stay on platform, and transfer happens after BOTH delivery confirmed AND seller onboards
@@ -95,7 +136,7 @@ export async function POST(req: Request) {
     console.log("[Checkout API] Seller stripeOnboardingComplete:", seller.stripeOnboardingComplete);
 
     // Calculate Vinted-style pricing (0% seller fee, buyer pays protection fee)
-    const productPriceInPence = Math.round(product.price * 100);
+    const productPriceInPence = Math.round(effectivePrice * 100);
     // Note: We don't know shipping cost yet - Stripe will add it based on buyer selection
     // We calculate buyer protection fee based on product price only
     const pricing = calculatePricingBreakdownInPence(productPriceInPence, 0);
@@ -233,6 +274,8 @@ export async function POST(req: Request) {
           // Store calculated amounts for order creation
           productPriceInPence: productPriceInPence.toString(),
           buyerProtectionFeeInPence: pricing.buyerProtectionFeeInPence.toString(),
+          // Offer-based checkout
+          offerId: validatedOfferId || "",
         },
       },
 
@@ -245,6 +288,7 @@ export async function POST(req: Request) {
         sellerOnboarded: seller.stripeOnboardingComplete ? "true" : "false",
         productPriceInPence: productPriceInPence.toString(),
         buyerProtectionFeeInPence: pricing.buyerProtectionFeeInPence.toString(),
+        offerId: validatedOfferId || "",
       },
 
       // Return URL after checkout completes

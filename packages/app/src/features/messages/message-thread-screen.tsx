@@ -57,6 +57,10 @@ interface MessageThreadScreenProps {
       isRead: boolean;
       senderRole?: "buyer" | "seller";
       isOwnMessage?: boolean;
+      type?: string;
+      offerAmount?: number | null;
+      offerId?: string | null;
+      offerStatus?: string | null;
     }>;
     userRole?: "buyer" | "seller";
     nextCursor?: string | null;
@@ -83,6 +87,16 @@ interface MessageThreadScreenProps {
   /** Factory to create a realtime connection. Defaults to native EventSource on web.
    *  Mobile should pass a factory using react-native-sse with auth headers. */
   createEventSource?: (url: string) => EventSourceLike;
+  /** Whether to show the offer toggle button in chat input */
+  showOfferButton?: boolean;
+  /** Callback to make an offer */
+  onMakeOffer?: (amount: number, message?: string) => Promise<unknown>;
+  /** Callback to counter an offer */
+  onCounterOffer?: (amount: number, message?: string) => Promise<unknown>;
+  /** Callback to accept the active offer */
+  onAcceptOffer?: () => Promise<unknown>;
+  /** Callback to reject the active offer */
+  onRejectOffer?: () => Promise<unknown>;
 }
 
 export function MessageThreadScreen({
@@ -98,6 +112,11 @@ export function MessageThreadScreen({
   onMarkAsRead,
   onBack,
   createEventSource: createEventSourceProp,
+  showOfferButton = false,
+  onMakeOffer,
+  onCounterOffer,
+  onAcceptOffer,
+  onRejectOffer,
 }: Readonly<MessageThreadScreenProps>) {
   const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
@@ -105,6 +124,10 @@ export function MessageThreadScreen({
   const [loading, setLoading] = useState(!initialMessages);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Offer input mode state
+  const [offerMode, setOfferMode] = useState(false);
+  const [offerAmount, setOfferAmount] = useState("");
 
   // Cursor pagination state
   const [hasMore, setHasMore] = useState(false);
@@ -179,6 +202,10 @@ export function MessageThreadScreen({
         content: msg.content,
         createdAt: msg.createdAt,
         isRead: msg.isRead,
+        type: msg.type ?? undefined,
+        offerAmount: msg.offerAmount ?? undefined,
+        offerId: msg.offerId ?? undefined,
+        offerStatus: msg.offerStatus ?? undefined,
       }));
       // Prepend older messages
       setMessages((prev) => {
@@ -213,6 +240,10 @@ export function MessageThreadScreen({
                 content: msg.content,
                 createdAt: msg.createdAt,
                 isRead: msg.isRead,
+                type: msg.type ?? undefined,
+                offerAmount: msg.offerAmount ?? undefined,
+                offerId: msg.offerId ?? undefined,
+                offerStatus: msg.offerStatus ?? undefined,
               }))
             );
             setHasMore(data.hasMore ?? false);
@@ -260,6 +291,10 @@ export function MessageThreadScreen({
               content: data.message.content,
               createdAt: data.message.createdAt,
               isRead: data.message.isRead,
+              type: data.message.type ?? undefined,
+              offerAmount: data.message.offerAmount ?? undefined,
+              offerId: data.message.offerId ?? undefined,
+              offerStatus: data.message.offerStatus ?? undefined,
             },
           ]);
         } else if (data.type === "messages_read" && !cancelled) {
@@ -339,6 +374,10 @@ export function MessageThreadScreen({
             content: msg.content,
             createdAt: msg.createdAt,
             isRead: msg.isRead,
+            type: msg.type ?? undefined,
+            offerAmount: msg.offerAmount ?? undefined,
+            offerId: msg.offerId ?? undefined,
+            offerStatus: msg.offerStatus ?? undefined,
           }))
         );
       } catch {
@@ -427,6 +466,55 @@ export function MessageThreadScreen({
       setSending(false);
     }
   }, [newMessage, sending, isOverLimit, orderId, currentUserId, onSendMessage]);
+
+  const handleSendOffer = useCallback(
+    async (amount: number, message?: string) => {
+      if (!onMakeOffer || sending) return;
+      setSending(true);
+      setError(null);
+
+      try {
+        await onMakeOffer(amount, message);
+        setOfferMode(false);
+        setOfferAmount("");
+        setNewMessage("");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to make offer");
+      } finally {
+        setSending(false);
+      }
+    },
+    [onMakeOffer, sending]
+  );
+
+  const handleAcceptOffer = useCallback(
+    async (offerId: string) => {
+      if (!onAcceptOffer) return;
+      try {
+        await onAcceptOffer();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to accept offer");
+      }
+    },
+    [onAcceptOffer]
+  );
+
+  const handleRejectOffer = useCallback(
+    async (offerId: string) => {
+      if (!onRejectOffer) return;
+      try {
+        await onRejectOffer();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to reject offer");
+      }
+    },
+    [onRejectOffer]
+  );
+
+  const handleCounterOffer = useCallback(async (offerId: string) => {
+    // When user clicks "Counter" on an OfferCard, switch to offer mode
+    setOfferMode(true);
+  }, []);
 
   const handleRetry = useCallback(() => {
     if (!failedContent) return;
@@ -521,6 +609,9 @@ export function MessageThreadScreen({
         getStableKey={getStableKey}
         onLoadMore={hasMore ? loadOlderMessages : undefined}
         loadingMore={loadingMore}
+        onAcceptOffer={handleAcceptOffer}
+        onRejectOffer={handleRejectOffer}
+        onCounterOffer={handleCounterOffer}
       />
 
       {/* Input */}
@@ -531,6 +622,15 @@ export function MessageThreadScreen({
           onSend={handleSend}
           sending={sending}
           maxLength={MESSAGE_LIMITS.MAX_LENGTH}
+          showOfferButton={showOfferButton}
+          offerMode={offerMode}
+          onToggleOfferMode={() => {
+            setOfferMode((prev) => !prev);
+            setOfferAmount("");
+          }}
+          offerAmount={offerAmount}
+          onOfferAmountChange={setOfferAmount}
+          onSendOffer={handleSendOffer}
         />
       </Column>
     </Column>

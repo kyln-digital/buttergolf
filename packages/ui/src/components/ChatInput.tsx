@@ -23,10 +23,11 @@ import { Platform, type TextInput } from "react-native";
 import { styled, View } from "tamagui";
 import { Text } from "./Text";
 import { Button } from "./Button";
+import { Input } from "./Input";
 import { TextArea } from "./TextArea";
 import { Row, Column } from "./Layout";
 import { Spinner } from "./Spinner";
-import { Send } from "@tamagui/lucide-icons";
+import { Send, Tag, X } from "@tamagui/lucide-icons";
 
 const InputContainer = styled(View, {
   name: "ChatInputContainer",
@@ -80,6 +81,18 @@ interface ChatInputProps {
   placeholder?: string;
   /** Whether the input is disabled */
   disabled?: boolean;
+  /** Whether to show the offer toggle button */
+  showOfferButton?: boolean;
+  /** Whether offer mode is currently active */
+  offerMode?: boolean;
+  /** Called to toggle offer mode on/off */
+  onToggleOfferMode?: () => void;
+  /** Current offer amount (in pounds) */
+  offerAmount?: string;
+  /** Called when offer amount changes */
+  onOfferAmountChange?: (amount: string) => void;
+  /** Called when user sends an offer */
+  onSendOffer?: (amount: number, message?: string) => void;
 }
 
 export function ChatInput({
@@ -90,17 +103,38 @@ export function ChatInput({
   maxLength = 2000,
   placeholder = "Type a message...",
   disabled = false,
+  showOfferButton = false,
+  offerMode = false,
+  onToggleOfferMode,
+  offerAmount = "",
+  onOfferAmountChange,
+  onSendOffer,
 }: Readonly<ChatInputProps>) {
   const isOverLimit = value.length > maxLength;
   const showCounter = value.length > maxLength * 0.8;
-  const canSend = value.trim().length > 0 && !isOverLimit && !sending && !disabled;
+
+  const parsedAmount = parseFloat(offerAmount);
+  const validOffer = offerMode && !isNaN(parsedAmount) && parsedAmount > 0;
+
+  const canSend = offerMode
+    ? validOffer && !sending && !disabled
+    : value.trim().length > 0 && !isOverLimit && !sending && !disabled;
+
   const canSendRef = useRef(canSend);
   // eslint-disable-next-line react-hooks/refs -- "latest ref" pattern: intentional sync during render to avoid stale closures in effects
   canSendRef.current = canSend;
 
-  const onSendRef = useRef(onSend);
+  const handleSend = () => {
+    if (offerMode && validOffer && onSendOffer) {
+      onSendOffer(parsedAmount, value.trim() || undefined);
+    } else if (!offerMode) {
+      onSend();
+    }
+  };
+
+  const onSendRef = useRef(handleSend);
   // eslint-disable-next-line react-hooks/refs -- "latest ref" pattern: intentional sync during render to avoid stale closures in effects
-  onSendRef.current = onSend;
+  onSendRef.current = handleSend;
 
   const textAreaRef = useRef<TextInput>(null);
 
@@ -125,14 +159,69 @@ export function ChatInput({
 
   return (
     <InputContainer>
+      {offerMode && (
+        <Row alignItems="center" gap="$sm" paddingBottom="$xs">
+          <Row
+            flex={1}
+            alignItems="center"
+            gap="$sm"
+            backgroundColor="$primaryLight"
+            borderRadius="$lg"
+            paddingHorizontal="$md"
+            paddingVertical="$sm"
+          >
+            <Text size="$6" fontWeight="700" color="$primary">
+              £
+            </Text>
+            <Input
+              value={offerAmount}
+              onChangeText={(text) => {
+                // Allow only numbers and one decimal point
+                const sanitised = text.replace(/[^0-9.]/g, "").replace(/(\..*?)\./g, "$1");
+                onOfferAmountChange?.(sanitised);
+              }}
+              placeholder="0.00"
+              size="md"
+              keyboardType="decimal-pad"
+              flex={1}
+              borderWidth={0}
+              backgroundColor="transparent"
+              paddingHorizontal={0}
+            />
+          </Row>
+          <Button
+            chromeless
+            size="$3"
+            onPress={onToggleOfferMode}
+            aria-label="Cancel offer"
+            padding="$xs"
+          >
+            <X size={18} color="$textSecondary" />
+          </Button>
+        </Row>
+      )}
+
       <Row alignItems="flex-end" gap="$sm">
+        {showOfferButton && !offerMode && (
+          <Button
+            chromeless
+            size="$3"
+            onPress={onToggleOfferMode}
+            aria-label="Make an offer"
+            padding="$xs"
+            marginBottom={6}
+          >
+            <Tag size={22} color="$primary" />
+          </Button>
+        )}
+
         <Column flex={1} gap="$xs">
           <TextArea
             ref={textAreaRef}
             value={value}
             onChangeText={onChangeText}
-            onSubmitEditing={canSend ? onSend : undefined}
-            placeholder={placeholder}
+            onSubmitEditing={canSend ? handleSend : undefined}
+            placeholder={offerMode ? "Add a message (optional)..." : placeholder}
             size="md"
             rows={1}
             maxLength={maxLength + 100}
@@ -154,9 +243,16 @@ export function ChatInput({
           )}
         </Column>
 
-        <SendButton onPress={onSend} disabled={!canSend} aria-label="Send message">
+        <SendButton
+          onPress={handleSend}
+          disabled={!canSend}
+          aria-label={offerMode ? "Send offer" : "Send message"}
+          backgroundColor={offerMode ? "$success" : "$primary"}
+        >
           {sending ? (
             <Spinner size="sm" color="$textInverse" />
+          ) : offerMode ? (
+            <Tag size={20} color="$textInverse" />
           ) : (
             <Send size={20} color="$textInverse" />
           )}

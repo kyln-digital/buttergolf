@@ -343,6 +343,73 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   console.log("Order created successfully:", order.id);
 
+  // Link conversation to order if this was an offer-based purchase
+  const offerId = session.metadata?.offerId;
+  if (offerId) {
+    try {
+      const offer = await prisma.offer.findUnique({
+        where: { id: offerId },
+        select: { conversationId: true },
+      });
+
+      if (offer?.conversationId) {
+        await prisma.conversation.update({
+          where: { id: offer.conversationId },
+          data: { orderId: order.id },
+        });
+
+        // Create a system message in the conversation
+        await prisma.message.create({
+          data: {
+            content: "Order created — payment confirmed.",
+            senderId: buyerId,
+            conversationId: offer.conversationId,
+            type: "SYSTEM",
+          },
+        });
+
+        console.log("Linked conversation", offer.conversationId, "to order", order.id);
+      }
+    } catch (err) {
+      // Non-fatal: conversation linking failure shouldn't block order creation
+      console.error("Failed to link conversation to order:", err);
+    }
+  } else {
+    // No offer — check if a conversation exists for this buyer+seller+product
+    // and link it if so (covers direct purchase after messaging)
+    try {
+      const conversation = await prisma.conversation.findUnique({
+        where: {
+          productId_buyerId_sellerId: {
+            productId,
+            buyerId,
+            sellerId,
+          },
+        },
+      });
+
+      if (conversation) {
+        await prisma.conversation.update({
+          where: { id: conversation.id },
+          data: { orderId: order.id },
+        });
+
+        await prisma.message.create({
+          data: {
+            content: "Order created — payment confirmed.",
+            senderId: buyerId,
+            conversationId: conversation.id,
+            type: "SYSTEM",
+          },
+        });
+
+        console.log("Linked existing conversation", conversation.id, "to order", order.id);
+      }
+    } catch (err) {
+      console.error("Failed to link conversation to order:", err);
+    }
+  }
+
   // Send email to seller if they need to complete their address
   if (sellerNeedsAddress) {
     try {

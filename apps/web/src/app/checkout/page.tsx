@@ -33,6 +33,7 @@ interface ProductInfo {
 function CheckoutPageContent() {
   const searchParams = useSearchParams();
   const productId = searchParams.get("productId");
+  const offerId = searchParams.get("offerId");
 
   const [loading, setLoading] = useState(!!productId);
   const [error, setError] = useState<string | null>(!productId ? "No product selected" : null);
@@ -136,7 +137,11 @@ function CheckoutPageContent() {
               minWidth={0}
               $gtMd={{ minWidth: 500 }}
             >
-              <StripeEmbeddedCheckout productId={product.id} onError={(err) => setError(err)} />
+              <StripeEmbeddedCheckout
+                productId={product.id}
+                offerId={offerId}
+                onError={(err) => setError(err)}
+              />
             </Column>
 
             {/* Right Column - Product Summary (narrower on desktop) */}
