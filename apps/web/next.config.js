@@ -1,4 +1,3 @@
-/* eslint-env node */
 const { withTamagui } = require("@tamagui/next-plugin");
 const { join, resolve } = require("node:path");
 const { PrismaPlugin } = require("@prisma/nextjs-monorepo-workaround-plugin");
