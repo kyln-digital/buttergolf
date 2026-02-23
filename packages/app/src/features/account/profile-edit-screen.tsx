@@ -1,8 +1,18 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { Column, Row, Text, Button, Heading, Spinner, Input } from "@buttergolf/ui";
-import { Button as TamaguiButton, Avatar, View } from "tamagui";
+import {
+  Column,
+  Row,
+  Text,
+  Button,
+  Button as TamaguiButton,
+  Heading,
+  Spinner,
+  Input,
+  View,
+} from "@buttergolf/ui";
+import { Avatar } from "tamagui";
 import { ArrowLeft, Camera, Check } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Alert } from "react-native";

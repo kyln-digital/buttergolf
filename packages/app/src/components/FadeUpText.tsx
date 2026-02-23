@@ -93,8 +93,10 @@ export function FadeUpText(props: FadeUpTextProps) {
       | 900
       | "bold"
       | "normal";
+
     return (
       <TamaguiText
+        // eslint-disable-next-line react/forbid-component-props
         fontSize={(props.style?.fontSize as number) || 32}
         fontWeight={fontWeightValue}
         color="$text"

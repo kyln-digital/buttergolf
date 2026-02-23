@@ -1,8 +1,16 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { Column, Row, Text, Button, Heading, ScrollView } from "@buttergolf/ui";
-import { Button as TamaguiButton, Switch } from "tamagui";
+import {
+  Column,
+  Row,
+  Text,
+  Button,
+  Button as TamaguiButton,
+  Heading,
+  ScrollView,
+} from "@buttergolf/ui";
+import { Switch } from "tamagui";
 import { ArrowLeft, Bell, ShoppingBag, MessageCircle, Tag, Mail } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Alert } from "react-native";

@@ -1,8 +1,19 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Column, Row, Text, Button, Heading, Spinner, ScrollView, Input } from "@buttergolf/ui";
-import { Button as TamaguiButton, View, Switch } from "tamagui";
+import {
+  Column,
+  Row,
+  Text,
+  Button,
+  Button as TamaguiButton,
+  Heading,
+  Spinner,
+  ScrollView,
+  Input,
+  View,
+} from "@buttergolf/ui";
+import { Switch } from "tamagui";
 import { ArrowLeft, Plus, MapPin, Check, Trash2, Edit3 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Alert } from "react-native";
@@ -116,7 +127,7 @@ export function AddressesScreen({
             try {
               await onDeleteAddress(address.id);
               void fetchAddresses();
-            } catch (err) {
+            } catch {
               Alert.alert("Error", "Failed to delete address");
             }
           },
@@ -131,7 +142,7 @@ export function AddressesScreen({
       try {
         await onSetDefault(address.id);
         void fetchAddresses();
-      } catch (err) {
+      } catch {
         Alert.alert("Error", "Failed to set default address");
       }
     },

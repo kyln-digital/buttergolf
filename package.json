@@ -18,6 +18,8 @@
     "db:studio": "turbo run db:studio",
     "db:seed": "turbo run db:seed",
     "upload:images": "tsx scripts/upload-sample-images.ts",
+    "optimize:site-images": "tsx scripts/optimize-site-images.ts",
+    "optimize:site-images:dry-run": "tsx scripts/optimize-site-images.ts --dry-run",
     "reset-stripe": "tsx scripts/reset-stripe-onboarding.ts",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",

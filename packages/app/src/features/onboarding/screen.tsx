@@ -96,6 +96,7 @@ export function OnboardingScreen({
   onSkip,
   onSignUp,
   onSignIn,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onAbout: _onAbout,
 }: Readonly<OnboardingScreenProps>) {
   const insets = useSafeAreaInsets();

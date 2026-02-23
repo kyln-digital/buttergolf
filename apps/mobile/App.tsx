@@ -222,6 +222,7 @@ function SignOutButton() {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _HeaderRightComponent = () => <SignOutButton />;
 
 // Function to fetch products from API
@@ -440,6 +441,7 @@ async function submitListingToApi(
 }
 
 // Legacy non-auth submit (kept for parity with existing call sites)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function _submitListing(data: SellFormData): Promise<{ id: string }> {
   return submitListingToApi(data, null);
 }
@@ -931,13 +933,13 @@ function OrderDetailScreenWrapper({ navigation, orderId }: { navigation: any; or
       onGenerateLabel={generateLabel}
       onDownloadLabel={downloadLabel}
       onMarkShipped={markShipped}
-      onMessageSeller={(_sellerId: string) =>
+      onMessageSeller={(_: string) =>
         navigation.navigate("MessageThread", {
           orderId,
           userRole: "buyer",
         })
       }
-      onMessageBuyer={(_buyerId: string) =>
+      onMessageBuyer={(_: string) =>
         navigation.navigate("MessageThread", {
           orderId,
           userRole: "seller",
@@ -1360,7 +1362,7 @@ function FavouritesScreenWrapper({
 
   // Handle checkout success
   const handleCheckoutSuccess = useCallback(
-    (_paymentIntentId: string) => {
+    (_: string) => {
       setCheckoutSheetOpen(false);
       setSelectedProduct(null);
       Alert.alert(
@@ -1674,7 +1676,7 @@ function ProductDetailScreenWrapper({
     return getToken();
   }, [getToken]);
 
-  const handleBuyNow = useCallback((id: string, _price: number) => {
+  const handleBuyNow = useCallback((id: string, _: number) => {
     fetchProduct(id)
       .then((product) => {
         if (product) {
@@ -1718,7 +1720,7 @@ function ProductDetailScreenWrapper({
   );
 
   const handleCheckoutSuccess = useCallback(
-    (_paymentIntentId: string) => {
+    (_: string) => {
       setCheckoutSheetOpen(false);
       setSelectedProduct(null);
       Alert.alert(

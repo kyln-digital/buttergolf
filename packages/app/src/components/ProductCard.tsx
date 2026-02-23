@@ -28,11 +28,12 @@ export interface ProductCardProps {
 // Heart icon component — uses Tamagui lucide icon which is cross-platform
 function HeartIcon({ filled }: Readonly<{ filled: boolean }>) {
   const theme = useTheme();
+  const filledColor = String(theme.primary.val);
   return (
     <Heart
       size={20}
-      color={filled ? "$primary" : "rgba(255,255,255,0.9)"}
-      fill={filled ? theme.primary.val : "transparent"}
+      color={filled ? filledColor : "rgba(255,255,255,0.9)"}
+      fill={filled ? filledColor : "transparent"}
       strokeWidth={2}
     />
   );

@@ -1,8 +1,18 @@
 "use client";
+/* eslint-disable react/prop-types */
 
 import React, { useState } from "react";
-import { Column, Row, Text, Button, Heading, ScrollView } from "@buttergolf/ui";
-import { Button as TamaguiButton, View, Accordion, Square, Paragraph } from "tamagui";
+import {
+  Column,
+  Row,
+  Text,
+  Button,
+  Button as TamaguiButton,
+  Heading,
+  ScrollView,
+  View,
+} from "@buttergolf/ui";
+import { Accordion, Square, Paragraph } from "tamagui";
 import {
   ArrowLeft,
   HelpCircle,
