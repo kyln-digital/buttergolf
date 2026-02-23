@@ -2,8 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Column, Row, Text } from "@buttergolf/ui";
-import { useMedia } from "tamagui";
+import { Column, Row, Text, useMedia } from "@buttergolf/ui";
 import { Home, Heart, PlusCircle, MessageCircle, User } from "@tamagui/lucide-icons";
 
 const TABS = [
@@ -36,8 +35,8 @@ const TABS = [
  * Mobile bottom tab navigation for web — mirrors the native app's MobileBottomNav.
  * Hidden on desktop via useMedia() hook.
  *
- * Uses Tamagui's `tag="a"` prop so each tab renders as a native <a> element,
- * wrapped with Next.js Link (legacyBehavior + passHref) for client-side navigation.
+ * Uses Next.js Link for client-side navigation with proper accessibility attributes
+ * (aria-label, aria-current) on each tab.
  */
 export function MobileBottomNav() {
   const pathname = usePathname();
