@@ -222,7 +222,7 @@ export function ButterHeader() {
               $gtMd={{ display: "none" }}
               onPress={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Menu"
-              color="$text"
+              color="$textInverse"
             >
               <MenuIcon />
             </Button>

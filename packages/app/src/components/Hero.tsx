@@ -167,14 +167,14 @@ function HeroHeading({
   return (
     <Heading
       level={1}
-      size="$9"
-      lineHeight="$9"
+      size="$7"
+      lineHeight="$7"
+      $gtSm={{ textAlign: "left", fontSize: "$9", lineHeight: "$9" }}
       $md={{ fontSize: "$11", lineHeight: "$11" }}
       $lg={{ fontSize: "$14", lineHeight: "$14" }}
       color="$text"
       fontWeight="700"
       textAlign="center"
-      $gtSm={{ textAlign: "left", fontSize: "$9", lineHeight: "$9" }}
       style={{ whiteSpace: "normal", wordBreak: "keep-all" }}
     >
       {text}

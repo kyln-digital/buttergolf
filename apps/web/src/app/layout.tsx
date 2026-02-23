@@ -17,7 +17,6 @@ import { ButterHeader } from "./_components/header/ButterHeader";
 // import { AppPromoBanner } from "./_components/AppPromoBanner";
 import { ConditionalLayout } from "./_components/ConditionalLayout";
 import { MobileInterstitial } from "./_components/MobileInterstitial";
-import { MobileBottomNav } from "./_components/MobileBottomNav";
 import { CartProvider } from "../context/CartContext";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 
@@ -104,11 +103,7 @@ export default function RootLayout({
               {/* TODO: Restore <AppPromoBanner /> once App Store / Play Store IDs are confirmed and app is publicly published. */}
             </ConditionalLayout>
             {/* Main content wrapper */}
-            <main className="bg-white pb-16 md:pb-0">{children}</main>
-            {/* Mobile bottom tab navigation – mirrors native app */}
-            <ConditionalLayout excludeRoutes={EXCLUDED_CHROME_ROUTES}>
-              <MobileBottomNav />
-            </ConditionalLayout>
+            <main className="bg-white">{children}</main>
           </CartProvider>
         </NextTamaguiProvider>
         <Analytics />
