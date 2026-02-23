@@ -85,6 +85,8 @@ interface ChatInputProps {
   showOfferButton?: boolean;
   /** Whether offer mode is currently active */
   offerMode?: boolean;
+  /** Whether the offer input is for a counter-offer (affects label) */
+  isCounterMode?: boolean;
   /** Called to toggle offer mode on/off */
   onToggleOfferMode?: () => void;
   /** Current offer amount (in pounds) */
@@ -105,6 +107,7 @@ export function ChatInput({
   disabled = false,
   showOfferButton = false,
   offerMode = false,
+  isCounterMode = false,
   onToggleOfferMode,
   offerAmount = "",
   onOfferAmountChange,
@@ -160,45 +163,52 @@ export function ChatInput({
   return (
     <InputContainer>
       {offerMode && (
-        <Row alignItems="center" gap="$sm" paddingBottom="$xs">
-          <Row
-            flex={1}
-            alignItems="center"
-            gap="$sm"
-            backgroundColor="$primaryLight"
-            borderRadius="$lg"
-            paddingHorizontal="$md"
-            paddingVertical="$sm"
-          >
-            <Text size="$6" fontWeight="700" color="$primary">
-              £
+        <Column gap="$xs" paddingBottom="$xs">
+          {isCounterMode && (
+            <Text size="$3" color="$primary" fontWeight="600">
+              Counter offer
             </Text>
-            <Input
-              value={offerAmount}
-              onChangeText={(text) => {
-                // Allow only numbers and one decimal point
-                const sanitised = text.replace(/[^0-9.]/g, "").replace(/(\..*?)\./g, "$1");
-                onOfferAmountChange?.(sanitised);
-              }}
-              placeholder="0.00"
-              size="md"
-              keyboardType="decimal-pad"
+          )}
+          <Row alignItems="center" gap="$sm">
+            <Row
               flex={1}
-              borderWidth={0}
-              backgroundColor="transparent"
-              paddingHorizontal={0}
-            />
+              alignItems="center"
+              gap="$sm"
+              backgroundColor="$primaryLight"
+              borderRadius="$lg"
+              paddingHorizontal="$md"
+              paddingVertical="$sm"
+            >
+              <Text size="$6" fontWeight="700" color="$primary">
+                £
+              </Text>
+              <Input
+                value={offerAmount}
+                onChangeText={(text) => {
+                  // Allow only numbers and one decimal point
+                  const sanitised = text.replace(/[^0-9.]/g, "").replace(/(\..*?)\./g, "$1");
+                  onOfferAmountChange?.(sanitised);
+                }}
+                placeholder="0.00"
+                size="md"
+                keyboardType="decimal-pad"
+                flex={1}
+                borderWidth={0}
+                backgroundColor="transparent"
+                paddingHorizontal={0}
+              />
+            </Row>
+            <Button
+              chromeless
+              size="$3"
+              onPress={onToggleOfferMode}
+              aria-label="Cancel offer"
+              padding="$xs"
+            >
+              <X size={18} color="$textSecondary" />
+            </Button>
           </Row>
-          <Button
-            chromeless
-            size="$3"
-            onPress={onToggleOfferMode}
-            aria-label="Cancel offer"
-            padding="$xs"
-          >
-            <X size={18} color="$textSecondary" />
-          </Button>
-        </Row>
+        </Column>
       )}
 
       <Row alignItems="flex-end" gap="$sm">

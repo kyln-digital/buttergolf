@@ -182,6 +182,7 @@ export function MessageThreadScreen({
 
   // Offer input mode state
   const [offerMode, setOfferMode] = useState(false);
+  const [isCounterMode, setIsCounterMode] = useState(false);
   const [offerAmount, setOfferAmount] = useState("");
 
   // Cursor pagination state
@@ -478,22 +479,30 @@ export function MessageThreadScreen({
 
   const handleSendOffer = useCallback(
     async (amount: number, message?: string) => {
-      if (!onMakeOffer || sending) return;
+      const callback = isCounterMode ? onCounterOffer : onMakeOffer;
+      if (!callback || sending) return;
       setSending(true);
       setError(null);
 
       try {
-        await onMakeOffer(amount, message);
+        await callback(amount, message);
         setOfferMode(false);
+        setIsCounterMode(false);
         setOfferAmount("");
         setNewMessage("");
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to make offer");
+        setError(
+          err instanceof Error
+            ? err.message
+            : isCounterMode
+              ? "Failed to submit counter offer"
+              : "Failed to make offer"
+        );
       } finally {
         setSending(false);
       }
     },
-    [onMakeOffer, sending]
+    [isCounterMode, onCounterOffer, onMakeOffer, sending]
   );
 
   const handleAcceptOffer = useCallback(
@@ -520,9 +529,9 @@ export function MessageThreadScreen({
     [onRejectOffer]
   );
 
-  const handleCounterOffer = useCallback(async (offerId: string) => {
-    // When user clicks "Counter" on an OfferCard, switch to offer mode
+  const handleCounterOffer = useCallback(async (_offerId: string) => {
     setOfferMode(true);
+    setIsCounterMode(true);
   }, []);
 
   const handleRetry = useCallback(() => {
@@ -633,8 +642,10 @@ export function MessageThreadScreen({
           maxLength={MESSAGE_LIMITS.MAX_LENGTH}
           showOfferButton={showOfferButton}
           offerMode={offerMode}
+          isCounterMode={isCounterMode}
           onToggleOfferMode={() => {
             setOfferMode((prev) => !prev);
+            setIsCounterMode(false);
             setOfferAmount("");
           }}
           offerAmount={offerAmount}

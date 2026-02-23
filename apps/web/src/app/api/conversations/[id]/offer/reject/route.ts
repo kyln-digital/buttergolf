@@ -105,17 +105,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       amount: currentAmount,
     }).catch((err) => console.error("[Broadcast] Offer update error:", err));
 
-    // Only email the buyer if seller rejected (buyer is the one who needs to know)
-    if (isSeller) {
-      sendOfferRejectedEmail({
-        buyerEmail: otherParty.email,
-        buyerName: otherParty.firstName || "Buyer",
-        sellerName: user.firstName || "Seller",
-        offerAmount: currentAmount,
-        productTitle: offer.product.title,
-        conversationId,
-      }).catch((err) => console.error("[Email] Offer rejected email error:", err));
-    }
+    // Email the other party regardless of who rejected
+    sendOfferRejectedEmail({
+      buyerEmail: otherParty.email,
+      buyerName: isBuyer ? user.firstName || "Buyer" : otherParty.firstName || "Buyer",
+      sellerName: isSeller ? user.firstName || "Seller" : otherParty.firstName || "Seller",
+      offerAmount: currentAmount,
+      productTitle: offer.product.title,
+      conversationId,
+    }).catch((err) => console.error("[Email] Offer rejected email error:", err));
 
     if (otherParty.pushTokens.length > 0) {
       sendPushNotifications(
