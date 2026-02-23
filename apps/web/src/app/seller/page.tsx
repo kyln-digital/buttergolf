@@ -123,7 +123,7 @@ export default function SellerDashboardPage() {
           title="Pending Offers"
           value={stats?.pendingOffers ?? 0}
           icon={<DollarSign size={24} color="$success" />}
-          href="/offers"
+          href="/messages"
         />
       </Row>
 

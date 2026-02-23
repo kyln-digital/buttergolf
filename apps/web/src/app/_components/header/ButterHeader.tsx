@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -36,8 +36,31 @@ export function ButterHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const themeName = useThemeName();
   const isDark = themeName?.startsWith("dark");
+
+  // Poll for unread message count
+  useEffect(() => {
+    let active = true;
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch("/api/conversations/unread-count");
+        if (res.ok && active) {
+          const data = await res.json();
+          setUnreadCount(data.unreadCount ?? 0);
+        }
+      } catch {
+        // Silently ignore — user may not be signed in
+      }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30_000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [pathname]);
 
   // Determine active category from pathname
   const getActiveCategory = (): string => {
@@ -186,6 +209,52 @@ export function ButterHeader() {
             >
               {/* Theme Toggle */}
               <ThemeToggleButton />
+
+              {/* Messages Icon with Unread Badge */}
+              <Link href="/messages" style={{ textDecoration: "none", position: "relative" }}>
+                <Button
+                  chromeless
+                  circular
+                  size="$4"
+                  aria-label="Messages"
+                  color={isActive("/messages") ? "$primary" : "$text"}
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                  {unreadCount > 0 && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 2,
+                        right: 2,
+                        minWidth: 18,
+                        height: 18,
+                        borderRadius: 9,
+                        backgroundColor: "var(--color-primary, #F45314)",
+                        color: "#fff",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "0 4px",
+                      }}
+                    >
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </div>
+                  )}
+                </Button>
+              </Link>
 
               <AuthButtonsSection>
                 <LazySignedOut>
@@ -343,13 +412,30 @@ export function ButterHeader() {
             style={{ textDecoration: "none" }}
             onClick={() => setMobileMenuOpen(false)}
           >
-            <Text
-              size="$7"
-              weight={isActive("/messages") ? "bold" : "normal"}
-              color={isActive("/messages") ? "$primary" : "$text"}
-            >
-              Messages
-            </Text>
+            <Row alignItems="center" gap="$2">
+              <Text
+                size="$7"
+                weight={isActive("/messages") ? "bold" : "normal"}
+                color={isActive("/messages") ? "$primary" : "$text"}
+              >
+                Messages
+              </Text>
+              {unreadCount > 0 && (
+                <Row
+                  backgroundColor="$primary"
+                  borderRadius="$full"
+                  minWidth={22}
+                  height={22}
+                  alignItems="center"
+                  justifyContent="center"
+                  paddingHorizontal="$1"
+                >
+                  <Text size="$1" color="$textInverse" fontWeight="700">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </Text>
+                </Row>
+              )}
+            </Row>
           </Link>
           <Link
             href="/orders"
