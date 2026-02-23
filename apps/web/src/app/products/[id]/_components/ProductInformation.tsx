@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTheme } from "tamagui";
-import { Column, Row, Text, Button, Heading, Popover } from "@buttergolf/ui";
+import { Column, Row, Text, Button, Heading, Popover, Input } from "@buttergolf/ui";
 import { Heart, Info } from "@tamagui/lucide-icons";
 import type { Product } from "../ProductDetailClient";
 
@@ -27,7 +26,6 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
   const [offerError, setOfferError] = useState("");
   const [submittingOffer, setSubmittingOffer] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const theme = useTheme();
 
   const handleSubmitOffer = async () => {
     const amount = Number.parseFloat(offerAmount);
@@ -49,8 +47,8 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
       await onSubmitOffer(amount);
       setPopoverOpen(false);
       setOfferAmount("");
-    } catch {
-      setOfferError("Failed to submit. Try again.");
+    } catch (err) {
+      setOfferError(err instanceof Error ? err.message : "Failed to submit. Try again.");
     } finally {
       setSubmittingOffer(false);
     }
@@ -276,65 +274,41 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
               </Text>
 
               {/* Price Input */}
-              <div style={{ position: "relative" }}>
-                <span
-                  style={{
-                    position: "absolute",
-                    left: 14,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    fontSize: "16px",
-                    color: theme.text.val,
-                    fontWeight: 500,
-                    zIndex: 1,
-                  }}
+              <Row
+                alignItems="center"
+                borderWidth={1}
+                borderColor={offerError ? "$error" : "$border"}
+                borderRadius="$md"
+                backgroundColor="$surface"
+                overflow="hidden"
+                focusWithinStyle={{ borderColor: "$primary", borderWidth: 2 }}
+              >
+                <Text
+                  paddingLeft="$sm"
+                  paddingRight="$xs"
+                  color="$text"
+                  fontWeight="500"
+                  userSelect="none"
                 >
                   £
-                </span>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                </Text>
+                <Input
+                  keyboardType="decimal-pad"
                   placeholder="Your offer"
                   value={offerAmount}
-                  onChange={(e) => {
-                    setOfferAmount(e.target.value);
+                  onChangeText={(text) => {
+                    const sanitised = text.replace(/[^0-9.]/g, "").replace(/(\..*?)\./g, "$1");
+                    setOfferAmount(sanitised);
                     setOfferError("");
                   }}
                   disabled={submittingOffer}
                   autoFocus
-                  style={{
-                    width: "100%",
-                    padding: "12px 14px 12px 30px",
-                    fontSize: "16px",
-                    border: `1px solid ${offerError ? theme.error.val : theme.border.val}`,
-                    borderRadius: "8px",
-                    outline: "none",
-                    fontFamily: "var(--font-urbanist)",
-                    backgroundColor: theme.surface.val,
-                    color: theme.text.val,
-                    boxSizing: "border-box",
-                  }}
-                  onFocus={(e) => {
-                    if (!offerError) {
-                      e.target.style.borderColor = theme.primary.val;
-                    }
-                  }}
-                  onBlur={(e) => {
-                    if (!offerError) {
-                      e.target.style.borderColor = theme.border.val;
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !submittingOffer) {
-                      handleSubmitOffer();
-                    }
-                    if (e.key === "Escape") {
-                      setPopoverOpen(false);
-                    }
-                  }}
+                  flex={1}
+                  borderWidth={0}
+                  backgroundColor="transparent"
+                  onSubmitEditing={!submittingOffer ? handleSubmitOffer : undefined}
                 />
-              </div>
+              </Row>
 
               {offerError && (
                 <Text size="$2" color="$error">

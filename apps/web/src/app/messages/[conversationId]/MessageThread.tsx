@@ -125,9 +125,16 @@ export function MessageThread({
       throw new Error(data.error || "Failed to accept offer");
     }
 
+    const data = await response.json();
     setHasActiveOffer(false);
-    return response.json();
-  }, [conversationId]);
+
+    // Redirect buyer to checkout immediately after accepting
+    if (userRole === "buyer" && data.checkoutUrl) {
+      router.push(data.checkoutUrl);
+    }
+
+    return data;
+  }, [conversationId, userRole, router]);
 
   const handleRejectOffer = useCallback(async () => {
     const response = await fetch(`/api/conversations/${conversationId}/offer/reject`, {

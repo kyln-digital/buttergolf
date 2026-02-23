@@ -26,16 +26,12 @@ function getInitials(name: string): string {
 
 function getOfferBadge(
   status: string | null
-): { label: string; variant: "success" | "warning" | "primary" | "error" } | null {
+): { label: string; variant: "warning" | "primary" } | null {
   switch (status) {
     case "PENDING":
       return { label: "Offer", variant: "warning" };
     case "COUNTERED":
       return { label: "Counter", variant: "primary" };
-    case "ACCEPTED":
-      return { label: "Accepted", variant: "success" };
-    case "REJECTED":
-      return { label: "Declined", variant: "error" };
     default:
       return null;
   }
