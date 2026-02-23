@@ -236,7 +236,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
             }
           }}
         >
-          <Popover.Trigger asChild>
+          <Popover.Anchor asChild>
             <Button
               butterVariant="secondary"
               size="$5"
@@ -247,7 +247,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
             >
               Make an offer
             </Button>
-          </Popover.Trigger>
+          </Popover.Anchor>
           <Popover.Content
             backgroundColor="$surface"
             borderRadius="$lg"
