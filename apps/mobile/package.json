@@ -34,6 +34,7 @@
     "burnt": "^0.13.0",
     "expo": "catalog:",
     "expo-auth-session": "catalog:",
+    "expo-dev-client": "^6.0.20",
     "expo-font": "catalog:",
     "expo-image-picker": "catalog:",
     "expo-notifications": "catalog:",
