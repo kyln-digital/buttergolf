@@ -61,7 +61,7 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("Stripe webhook event received:", event.type);
+    console.info("Stripe webhook event received:", event.type);
 
     // Handle events with switch for cleaner organization
     switch (event.type) {
@@ -107,7 +107,7 @@ export async function POST(req: Request) {
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        console.info(`Unhandled event type: ${event.type}`);
     }
 
     return NextResponse.json({ received: true });
@@ -126,7 +126,7 @@ export async function POST(req: Request) {
  * Creates order, sends confirmation emails to buyer and seller
  */
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  console.log("Checkout session completed:", {
+  console.info("Checkout session completed:", {
     id: session.id,
     paymentIntentId: session.payment_intent,
     amountTotal: session.amount_total,
@@ -160,7 +160,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   });
 
   if (existingOrder) {
-    console.log("Order already exists for session:", session.id);
+    console.info("Order already exists for session:", session.id);
     return NextResponse.json({
       received: true,
       orderId: existingOrder.id,
@@ -341,7 +341,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     data: { isSold: true },
   });
 
-  console.log("Order created successfully:", order.id);
+  console.info("Order created successfully:", order.id);
 
   // Link conversation to order if this was an offer-based purchase
   const offerId = session.metadata?.offerId;
@@ -368,7 +368,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           },
         });
 
-        console.log("Linked conversation", offer.conversationId, "to order", order.id);
+        console.info("Linked conversation", offer.conversationId, "to order", order.id);
       }
     } catch (err) {
       // Non-fatal: conversation linking failure shouldn't block order creation
@@ -403,7 +403,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           },
         });
 
-        console.log("Linked existing conversation", conversation.id, "to order", order.id);
+        console.info("Linked existing conversation", conversation.id, "to order", order.id);
       }
     } catch (err) {
       console.error("Failed to link conversation to order:", err);
@@ -441,7 +441,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           </div>
         `,
       });
-      console.log("Sent address required email to seller:", product.user.email);
+      console.info("Sent address required email to seller:", product.user.email);
     } catch (emailError) {
       console.error("Failed to send address required email:", emailError);
     }
@@ -450,13 +450,13 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // Attempt to generate shipping label automatically
   // (will fail gracefully if seller has no valid address)
   try {
-    console.log("Attempting to auto-generate shipping label for order:", order.id);
+    console.info("Attempting to auto-generate shipping label for order:", order.id);
 
     const labelResult = await generateShippingLabel({
       orderId: order.id,
     });
 
-    console.log("Shipping label generated successfully:", {
+    console.info("Shipping label generated successfully:", {
       orderId: order.id,
       trackingNumber: labelResult.trackingNumber,
       carrier: labelResult.carrier,
@@ -510,7 +510,7 @@ async function sendOrderEmails(
   const sellerName =
     `${product.user.firstName} ${product.user.lastName}`.trim() || product.user.email;
 
-  console.log("Sending order notification emails...", {
+  console.info("Sending order notification emails...", {
     orderId,
     buyerEmail: buyer.email,
     sellerEmail: product.user.email,
@@ -529,7 +529,7 @@ async function sendOrderEmails(
   });
 
   if (buyerEmailResult.success) {
-    console.log("Buyer confirmation email sent:", {
+    console.info("Buyer confirmation email sent:", {
       orderId,
       emailId: buyerEmailResult.id,
       recipient: buyer.email,
@@ -558,7 +558,7 @@ async function sendOrderEmails(
   });
 
   if (sellerEmailResult.success) {
-    console.log("Seller notification email sent:", {
+    console.info("Seller notification email sent:", {
       orderId,
       emailId: sellerEmailResult.id,
       recipient: product.user.email,
@@ -583,7 +583,7 @@ async function sendOrderEmails(
         productTitle: product.title,
         autoReleaseDate: autoReleaseAt,
       });
-      console.log("Payment on-hold email sent to buyer:", buyer.email);
+      console.info("Payment on-hold email sent to buyer:", buyer.email);
     } catch (holdEmailError) {
       // Log but don't fail - this is a secondary email
       console.error("Failed to send payment on-hold email:", holdEmailError);
@@ -598,7 +598,7 @@ async function sendOrderEmails(
 function handleCheckoutExpired(session: Stripe.Checkout.Session) {
   const { productId } = session.metadata || {};
 
-  console.log("⏰ Checkout session expired:", {
+  console.info("⏰ Checkout session expired:", {
     sessionId: session.id,
     productId: productId || "none",
   });
@@ -618,7 +618,7 @@ function handleCheckoutExpired(session: Stripe.Checkout.Session) {
 async function handlePromotionPayment(paymentIntent: Stripe.PaymentIntent) {
   const { productId, promotionType, durationMs } = paymentIntent.metadata;
 
-  console.log("Promotion payment succeeded:", {
+  console.info("Promotion payment succeeded:", {
     paymentIntentId: paymentIntent.id,
     productId,
     promotionType,
@@ -679,7 +679,7 @@ async function handlePromotionPayment(paymentIntent: Stripe.PaymentIntent) {
     },
   });
 
-  console.log("Promotion activated:", {
+  console.info("Promotion activated:", {
     promotionId: promotion.id,
     productId,
     type: promotionType,
@@ -715,13 +715,13 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   });
 
   if (existingOrder) {
-    console.log("Payment intent succeeded (already handled by checkout):", paymentIntent.id);
+    console.info("Payment intent succeeded (already handled by checkout):", paymentIntent.id);
     return;
   }
 
   // Check if this is from our PaymentElement flow
   if (source !== "payment_element") {
-    console.log("Payment intent succeeded without checkout session (legacy):", {
+    console.info("Payment intent succeeded without checkout session (legacy):", {
       id: paymentIntent.id,
       amount: paymentIntent.amount / 100,
       currency: paymentIntent.currency,
@@ -731,7 +731,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   }
 
   // This is from PaymentElement flow - create the order using shared utility
-  console.log("Payment intent succeeded from PaymentElement flow:", {
+  console.info("Payment intent succeeded from PaymentElement flow:", {
     id: paymentIntent.id,
     amount: paymentIntent.amount / 100,
     productId: paymentIntent.metadata.productId,
@@ -742,7 +742,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   const order = await createOrderFromPaymentIntent(paymentIntent);
 
   if (order) {
-    console.log("Order created successfully from webhook:", order.id);
+    console.info("Order created successfully from webhook:", order.id);
   } else {
     console.error("Failed to create order from webhook for PaymentIntent:", paymentIntent.id);
   }
@@ -773,7 +773,7 @@ function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
  * Update order status and optionally restore product availability
  */
 async function handleRefund(charge: Stripe.Charge) {
-  console.log("💸 Charge refunded:", {
+  console.info("💸 Charge refunded:", {
     chargeId: charge.id,
     paymentIntentId: charge.payment_intent,
     amountRefunded: (charge.amount_refunded || 0) / 100,
@@ -808,7 +808,7 @@ async function handleRefund(charge: Stripe.Charge) {
     });
   } else {
     // Partial refund - log but don't change status (could add PARTIALLY_REFUNDED to enum later)
-    console.log("Partial refund processed for order:", order.id);
+    console.info("Partial refund processed for order:", order.id);
   }
 
   // If fully refunded, restore product availability
@@ -817,7 +817,7 @@ async function handleRefund(charge: Stripe.Charge) {
       where: { id: order.productId },
       data: { isSold: false },
     });
-    console.log("Product restored to available:", order.productId);
+    console.info("Product restored to available:", order.productId);
   }
 
   // TODO: Send refund confirmation email to buyer
@@ -848,7 +848,7 @@ function handleDisputeCreated(dispute: Stripe.Dispute) {
  * Track dispute resolution outcome
  */
 function handleDisputeClosed(dispute: Stripe.Dispute) {
-  console.log("Dispute closed:", {
+  console.info("Dispute closed:", {
     disputeId: dispute.id,
     chargeId: dispute.charge,
     status: dispute.status, // won, lost, warning_closed, etc.

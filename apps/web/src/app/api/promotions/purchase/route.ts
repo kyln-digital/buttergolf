@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
     const priceInPence = PROMOTION_PRICES[promotionType];
     const durationMs = PROMOTION_DURATIONS[promotionType];
 
-    console.log("Creating promotion PaymentIntent:", {
+    console.info("Creating promotion PaymentIntent:", {
       productId,
       promotionType,
       priceInPence,
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log("Promotion PaymentIntent created:", {
+    console.info("Promotion PaymentIntent created:", {
       paymentIntentId: paymentIntent.id,
       promotionId: promotion.id,
     });
