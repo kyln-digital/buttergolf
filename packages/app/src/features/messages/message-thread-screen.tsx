@@ -375,7 +375,7 @@ export function MessageThreadScreen({
       currentSource?.close();
       if (reconnectTimer) clearTimeout(reconnectTimer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- initialMessages
+
     // is intentionally read from a ref so that a new server-side array
     // reference does not tear down and recreate the realtime connection.
   }, [orderId, currentUserId, onFetchMessages, onMarkAsRead, mergeMessages, createEventSourceProp]);
