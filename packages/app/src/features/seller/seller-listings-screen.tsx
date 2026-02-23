@@ -456,7 +456,6 @@ export function SellerListingsScreen({
                         size="$3"
                         chromeless
                         onPress={(e) => {
-                          // @ts-expect-error - stopPropagation exists on web gesture events
                           e?.stopPropagation?.();
                           onEditListing(listing.id);
                         }}
@@ -470,7 +469,6 @@ export function SellerListingsScreen({
                           size="$3"
                           chromeless
                           onPress={(e) => {
-                            // @ts-expect-error - stopPropagation exists on web gesture events
                             e?.stopPropagation?.();
                             handleToggleStatus(listing);
                           }}
@@ -487,7 +485,6 @@ export function SellerListingsScreen({
                           size="$3"
                           chromeless
                           onPress={(e) => {
-                            // @ts-expect-error - stopPropagation exists on web gesture events
                             e?.stopPropagation?.();
                             handleToggleStatus(listing);
                           }}
@@ -504,7 +501,6 @@ export function SellerListingsScreen({
                           size="$3"
                           chromeless
                           onPress={(e) => {
-                            // @ts-expect-error - stopPropagation exists on web gesture events
                             e?.stopPropagation?.();
                             handleDelete(listing);
                           }}
