@@ -319,17 +319,16 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
               )}
 
               <Row gap="$2" justifyContent="flex-end">
-                <Popover.Close asChild>
-                  <Button
-                    size="$3"
-                    backgroundColor="transparent"
-                    color="$textSecondary"
-                    borderRadius="$full"
-                    paddingHorizontal="$3"
-                  >
-                    Cancel
-                  </Button>
-                </Popover.Close>
+                <Button
+                  size="$3"
+                  backgroundColor="transparent"
+                  color="$textSecondary"
+                  borderRadius="$full"
+                  paddingHorizontal="$3"
+                  onPress={() => setPopoverOpen(false)}
+                >
+                  Cancel
+                </Button>
                 <Button
                   butterVariant="primary"
                   size="$3"
