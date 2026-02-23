@@ -50,7 +50,7 @@ function TamaguiProviderInner({ children }: { children: ReactNode }) {
 export function NextTamaguiProvider({ children }: Readonly<{ children: ReactNode }>) {
   // Inject styles for SSR (react-native-web components)
   useServerInsertedHTML(() => {
-    // @ts-ignore - RN doesn't have this type but it exists at runtime
+    // @ts-expect-error - RN doesn't have this type but it exists at runtime
     const rnwStyle = StyleSheet.getSheet();
     return (
       <>

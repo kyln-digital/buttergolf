@@ -127,7 +127,7 @@ export function SellerListingsScreen({
               try {
                 await onToggleStatus(listing.id, newActive);
                 void fetchListings();
-              } catch (err) {
+              } catch {
                 Alert.alert("Error", `Failed to ${action} listing`);
               } finally {
                 setProcessingId(null);
@@ -160,7 +160,7 @@ export function SellerListingsScreen({
               try {
                 await onDeleteListing(listing.id);
                 void fetchListings();
-              } catch (err) {
+              } catch {
                 Alert.alert("Error", "Failed to delete listing");
               } finally {
                 setProcessingId(null);
@@ -218,7 +218,7 @@ export function SellerListingsScreen({
         borderBottomWidth={1}
         borderBottomColor="$border"
       >
-        <TamaguiButton
+        <Button
           chromeless
           circular
           size="$4"
@@ -228,7 +228,7 @@ export function SellerListingsScreen({
         <Heading level={4} flex={1}>
           My Listings
         </Heading>
-        <TamaguiButton
+        <Button
           chromeless
           circular
           size="$4"
@@ -284,7 +284,7 @@ export function SellerListingsScreen({
         }}
       >
         {filterTabs.map((tab) => (
-          <TamaguiButton
+          <Button
             key={tab.key}
             backgroundColor={activeFilter === tab.key ? "$primary" : "$surface"}
             borderRadius="$full"
@@ -320,7 +320,7 @@ export function SellerListingsScreen({
                 </View>
               )}
             </Row>
-          </TamaguiButton>
+          </Button>
         ))}
       </ScrollView>
 
@@ -363,7 +363,7 @@ export function SellerListingsScreen({
               const isProcessing = processingId === listing.id;
 
               return (
-                <TamaguiButton
+                <Button
                   key={listing.id}
                   unstyled
                   backgroundColor="$surface"
@@ -452,23 +452,25 @@ export function SellerListingsScreen({
                       gap="$2"
                       justifyContent="flex-end"
                     >
-                      <TamaguiButton
+                      <Button
                         size="$3"
                         chromeless
-                        onPress={(e: any) => {
+                        onPress={(e) => {
+                          // @ts-expect-error - stopPropagation exists on web gesture events
                           e?.stopPropagation?.();
                           onEditListing(listing.id);
                         }}
                         icon={<Edit3 size={16} color="$text" />}
                       >
                         <Text size="$2">Edit</Text>
-                      </TamaguiButton>
+                      </Button>
 
                       {listing.status === "ACTIVE" && (
-                        <TamaguiButton
+                        <Button
                           size="$3"
                           chromeless
-                          onPress={(e: any) => {
+                          onPress={(e) => {
+                            // @ts-expect-error - stopPropagation exists on web gesture events
                             e?.stopPropagation?.();
                             handleToggleStatus(listing);
                           }}
@@ -477,14 +479,15 @@ export function SellerListingsScreen({
                           <Text size="$2" color="$warning">
                             Deactivate
                           </Text>
-                        </TamaguiButton>
+                        </Button>
                       )}
 
                       {listing.status === "INACTIVE" && (
-                        <TamaguiButton
+                        <Button
                           size="$3"
                           chromeless
-                          onPress={(e: any) => {
+                          onPress={(e) => {
+                            // @ts-expect-error - stopPropagation exists on web gesture events
                             e?.stopPropagation?.();
                             handleToggleStatus(listing);
                           }}
@@ -493,14 +496,15 @@ export function SellerListingsScreen({
                           <Text size="$2" color="$success">
                             Activate
                           </Text>
-                        </TamaguiButton>
+                        </Button>
                       )}
 
                       {listing.status === "DRAFT" && (
-                        <TamaguiButton
+                        <Button
                           size="$3"
                           chromeless
-                          onPress={(e: any) => {
+                          onPress={(e) => {
+                            // @ts-expect-error - stopPropagation exists on web gesture events
                             e?.stopPropagation?.();
                             handleDelete(listing);
                           }}
@@ -509,11 +513,11 @@ export function SellerListingsScreen({
                           <Text size="$2" color="$error">
                             Delete
                           </Text>
-                        </TamaguiButton>
+                        </Button>
                       )}
                     </Row>
                   )}
-                </TamaguiButton>
+                </Button>
               );
             })}
           </Column>
