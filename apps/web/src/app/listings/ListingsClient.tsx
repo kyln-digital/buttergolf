@@ -332,7 +332,7 @@ export function ListingsClient({
           {/* Header */}
           <Row alignItems="center" justifyContent="space-between" flexWrap="wrap" gap="$md">
             <Column gap="$xs">
-              <Text size="$9" weight="bold">
+              <Text size="$7" $gtMd={{ size: "$9" }} weight="bold">
                 Shop All Products
               </Text>
               <Text color="$textSecondary">

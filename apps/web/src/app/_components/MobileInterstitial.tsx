@@ -17,6 +17,11 @@ export function MobileInterstitial() {
       return;
     }
 
+    // Don't show if already dismissed this session
+    if (sessionStorage.getItem("dismissedMobileInterstitial")) {
+      return;
+    }
+
     const ua = navigator.userAgent || "";
     const isTouch = window.matchMedia("(pointer: coarse)").matches;
     const isSmallScreen = window.matchMedia("(max-width: 1024px)").matches;
@@ -30,6 +35,11 @@ export function MobileInterstitial() {
       setIsMobile(true);
     }
   }, []);
+
+  const handleDismiss = () => {
+    sessionStorage.setItem("dismissedMobileInterstitial", "1");
+    setIsMobile(false);
+  };
 
   // Focus trap: keep focus within the dialog
   useEffect(() => {
@@ -146,6 +156,18 @@ export function MobileInterstitial() {
             }}
           >
             Get it on Google Play
+          </Button>
+
+          {/* Dismiss - Continue to website */}
+          <Button chromeless onPress={handleDismiss} marginTop="$md" width="100%">
+            <Text
+              color="$overlayLight60"
+              size="$5"
+              textAlign="center"
+              textDecorationLine="underline"
+            >
+              Continue to website
+            </Text>
           </Button>
         </Column>
       </Column>

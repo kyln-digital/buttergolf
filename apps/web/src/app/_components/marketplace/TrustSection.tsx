@@ -29,15 +29,22 @@ const TRUST_ITEMS = [
 export function TrustSection() {
   return (
     <Column backgroundColor="$background" paddingVertical="$10" width="100%">
-      <Column maxWidth={1280} marginHorizontal="auto" paddingHorizontal="$12" width="100%">
+      <Column
+        maxWidth={1280}
+        marginHorizontal="auto"
+        paddingHorizontal="$md"
+        $gtSm={{ paddingHorizontal: "$xl" }}
+        $gtLg={{ paddingHorizontal: "$2xl" }}
+        width="100%"
+      >
         {/* Main Heading */}
         <Heading
           level={2}
           size="$9"
-          $gtMd={{ size: "$10" }}
+          $gtMd={{ size: "$10", marginBottom: "$3xl" }}
           color="$text"
           textAlign="center"
-          marginBottom="$16"
+          marginBottom="$xl"
         >
           Fresh takes on second-hand reassurance
         </Heading>
@@ -45,8 +52,9 @@ export function TrustSection() {
         {/* Trust Items Grid */}
         <Column
           style={{ display: "grid" }}
-          gridTemplateColumns="1"
-          gap="$12"
+          gridTemplateColumns="1fr"
+          gap="$lg"
+          $gtSm={{ gap: "$xl" }}
           $gtMd={{
             gridTemplateColumns: "repeat(2, 1fr)",
           }}

@@ -65,7 +65,9 @@ export function CategoriesSection() {
           ref={trackRef}
           style={{
             display: "flex",
-            gap: "24px",
+            gap: "16px",
+            paddingLeft: "16px",
+            paddingRight: "16px",
             willChange: "transform",
             // CSS animation for infinite scroll
             animation:
@@ -83,8 +85,8 @@ export function CategoriesSection() {
               className="category-card"
               style={{
                 position: "relative",
-                width: "296px",
-                height: "329px", // 9:10 aspect ratio (296 * 1.1111)
+                width: "clamp(220px, 40vw, 296px)",
+                aspectRatio: "9 / 10",
                 borderRadius: "14px",
                 flexShrink: 0,
                 textDecoration: "none",
@@ -128,7 +130,7 @@ export function CategoriesSection() {
                     bottom: "16px",
                     left: "16px",
                     fontFamily: "var(--font-urbanist)",
-                    fontSize: "24px",
+                    fontSize: "clamp(18px, 4vw, 24px)",
                     fontWeight: 600,
                     lineHeight: 1,
                     color: "#FFFAD2",
@@ -150,8 +152,8 @@ export function CategoriesSection() {
             transform: translateX(0);
           }
           100% {
-            /* Move exactly one set of categories (320px card + 24px gap) */
-            transform: translateX(calc(-1 * ${CATEGORIES.length} * (296px + 24px)));
+            /* Move exactly one set of categories (card + gap) */
+            transform: translateX(calc(-1 * ${CATEGORIES.length} * (clamp(220px, 40vw, 296px) + 16px)));
           }
         }
 
@@ -175,7 +177,6 @@ export function CategoriesSection() {
 
           .categories-track > a {
             scroll-snap-align: center;
-            width: 280px;
           }
         }
 
