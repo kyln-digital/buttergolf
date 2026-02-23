@@ -1,5 +1,6 @@
 "use client";
 
+import { type FC } from "react";
 import { Switch as TamaguiSwitch, styled, GetProps, Label, XStack } from "tamagui";
 
 /**
@@ -56,10 +57,11 @@ const SwitchThumb = styled(TamaguiSwitch.Thumb, {
   elevation: 3,
 });
 
-// Main Switch component as compound component
-// Cast through unknown to restore the base TamaguiSwitch prop types (checked, onCheckedChange, etc.)
-// that styled() loses in this Tamagui version.
-export const Switch = SwitchFrame as unknown as typeof TamaguiSwitch & {
+// Main Switch component as compound component.
+// styled() loses the base switch props (checked, onCheckedChange, etc.) in this Tamagui version.
+// Using FC<GetProps<TamaguiSwitch>> restores the call-signature props without pulling in
+// TamaguiSwitch's incompatible static sub-component types.
+export const Switch = SwitchFrame as unknown as FC<GetProps<typeof TamaguiSwitch>> & {
   Thumb: typeof SwitchThumb;
 };
 
@@ -110,7 +112,10 @@ export function SwitchWithLabel({
         onCheckedChange={onCheckedChange}
         disabled={disabled}
       >
-        <Switch.Thumb animation="bouncy" />
+        {
+          // @ts-ignore — styled() loses animation prop type from TamaguiSwitch.Thumb; valid at runtime
+          <Switch.Thumb animation="bouncy" />
+        }
       </Switch>
       <Label
         htmlFor={switchId}

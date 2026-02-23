@@ -1,5 +1,6 @@
 "use client";
 
+import { type FC } from "react";
 import { Slider as TamaguiSlider, styled, GetProps } from "tamagui";
 
 /**
@@ -130,10 +131,11 @@ const SliderThumb = styled(TamaguiSlider.Thumb, {
   },
 });
 
-// Main Slider component as compound component
-// Cast through unknown to restore the base TamaguiSlider prop types (value, defaultValue, etc.)
-// that styled() loses in this Tamagui version.
-export const Slider = SliderFrame as unknown as typeof TamaguiSlider & {
+// Main Slider component as compound component.
+// styled() loses the base slider props (value, defaultValue, onValueChange, etc.) in this
+// Tamagui version. Using FC<GetProps<TamaguiSlider>> restores the call-signature props without
+// pulling in TamaguiSlider's incompatible static sub-component types.
+export const Slider = SliderFrame as unknown as FC<GetProps<typeof TamaguiSlider>> & {
   Track: typeof SliderTrack;
   TrackActive: typeof SliderTrackActive;
   Thumb: typeof SliderThumb;
