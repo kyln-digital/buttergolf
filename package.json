@@ -9,6 +9,7 @@
     "dev:mobile": "turbo run dev --filter=mobile",
     "dev:mobile:ios": "pnpm --filter mobile run ios",
     "dev:mobile:android": "pnpm --filter mobile run android",
+    "ios:local:build-and-submit": "pnpm --filter mobile run ios:local:build-and-submit",
     "db:generate": "turbo run db:generate",
     "db:push": "turbo run db:push",
     "db:migrate:dev": "turbo run db:migrate:dev",
