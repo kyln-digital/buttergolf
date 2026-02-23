@@ -176,7 +176,7 @@ function HeroHeading({
       style={{
         // Inline style overrides the level variant's fontSize on web for mobile sizes
         fontSize: isMobile ? 32 : undefined,
-        lineHeight: isMobile ? 1.2 : undefined,
+        lineHeight: isMobile ? 40 : undefined,
         whiteSpace: "normal",
         wordBreak: "keep-all",
       }}
