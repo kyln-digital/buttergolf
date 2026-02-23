@@ -152,8 +152,8 @@ export function CategoriesSection() {
             transform: translateX(0);
           }
           100% {
-            /* Move exactly one set of categories (card + gap) */
-            transform: translateX(calc(-1 * ${CATEGORIES.length} * (clamp(220px, 40vw, 296px) + 16px)));
+            /* Move exactly one set of categories (card + gap); use fixed width for animation */
+            transform: translateX(calc(-1 * ${CATEGORIES.length} * (260px + 16px)));
           }
         }
 

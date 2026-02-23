@@ -1,6 +1,7 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { Row, Column, Text } from "@buttergolf/ui";
 import { Home, Heart, PlusCircle, MessageCircle, User } from "@tamagui/lucide-icons";
 
@@ -36,7 +37,6 @@ const TABS = [
  */
 export function MobileBottomNav() {
   const pathname = usePathname();
-  const router = useRouter();
 
   const getActiveTab = () => {
     for (const tab of TABS) {
@@ -71,28 +71,31 @@ export function MobileBottomNav() {
           const isActive = activeTab === tab.key;
           const IconComponent = tab.icon;
           return (
-            <Column
+            <Link
               key={tab.key}
-              gap="$1"
-              alignItems="center"
-              minWidth={56}
-              paddingVertical="$1"
-              paddingHorizontal="$1"
-              cursor="pointer"
-              onPress={() => router.push(tab.href)}
-              role="link"
+              href={tab.href}
               aria-label={tab.label}
               aria-current={isActive ? "page" : undefined}
+              style={{ textDecoration: "none", minWidth: 56, display: "flex" }}
             >
-              <IconComponent size={22} color={isActive ? "$primary" : "$textSecondary"} />
-              <Text
-                size="$1"
-                color={isActive ? "$primary" : "$textSecondary"}
-                fontWeight={isActive ? "600" : "400"}
+              <Column
+                gap="$1"
+                alignItems="center"
+                paddingVertical="$1"
+                paddingHorizontal="$1"
+                cursor="pointer"
+                flex={1}
               >
-                {tab.label}
-              </Text>
-            </Column>
+                <IconComponent size={22} color={isActive ? "$primary" : "$textSecondary"} />
+                <Text
+                  size="$1"
+                  color={isActive ? "$primary" : "$textSecondary"}
+                  fontWeight={isActive ? "600" : "400"}
+                >
+                  {tab.label}
+                </Text>
+              </Column>
+            </Link>
           );
         })}
       </Row>

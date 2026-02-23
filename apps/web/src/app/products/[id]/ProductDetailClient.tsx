@@ -214,7 +214,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
 
                 {/* Thumbnail Gallery - Horizontal strip below main image */}
                 {product.images.length > 1 && (
-                  <Row gap="$sm" flexWrap="wrap">
+                  <Row gap="$sm" flexWrap="wrap" $gtMd={{ flexWrap: "nowrap", overflowX: "auto" }}>
                     {product.images.map((img, index) => (
                       <Card
                         key={img.id}
