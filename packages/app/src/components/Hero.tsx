@@ -167,15 +167,19 @@ function HeroHeading({
   return (
     <Heading
       level={1}
-      size="$7"
-      lineHeight="$7"
       $gtSm={{ textAlign: "left", fontSize: "$9", lineHeight: "$9" }}
       $md={{ fontSize: "$11", lineHeight: "$11" }}
       $lg={{ fontSize: "$14", lineHeight: "$14" }}
       color="$text"
       fontWeight="700"
       textAlign="center"
-      style={{ whiteSpace: "normal", wordBreak: "keep-all" }}
+      style={{
+        // Inline style overrides the level variant's fontSize on web for mobile sizes
+        fontSize: isMobile ? 22 : undefined,
+        lineHeight: isMobile ? 1.25 : undefined,
+        whiteSpace: "normal",
+        wordBreak: "keep-all",
+      }}
     >
       {text}
     </Heading>
