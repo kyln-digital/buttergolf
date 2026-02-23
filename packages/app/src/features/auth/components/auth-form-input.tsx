@@ -67,15 +67,7 @@ export function AuthFormInput({
           onChange={(e: any) => onChangeText(e.nativeEvent?.text ?? e.target?.value ?? "")}
           placeholder={placeholder}
           placeholderTextColor="$slateSmoke"
-          type={
-            secureTextEntry
-              ? "password"
-              : type === "email"
-                ? "email"
-                : type === "tel"
-                  ? "tel"
-                  : "text"
-          }
+          secureTextEntry={secureTextEntry}
           autoCapitalize={autoCapitalize}
           inputMode={
             inputMode ??

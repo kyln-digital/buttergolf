@@ -49,10 +49,10 @@ export function MakeOfferSheet({
       onPositionChange={setPosition}
       dismissOnSnapToBottom
       zIndex={100_000}
-      transition="medium"
+      animation="medium"
     >
       <Sheet.Overlay
-        transition="lazy"
+        animation="lazy"
         enterStyle={{ opacity: 0 }}
         exitStyle={{ opacity: 0 }}
         backgroundColor="$overlayDark50"
