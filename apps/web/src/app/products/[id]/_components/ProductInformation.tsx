@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Column, Row, Text, Button, Heading, Popover, Input } from "@buttergolf/ui";
+import { Button as TamaguiButton } from "tamagui";
 import { Heart, Info } from "@tamagui/lucide-icons";
 import type { Product } from "../ProductDetailClient";
 
@@ -342,6 +343,16 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
           </Popover.Content>
         </Popover>
       </Column>
+
+      {/* TEST ONLY: docs-exact pattern — Popover.Trigger asChild with plain Tamagui Button */}
+      <Popover placement="top">
+        <Popover.Trigger asChild>
+          <TamaguiButton>Test: docs pattern (plain Tamagui Button)</TamaguiButton>
+        </Popover.Trigger>
+        <Popover.Content borderWidth={1} borderColor="$borderColor" padding="$4">
+          <Text>✓ Popover.Trigger asChild works with plain Tamagui Button</Text>
+        </Popover.Content>
+      </Popover>
     </Column>
   );
 }
