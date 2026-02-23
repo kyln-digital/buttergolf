@@ -73,7 +73,7 @@ export async function seedClubModels(prisma: PrismaClient) {
       for (const modelName of fixture.models) {
         try {
           // Calculate usage count based on popularity heuristics
-          const usageCount = calculateUsageCount(modelName, brand.name);
+          const usageCount = calculateUsageCount(modelName);
 
           await prisma.clubModel.upsert({
             where: {
@@ -116,7 +116,7 @@ export async function seedClubModels(prisma: PrismaClient) {
  * Popular/current models get higher counts, older/discontinued models get lower counts.
  * This affects the order of suggestions in autocomplete dropdowns.
  */
-function calculateUsageCount(modelName: string, brandName: string): number {
+function calculateUsageCount(modelName: string): number {
   const name = modelName.toLowerCase();
 
   // Current generation models (high usage)

@@ -5,7 +5,7 @@ import type { PrismaClient } from "../generated/client";
 
 // Determine if we're running in a React Native environment.
 const isReactNative =
-  typeof navigator !== "undefined" && (navigator as any).product === "ReactNative";
+  typeof navigator !== "undefined" && (navigator as { product?: string }).product === "ReactNative";
 
 // Compute prisma instance in an IIFE so we can export a const.
 const prisma: PrismaClient = (() => {
@@ -33,16 +33,19 @@ const prisma: PrismaClient = (() => {
   };
 
   // Import from custom output location to fix pnpm monorepo module resolution
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { PrismaClient: PrismaClientRuntime } = require("../generated/client") as {
-    PrismaClient: new (...args: any[]) => PrismaClient;
+    PrismaClient: new (options?: unknown) => PrismaClient;
   };
 
   const instance =
     globalForPrisma.prisma ??
     new PrismaClientRuntime({
+      // eslint-disable-next-line turbo/no-undeclared-env-vars
       log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-    } as any);
+    });
 
+  // eslint-disable-next-line turbo/no-undeclared-env-vars
   if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = instance;
 
   return instance;

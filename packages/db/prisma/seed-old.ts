@@ -4,7 +4,7 @@ import { CATEGORIES } from "../src/constants/categories";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Seeding database...");
+  console.info("🌱 Seeding database...");
 
   // Create three users with different rating profiles
   const user1 = await prisma.user.upsert({
@@ -43,7 +43,7 @@ async function main() {
     },
   });
 
-  console.log("Created users:", [user1.name, user2.name, user3.name]);
+  console.info("Created users:", [user1.name, user2.name, user3.name]);
 
   // Create categories from centralized constants
   const categories = await Promise.all(
@@ -61,7 +61,7 @@ async function main() {
     )
   );
 
-  console.log(`Created ${categories.length} categories`);
+  console.info(`Created ${categories.length} categories`);
 
   // Create sample products with realistic golf equipment
   const driversCategory = categories.find((c) => c.slug === "drivers")!;
@@ -358,8 +358,8 @@ async function main() {
     }),
   ]);
 
-  console.log(`Created ${products.length} sample products`);
-  console.log("🌱 Seeding complete!");
+  console.info(`Created ${products.length} sample products`);
+  console.info("🌱 Seeding complete!");
 }
 
 main()
