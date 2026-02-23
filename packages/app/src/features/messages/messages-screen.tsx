@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { FlatList, RefreshControl, Platform } from "react-native";
 import { Column, Row, Text, Heading, Spinner, Button, ConversationListItem } from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MessageCircle } from "@tamagui/lucide-icons";
+import { MessageCircle, AlertTriangle, RefreshCw } from "@tamagui/lucide-icons";
 import { MobileBottomNav } from "../../components/mobile";
 import { formatDistanceToNow } from "date-fns";
 
@@ -75,51 +75,48 @@ export function MessagesScreen({
   const [hasMore, setHasMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [retrying, setRetrying] = useState(false);
 
-  // Fetch conversations on mount
+  // Keep a stable ref to the fetch callback so effects don't re-fire on every render
+  const fetchRef = useRef(onFetchConversations);
   useEffect(() => {
-    if (!onFetchConversations) {
+    fetchRef.current = onFetchConversations;
+  }, [onFetchConversations]);
+
+  const loadConversations = useCallback(async () => {
+    const fetcher = fetchRef.current;
+    if (!fetcher) {
       setLoading(false);
       return;
     }
+    try {
+      setError(null);
+      const data = await fetcher();
+      setConversations(data.conversations);
+      setHasMore(data.hasMore ?? false);
+      setCurrentPage(1);
+    } catch (err) {
+      const raw = err instanceof Error ? err.message : "Failed to load messages";
+      // Show a user-friendly message, not raw API responses
+      setError(raw.length > 120 ? "Unable to load messages. Please try again." : raw);
+      console.error("Error fetching conversations:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-    let cancelled = false;
-
-    const fetchData = async () => {
-      try {
-        setError(null);
-        const data = await onFetchConversations();
-        if (!cancelled) {
-          setConversations(data.conversations);
-          setHasMore(data.hasMore ?? false);
-          setCurrentPage(1);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load messages");
-          console.error("Error fetching conversations:", err);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchData();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [onFetchConversations]);
-
-  // Setup auto-refresh every 30 seconds
+  // Fetch conversations once on mount
   useEffect(() => {
-    if (!onFetchConversations) return;
+    loadConversations();
+  }, [loadConversations]);
 
+  // Setup auto-refresh every 30 seconds (uses ref so interval is stable)
+  useEffect(() => {
     const interval = setInterval(async () => {
+      const fetcher = fetchRef.current;
+      if (!fetcher) return;
       try {
-        const data = await onFetchConversations();
+        const data = await fetcher();
         setConversations(data.conversations);
       } catch (err) {
         console.error("Error refreshing conversations:", err);
@@ -127,32 +124,42 @@ export function MessagesScreen({
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [onFetchConversations]);
+  }, []);
+
+  const handleRetry = useCallback(async () => {
+    setRetrying(true);
+    setLoading(true);
+    await loadConversations();
+    setRetrying(false);
+  }, [loadConversations]);
 
   const handleRefresh = useCallback(async () => {
-    if (!onFetchConversations) return;
+    const fetcher = fetchRef.current;
+    if (!fetcher) return;
 
     setRefreshing(true);
     try {
-      const data = await onFetchConversations();
+      const data = await fetcher();
       setConversations(data.conversations);
       setHasMore(data.hasMore ?? false);
       setCurrentPage(1);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to refresh");
+      const raw = err instanceof Error ? err.message : "Failed to refresh";
+      setError(raw.length > 120 ? "Unable to load messages. Please try again." : raw);
     } finally {
       setRefreshing(false);
     }
-  }, [onFetchConversations]);
+  }, []);
 
   const handleLoadMore = useCallback(async () => {
-    if (!onFetchConversations || !hasMore || loadingMore) return;
+    const fetcher = fetchRef.current;
+    if (!fetcher || !hasMore || loadingMore) return;
 
     setLoadingMore(true);
     try {
       const nextPage = currentPage + 1;
-      const data = await onFetchConversations(nextPage);
+      const data = await fetcher(nextPage);
       setConversations((prev) => [...prev, ...data.conversations]);
       setHasMore(data.hasMore ?? false);
       setCurrentPage(nextPage);
@@ -161,7 +168,7 @@ export function MessagesScreen({
     } finally {
       setLoadingMore(false);
     }
-  }, [onFetchConversations, hasMore, loadingMore, currentPage]);
+  }, [hasMore, loadingMore, currentPage]);
 
   const totalUnread = conversations.reduce((sum, conv) => sum + conv.unreadCount, 0);
 
@@ -264,24 +271,6 @@ export function MessagesScreen({
         </Row>
       </Column>
 
-      {/* Error banner */}
-      {error && (
-        <Row
-          backgroundColor="$errorLight"
-          paddingHorizontal="$md"
-          paddingVertical="$sm"
-          alignItems="center"
-          gap="$sm"
-        >
-          <Text size="$3" color="$error" flex={1}>
-            {error}
-          </Text>
-          <Text size="$3" color="$error" weight="semibold" onPress={() => setError(null)}>
-            Dismiss
-          </Text>
-        </Row>
-      )}
-
       {/* Content */}
       {loading ? (
         <Column flex={1} alignItems="center" justifyContent="center" gap="$md">
@@ -289,6 +278,43 @@ export function MessagesScreen({
           <Text color="$textSecondary" size="$4">
             Loading messages...
           </Text>
+        </Column>
+      ) : error && conversations.length === 0 ? (
+        <Column
+          flex={1}
+          alignItems="center"
+          justifyContent="center"
+          gap="$lg"
+          paddingHorizontal="$xl"
+        >
+          <Column
+            width={80}
+            height={80}
+            borderRadius={40}
+            backgroundColor="$errorLight"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <AlertTriangle size={40} color="$error" />
+          </Column>
+          <Heading level={3} textAlign="center">
+            Something went wrong
+          </Heading>
+          <Text size="$5" color="$textSecondary" textAlign="center">
+            {"We couldn't load your messages. Check your connection and try again."}
+          </Text>
+          <Button
+            size="$5"
+            backgroundColor="$primary"
+            color="$textInverse"
+            paddingHorizontal="$6"
+            borderRadius="$full"
+            onPress={handleRetry}
+            disabled={retrying}
+            opacity={retrying ? 0.6 : 1}
+          >
+            {retrying ? "Retrying..." : "Try Again"}
+          </Button>
         </Column>
       ) : conversations.length === 0 ? (
         <Column
