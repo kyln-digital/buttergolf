@@ -44,7 +44,7 @@ export function MobileCheckoutSheet({
   productId,
   productTitle,
   productPrice,
-  productImageUrl: _productImageUrl,
+  productImageUrl,
   sellerId: _sellerId,
   open,
   onOpenChange,
