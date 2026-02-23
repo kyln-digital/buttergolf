@@ -205,7 +205,7 @@ export function Hero({
   animationDelay = 0.8,
 }: Readonly<HeroProps>) {
   const heroImageSource = heroImage ? getImageSource(heroImage) : null;
-  // eslint-disable-next-line react-hooks/static-components
+
   const HeroSvgComponent = heroImage ? getSvgComponent(heroImage) : null;
   const isWeb = Platform.OS === "web";
   const isMobile = !isWeb;

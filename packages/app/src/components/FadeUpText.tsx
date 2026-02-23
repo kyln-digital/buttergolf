@@ -35,7 +35,7 @@ function FadeUpTextWeb({ text, delay = 0, className, style, ariaLabel }: FadeUpT
     if (prefersReducedMotion || !isDesktop) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setShouldAnimate(false);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+
       setIsVisible(true);
       return;
     }
