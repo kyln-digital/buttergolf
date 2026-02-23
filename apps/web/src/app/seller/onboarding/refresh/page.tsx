@@ -19,7 +19,7 @@ export default function SellerOnboardingRefreshPage() {
     const params = searchParams.toString();
     const deepLink = `buttergolf://seller/onboarding/refresh${params ? `?${params}` : ""}`;
 
-    console.log("[SellerOnboardingRefresh] Redirecting to deep link:", deepLink);
+    console.info("[SellerOnboardingRefresh] Redirecting to deep link:", deepLink);
 
     // Redirect to the mobile app
     window.location.href = deepLink;

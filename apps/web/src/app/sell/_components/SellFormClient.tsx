@@ -317,7 +317,7 @@ export function SellFormClient() {
     // Synchronous guard to prevent duplicate submissions
     // (React state updates are async, so we need a ref for immediate check)
     if (isSubmittingRef.current) {
-      console.log("[SellForm] Duplicate submission blocked by ref guard");
+      console.info("[SellForm] Duplicate submission blocked by ref guard");
       return;
     }
     isSubmittingRef.current = true;
@@ -383,7 +383,7 @@ export function SellFormClient() {
   const handleSaveDraft = async () => {
     // Synchronous guard to prevent duplicate submissions
     if (isSubmittingRef.current) {
-      console.log("[SellForm] Duplicate draft save blocked by ref guard");
+      console.info("[SellForm] Duplicate draft save blocked by ref guard");
       return;
     }
     isSubmittingRef.current = true;

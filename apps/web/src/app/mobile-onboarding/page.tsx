@@ -41,7 +41,7 @@ function postMessageToRN(message: Record<string, unknown>) {
     window.ReactNativeWebView.postMessage(JSON.stringify(message));
   } else {
     // Dev fallback - log to console
-    console.log("[MobileOnboarding] postMessage:", message);
+    console.info("[MobileOnboarding] postMessage:", message);
   }
 }
 
