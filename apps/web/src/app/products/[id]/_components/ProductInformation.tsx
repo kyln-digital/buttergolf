@@ -237,7 +237,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
             }
           }}
         >
-          <Popover.Anchor asChild>
+          <Popover.Anchor>
             <Button
               butterVariant="secondary"
               size="$5"
