@@ -10,6 +10,7 @@ export function CategoriesSection() {
   const trackRef = useRef<HTMLDivElement>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Check for reduced motion preference (memoized)
   const prefersReducedMotion = useMemo(() => {
@@ -25,6 +26,11 @@ export function CategoriesSection() {
 
   useEffect(() => {
     setIsMounted(true); // eslint-disable-line react-hooks/set-state-in-effect -- Required for hydration
+    const mq = window.matchMedia("(max-width: 768px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, []);
 
   // Calculate animation duration based on number of items
@@ -50,7 +56,6 @@ export function CategoriesSection() {
         style={{
           position: "relative",
           width: "100%",
-          overflowX: "hidden",
           overflowY: "visible",
           WebkitOverflowScrolling: "touch",
           padding: "20px 0",
@@ -68,17 +73,17 @@ export function CategoriesSection() {
             gap: "16px",
             paddingLeft: "16px",
             paddingRight: "16px",
-            willChange: "transform",
-            // CSS animation for infinite scroll
+            willChange: isMobile ? "auto" : "transform",
+            // Disable animation on mobile — user scrolls manually
             animation:
-              isMounted && !prefersReducedMotion
+              isMounted && !prefersReducedMotion && !isMobile
                 ? `scroll-infinite ${animationDuration}s linear infinite`
                 : "none",
             animationPlayState: isPaused ? "paused" : "running",
           }}
           className="categories-track"
         >
-          {duplicatedCategories.map((category, index) => (
+          {(isMobile ? CATEGORIES : duplicatedCategories).map((category, index) => (
             <Link
               key={`${category.slug}-${index}`}
               href={`/category/${category.slug}`}
@@ -157,6 +162,13 @@ export function CategoriesSection() {
           }
         }
 
+        /* Desktop: clip the infinite scroll animation */
+        .categories-carousel-container {
+          overflow-x: hidden;
+          overflow-y: visible;
+        }
+
+        /* Mobile: manual touch scroll replaces auto-animation */
         @media (max-width: 768px) {
           .categories-carousel-container {
             overflow-x: auto;
@@ -165,14 +177,15 @@ export function CategoriesSection() {
             scroll-snap-type: x mandatory;
             scrollbar-width: none;
             -ms-overflow-style: none;
+            cursor: grab;
+          }
+
+          .categories-carousel-container:active {
+            cursor: grabbing;
           }
 
           .categories-carousel-container::-webkit-scrollbar {
             display: none;
-          }
-
-          .categories-track {
-            animation: none !important;
           }
 
           .categories-track > a {
