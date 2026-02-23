@@ -59,10 +59,11 @@ const StyledTabTrigger = styled(Tabs.Tab, {
 });
 
 interface SegmentedTabTriggerProps extends GetProps<typeof StyledTabTrigger> {
-  /** Icon element rendered before label */
+  // @ts-ignore — ReactNode conflicts with Tamagui's token index signature; valid at runtime
   icon?: ReactNode;
   /** Badge count displayed after label */
   count?: number;
+  // @ts-ignore — ReactNode conflicts with Tamagui's token index signature; valid at runtime
   children: ReactNode;
 }
 
@@ -72,10 +73,10 @@ function SegmentedTabTrigger({
   children,
   ...props
 }: Readonly<SegmentedTabTriggerProps>) {
-  // styled(Tabs.Tab) narrows children to string in this Tamagui version; cast to accept ReactNode
-  const Trigger = StyledTabTrigger as ComponentType<
-    GetProps<typeof StyledTabTrigger> & { children?: ReactNode }
-  >;
+  // styled(Tabs.Tab) has a token index signature that blocks ReactNode children/icon props.
+  // Cast to any locally; public SegmentedTabTriggerProps interface stays typed for callers.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const Trigger = StyledTabTrigger as ComponentType<any>;
   return (
     <Trigger {...props}>
       {icon}

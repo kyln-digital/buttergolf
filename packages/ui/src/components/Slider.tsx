@@ -1,6 +1,5 @@
 "use client";
 
-import { type FC } from "react";
 import { Slider as TamaguiSlider, styled, GetProps } from "tamagui";
 
 /**
@@ -131,11 +130,8 @@ const SliderThumb = styled(TamaguiSlider.Thumb, {
   },
 });
 
-// Main Slider component as compound component.
-// styled() loses the base slider props (value, defaultValue, onValueChange, etc.) in this
-// Tamagui version. Using FC<GetProps<TamaguiSlider>> restores the call-signature props without
-// pulling in TamaguiSlider's incompatible static sub-component types.
-export const Slider = SliderFrame as unknown as FC<GetProps<typeof TamaguiSlider>> & {
+// Main Slider component as compound component
+export const Slider = SliderFrame as typeof SliderFrame & {
   Track: typeof SliderTrack;
   TrackActive: typeof SliderTrackActive;
   Thumb: typeof SliderThumb;
@@ -181,8 +177,12 @@ export function RangeSlider({
   onValueChange,
   disabled = false,
 }: RangeSliderProps) {
+  // styled() adds a Tamagui token index signature that blocks value/defaultValue/children types.
+  // Cast locally to any so the JSX tree is unchecked; the public Slider export remains typed.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const S = Slider as any;
   return (
-    <Slider
+    <S
       min={min}
       max={max}
       step={step}
@@ -191,11 +191,11 @@ export function RangeSlider({
       onValueChange={onValueChange}
       disabled={disabled}
     >
-      <Slider.Track>
-        <Slider.TrackActive />
-      </Slider.Track>
-      <Slider.Thumb index={0} />
-      <Slider.Thumb index={1} />
-    </Slider>
+      <S.Track>
+        <S.TrackActive />
+      </S.Track>
+      <S.Thumb index={0} />
+      <S.Thumb index={1} />
+    </S>
   );
 }
