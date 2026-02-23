@@ -124,6 +124,7 @@ module.exports = () => {
       "@tamagui/toast",
       "@tamagui/next-theme",
       "@tamagui/sheet",
+      "@tamagui/popover",
       "@tamagui/portal",
       "@tamagui/polyfill-dev",
       "@tamagui/form",

@@ -134,6 +134,7 @@ pnpm dev:mobile    # Start Expo dev server
 pnpm build         # Build all apps and packages
 pnpm build:web     # Build web app only
 pnpm build:mobile  # Build mobile app only
+pnpm check         # REQUIRED final validation (format + lint + type-check)
 
 # Type checking
 pnpm check-types   # Run TypeScript compiler across workspace
@@ -154,6 +155,13 @@ pnpm db:seed            # Seed database with sample data
 # Auth (Clerk)
 # See docs/AUTH_SETUP_CLERK.md for details. Ensure env vars are set before running apps.
 ```
+
+## Python Command Policy (CRITICAL)
+
+- Never run `python` directly in this repository.
+- Always execute Python through Poetry: `poetry run python ...`
+- For module execution, use: `poetry run python -m <module>`
+- If Poetry is unavailable or not configured, stop and report the issue instead of falling back to `python`.
 
 ## Package Naming Convention
 
@@ -1148,6 +1156,7 @@ Each app extends this base configuration.
 
 ### Type Checking
 
+- REQUIRED for agents: run `pnpm check` at the end of every coding task and remedy any errors it reports before finishing.
 - Run `pnpm check-types` before committing
 - Strict mode is enabled across the workspace
 - No implicit any, unused locals, or unused parameters allowed

@@ -1,8 +1,17 @@
 "use client";
 
 import React from "react";
-import { Column, Row, ScrollView, Text, Button, Heading, ThemeSwitcher } from "@buttergolf/ui";
-import { Button as TamaguiButton, Avatar } from "tamagui";
+import {
+  Column,
+  Row,
+  ScrollView,
+  Text,
+  Button,
+  Button as TamaguiButton,
+  Heading,
+  ThemeSwitcher,
+} from "@buttergolf/ui";
+import { Avatar } from "tamagui";
 import {
   ArrowLeft,
   LogOut,
@@ -70,9 +79,11 @@ export function AccountScreen({
   user,
   isLoading = false,
   isSellerOnboarded = false,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   activeListingsCount,
   pendingPayoutsCount,
   pendingOrdersCount,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   unreadMessagesCount,
   onSignOut,
   onNavigateBack,

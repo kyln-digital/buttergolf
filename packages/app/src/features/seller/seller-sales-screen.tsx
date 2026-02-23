@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Column, Row, Text, Button, Heading, ScrollView, Spinner } from "@buttergolf/ui";
-import { Button as TamaguiButton, View } from "tamagui";
+import { Column, Row, Text, Button, Heading, ScrollView, Spinner, View } from "@buttergolf/ui";
 import {
   ArrowLeft,
   Package,
@@ -277,7 +276,7 @@ export function SellerSalesScreen({
         borderBottomWidth={1}
         borderBottomColor="$border"
       >
-        <TamaguiButton
+        <Button
           chromeless
           circular
           size="$4"
@@ -298,7 +297,7 @@ export function SellerSalesScreen({
         }}
       >
         {filterTabs.map((tab) => (
-          <TamaguiButton
+          <Button
             key={tab.key}
             backgroundColor={activeFilter === tab.key ? "$primary" : "$surface"}
             borderRadius="$full"
@@ -334,7 +333,7 @@ export function SellerSalesScreen({
                 </View>
               )}
             </Row>
-          </TamaguiButton>
+          </Button>
         ))}
       </ScrollView>
 
@@ -381,7 +380,7 @@ export function SellerSalesScreen({
                   overflow="hidden"
                 >
                   {/* Order Header */}
-                  <TamaguiButton
+                  <Button
                     unstyled
                     padding="$4"
                     borderBottomWidth={1}
@@ -412,7 +411,7 @@ export function SellerSalesScreen({
                       </Column>
                       <ChevronRight size={20} color="$textMuted" />
                     </Row>
-                  </TamaguiButton>
+                  </Button>
 
                   {/* Order Items Preview */}
                   <Column padding="$4" gap="$3">
@@ -522,17 +521,14 @@ export function SellerSalesScreen({
                     borderTopColor="$border"
                     justifyContent="center"
                   >
-                    <TamaguiButton
-                      chromeless
-                      onPress={() => onMessageBuyer(order.buyer.id, order.id)}
-                    >
+                    <Button chromeless onPress={() => onMessageBuyer(order.buyer.id, order.id)}>
                       <Row alignItems="center" gap="$2">
                         <MessageCircle size={18} color="$primary" />
                         <Text size="$3" color="$primary">
                           Message Buyer
                         </Text>
                       </Row>
-                    </TamaguiButton>
+                    </Button>
                   </Row>
                 </Column>
               );

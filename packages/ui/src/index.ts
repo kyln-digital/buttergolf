@@ -135,6 +135,8 @@ export { ChatInput } from "./components/ChatInput";
 export type { ChatInputProps } from "./components/ChatInput";
 export { ChatMessageList } from "./components/ChatMessageList";
 export type { ChatMessageListProps, ChatMessage } from "./components/ChatMessageList";
+export { OfferCard } from "./components/OfferCard";
+export type { OfferCardProps } from "./components/OfferCard";
 export { ConversationListItem } from "./components/ConversationListItem";
 export type { ConversationListItemProps } from "./components/ConversationListItem";
 

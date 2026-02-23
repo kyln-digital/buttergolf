@@ -11,8 +11,9 @@ import {
   Image,
   ScrollView,
   Badge,
+  View,
 } from "@buttergolf/ui";
-import { Button as TamaguiButton, View, Avatar, TextArea } from "tamagui";
+import { Avatar, TextArea } from "tamagui";
 import {
   ArrowLeft,
   Package,
@@ -220,11 +221,14 @@ function formatDaysUntil(dateString: string): string {
 export function OrderDetailScreen({
   orderId,
   currentUserId,
-  getToken,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getToken: _getToken,
   onFetchOrder,
   onFetchTracking,
-  onFetchMessages,
-  onSendMessage,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onFetchMessages: _onFetchMessages,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onSendMessage: _onSendMessage,
   onConfirmReceipt,
   onSubmitRating,
   onGenerateLabel,
@@ -254,7 +258,7 @@ export function OrderDetailScreen({
           const trackingData = await onFetchTracking(orderId);
           setTrackingEvents(trackingData.events || []);
         } catch {
-          console.log("Tracking not available");
+          console.info("Tracking not available");
         }
       }
     } catch (err) {
@@ -285,7 +289,7 @@ export function OrderDetailScreen({
               await onConfirmReceipt(orderId);
               void fetchOrder();
               Alert.alert("Success", "Payment has been released to the seller.");
-            } catch (err) {
+            } catch {
               Alert.alert("Error", "Failed to confirm receipt. Please try again.");
             } finally {
               setActionLoading(null);
@@ -304,7 +308,7 @@ export function OrderDetailScreen({
       await onSubmitRating(orderId, rating, ratingComment || undefined);
       setHasRated(true);
       Alert.alert("Thank You", "Your rating has been submitted.");
-    } catch (err) {
+    } catch {
       Alert.alert("Error", "Failed to submit rating. Please try again.");
     } finally {
       setActionLoading(null);
@@ -319,7 +323,7 @@ export function OrderDetailScreen({
       await onGenerateLabel(orderId);
       void fetchOrder();
       Alert.alert("Success", "Shipping label has been generated.");
-    } catch (err) {
+    } catch {
       Alert.alert("Error", "Failed to generate label. Please try again.");
     } finally {
       setActionLoading(null);
@@ -366,7 +370,7 @@ export function OrderDetailScreen({
           borderBottomWidth={1}
           borderBottomColor="$border"
         >
-          <TamaguiButton
+          <Button
             chromeless
             circular
             size="$4"
@@ -413,7 +417,7 @@ export function OrderDetailScreen({
         borderBottomWidth={1}
         borderBottomColor="$border"
       >
-        <TamaguiButton
+        <Button
           chromeless
           circular
           size="$4"
@@ -542,7 +546,7 @@ export function OrderDetailScreen({
         )}
 
         {/* Product Card */}
-        <TamaguiButton
+        <Button
           unstyled
           backgroundColor="$surface"
           borderRadius="$lg"
@@ -600,7 +604,7 @@ export function OrderDetailScreen({
               )}
             </Column>
           </Row>
-        </TamaguiButton>
+        </Button>
 
         {/* Tracking Info */}
         {order.trackingCode && (
@@ -932,13 +936,13 @@ export function OrderDetailScreen({
 
             <Row gap="$2" justifyContent="center" marginVertical="$2">
               {[1, 2, 3, 4, 5].map((star) => (
-                <TamaguiButton key={star} chromeless size="$5" onPress={() => setRating(star)}>
+                <Button key={star} chromeless size="$5" onPress={() => setRating(star)}>
                   <Star
                     size={32}
                     color={rating >= star ? "$warning" : "$textMuted"}
                     fill={rating >= star ? "$warning" : "transparent"}
                   />
-                </TamaguiButton>
+                </Button>
               ))}
             </Row>
 

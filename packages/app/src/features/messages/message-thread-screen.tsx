@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Column, Row, Text, Button, View, Image, ChatMessageList, ChatInput } from "@buttergolf/ui";
+import { Column, Row, Text, Button, Image, ChatMessageList, ChatInput } from "@buttergolf/ui";
 import type { ChatMessage } from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft } from "@tamagui/lucide-icons";
@@ -57,6 +57,10 @@ interface MessageThreadScreenProps {
       isRead: boolean;
       senderRole?: "buyer" | "seller";
       isOwnMessage?: boolean;
+      type?: string;
+      offerAmount?: number | null;
+      offerId?: string | null;
+      offerStatus?: string | null;
     }>;
     userRole?: "buyer" | "seller";
     nextCursor?: string | null;
@@ -83,6 +87,71 @@ interface MessageThreadScreenProps {
   /** Factory to create a realtime connection. Defaults to native EventSource on web.
    *  Mobile should pass a factory using react-native-sse with auth headers. */
   createEventSource?: (url: string) => EventSourceLike;
+  /** Whether to show the offer toggle button in chat input */
+  showOfferButton?: boolean;
+  /** Callback to make an offer */
+  onMakeOffer?: (amount: number, message?: string) => Promise<unknown>;
+  /** Callback to counter an offer */
+  onCounterOffer?: (amount: number, message?: string) => Promise<unknown>;
+  /** Callback to accept the active offer */
+  onAcceptOffer?: () => Promise<unknown>;
+  /** Callback to reject the active offer */
+  onRejectOffer?: () => Promise<unknown>;
+}
+
+type ChatMessageType = NonNullable<ChatMessage["type"]>;
+type ChatOfferStatus = NonNullable<ChatMessage["offerStatus"]>;
+
+const CHAT_MESSAGE_TYPES: ReadonlySet<ChatMessageType> = new Set([
+  "TEXT",
+  "OFFER",
+  "COUNTER_OFFER",
+  "OFFER_ACCEPTED",
+  "OFFER_REJECTED",
+  "OFFER_EXPIRED",
+  "SYSTEM",
+]);
+
+const CHAT_OFFER_STATUSES: ReadonlySet<ChatOfferStatus> = new Set([
+  "PENDING",
+  "ACCEPTED",
+  "REJECTED",
+  "EXPIRED",
+  "COUNTERED",
+]);
+
+function toChatMessageType(value: string | null | undefined): ChatMessage["type"] {
+  if (!value) return undefined;
+  return CHAT_MESSAGE_TYPES.has(value as ChatMessageType) ? (value as ChatMessageType) : undefined;
+}
+
+function toChatOfferStatus(value: string | null | undefined): ChatMessage["offerStatus"] {
+  if (!value) return undefined;
+  return CHAT_OFFER_STATUSES.has(value as ChatOfferStatus) ? (value as ChatOfferStatus) : undefined;
+}
+
+function toChatMessage(msg: {
+  id: string;
+  senderId: string;
+  content: string;
+  createdAt: string;
+  isRead: boolean;
+  type?: string | null;
+  offerAmount?: number | null;
+  offerId?: string | null;
+  offerStatus?: string | null;
+}): ChatMessage {
+  return {
+    id: msg.id,
+    senderId: msg.senderId,
+    content: msg.content,
+    createdAt: msg.createdAt,
+    isRead: msg.isRead,
+    type: toChatMessageType(msg.type),
+    offerAmount: msg.offerAmount ?? undefined,
+    offerId: msg.offerId ?? undefined,
+    offerStatus: toChatOfferStatus(msg.offerStatus),
+  };
 }
 
 export function MessageThreadScreen({
@@ -98,6 +167,11 @@ export function MessageThreadScreen({
   onMarkAsRead,
   onBack,
   createEventSource: createEventSourceProp,
+  showOfferButton = false,
+  onMakeOffer,
+  onCounterOffer,
+  onAcceptOffer,
+  onRejectOffer,
 }: Readonly<MessageThreadScreenProps>) {
   const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
@@ -105,6 +179,11 @@ export function MessageThreadScreen({
   const [loading, setLoading] = useState(!initialMessages);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Offer input mode state
+  const [offerMode, setOfferMode] = useState(false);
+  const [isCounterMode, setIsCounterMode] = useState(false);
+  const [offerAmount, setOfferAmount] = useState("");
 
   // Cursor pagination state
   const [hasMore, setHasMore] = useState(false);
@@ -173,13 +252,7 @@ export function MessageThreadScreen({
     setLoadingMore(true);
     try {
       const data = await onFetchMessages(orderId, nextCursor);
-      const older = data.messages.map((msg) => ({
-        id: msg.id,
-        senderId: msg.senderId,
-        content: msg.content,
-        createdAt: msg.createdAt,
-        isRead: msg.isRead,
-      }));
+      const older = data.messages.map(toChatMessage);
       // Prepend older messages
       setMessages((prev) => {
         const existingIds = new Set(prev.map((m) => m.id));
@@ -206,15 +279,7 @@ export function MessageThreadScreen({
         if (onFetchMessages) {
           const data = await onFetchMessages(orderId);
           if (!cancelled) {
-            mergeMessages(
-              data.messages.map((msg) => ({
-                id: msg.id,
-                senderId: msg.senderId,
-                content: msg.content,
-                createdAt: msg.createdAt,
-                isRead: msg.isRead,
-              }))
-            );
+            mergeMessages(data.messages.map(toChatMessage));
             setHasMore(data.hasMore ?? false);
             setNextCursor(data.nextCursor ?? null);
           }
@@ -253,15 +318,7 @@ export function MessageThreadScreen({
           // handles the sender's own messages.
           if (data.message.senderId === currentUserId) return;
 
-          mergeMessages([
-            {
-              id: data.message.id,
-              senderId: data.message.senderId,
-              content: data.message.content,
-              createdAt: data.message.createdAt,
-              isRead: data.message.isRead,
-            },
-          ]);
+          mergeMessages([toChatMessage(data.message)]);
         } else if (data.type === "messages_read" && !cancelled) {
           // The other party read our messages — update isRead for all
           // messages we sent that are still marked unread.
@@ -319,7 +376,7 @@ export function MessageThreadScreen({
       currentSource?.close();
       if (reconnectTimer) clearTimeout(reconnectTimer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- initialMessages
+
     // is intentionally read from a ref so that a new server-side array
     // reference does not tear down and recreate the realtime connection.
   }, [orderId, currentUserId, onFetchMessages, onMarkAsRead, mergeMessages, createEventSourceProp]);
@@ -332,15 +389,7 @@ export function MessageThreadScreen({
     const interval = setInterval(async () => {
       try {
         const data = await onFetchMessages(orderId);
-        mergeMessages(
-          data.messages.map((msg) => ({
-            id: msg.id,
-            senderId: msg.senderId,
-            content: msg.content,
-            createdAt: msg.createdAt,
-            isRead: msg.isRead,
-          }))
-        );
+        mergeMessages(data.messages.map(toChatMessage));
       } catch {
         // Silent — polling failures don't surface to the user
       }
@@ -427,6 +476,66 @@ export function MessageThreadScreen({
       setSending(false);
     }
   }, [newMessage, sending, isOverLimit, orderId, currentUserId, onSendMessage]);
+
+  const handleSendOffer = useCallback(
+    async (amount: number, message?: string) => {
+      const callback = isCounterMode ? onCounterOffer : onMakeOffer;
+      if (!callback || sending) return;
+      setSending(true);
+      setError(null);
+
+      try {
+        await callback(amount, message);
+        setOfferMode(false);
+        setIsCounterMode(false);
+        setOfferAmount("");
+        setNewMessage("");
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : isCounterMode
+              ? "Failed to submit counter offer"
+              : "Failed to make offer"
+        );
+      } finally {
+        setSending(false);
+      }
+    },
+    [isCounterMode, onCounterOffer, onMakeOffer, sending]
+  );
+
+  const handleAcceptOffer = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    async (_offerId: string) => {
+      if (!onAcceptOffer) return;
+      try {
+        await onAcceptOffer();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to accept offer");
+      }
+    },
+    [onAcceptOffer]
+  );
+
+  const handleRejectOffer = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    async (_offerId: string) => {
+      if (!onRejectOffer) return;
+      try {
+        await onRejectOffer();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to reject offer");
+      }
+    },
+    [onRejectOffer]
+  );
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleCounterOffer = useCallback(async (_offerId: string) => {
+    setOfferMode(true);
+    setIsCounterMode(true);
+  }, []);
 
   const handleRetry = useCallback(() => {
     if (!failedContent) return;
@@ -521,6 +630,9 @@ export function MessageThreadScreen({
         getStableKey={getStableKey}
         onLoadMore={hasMore ? loadOlderMessages : undefined}
         loadingMore={loadingMore}
+        onAcceptOffer={handleAcceptOffer}
+        onRejectOffer={handleRejectOffer}
+        onCounterOffer={handleCounterOffer}
       />
 
       {/* Input */}
@@ -531,6 +643,17 @@ export function MessageThreadScreen({
           onSend={handleSend}
           sending={sending}
           maxLength={MESSAGE_LIMITS.MAX_LENGTH}
+          showOfferButton={showOfferButton}
+          offerMode={offerMode}
+          isCounterMode={isCounterMode}
+          onToggleOfferMode={() => {
+            setOfferMode((prev) => !prev);
+            setIsCounterMode(false);
+            setOfferAmount("");
+          }}
+          offerAmount={offerAmount}
+          onOfferAmountChange={setOfferAmount}
+          onSendOffer={handleSendOffer}
         />
       </Column>
     </Column>

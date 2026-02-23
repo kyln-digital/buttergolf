@@ -63,7 +63,7 @@ export async function GET(
 
         if (paymentIntent.status === "succeeded") {
           // Payment succeeded but webhook was missed/delayed - create order as fallback
-          console.log(
+          console.info(
             "[by-payment-intent] Webhook missed, creating order from PaymentIntent:",
             paymentIntentId
           );

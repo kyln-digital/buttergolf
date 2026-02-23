@@ -76,26 +76,34 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
 
   const handleSubmitOffer = async (offerAmount: number) => {
     try {
-      const response = await fetch("/api/offers", {
+      // Create or get conversation for this product
+      const convResponse = await fetch("/api/conversations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId: product.id,
-          amount: offerAmount,
-        }),
+        body: JSON.stringify({ productId: product.id }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        console.error("Offer submission failed:", response.status, error);
+      if (!convResponse.ok) {
+        const error = await convResponse.json();
+        throw new Error(error.error || "Failed to start conversation");
+      }
+
+      const { conversationId } = await convResponse.json();
+
+      // Submit the offer through the conversation
+      const offerResponse = await fetch(`/api/conversations/${conversationId}/offer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: offerAmount }),
+      });
+
+      if (!offerResponse.ok) {
+        const error = await offerResponse.json();
         throw new Error(error.error || "Failed to submit offer");
       }
 
-      const result = await response.json();
-      console.log("Offer submitted successfully:", result);
-
-      // Redirect to offer detail page
-      router.push(`/offers/${result.id}`);
+      // Redirect to conversation
+      router.push(`/messages/${conversationId}`);
     } catch (error) {
       console.error("Error submitting offer:", error);
       throw error;

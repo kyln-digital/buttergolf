@@ -136,7 +136,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (!sellerIsOnboarded) {
       // Seller hasn't completed onboarding - mark as pending, funds stay on platform
-      console.log("Seller not yet onboarded - marking order as PENDING_SELLER_ONBOARDING:", {
+      console.info("Seller not yet onboarded - marking order as PENDING_SELLER_ONBOARDING:", {
         orderId,
         sellerId: order.sellerId,
         hasConnectId: !!order.seller.stripeConnectId,
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         },
       });
 
-      console.log("Order updated to PENDING_SELLER_ONBOARDING:", {
+      console.info("Order updated to PENDING_SELLER_ONBOARDING:", {
         orderId: updatedOrder.id,
         buyerConfirmedAt: updatedOrder.buyerConfirmedAt,
       });
@@ -169,7 +169,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // Seller is onboarded - proceed with transfer
-    console.log("Creating transfer to seller:", {
+    console.info("Creating transfer to seller:", {
       orderId,
       sellerId: order.sellerId,
       sellerConnectId: order.seller.stripeConnectId,
@@ -201,7 +201,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       }
     );
 
-    console.log("Transfer created successfully:", {
+    console.info("Transfer created successfully:", {
       transferId: transfer.id,
       amount: transfer.amount,
       destination: transfer.destination,
@@ -219,7 +219,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       },
     });
 
-    console.log("Order updated to RELEASED:", {
+    console.info("Order updated to RELEASED:", {
       orderId: updatedOrder.id,
       paymentReleasedAt: updatedOrder.paymentReleasedAt,
     });
@@ -234,7 +234,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         payoutAmount: transferAmountInPence / 100,
         releaseReason: "buyer_confirmed",
       });
-      console.log("Payment released email sent to seller:", order.seller.email);
+      console.info("Payment released email sent to seller:", order.seller.email);
     } catch (emailError) {
       // Log but don't fail the request if email fails
       console.error("Failed to send payment released email:", emailError);

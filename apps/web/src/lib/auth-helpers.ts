@@ -46,7 +46,7 @@ export async function getOrCreateUser(clerkUserId: string) {
     },
   });
 
-  console.log(`Created user ${user.id} for Clerk ID ${clerkUserId} via fallback`);
+  console.info(`Created user ${user.id} for Clerk ID ${clerkUserId} via fallback`);
 
   return user;
 }

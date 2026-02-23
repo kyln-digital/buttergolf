@@ -35,7 +35,9 @@ export function useMessageStream(
   const [error, setError] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   // Store onMessage in a ref to avoid reconnections when callback changes
+
   const onMessageRef = useRef(onMessage);
+  // eslint-disable-next-line react-hooks/refs
   onMessageRef.current = onMessage;
 
   useEffect(() => {
@@ -65,7 +67,7 @@ export function useMessageStream(
 
       // Handle connection open
       eventSource.addEventListener("open", () => {
-        console.log("[useMessageStream] Connected");
+        console.info("[useMessageStream] Connected");
         setIsConnected(true);
         setError(null);
       });
@@ -102,7 +104,7 @@ export function useMessageStream(
       });
 
       return () => {
-        console.log("[useMessageStream] Closing connection");
+        console.info("[useMessageStream] Closing connection");
         eventSource.close();
         eventSourceRef.current = null;
         setIsConnected(false);

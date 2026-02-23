@@ -10,7 +10,7 @@ import { ThreadListSkeleton } from "./ThreadListSkeleton";
 
 interface ThreadListProps {
   conversations: Conversation[];
-  activeOrderId: string | null;
+  activeConversationId: string | null;
   loading?: boolean;
 }
 
@@ -24,7 +24,20 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
-export function ThreadList({ conversations, activeOrderId, loading }: ThreadListProps) {
+function getOfferBadge(
+  status: string | null
+): { label: string; variant: "warning" | "primary" } | null {
+  switch (status) {
+    case "PENDING":
+      return { label: "Offer", variant: "warning" };
+    case "COUNTERED":
+      return { label: "Counter", variant: "primary" };
+    default:
+      return null;
+  }
+}
+
+export function ThreadList({ conversations, activeConversationId, loading }: ThreadListProps) {
   if (loading) {
     return <ThreadListSkeleton />;
   }
@@ -82,13 +95,14 @@ export function ThreadList({ conversations, activeOrderId, loading }: ThreadList
         <ScrollView flex={1} showsVerticalScrollIndicator={false}>
           <Column paddingVertical="$xs">
             {conversations.map((conversation) => {
-              const isActive = conversation.orderId === activeOrderId;
+              const isActive = conversation.id === activeConversationId;
               const hasUnread = conversation.unreadCount > 0;
+              const offerBadge = getOfferBadge(conversation.activeOfferStatus);
 
               return (
                 <Link
-                  key={conversation.orderId}
-                  href={`/messages/${conversation.orderId}`}
+                  key={conversation.id}
+                  href={`/messages/${conversation.id}`}
                   style={{ textDecoration: "none" }}
                 >
                   <Row
@@ -158,6 +172,17 @@ export function ThreadList({ conversations, activeOrderId, loading }: ThreadList
                       <Text size="$3" color="$textSecondary" numberOfLines={1}>
                         {conversation.productTitle}
                       </Text>
+
+                      {offerBadge && (
+                        <Row alignItems="center" gap="$xs">
+                          <Badge variant={offerBadge.variant} size="sm">
+                            {offerBadge.label}
+                            {conversation.activeOfferAmount != null
+                              ? ` £${conversation.activeOfferAmount.toFixed(2)}`
+                              : ""}
+                          </Badge>
+                        </Row>
+                      )}
 
                       <Row justifyContent="space-between" alignItems="center" gap="$sm">
                         <Text

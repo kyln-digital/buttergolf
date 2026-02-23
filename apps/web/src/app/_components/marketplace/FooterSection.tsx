@@ -30,6 +30,7 @@ export function FooterSection() {
           sizes="50vw"
           style={{
             objectFit: "contain",
+            objectPosition: "right center",
           }}
         />
       </Column>

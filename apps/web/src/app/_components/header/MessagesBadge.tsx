@@ -24,6 +24,7 @@ export function MessagesBadge() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchCount();
     const id = setInterval(fetchCount, POLL_INTERVAL);
     return () => clearInterval(id);

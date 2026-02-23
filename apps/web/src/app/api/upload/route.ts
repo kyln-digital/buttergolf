@@ -159,7 +159,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     // Debug logging
-    console.log("📤 Cloudinary Upload:", {
+    console.info("📤 Cloudinary Upload:", {
       filename,
       contentType,
       sizeBytes: buffer.length,
@@ -203,7 +203,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     // Debug: Log the image dimensions being uploaded
-    console.log("📐 Uploading image data:", {
+    console.info("📐 Uploading image data:", {
       base64Length: base64Image.length,
       estimatedSizeKB: Math.round((base64Image.length * 0.75) / 1024),
       isFirstImage,
@@ -213,7 +213,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     // The blob is already cropped by ImageCropModal, SDK applies background transformation to it
     const result = await cloudinary.uploader.upload(base64Image, uploadOptions);
 
-    console.log("Cloudinary Upload Success:", {
+    console.info("Cloudinary Upload Success:", {
       publicId: result.public_id,
       url: result.secure_url,
       dimensions: `${result.width}x${result.height}`,

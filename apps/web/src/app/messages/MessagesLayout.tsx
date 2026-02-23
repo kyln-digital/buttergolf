@@ -8,16 +8,22 @@ import { View } from "tamagui";
 import { ThreadList } from "./_components/ThreadList";
 
 export interface Conversation {
-  orderId: string;
+  id: string;
+  productId: string;
   productTitle: string;
   productImage: string | null;
+  productPrice: number;
+  productSold: boolean;
+  otherUserId: string;
   otherUserName: string;
   otherUserImage: string | null;
   lastMessagePreview: string | null;
   lastMessageAt: string;
   unreadCount: number;
   userRole: "buyer" | "seller";
-  orderStatus: string;
+  orderId: string | null;
+  activeOfferStatus: string | null;
+  activeOfferAmount: number | null;
 }
 
 interface MessagesLayoutProps {
@@ -43,7 +49,7 @@ export function MessagesLayout({
   // Refresh thread list every 30 seconds so unread counts / previews stay current
   const refreshConversations = useCallback(async () => {
     try {
-      const res = await fetch("/api/messages?limit=50");
+      const res = await fetch("/api/conversations?limit=50");
       if (!res.ok) return;
       const data = await res.json();
       if (data.conversations) {
@@ -59,7 +65,7 @@ export function MessagesLayout({
     return () => clearInterval(interval);
   }, [refreshConversations]);
 
-  // Determine if a thread is currently selected (URL is /messages/[orderId])
+  // Determine if a thread is currently selected (URL is /messages/[conversationId])
   const isThreadSelected = pathname !== "/messages" && pathname.startsWith("/messages/");
 
   const containerStyle = {
@@ -93,7 +99,7 @@ export function MessagesLayout({
         borderColor="$border"
         style={containerStyle}
       >
-        <ThreadList conversations={conversations} activeOrderId={null} />
+        <ThreadList conversations={conversations} activeConversationId={null} />
       </Column>
     );
   }
@@ -117,7 +123,10 @@ export function MessagesLayout({
         borderRightColor="$border"
         backgroundColor="$surface"
       >
-        <ThreadList conversations={conversations} activeOrderId={extractOrderId(pathname)} />
+        <ThreadList
+          conversations={conversations}
+          activeConversationId={extractConversationId(pathname)}
+        />
       </Column>
 
       {/* Right pane — Conversation or empty state */}
@@ -128,8 +137,7 @@ export function MessagesLayout({
   );
 }
 
-function extractOrderId(pathname: string): string | null {
-  // pathname is /messages/[orderId] — extract the orderId
+function extractConversationId(pathname: string): string | null {
   const parts = pathname.split("/");
   if (parts.length >= 3 && parts[1] === "messages" && parts[2]) {
     return parts[2];

@@ -1,8 +1,16 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { Column, ScrollView, Text, Button, Heading, Row, Spinner } from "@buttergolf/ui";
-import { Button as TamaguiButton } from "tamagui";
+import {
+  Column,
+  ScrollView,
+  Text,
+  Button,
+  Button as TamaguiButton,
+  Heading,
+  Row,
+  Spinner,
+} from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSignIn } from "@clerk/clerk-expo";
 import { AuthFormInput, AuthErrorDisplay } from "./components";
@@ -102,6 +110,7 @@ export function ResetPasswordScreen({
 
     try {
       // Attempt password reset with code and new password
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await (signIn as any).resetPassword({
         code,
         password: newPassword,

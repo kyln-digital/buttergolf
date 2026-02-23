@@ -130,7 +130,7 @@ export async function POST(request: Request) {
       });
 
       if (existingProduct) {
-        console.log(
+        console.info(
           `[Products API] Duplicate request detected: ${requestId} - returning existing product ${existingProduct.id}`
         );
         // Return the existing product instead of creating a duplicate

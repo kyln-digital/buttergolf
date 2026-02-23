@@ -59,11 +59,9 @@ const StyledTabTrigger = styled(Tabs.Tab, {
 });
 
 interface SegmentedTabTriggerProps extends GetProps<typeof StyledTabTrigger> {
-  // @ts-ignore — ReactNode conflicts with Tamagui's token index signature; valid at runtime
   icon?: ReactNode;
   /** Badge count displayed after label */
   count?: number;
-  // @ts-ignore — ReactNode conflicts with Tamagui's token index signature; valid at runtime
   children: ReactNode;
 }
 

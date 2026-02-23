@@ -100,7 +100,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       updateData.actualDelivery = now;
       updateData.autoReleaseAt = calculateAutoReleaseDate(now);
 
-      console.log("Setting auto-release date for delivered order:", {
+      console.info("Setting auto-release date for delivered order:", {
         orderId,
         deliveredAt: now,
         autoReleaseAt: updateData.autoReleaseAt,
@@ -113,7 +113,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       data: updateData,
     });
 
-    console.log("Order shipment status updated:", {
+    console.info("Order shipment status updated:", {
       orderId,
       oldStatus: order.shipmentStatus,
       newStatus: status,
@@ -131,7 +131,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           productTitle: order.product.title,
           autoReleaseDate: updatedOrder.autoReleaseAt,
         });
-        console.log("Payment on-hold email sent to buyer:", order.buyer.email);
+        console.info("Payment on-hold email sent to buyer:", order.buyer.email);
       } catch (emailError) {
         // Log but don't fail the request
         console.error("Failed to send payment on-hold email:", emailError);

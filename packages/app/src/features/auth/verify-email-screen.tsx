@@ -2,7 +2,6 @@
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { Column, Row, ScrollView, Text, Button, Heading, Spinner, useTheme } from "@buttergolf/ui";
-import { Button as TamaguiButton } from "tamagui";
 import { Mail, ArrowLeft } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSignUp } from "@clerk/clerk-expo";
@@ -148,7 +147,7 @@ export function VerifyEmailScreen({
         <Column gap="$6" flex={1}>
           {/* Back Button */}
           {onNavigateBack && (
-            <TamaguiButton
+            <Button
               chromeless
               size="$4"
               icon={<ArrowLeft size={20} />}
@@ -261,7 +260,7 @@ export function VerifyEmailScreen({
               {"Didn't receive a code?"}
             </Text>
 
-            <TamaguiButton
+            <Button
               chromeless
               size="$4"
               color={resendCountdown > 0 ? "$textMuted" : "$primary"}
@@ -279,7 +278,7 @@ export function VerifyEmailScreen({
               ) : (
                 "Resend Code"
               )}
-            </TamaguiButton>
+            </Button>
 
             {resendAttempts > 0 && (
               <Text size="$3" color="$textMuted" textAlign="center">

@@ -399,6 +399,7 @@ export function SellerHub() {
             {/* Sort */}
             <Row gap="$sm" alignItems="center">
               <Text weight="medium">Sort:</Text>
+              {/* eslint-disable-next-line react/forbid-elements */}
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}

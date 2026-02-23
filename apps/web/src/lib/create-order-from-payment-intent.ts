@@ -178,7 +178,7 @@ export async function createOrderFromPaymentIntent(paymentIntent: Stripe.Payment
     data: { isSold: true },
   });
 
-  console.log("[createOrderFromPaymentIntent] Order created successfully:", order.id);
+  console.info("[createOrderFromPaymentIntent] Order created successfully:", order.id);
 
   // Fire-and-forget: send emails, generate label, handle seller address notification
   // These shouldn't block the order response
@@ -258,7 +258,7 @@ async function handlePostOrderTasks(
   // Attempt to generate shipping label automatically
   try {
     const labelResult = await generateShippingLabel({ orderId });
-    console.log("[createOrderFromPaymentIntent] Shipping label generated:", {
+    console.info("[createOrderFromPaymentIntent] Shipping label generated:", {
       orderId,
       trackingNumber: labelResult.trackingNumber,
       carrier: labelResult.carrier,

@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  console.log("Starting payment reminder cron job...");
+  console.info("Starting payment reminder cron job...");
 
   const results: Array<{
     orderId: string;
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      console.log(`Found ${ordersToRemind.length} orders for ${daysUntilRelease}-day reminder`);
+      console.info(`Found ${ordersToRemind.length} orders for ${daysUntilRelease}-day reminder`);
 
       for (const order of ordersToRemind) {
         try {
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
           });
 
           if (emailResult.success) {
-            console.log("Reminder email sent:", {
+            console.info("Reminder email sent:", {
               orderId: order.id,
               daysUntilRelease,
               emailId: emailResult.id,
@@ -154,7 +154,7 @@ export async function GET(request: NextRequest) {
     const failedCount = results.filter((r) => r.status === "failed").length;
     const skippedCount = results.filter((r) => r.status === "skipped").length;
 
-    console.log("Payment reminder cron job completed:", {
+    console.info("Payment reminder cron job completed:", {
       total: results.length,
       sent: sentCount,
       failed: failedCount,

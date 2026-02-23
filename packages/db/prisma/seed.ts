@@ -6,7 +6,7 @@ import { seedClubModels } from "./seeders/clubModels";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Seeding database...");
+  console.info("🌱 Seeding database...");
 
   // Create three users with different rating profiles
   const user1 = await prisma.user.upsert({
@@ -48,7 +48,7 @@ async function main() {
     },
   });
 
-  console.log("Created users:", [
+  console.info("Created users:", [
     `${user1.firstName} ${user1.lastName}`,
     `${user2.firstName} ${user2.lastName}`,
     `${user3.firstName} ${user3.lastName}`,
@@ -70,7 +70,7 @@ async function main() {
     )
   );
 
-  console.log(`Created ${categories.length} categories`);
+  console.info(`Created ${categories.length} categories`);
 
   // Create brands from centralized constants
   const brands = await Promise.all(
@@ -87,7 +87,7 @@ async function main() {
     )
   );
 
-  console.log(`Created ${brands.length} brands`);
+  console.info(`Created ${brands.length} brands`);
 
   // Seed club models for product upload dropdowns
   await seedClubModels(prisma);
@@ -104,18 +104,10 @@ async function main() {
 
   // Get brand references
   const taylorMade = brands.find((b) => b.slug === "taylormade")!;
-  const callaway = brands.find((b) => b.slug === "callaway")!;
   const titleist = brands.find((b) => b.slug === "titleist")!;
   const ping = brands.find((b) => b.slug === "ping")!;
-  const cobra = brands.find((b) => b.slug === "cobra")!;
-  const mizuno = brands.find((b) => b.slug === "mizuno")!;
-  const srixon = brands.find((b) => b.slug === "srixon")!;
-  const wilson = brands.find((b) => b.slug === "wilson")!;
-  const cleveland = brands.find((b) => b.slug === "cleveland")!;
   const odyssey = brands.find((b) => b.slug === "odyssey")!;
   const footjoy = brands.find((b) => b.slug === "footjoy")!;
-  const sunMountain = brands.find((b) => b.slug === "sun-mountain")!;
-  const nike = brands.find((b) => b.slug === "nike")!;
   const adidas = brands.find((b) => b.slug === "adidas")!;
 
   // Create a few sample products for UI testing (users will create real marketplace inventory)
@@ -302,8 +294,8 @@ async function main() {
     }),
   ]);
 
-  console.log(`Created ${products.length} sample products`);
-  console.log("🌱 Seeding complete!");
+  console.info(`Created ${products.length} sample products`);
+  console.info("🌱 Seeding complete!");
 }
 
 main()

@@ -7,6 +7,11 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
+    "ios:local:build": "eas build --platform ios --local",
+    "ios:local:build:auto": "eas build --platform ios --local --non-interactive",
+    "ios:local:submit": "sh -c 'IPA_PATH=$(ls -t build-*.ipa 2>/dev/null | head -n 1); if [ -z \"$IPA_PATH\" ]; then IPA_PATH=$(find ~/Library/Developer/Xcode/Archives -name \"*.ipa\" -print 2>/dev/null | tail -n 1); fi; if [ -z \"$IPA_PATH\" ]; then IPA_PATH=$(find . -maxdepth 3 -name \"*.ipa\" -print 2>/dev/null | head -n 1); fi; if [ -z \"$IPA_PATH\" ]; then echo \"No .ipa found. Run local build first.\"; exit 1; fi; echo \"Submitting: $IPA_PATH\"; eas submit --platform ios --non-interactive --path \"$IPA_PATH\"'",
+    "ios:local:build-and-submit": "pnpm run ios:local:build && pnpm run ios:local:submit",
+    "ios:local:build-and-submit:auto": "pnpm run ios:local:build:auto && pnpm run ios:local:submit",
     "web": "expo start --web",
     "lint": "eslint . --fix",
     "check-types": "tsc --noEmit"

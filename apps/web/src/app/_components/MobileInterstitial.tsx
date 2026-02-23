@@ -32,6 +32,7 @@ export function MobileInterstitial() {
     const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
 
     if (isMobileDevice && !isStandalone) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsMobile(true);
     }
   }, []);

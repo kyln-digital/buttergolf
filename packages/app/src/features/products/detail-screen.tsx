@@ -17,7 +17,7 @@ import {
 import type { Product } from "../../types/product";
 import { useLink } from "solito/navigation";
 import { routes } from "../../navigation";
-import { ArrowLeft, Heart, Share2, Eye } from "@tamagui/lucide-icons";
+import { ArrowLeft, Heart, Eye } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Helper to format condition rating (1-10) to label

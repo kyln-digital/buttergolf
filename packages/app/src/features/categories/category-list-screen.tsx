@@ -69,7 +69,7 @@ export function CategoryListScreen({
       setLoading(true);
       onFetchProducts(categorySlug)
         .then((fetchedProducts) => {
-          console.log(`Fetched ${fetchedProducts.length} products for ${categorySlug}`);
+          console.info(`Fetched ${fetchedProducts.length} products for ${categorySlug}`);
           setProducts(fetchedProducts);
         })
         .catch((error) => {

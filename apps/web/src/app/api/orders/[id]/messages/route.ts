@@ -191,9 +191,25 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // Find or create conversation for this order
+    let conversation = await prisma.conversation.findFirst({
+      where: { orderId },
+    });
+    if (!conversation) {
+      conversation = await prisma.conversation.create({
+        data: {
+          productId: order.productId,
+          buyerId: order.buyerId,
+          sellerId: order.sellerId,
+          orderId,
+        },
+      });
+    }
+
     // Create message
     const message = await prisma.message.create({
       data: {
+        conversationId: conversation.id,
         orderId,
         senderId: user.id,
         content: content.trim(),

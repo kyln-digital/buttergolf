@@ -26,6 +26,7 @@ import { Column, Row } from "./Layout";
 import { Spinner } from "./Spinner";
 import { ScrollView } from "./ScrollView";
 import { ChatBubble } from "./ChatBubble";
+import { OfferCard } from "./OfferCard";
 import { Button } from "./Button";
 import { MessageSquare } from "@tamagui/lucide-icons";
 
@@ -35,6 +36,21 @@ interface ChatMessage {
   content: string;
   createdAt: string;
   isRead?: boolean;
+  /** Message type — defaults to TEXT for backward compatibility */
+  type?:
+    | "TEXT"
+    | "OFFER"
+    | "COUNTER_OFFER"
+    | "OFFER_ACCEPTED"
+    | "OFFER_REJECTED"
+    | "OFFER_EXPIRED"
+    | "SYSTEM";
+  /** Offer amount for OFFER/COUNTER_OFFER messages */
+  offerAmount?: number;
+  /** Related offer ID */
+  offerId?: string;
+  /** Current status of the related offer (for rendering action buttons) */
+  offerStatus?: "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED" | "COUNTERED";
 }
 
 interface ChatMessageListProps {
@@ -60,6 +76,10 @@ interface ChatMessageListProps {
   onLoadMore?: () => void;
   /** Whether older messages are currently loading */
   loadingMore?: boolean;
+  /** Offer action callbacks — if provided, action buttons are rendered on offer cards */
+  onAcceptOffer?: (offerId: string) => void;
+  onRejectOffer?: (offerId: string) => void;
+  onCounterOffer?: (offerId: string) => void;
 }
 
 function defaultFormatTimestamp(dateString: string): string {
@@ -139,6 +159,9 @@ export function ChatMessageList({
   getStableKey,
   onLoadMore,
   loadingMore = false,
+  onAcceptOffer,
+  onRejectOffer,
+  onCounterOffer,
 }: Readonly<ChatMessageListProps>) {
   const scrollViewRef = useRef<React.ElementRef<typeof ScrollView>>(null);
   const hasScrolledOnce = useRef(false);
@@ -227,22 +250,68 @@ export function ChatMessageList({
               const isOwn = message.senderId === currentUserId;
               const prev = group.messages[idx - 1];
               const next = group.messages[idx + 1];
+              const msgType = message.type || "TEXT";
+              const key = getStableKey ? getStableKey(message) : message.id;
 
-              // Group consecutive messages from the same sender within 2 minutes
+              // System messages — centered, no bubble
+              if (msgType === "SYSTEM" || msgType === "OFFER_EXPIRED") {
+                return (
+                  <Row key={key} justifyContent="center" paddingVertical="$xs">
+                    <View
+                      backgroundColor="$backgroundHover"
+                      borderRadius="$full"
+                      paddingHorizontal="$md"
+                      paddingVertical="$xs"
+                    >
+                      <Text size="$3" color="$textTertiary" textAlign="center">
+                        {message.content}
+                      </Text>
+                    </View>
+                  </Row>
+                );
+              }
+
+              // Offer / counter-offer / accepted / rejected — card format
+              if (
+                msgType === "OFFER" ||
+                msgType === "COUNTER_OFFER" ||
+                msgType === "OFFER_ACCEPTED" ||
+                msgType === "OFFER_REJECTED"
+              ) {
+                return (
+                  <OfferCard
+                    key={key}
+                    isOwnMessage={isOwn}
+                    type={msgType}
+                    offerAmount={message.offerAmount}
+                    content={message.content}
+                    timestamp={formatTimestamp(message.createdAt)}
+                    offerStatus={message.offerStatus}
+                    offerId={message.offerId}
+                    onAccept={onAcceptOffer}
+                    onReject={onRejectOffer}
+                    onCounter={onCounterOffer}
+                  />
+                );
+              }
+
+              // TEXT messages — standard chat bubble
               const sameSenderAsPrev =
                 prev &&
                 prev.senderId === message.senderId &&
+                (prev.type || "TEXT") === "TEXT" &&
                 new Date(message.createdAt).getTime() - new Date(prev.createdAt).getTime() <
                   120_000;
               const sameSenderAsNext =
                 next &&
                 next.senderId === message.senderId &&
+                (next.type || "TEXT") === "TEXT" &&
                 new Date(next.createdAt).getTime() - new Date(message.createdAt).getTime() <
                   120_000;
 
               return (
                 <ChatBubble
-                  key={getStableKey ? getStableKey(message) : message.id}
+                  key={key}
                   isOwnMessage={isOwn}
                   content={message.content}
                   timestamp={formatTimestamp(message.createdAt)}

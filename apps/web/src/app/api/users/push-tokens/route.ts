@@ -47,7 +47,7 @@ export async function POST(req: Request) {
         data: { pushTokens },
       });
 
-      console.log(`[Push] Registered token for user ${clerkId}: ${token.substring(0, 20)}...`);
+      console.info(`[Push] Registered token for user ${clerkId}: ${token.substring(0, 20)}...`);
     }
 
     return NextResponse.json({ success: true });
@@ -94,7 +94,7 @@ export async function DELETE(req: Request) {
       data: { pushTokens },
     });
 
-    console.log(`[Push] Unregistered token for user ${clerkId}: ${token.substring(0, 20)}...`);
+    console.info(`[Push] Unregistered token for user ${clerkId}: ${token.substring(0, 20)}...`);
 
     return NextResponse.json({ success: true });
   } catch (error) {

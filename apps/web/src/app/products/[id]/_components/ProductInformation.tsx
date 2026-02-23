@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useTheme } from "tamagui";
-import { Column, Row, Text, Button, Heading, Popover } from "@buttergolf/ui";
+import { Column, Row, Text, Button, Heading, Popover, Input } from "@buttergolf/ui";
+import { Button as TamaguiButton } from "tamagui";
 import { Heart, Info } from "@tamagui/lucide-icons";
 import type { Product } from "../ProductDetailClient";
 
@@ -26,8 +26,6 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
   const [offerAmount, setOfferAmount] = useState("");
   const [offerError, setOfferError] = useState("");
   const [submittingOffer, setSubmittingOffer] = useState(false);
-  const [popoverOpen, setPopoverOpen] = useState(false);
-  const theme = useTheme();
 
   const handleSubmitOffer = async () => {
     const amount = Number.parseFloat(offerAmount);
@@ -47,10 +45,9 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
 
     try {
       await onSubmitOffer(amount);
-      setPopoverOpen(false);
       setOfferAmount("");
-    } catch {
-      setOfferError("Failed to submit. Try again.");
+    } catch (err) {
+      setOfferError(err instanceof Error ? err.message : "Failed to submit. Try again.");
     } finally {
       setSubmittingOffer(false);
     }
@@ -114,8 +111,9 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
         >
           <Heart
             size={22}
-            fill={isFavourite ? theme.primary.val : "none"}
+            fill={isFavourite ? "$primary" : "transparent"}
             color={isFavourite ? "$primary" : "$textSecondary"}
+            opacity={isFavourite ? 1 : 0.9}
             strokeWidth={1.5}
           />
         </Button>
@@ -227,10 +225,8 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
 
         {/* Make an Offer Popover */}
         <Popover
-          placement="top"
-          open={popoverOpen}
+          placement="bottom"
           onOpenChange={(open) => {
-            setPopoverOpen(open);
             if (!open) {
               setOfferAmount("");
               setOfferError("");
@@ -238,37 +234,34 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
           }}
         >
           <Popover.Trigger asChild>
-            <Button
-              butterVariant="secondary"
+            <TamaguiButton
               size="$5"
               width="100%"
               height={56}
+              backgroundColor="$cloudMist"
+              borderWidth={1}
+              borderColor="$border"
+              color="$text"
+              borderRadius="$full"
+              fontFamily="$body"
+              fontWeight="700"
+              cursor="pointer"
+              boxShadow="0px 1px 4px rgba(0, 0, 0, 0.2)"
               disabled={product.isSold}
+              hoverStyle={{ backgroundColor: "$cloudMistHover", borderColor: "$borderHover" }}
+              pressStyle={{ backgroundColor: "$cloudMistPress", scale: 0.98 }}
             >
               Make an offer
-            </Button>
+            </TamaguiButton>
           </Popover.Trigger>
+
           <Popover.Content
             backgroundColor="$surface"
             borderRadius="$lg"
             padding="$4"
             borderWidth={1}
             borderColor="$border"
-            shadowColor="$shadowColor"
-            shadowRadius={20}
-            shadowOffset={{ width: 0, height: 10 }}
-            shadowOpacity={0.15}
             elevate
-            animation={[
-              "medium",
-              {
-                opacity: {
-                  overshootClamping: true,
-                },
-              },
-            ]}
-            enterStyle={{ y: -10, opacity: 0 }}
-            exitStyle={{ y: -10, opacity: 0 }}
           >
             <Column gap="$3" width={280}>
               <Text size="$5" fontWeight="600" color="$text">
@@ -276,65 +269,42 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
               </Text>
 
               {/* Price Input */}
-              <div style={{ position: "relative" }}>
-                <span
-                  style={{
-                    position: "absolute",
-                    left: 14,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    fontSize: "16px",
-                    color: theme.text.val,
-                    fontWeight: 500,
-                    zIndex: 1,
-                  }}
+              <Row
+                alignItems="center"
+                borderWidth={1}
+                borderColor={offerError ? "$error" : "$border"}
+                borderRadius="$md"
+                backgroundColor="$surface"
+                overflow="hidden"
+                focusWithinStyle={{ borderColor: "$primary", borderWidth: 2 }}
+              >
+                <Text
+                  paddingLeft="$sm"
+                  paddingRight="$xs"
+                  color="$text"
+                  fontWeight="500"
+                  userSelect="none"
                 >
                   £
-                </span>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                </Text>
+                <Input
+                  keyboardType="decimal-pad"
                   placeholder="Your offer"
                   value={offerAmount}
-                  onChange={(e) => {
-                    setOfferAmount(e.target.value);
+                  onChangeText={(text) => {
+                    const sanitised = text.replace(/[^0-9.]/g, "").replace(/(\..*?)\./g, "$1");
+                    setOfferAmount(sanitised);
                     setOfferError("");
                   }}
                   disabled={submittingOffer}
                   autoFocus
-                  style={{
-                    width: "100%",
-                    padding: "12px 14px 12px 30px",
-                    fontSize: "16px",
-                    border: `1px solid ${offerError ? theme.error.val : theme.border.val}`,
-                    borderRadius: "8px",
-                    outline: "none",
-                    fontFamily: "var(--font-urbanist)",
-                    backgroundColor: theme.surface.val,
-                    color: theme.text.val,
-                    boxSizing: "border-box",
-                  }}
-                  onFocus={(e) => {
-                    if (!offerError) {
-                      e.target.style.borderColor = theme.primary.val;
-                    }
-                  }}
-                  onBlur={(e) => {
-                    if (!offerError) {
-                      e.target.style.borderColor = theme.border.val;
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !submittingOffer) {
-                      handleSubmitOffer();
-                    }
-                    if (e.key === "Escape") {
-                      setPopoverOpen(false);
-                    }
-                  }}
+                  flex={1}
+                  borderWidth={0}
+                  backgroundColor="transparent"
+                  focusStyle={{ borderWidth: 0, outlineWidth: 0 }}
+                  onSubmitEditing={!submittingOffer ? handleSubmitOffer : undefined}
                 />
-              </div>
+              </Row>
 
               {offerError && (
                 <Text size="$2" color="$error">
@@ -344,7 +314,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
 
               <Row gap="$2" justifyContent="flex-end">
                 <Popover.Close asChild>
-                  <Button
+                  <TamaguiButton
                     size="$3"
                     backgroundColor="transparent"
                     color="$textSecondary"
@@ -352,7 +322,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
                     paddingHorizontal="$3"
                   >
                     Cancel
-                  </Button>
+                  </TamaguiButton>
                 </Popover.Close>
                 <Button
                   butterVariant="primary"

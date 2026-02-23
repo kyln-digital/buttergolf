@@ -40,7 +40,12 @@
         "MOBILE_SESSION_SECRET",
         "SENTRY_AUTH_TOKEN",
         "TAMAGUI_DEBUG",
-        "TAMAGUI_DISABLE_MISSING_TOKEN_LOG"
+        "TAMAGUI_DISABLE_MISSING_TOKEN_LOG",
+        "NODE_ENV",
+        "SITE_URL",
+        "ANALYZE",
+        "DISABLE_EXTRACTION",
+        "CI"
       ]
     },
     "db:generate": {

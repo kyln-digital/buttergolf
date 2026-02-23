@@ -120,7 +120,7 @@ export async function POST(req: Request) {
 
     const payload: ShipEngineTrackingWebhookPayload = JSON.parse(body);
 
-    console.log("ShipEngine webhook event received:", {
+    console.info("ShipEngine webhook event received:", {
       resourceType: payload.resource_type,
       trackingNumber: payload.data?.tracking_number,
       status: payload.data?.status_code,
@@ -186,7 +186,7 @@ export async function POST(req: Request) {
         data: updateData,
       });
 
-      console.log("Order updated:", {
+      console.info("Order updated:", {
         orderId: order.id,
         trackingCode,
         shipmentStatus,
@@ -220,7 +220,7 @@ export async function POST(req: Request) {
               estimatedDelivery: trackingData.estimated_delivery_date,
               carrier: order.carrier,
             });
-            console.log("Sent label generated email to buyer");
+            console.info("Sent label generated email to buyer");
           }
 
           // IN_TRANSIT: Package picked up and moving
@@ -241,7 +241,7 @@ export async function POST(req: Request) {
               currentLocation,
               estimatedDelivery: trackingData.estimated_delivery_date,
             });
-            console.log("Sent in transit email to buyer");
+            console.info("Sent in transit email to buyer");
           }
 
           // OUT_FOR_DELIVERY: Package out for delivery today
@@ -254,7 +254,7 @@ export async function POST(req: Request) {
               trackingCode: order.trackingCode,
               trackingUrl: order.trackingUrl,
             });
-            console.log("Sent out for delivery email to buyer");
+            console.info("Sent out for delivery email to buyer");
           }
 
           // DELIVERED: Package delivered (send to both buyer and seller)
@@ -267,7 +267,7 @@ export async function POST(req: Request) {
               productTitle: product.title,
               isBuyer: true,
             });
-            console.log("Sent delivered email to buyer");
+            console.info("Sent delivered email to buyer");
 
             // Send to seller
             const seller = await prisma.user.findUnique({
@@ -283,7 +283,7 @@ export async function POST(req: Request) {
                 productTitle: product.title,
                 isBuyer: false,
               });
-              console.log("Sent delivered email to seller");
+              console.info("Sent delivered email to seller");
             }
           }
         }

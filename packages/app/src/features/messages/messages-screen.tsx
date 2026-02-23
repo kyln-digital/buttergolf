@@ -13,14 +13,14 @@ import {
   Card,
   Badge,
 } from "@buttergolf/ui";
-import { Button as TamaguiButton } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MessageCircle, ChevronRight, RefreshCw } from "@tamagui/lucide-icons";
 import { MobileBottomNav } from "../../components/mobile";
 import { formatDistanceToNow } from "date-fns";
 
 export interface Conversation {
-  orderId: string;
+  id: string;
+  orderId?: string;
   productTitle: string;
   productImage: string | null;
   otherUserName: string;
@@ -29,7 +29,10 @@ export interface Conversation {
   lastMessageAt: string;
   unreadCount: number;
   userRole: "buyer" | "seller";
-  orderStatus: string;
+  orderStatus?: string;
+  activeOfferStatus?: string;
+  activeOfferAmount?: number;
+  productSold?: boolean;
 }
 
 interface MessagesScreenProps {
@@ -228,7 +231,7 @@ export function MessagesScreen({
             )}
           </Column>
           {!loading && (
-            <TamaguiButton
+            <Button
               chromeless
               circular
               size="$4"
@@ -242,7 +245,7 @@ export function MessagesScreen({
               ) : (
                 <RefreshCw size={20} color="$text" />
               )}
-            </TamaguiButton>
+            </Button>
           )}
         </Row>
       </Column>
@@ -275,7 +278,7 @@ export function MessagesScreen({
             No messages yet
           </Heading>
           <Text size="$5" color="$textSecondary" textAlign="center">
-            When you buy or sell items, you'll be able to message with the other party
+            {"When you buy or sell items, you'll be able to message with the other party"}
           </Text>
           <Button
             size="$5"
@@ -293,7 +296,7 @@ export function MessagesScreen({
           <Column gap="$md" paddingHorizontal="$md" paddingVertical="$md">
             {conversations.map((conversation) => (
               <Card
-                key={conversation.orderId}
+                key={conversation.id}
                 variant="elevated"
                 paddingHorizontal="$md"
                 paddingVertical="$md"
@@ -343,11 +346,34 @@ export function MessagesScreen({
                     </Text>
 
                     <Row alignItems="center" justifyContent="space-between">
-                      <Text size="$3" color="$textTertiary">
-                        {formatDistanceToNow(new Date(conversation.lastMessageAt), {
-                          addSuffix: true,
-                        })}
-                      </Text>
+                      <Row gap="$sm" alignItems="center" flex={1}>
+                        <Text size="$3" color="$textTertiary">
+                          {formatDistanceToNow(new Date(conversation.lastMessageAt), {
+                            addSuffix: true,
+                          })}
+                        </Text>
+                        {conversation.activeOfferStatus === "PENDING" && (
+                          <Badge size="sm" backgroundColor="$warning">
+                            <Text size="$1" color="$textInverse" fontWeight="600">
+                              Offer £{conversation.activeOfferAmount?.toFixed(0)}
+                            </Text>
+                          </Badge>
+                        )}
+                        {conversation.activeOfferStatus === "COUNTERED" && (
+                          <Badge size="sm" backgroundColor="$info">
+                            <Text size="$1" color="$textInverse" fontWeight="600">
+                              Counter £{conversation.activeOfferAmount?.toFixed(0)}
+                            </Text>
+                          </Badge>
+                        )}
+                        {conversation.activeOfferStatus === "ACCEPTED" && (
+                          <Badge size="sm" backgroundColor="$success">
+                            <Text size="$1" color="$textInverse" fontWeight="600">
+                              Accepted
+                            </Text>
+                          </Badge>
+                        )}
+                      </Row>
                       <ChevronRight size={16} color="$textTertiary" />
                     </Row>
                   </Column>

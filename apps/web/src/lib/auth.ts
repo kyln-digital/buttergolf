@@ -56,7 +56,7 @@ export async function getUserIdFromRequest(request?: Request): Promise<string | 
   });
 
   if (isAuthenticated && userId) {
-    console.log("[Auth] Authenticated via Clerk:", { userId });
+    console.info("[Auth] Authenticated via Clerk:", { userId });
     return userId;
   }
 
@@ -68,7 +68,7 @@ export async function getUserIdFromRequest(request?: Request): Promise<string | 
       const token = authHeader.slice(7);
       const mobileSession = await verifyMobileSessionToken(token);
       if (mobileSession) {
-        console.log("[Auth] Authenticated via mobile session token:", {
+        console.info("[Auth] Authenticated via mobile session token:", {
           userId: mobileSession.userId,
         });
         return mobileSession.userId;
@@ -76,7 +76,7 @@ export async function getUserIdFromRequest(request?: Request): Promise<string | 
     }
   }
 
-  console.log("[Auth] Not authenticated via any method");
+  console.info("[Auth] Not authenticated via any method");
   return null;
 }
 
@@ -100,7 +100,7 @@ export async function getClerkUserFromRequest(request?: Request): Promise<ClerkU
     // For web requests, use currentUser() to get full profile
     const user = await currentUser();
     if (user) {
-      console.log("[Auth] Got Clerk user data:", {
+      console.info("[Auth] Got Clerk user data:", {
         userId: user.id,
         firstName: user.firstName,
         lastName: user.lastName,
@@ -136,7 +136,7 @@ export async function getClerkUserFromRequest(request?: Request): Promise<ClerkU
       // First try getting user data embedded in the mobile session token
       const mobileUserData = await getMobileSessionUserData(token);
       if (mobileUserData) {
-        console.log("[Auth] Got user data from mobile session token:", mobileUserData);
+        console.info("[Auth] Got user data from mobile session token:", mobileUserData);
         return mobileUserData;
       }
 
@@ -145,7 +145,7 @@ export async function getClerkUserFromRequest(request?: Request): Promise<ClerkU
       if (mobileSession) {
         try {
           const user = await getClerkBackend().users.getUser(mobileSession.userId);
-          console.log("[Auth] Got Clerk user data via backend API:", {
+          console.info("[Auth] Got Clerk user data via backend API:", {
             userId: user.id,
             firstName: user.firstName,
             lastName: user.lastName,
@@ -171,6 +171,6 @@ export async function getClerkUserFromRequest(request?: Request): Promise<ClerkU
     }
   }
 
-  console.log("[Auth] Not authenticated via any method");
+  console.info("[Auth] Not authenticated via any method");
   return null;
 }

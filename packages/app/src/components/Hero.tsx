@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Platform, Image as RNImage, Dimensions } from "react-native";
+import { Platform, Image as RNImage } from "react-native";
 import { Column, Row, Heading, Text, Button, View, Image, useMedia } from "@buttergolf/ui";
 import { images } from "@buttergolf/assets";
 import { useLink } from "solito/navigation";
@@ -147,18 +147,21 @@ function HeroHeading({
   if (multiLine && lines.length > 1) {
     return (
       <Column>
-        {lines.map((line, index) => (
-          <Heading
-            key={index}
-            level={1}
-            fontSize={40}
-            color="$text"
-            fontWeight="700"
-            lineHeight={46}
-          >
-            {line}
-          </Heading>
-        ))}
+        {lines.map((line, index) => {
+          return (
+            <Heading
+              key={index}
+              level={1}
+              // eslint-disable-next-line react/forbid-component-props
+              fontSize={40}
+              color="$text"
+              fontWeight="700"
+              lineHeight={46}
+            >
+              {line}
+            </Heading>
+          );
+        })}
       </Column>
     );
   }
@@ -196,7 +199,8 @@ export function Hero({
   subtitle,
   primaryCta,
   secondaryCta,
-  backgroundImage,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  backgroundImage: _backgroundImage,
   heroImage,
   showHeroImage = true,
   minHeight = 500,
@@ -205,6 +209,7 @@ export function Hero({
   animationDelay = 0.8,
 }: Readonly<HeroProps>) {
   const heroImageSource = heroImage ? getImageSource(heroImage) : null;
+
   const HeroSvgComponent = heroImage ? getSvgComponent(heroImage) : null;
   const isWeb = Platform.OS === "web";
   const isMobile = !isWeb;
@@ -255,7 +260,9 @@ export function Hero({
                 alignItems="flex-end"
                 overflow="visible"
               >
+                {}
                 {HeroSvgComponent ? (
+                  // eslint-disable-next-line react-hooks/static-components
                   <HeroSvgComponent width="100%" height="95%" />
                 ) : heroImageSource ? (
                   <RNImage

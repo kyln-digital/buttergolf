@@ -23,7 +23,7 @@ export async function registerForPushNotificationsAsync(
 ): Promise<string | null> {
   // Skip if no auth token (user not logged in)
   if (!token) {
-    console.log("[Notifications] Skipping push registration - no auth token");
+    console.info("[Notifications] Skipping push registration - no auth token");
     return null;
   }
 
@@ -57,7 +57,7 @@ export async function registerForPushNotificationsAsync(
         { finalStatus },
         "warning"
       );
-      console.log("[Notifications] Permission not granted");
+      console.info("[Notifications] Permission not granted");
       return null;
     }
 
@@ -70,7 +70,7 @@ export async function registerForPushNotificationsAsync(
       tokenLength: pushToken.data?.length,
     });
 
-    console.log("[Notifications] Got push token:", {
+    console.info("[Notifications] Got push token:", {
       tokenLength: pushToken.data?.length,
       tokenPrefix: pushToken.data?.substring(0, 20),
     });
@@ -80,7 +80,7 @@ export async function registerForPushNotificationsAsync(
     const storedToken = await deferredSecureStoreGet("expo_push_token");
     if (storedToken === pushToken.data) {
       addBreadcrumb("turbomodule.notifications", "Push token unchanged");
-      console.log("[Notifications] Push token unchanged in local storage");
+      console.info("[Notifications] Push token unchanged in local storage");
       return pushToken.data;
     }
 
@@ -130,7 +130,7 @@ export async function clearStoredPushToken(): Promise<void> {
     addBreadcrumb("turbomodule.securestore", "Clearing stored push token");
     await deferredSecureStoreDelete("expo_push_token");
     addBreadcrumb("turbomodule.securestore", "Push token cleared");
-    console.log("[Notifications] Cleared stored push token");
+    console.info("[Notifications] Cleared stored push token");
   } catch (error) {
     addBreadcrumb(
       "turbomodule.securestore",
@@ -154,7 +154,7 @@ export function setupNotificationHandlers(
   // Set notification handler (what happens when notification arrives while app is open)
   Notifications.setNotificationHandler({
     handleNotification: async (notification) => {
-      console.log("[Notifications] Notification received:", {
+      console.info("[Notifications] Notification received:", {
         title: notification.request.content.title,
       });
 
@@ -174,7 +174,7 @@ export function setupNotificationHandlers(
 
   // Handle user tapping on notification
   const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-    console.log("[Notifications] Notification tapped:", {
+    console.info("[Notifications] Notification tapped:", {
       data: response.notification.request.content.data,
     });
 
@@ -218,7 +218,7 @@ export async function registerPushTokenWithBackend(
     }
 
     addBreadcrumb("api", "Push token registered with backend");
-    console.log("[Notifications] Push token registered with backend");
+    console.info("[Notifications] Push token registered with backend");
     return true;
   } catch (error) {
     addBreadcrumb("api", "Failed to register push token", { error: String(error) }, "error");
@@ -254,7 +254,7 @@ export async function unregisterPushTokenFromBackend(
     }
 
     addBreadcrumb("api", "Push token unregistered from backend");
-    console.log("[Notifications] Push token unregistered from backend");
+    console.info("[Notifications] Push token unregistered from backend");
     return true;
   } catch (error) {
     addBreadcrumb("api", "Failed to unregister push token", { error: String(error) }, "error");

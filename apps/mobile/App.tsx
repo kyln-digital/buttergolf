@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   NavigationContainer,
   DarkTheme,
@@ -47,12 +48,7 @@ import { OnboardingScreen } from "@buttergolf/app/src/features/onboarding";
 import { HomeScreen } from "@buttergolf/app/src/features/home";
 import { CategoryListScreen } from "@buttergolf/app/src/features/categories";
 import { useMobileFavourites } from "@buttergolf/app/src/hooks";
-import {
-  MobileCheckoutSheet,
-  MakeOfferSheet,
-  OffersListScreen,
-  OfferDetailScreen,
-} from "./components";
+import { MobileCheckoutSheet } from "./components";
 import { SellerStatusProvider, useSellerStatusContext } from "./context";
 import RNEventSource from "react-native-sse";
 import {
@@ -107,7 +103,6 @@ SplashScreen.preventAutoHideAsync();
 
 // Local types matching what screen components expect
 // (These are duplicated from screen components to avoid circular deps)
-type OfferStatus = "PENDING" | "ACCEPTED" | "REJECTED" | "COUNTERED" | "EXPIRED";
 
 interface Message {
   id: string;
@@ -122,45 +117,10 @@ interface Message {
   isOwnMessage?: boolean;
 }
 
-interface Offer {
-  id: string;
-  amount: number;
-  status: OfferStatus;
-  message?: string;
-  expiresAt?: string;
-  createdAt: string;
-  product: {
-    id: string;
-    title: string;
-    price: number;
-    images: { url: string }[];
-  };
-  buyer: {
-    id: string;
-    firstName?: string;
-    lastName?: string;
-    imageUrl?: string;
-  };
-  seller: {
-    id: string;
-    firstName?: string;
-    lastName?: string;
-    imageUrl?: string;
-  };
-  counterOffers?: {
-    id: string;
-    amount: number;
-    fromSeller: boolean;
-    createdAt: string;
-  }[];
-}
-
 // Define navigation param types
 type RootStackParamList = {
   ProductDetail: { id?: string };
   Category: { slug?: string };
-  Offers: undefined;
-  OfferDetail: { offerId?: string };
   [key: string]: undefined | Record<string, string | undefined>;
 };
 
@@ -199,13 +159,7 @@ const linking = {
         path: routes.messages.slice(1), // 'messages'
       },
       MessageThread: {
-        path: "orders/:orderId/messages",
-      },
-      Offers: {
-        path: "offers",
-      },
-      OfferDetail: {
-        path: "offers/:offerId",
+        path: "messages/:conversationId",
       },
       Sell: {
         path: routes.sell.slice(1), // 'sell'
@@ -268,7 +222,8 @@ function SignOutButton() {
   );
 }
 
-const HeaderRightComponent = () => <SignOutButton />;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _HeaderRightComponent = () => <SignOutButton />;
 
 // Function to fetch products from API
 async function fetchProducts(): Promise<ProductCardData[]> {
@@ -288,7 +243,7 @@ async function fetchProducts(): Promise<ProductCardData[]> {
       );
     }
 
-    console.log("Fetching products from:", apiUrl);
+    console.info("Fetching products from:", apiUrl);
     const response = await fetch(`${apiUrl}/api/products/recent`, {
       headers: {
         Accept: "application/json",
@@ -318,7 +273,7 @@ async function fetchProductsByCategory(categorySlug: string): Promise<ProductCar
       );
     }
 
-    console.log("Fetching products for category:", categorySlug, "from:", apiUrl);
+    console.info("Fetching products for category:", categorySlug, "from:", apiUrl);
     // Use /api/listings endpoint which properly:
     // - Supports category slug filtering
     // - Returns ProductCardData format
@@ -354,7 +309,7 @@ async function fetchProduct(id: string): Promise<Product | null> {
       );
     }
 
-    console.log("Fetching product:", id, "from:", apiUrl);
+    console.info("Fetching product:", id, "from:", apiUrl);
     const response = await fetch(`${apiUrl}/api/products/${id}`, {
       headers: {
         Accept: "application/json",
@@ -464,7 +419,7 @@ async function submitListingToApi(
   };
 
   // Debug: log the payload being sent
-  console.log("[Submit Listing] Payload:", JSON.stringify(payload, null, 2));
+  console.info("[Submit Listing] Payload:", JSON.stringify(payload, null, 2));
 
   const response = await fetch(`${apiUrl}/api/products`, {
     method: "POST",
@@ -486,7 +441,8 @@ async function submitListingToApi(
 }
 
 // Legacy non-auth submit (kept for parity with existing call sites)
-async function submitListing(data: SellFormData): Promise<{ id: string }> {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function _submitListing(data: SellFormData): Promise<{ id: string }> {
   return submitListingToApi(data, null);
 }
 
@@ -585,7 +541,7 @@ async function uploadImageToCloudinary(
   const extension = image.uri.split(".").pop() || "jpg";
   const filename = `${timestamp}-${randomStr}.${extension}`;
 
-  console.log("📤 Uploading image to Cloudinary:", {
+  console.info("📤 Uploading image to Cloudinary:", {
     uri: image.uri.substring(0, 50) + "...",
     isFirstImage,
     filename,
@@ -598,7 +554,7 @@ async function uploadImageToCloudinary(
   // Determine content type
   const contentType = blob.type || "image/jpeg";
 
-  console.log("Image blob:", {
+  console.info("Image blob:", {
     size: blob.size,
     sizeKB: Math.round(blob.size / 1024),
     type: contentType,
@@ -678,7 +634,7 @@ async function uploadImageToCloudinary(
   }
 
   const result = await uploadResponse.json();
-  console.log("Upload success:", result.url);
+  console.info("Upload success:", result.url);
 
   return result.url;
 }
@@ -977,13 +933,13 @@ function OrderDetailScreenWrapper({ navigation, orderId }: { navigation: any; or
       onGenerateLabel={generateLabel}
       onDownloadLabel={downloadLabel}
       onMarkShipped={markShipped}
-      onMessageSeller={(sellerId: string) =>
+      onMessageSeller={(_: string) =>
         navigation.navigate("MessageThread", {
           orderId,
           userRole: "buyer",
         })
       }
-      onMessageBuyer={(buyerId: string) =>
+      onMessageBuyer={(_: string) =>
         navigation.navigate("MessageThread", {
           orderId,
           userRole: "seller",
@@ -1323,9 +1279,8 @@ function FavouritesScreenWrapper({
   const { getToken } = useAuth();
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
-  // State for checkout and offer sheets
+  // State for checkout sheet
   const [checkoutSheetOpen, setCheckoutSheetOpen] = useState(false);
-  const [offerSheetOpen, setOfferSheetOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<{
     id: string;
     title: string;
@@ -1341,7 +1296,7 @@ function FavouritesScreenWrapper({
   // Memoize fetch functions to prevent re-render issues during navigation
   // Uses deferredFetch to prevent TurboModule race conditions
   const fetchFavourites = useCallback(async () => {
-    console.log("[FavouritesScreenWrapper] Fetching favourites");
+    console.info("[FavouritesScreenWrapper] Fetching favourites");
 
     const url = `${apiUrl}/api/favourites?page=1&limit=100`;
     const response = await deferredFetch(url, { getToken });
@@ -1383,32 +1338,31 @@ function FavouritesScreenWrapper({
       });
   }, []);
 
-  // Handle Make Offer - fetch product and open offer sheet
-  const handleMakeOffer = useCallback((productId: string) => {
-    fetchProduct(productId)
-      .then((product) => {
-        if (product) {
-          setSelectedProduct({
-            id: product.id,
-            title: product.title,
-            price: product.price,
-            sellerId: product.user?.id || "",
-          });
-          setOfferSheetOpen(true);
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to fetch product for Make Offer:", error);
-        Alert.alert(
-          "Unable to load product",
-          "Something went wrong while loading this product. Please try again."
+  // Handle Make Offer - create conversation and navigate to message thread
+  const handleMakeOffer = useCallback(
+    async (productId: string) => {
+      try {
+        const data = await deferredPost<{ conversationId: string }>(
+          `${apiUrl}/api/conversations`,
+          { productId },
+          { getToken }
         );
-      });
-  }, []);
+        navigation.navigate("MessageThread", {
+          conversationId: data.conversationId,
+          productTitle: "Product",
+          userRole: "buyer",
+        });
+      } catch (error) {
+        console.error("Failed to create conversation for Make Offer:", error);
+        Alert.alert("Unable to make offer", "Something went wrong. Please try again.");
+      }
+    },
+    [getToken, apiUrl, navigation]
+  );
 
   // Handle checkout success
   const handleCheckoutSuccess = useCallback(
-    (paymentIntentId: string) => {
+    (_: string) => {
       setCheckoutSheetOpen(false);
       setSelectedProduct(null);
       Alert.alert(
@@ -1418,26 +1372,6 @@ function FavouritesScreenWrapper({
           {
             text: "View Messages",
             onPress: () => navigation.navigate("Messages"),
-          },
-          { text: "OK" },
-        ]
-      );
-    },
-    [navigation]
-  );
-
-  // Handle offer success
-  const handleOfferSuccess = useCallback(
-    (offer: { id: string }) => {
-      setOfferSheetOpen(false);
-      setSelectedProduct(null);
-      Alert.alert(
-        "Offer Sent!",
-        "Your offer has been sent to the seller. You'll be notified when they respond.",
-        [
-          {
-            text: "View Offer",
-            onPress: () => navigation.navigate("OfferDetail", { offerId: offer.id }),
           },
           { text: "OK" },
         ]
@@ -1477,19 +1411,6 @@ function FavouritesScreenWrapper({
           onSuccess={handleCheckoutSuccess}
         />
       )}
-
-      {/* Make Offer Sheet */}
-      {selectedProduct && (
-        <MakeOfferSheet
-          open={offerSheetOpen}
-          onOpenChange={setOfferSheetOpen}
-          productId={selectedProduct.id}
-          productTitle={selectedProduct.title}
-          productPrice={selectedProduct.price}
-          getToken={getTokenCallback}
-          onSuccess={handleOfferSuccess}
-        />
-      )}
     </>
   );
 }
@@ -1507,14 +1428,12 @@ function MessagesScreenWrapper({
   const { getToken } = useAuth();
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
-  // Memoize fetchConversations to prevent re-renders from triggering useEffect loops
-  // and to avoid race conditions with screen transitions. Uses deferredFetch for TurboModule safety.
   const fetchConversations = useCallback(
     async (page?: number) => {
-      console.log("[MessagesScreenWrapper] Fetching conversations", { page });
+      console.info("[MessagesScreenWrapper] Fetching conversations", { page });
 
       const qs = page && page > 1 ? `?page=${page}` : "";
-      const response = await deferredFetch(`${apiUrl}/api/messages${qs}`, { getToken });
+      const response = await deferredFetch(`${apiUrl}/api/conversations${qs}`, { getToken });
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -1537,11 +1456,16 @@ function MessagesScreenWrapper({
       onFetchConversations={fetchConversations}
       onConversationPress={(conversation) =>
         navigation.navigate("MessageThread", {
-          orderId: conversation.orderId,
+          conversationId: conversation.id,
           otherUserName: conversation.otherUserName,
           otherUserImage: conversation.otherUserImage,
           productTitle: conversation.productTitle,
           userRole: conversation.userRole,
+          productSold: conversation.productSold,
+          hasActiveOffer:
+            !!conversation.activeOfferStatus &&
+            (conversation.activeOfferStatus === "PENDING" ||
+              conversation.activeOfferStatus === "COUNTERED"),
         })
       }
       onBrowseListings={() => navigation.navigate("Home")}
@@ -1556,34 +1480,35 @@ function MessagesScreenWrapper({
 
 /**
  * Wrapper component for MessageThreadScreen that provides navigation handlers.
+ * Uses conversation-based APIs with offer support.
  */
 function MessageThreadScreenWrapper({
   navigation,
-  orderId,
+  conversationId,
   otherUserName,
   otherUserImage,
   productTitle,
   userRole,
+  productSold,
+  hasActiveOffer,
 }: {
   navigation: any;
-  orderId: string;
+  conversationId: string;
   otherUserName: string;
   otherUserImage: string | null;
   productTitle: string;
   userRole: "buyer" | "seller";
+  productSold?: boolean;
+  hasActiveOffer?: boolean;
 }) {
   const { getToken } = useAuth();
   const { user } = useUser();
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
-  // Memoize all fetch functions to prevent re-render issues during navigation
-  // Uses deferredFetch for TurboModule safety
   const fetchMessages = useCallback(
     async (id: string, cursor?: string) => {
-      console.log("[MessageThreadScreenWrapper] Fetching messages:", { id, cursor });
-
       const qs = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
-      const response = await deferredFetch(`${apiUrl}/api/orders/${id}/messages${qs}`, {
+      const response = await deferredFetch(`${apiUrl}/api/conversations/${id}/messages${qs}`, {
         getToken,
       });
 
@@ -1599,7 +1524,7 @@ function MessageThreadScreenWrapper({
   const sendMessage = useCallback(
     async (id: string, content: string) => {
       const data = await deferredPost<{ message: Message }>(
-        `${apiUrl}/api/orders/${id}/messages`,
+        `${apiUrl}/api/conversations/${id}/messages`,
         { content },
         { getToken }
       );
@@ -1610,7 +1535,7 @@ function MessageThreadScreenWrapper({
 
   const markAsRead = useCallback(
     async (id: string) => {
-      await deferredFetch(`${apiUrl}/api/orders/${id}/messages/mark-read`, {
+      await deferredFetch(`${apiUrl}/api/conversations/${id}/messages/mark-read`, {
         method: "POST",
         getToken,
       });
@@ -1618,17 +1543,50 @@ function MessageThreadScreenWrapper({
     [getToken, apiUrl]
   );
 
+  const handleMakeOffer = useCallback(
+    async (amount: number, message?: string) => {
+      await deferredPost(
+        `${apiUrl}/api/conversations/${conversationId}/offer`,
+        { amount, message },
+        { getToken }
+      );
+    },
+    [getToken, apiUrl, conversationId]
+  );
+
+  const handleCounterOffer = useCallback(
+    async (amount: number, message?: string) => {
+      await deferredPost(
+        `${apiUrl}/api/conversations/${conversationId}/offer/counter`,
+        { amount, message },
+        { getToken }
+      );
+    },
+    [getToken, apiUrl, conversationId]
+  );
+
+  const handleAcceptOffer = useCallback(async () => {
+    await deferredPost(
+      `${apiUrl}/api/conversations/${conversationId}/offer/accept`,
+      {},
+      { getToken }
+    );
+  }, [getToken, apiUrl, conversationId]);
+
+  const handleRejectOffer = useCallback(async () => {
+    await deferredPost(
+      `${apiUrl}/api/conversations/${conversationId}/offer/reject`,
+      {},
+      { getToken }
+    );
+  }, [getToken, apiUrl, conversationId]);
+
   // Pre-fetch auth token so the SSE factory can use it synchronously.
-  // When authToken transitions from null→string the createEventSource prop
-  // changes, causing the shared screen's SSE effect to (re-)connect.
   const [authToken, setAuthToken] = useState<string | null>(null);
   useEffect(() => {
     getToken().then((t) => setAuthToken(t));
   }, [getToken]);
 
-  // Factory that creates an SSE connection with auth headers for mobile.
-  // Only defined once we have a valid token; undefined means "no SSE yet"
-  // and the shared screen falls back to polling until the token arrives.
   const createEventSource = useMemo(() => {
     if (!authToken) return undefined;
     return (url: string) => {
@@ -1642,15 +1600,20 @@ function MessageThreadScreenWrapper({
 
   return (
     <MessageThreadScreen
-      orderId={orderId}
+      orderId={conversationId}
       currentUserId={user?.id || ""}
       userRole={userRole}
       otherUserName={otherUserName}
       otherUserImage={otherUserImage}
       productTitle={productTitle}
+      showOfferButton={userRole === "buyer" && !productSold && !hasActiveOffer}
       onFetchMessages={fetchMessages}
       onSendMessage={sendMessage}
       onMarkAsRead={markAsRead}
+      onMakeOffer={handleMakeOffer}
+      onCounterOffer={handleCounterOffer}
+      onAcceptOffer={handleAcceptOffer}
+      onRejectOffer={handleRejectOffer}
       onBack={() => navigation.goBack()}
       createEventSource={createEventSource}
     />
@@ -1697,10 +1660,10 @@ function ProductDetailScreenWrapper({
   isAuthenticated: boolean;
 }) {
   const { getToken } = useAuth();
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
-  // State for checkout and offer sheets
+  // State for checkout sheet
   const [checkoutSheetOpen, setCheckoutSheetOpen] = useState(false);
-  const [offerSheetOpen, setOfferSheetOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<{
     id: string;
     title: string;
@@ -1713,8 +1676,7 @@ function ProductDetailScreenWrapper({
     return getToken();
   }, [getToken]);
 
-  const handleBuyNow = useCallback((id: string, price: number) => {
-    // Fetch product details and open checkout sheet
+  const handleBuyNow = useCallback((id: string, _: number) => {
     fetchProduct(id)
       .then((product) => {
         if (product) {
@@ -1736,34 +1698,31 @@ function ProductDetailScreenWrapper({
       });
   }, []);
 
-  const handleMakeOffer = useCallback((id: string, price: number) => {
-    // Fetch product details and open offer sheet
-    fetchProduct(id)
-      .then((product) => {
-        if (product) {
-          setSelectedProduct({
-            id: product.id,
-            title: product.title,
-            price: product.price,
-            sellerId: product.user?.id || "",
-          });
-          setOfferSheetOpen(true);
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to fetch product for Make Offer:", error);
-        Alert.alert(
-          "Unable to load product",
-          "Something went wrong while loading this product. Please try again."
+  const handleMakeOffer = useCallback(
+    async (id: string) => {
+      try {
+        const data = await deferredPost<{ conversationId: string }>(
+          `${apiUrl}/api/conversations`,
+          { productId: id },
+          { getToken }
         );
-      });
-  }, []);
+        navigation.navigate("MessageThread", {
+          conversationId: data.conversationId,
+          productTitle: "Product",
+          userRole: "buyer",
+        });
+      } catch (error) {
+        console.error("Failed to create conversation for Make Offer:", error);
+        Alert.alert("Unable to make offer", "Something went wrong. Please try again.");
+      }
+    },
+    [getToken, apiUrl, navigation]
+  );
 
   const handleCheckoutSuccess = useCallback(
-    (paymentIntentId: string) => {
+    (_: string) => {
       setCheckoutSheetOpen(false);
       setSelectedProduct(null);
-      // Navigate to order confirmation or messages
       Alert.alert(
         "Payment Successful!",
         "Your order has been placed. You can track it in your messages.",
@@ -1771,26 +1730,6 @@ function ProductDetailScreenWrapper({
           {
             text: "View Messages",
             onPress: () => navigation.navigate("Messages"),
-          },
-          { text: "OK" },
-        ]
-      );
-    },
-    [navigation]
-  );
-
-  const handleOfferSuccess = useCallback(
-    (offer: { id: string }) => {
-      setOfferSheetOpen(false);
-      setSelectedProduct(null);
-      // Navigate to offer detail
-      Alert.alert(
-        "Offer Sent!",
-        "Your offer has been sent to the seller. You'll be notified when they respond.",
-        [
-          {
-            text: "View Offer",
-            onPress: () => navigation.navigate("OfferDetail", { offerId: offer.id }),
           },
           { text: "OK" },
         ]
@@ -1823,82 +1762,7 @@ function ProductDetailScreenWrapper({
           onSuccess={handleCheckoutSuccess}
         />
       )}
-
-      {/* Make Offer Sheet */}
-      {selectedProduct && (
-        <MakeOfferSheet
-          open={offerSheetOpen}
-          onOpenChange={setOfferSheetOpen}
-          productId={selectedProduct.id}
-          productTitle={selectedProduct.title}
-          productPrice={selectedProduct.price}
-          getToken={getTokenCallback}
-          onSuccess={handleOfferSuccess}
-        />
-      )}
     </>
-  );
-}
-
-/**
- * Wrapper component for OffersListScreen that provides data fetching.
- */
-function OffersListScreenWrapper({ navigation }: { navigation: any }) {
-  const { getToken } = useAuth();
-  const { user } = useUser();
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
-
-  const fetchOffers = useCallback(async () => {
-    const data = await deferredGet<Offer[]>(`${apiUrl}/api/offers`, { getToken });
-    return data || [];
-  }, [getToken, apiUrl]);
-
-  return (
-    <OffersListScreen
-      currentUserId={user?.id || ""}
-      onFetchOffers={fetchOffers}
-      onViewOffer={(offerId) => navigation.navigate("OfferDetail", { offerId })}
-      onBack={() => navigation.goBack()}
-      onBrowseListings={() => navigation.navigate("Home")}
-    />
-  );
-}
-
-/**
- * Wrapper component for OfferDetailScreen that provides data fetching and actions.
- */
-function OfferDetailScreenWrapper({ navigation, offerId }: { navigation: any; offerId: string }) {
-  const { getToken } = useAuth();
-  const { user } = useUser();
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
-
-  const fetchOffer = useCallback(
-    async (id: string) => {
-      return deferredGet<Offer>(`${apiUrl}/api/offers/${id}`, { getToken });
-    },
-    [getToken, apiUrl]
-  );
-
-  const getTokenCallback = useCallback(async () => {
-    return getToken();
-  }, [getToken]);
-
-  return (
-    <OfferDetailScreen
-      offerId={offerId}
-      currentUserId={user?.id || ""}
-      getToken={getTokenCallback}
-      onFetchOffer={fetchOffer}
-      onBack={() => navigation.goBack()}
-      onOfferAccepted={() => {
-        // When buyer's offer is accepted, they may want to proceed to checkout
-        navigation.navigate("Messages");
-      }}
-      onOfferUpdated={() => {
-        // Refresh offers list when returning
-      }}
-      onViewProduct={(productId) => navigation.navigate("ProductDetail", { id: productId })}
-    />
   );
 }
 
@@ -2052,7 +1916,7 @@ export default function App() {
     // Setup notification handlers
     const unsubscribe = setupNotificationHandlers(
       (notification) => {
-        console.log("[App] Notification received:", {
+        console.info("[App] Notification received:", {
           title: notification.request.content.title,
         });
       },
@@ -2060,7 +1924,7 @@ export default function App() {
         // Handle notification tap - navigate to message thread
         const orderId = response.notification.request.content.data?.orderId;
         if (orderId) {
-          console.log("[App] Navigating to message thread:", orderId);
+          console.info("[App] Navigating to message thread:", orderId);
           // Note: Navigation will be handled by deep linking
         }
       }
@@ -2110,8 +1974,8 @@ export default function App() {
   const clerkPublishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
   const stripePublishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
-  console.log("[Clerk] Publishable key:", clerkPublishableKey ? "LOADED" : "MISSING");
-  console.log("[Stripe] Publishable key:", stripePublishableKey ? "LOADED" : "MISSING");
+  console.info("[Clerk] Publishable key:", clerkPublishableKey ? "LOADED" : "MISSING");
+  console.info("[Stripe] Publishable key:", stripePublishableKey ? "LOADED" : "MISSING");
 
   // CRITICAL: If required keys are missing, show error screen
   if (!clerkPublishableKey || !stripePublishableKey) {
@@ -2328,41 +2192,26 @@ export default function App() {
                           }: {
                             route: {
                               params?: {
-                                orderId?: string;
+                                conversationId?: string;
                                 otherUserName?: string;
                                 otherUserImage?: string | null;
                                 productTitle?: string;
                                 userRole?: "buyer" | "seller";
+                                productSold?: boolean;
+                                hasActiveOffer?: boolean;
                               };
                             };
                             navigation: any;
                           }) => (
                             <MessageThreadScreenWrapper
                               navigation={navigation}
-                              orderId={route.params?.orderId || ""}
+                              conversationId={route.params?.conversationId || ""}
                               otherUserName={route.params?.otherUserName || "User"}
                               otherUserImage={route.params?.otherUserImage ?? null}
-                              productTitle={route.params?.productTitle || "Order"}
+                              productTitle={route.params?.productTitle || ""}
                               userRole={route.params?.userRole || "buyer"}
-                            />
-                          )}
-                        </Stack.Screen>
-                        <Stack.Screen name="Offers" options={{ headerShown: false }}>
-                          {({ navigation }: { navigation: any }) => (
-                            <OffersListScreenWrapper navigation={navigation} />
-                          )}
-                        </Stack.Screen>
-                        <Stack.Screen name="OfferDetail" options={{ headerShown: false }}>
-                          {({
-                            route,
-                            navigation,
-                          }: {
-                            route: { params?: { offerId?: string } };
-                            navigation: any;
-                          }) => (
-                            <OfferDetailScreenWrapper
-                              navigation={navigation}
-                              offerId={route.params?.offerId || ""}
+                              productSold={route.params?.productSold}
+                              hasActiveOffer={route.params?.hasActiveOffer}
                             />
                           )}
                         </Stack.Screen>

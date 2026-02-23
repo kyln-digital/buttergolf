@@ -785,7 +785,7 @@ export async function generateShippingLabel(params: {
         estimatedDelivery: selectedRate.estimated_delivery_date,
         carrier: selectedRate.carrier_friendly_name,
       });
-      console.log("Sent label generated email to buyer");
+      console.info("Sent label generated email to buyer");
     }
   } catch (emailError) {
     // Don't fail label generation if email fails
