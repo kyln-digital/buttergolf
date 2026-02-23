@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "prebuild": "pnpm -w run optimize:site-images",
     "build": "next build --webpack",
     "postbuild": "next-sitemap",
     "start": "next start",
