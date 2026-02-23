@@ -61,12 +61,12 @@
     "ignoredBuiltDependencies": [
       "@clerk/shared",
       "@parcel/watcher",
+      "@prisma/client",
       "bufferutil",
       "nodent-runtime",
       "utf-8-validate"
     ],
     "onlyBuiltDependencies": [
-      "@prisma/client",
       "@prisma/engines",
       "@sentry/cli",
       "browser-tabs-lock",
