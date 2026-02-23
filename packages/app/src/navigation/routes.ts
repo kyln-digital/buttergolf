@@ -14,6 +14,7 @@ export const routes = {
   orders: "/orders",
   orderDetail: "/orders/[id]",
   messages: "/messages",
+  messageThread: "/messages/[conversationId]",
   signIn: "/sign-in",
   signUp: "/sign-up",
   verifyEmail: "/verify-email",
