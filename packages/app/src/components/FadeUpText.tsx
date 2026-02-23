@@ -33,7 +33,9 @@ function FadeUpTextWeb({ text, delay = 0, className, style, ariaLabel }: FadeUpT
 
     // If user prefers reduced motion or on mobile, show immediately without animation
     if (prefersReducedMotion || !isDesktop) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShouldAnimate(false);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsVisible(true);
       return;
     }

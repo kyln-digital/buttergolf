@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Platform, Image as RNImage, Dimensions } from "react-native";
+import { Platform, Image as RNImage } from "react-native";
 import { Column, Row, Heading, Text, Button, View, Image, useMedia } from "@buttergolf/ui";
 import { images } from "@buttergolf/assets";
 import { useLink } from "solito/navigation";
@@ -196,7 +196,7 @@ export function Hero({
   subtitle,
   primaryCta,
   secondaryCta,
-  backgroundImage,
+  backgroundImage: _backgroundImage,
   heroImage,
   showHeroImage = true,
   minHeight = 500,
@@ -205,6 +205,7 @@ export function Hero({
   animationDelay = 0.8,
 }: Readonly<HeroProps>) {
   const heroImageSource = heroImage ? getImageSource(heroImage) : null;
+  // eslint-disable-next-line react-hooks/static-components
   const HeroSvgComponent = heroImage ? getSvgComponent(heroImage) : null;
   const isWeb = Platform.OS === "web";
   const isMobile = !isWeb;

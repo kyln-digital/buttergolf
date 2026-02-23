@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Column, Row, Text, Button, Heading, Popover, Input } from "@buttergolf/ui";
 import { Heart, Info } from "@tamagui/lucide-icons";
+import { useTheme } from "tamagui";
 import type { Product } from "../ProductDetailClient";
 
 interface User {
@@ -21,6 +22,7 @@ interface ProductInformationProps {
 }
 
 export function ProductInformation({ product, onBuyNow, onSubmitOffer }: ProductInformationProps) {
+  const theme = useTheme();
   const [isFavourite, setIsFavourite] = useState(false);
   const [offerAmount, setOfferAmount] = useState("");
   const [offerError, setOfferError] = useState("");
@@ -60,6 +62,8 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
 
   const averageRating = product.user.averageRating || 0;
   const ratingCount = product.user.ratingCount || 0;
+  const favouriteColor = String(theme.primary.val);
+  const defaultIconColor = String(theme.textSecondary.val);
 
   return (
     <Column
@@ -112,8 +116,8 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
         >
           <Heart
             size={22}
-            fill={isFavourite ? "$primary" : "none"}
-            color={isFavourite ? "$primary" : "$textSecondary"}
+            fill={isFavourite ? favouriteColor : "none"}
+            color={isFavourite ? favouriteColor : defaultIconColor}
             strokeWidth={1.5}
           />
         </Button>
