@@ -48,7 +48,7 @@ export function ButterHeader() {
         const res = await fetch("/api/conversations/unread-count");
         if (res.ok && active) {
           const data = await res.json();
-          setUnreadCount(data.unreadCount ?? 0);
+          setUnreadCount(data.count ?? 0);
         }
       } catch {
         // Silently ignore — user may not be signed in
@@ -209,52 +209,6 @@ export function ButterHeader() {
             >
               {/* Theme Toggle */}
               <ThemeToggleButton />
-
-              {/* Messages Icon with Unread Badge */}
-              <Link href="/messages" style={{ textDecoration: "none", position: "relative" }}>
-                <Button
-                  chromeless
-                  circular
-                  size="$4"
-                  aria-label="Messages"
-                  color={isActive("/messages") ? "$primary" : "$text"}
-                >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                  </svg>
-                  {unreadCount > 0 && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: 2,
-                        right: 2,
-                        minWidth: 18,
-                        height: 18,
-                        borderRadius: 9,
-                        backgroundColor: "var(--color-primary, #F45314)",
-                        color: "#fff",
-                        fontSize: 11,
-                        fontWeight: 700,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        padding: "0 4px",
-                      }}
-                    >
-                      {unreadCount > 99 ? "99+" : unreadCount}
-                    </div>
-                  )}
-                </Button>
-              </Link>
 
               <AuthButtonsSection>
                 <LazySignedOut>

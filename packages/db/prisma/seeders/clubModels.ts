@@ -42,7 +42,7 @@ const categoryToClubKind: Record<keyof ClubModelsData, ClubKind> = {
  * across all major brands and categories.
  */
 export async function seedClubModels(prisma: PrismaClient) {
-  console.log("Seeding club models...");
+  console.info("Seeding club models...");
 
   // Load fixture data
   const fixturesPath = join(__dirname, "../fixtures/clubModels.json");
@@ -60,7 +60,7 @@ export async function seedClubModels(prisma: PrismaClient) {
     const fixtures = fixtureData[category as keyof ClubModelsData];
     if (!fixtures) continue;
 
-    console.log(`\n  Processing ${category}...`);
+    console.info(`\n  Processing ${category}...`);
 
     for (const fixture of fixtures) {
       const brand = brandMap.get(fixture.brand);
@@ -105,7 +105,7 @@ export async function seedClubModels(prisma: PrismaClient) {
     }
   }
 
-  console.log(
+  console.info(
     `\nClub models seeding complete: ${totalCreated} created/updated, ${totalSkipped} skipped`
   );
 }
