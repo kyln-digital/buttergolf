@@ -40,16 +40,21 @@ export function FooterSection() {
         zIndex={1}
         maxWidth={1280}
         marginHorizontal="auto"
-        paddingHorizontal="$2xl"
+        paddingHorizontal="$md"
+        $gtSm={{ paddingHorizontal: "$xl" }}
+        $gtMd={{ paddingHorizontal: "$2xl" }}
         width="100%"
       >
         {/* Top Section: Logo + Navigation Links */}
-        <Row
-          justifyContent="space-between"
-          alignItems="flex-start"
+        <Column
+          gap="$lg"
           marginBottom="$2xl"
-          flexWrap="wrap"
-          gap="$xl"
+          $gtSm={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: "$xl",
+          }}
         >
           {/* Logo */}
           <Image
@@ -66,7 +71,7 @@ export function FooterSection() {
           />
 
           {/* Right Side - Navigation Links (Two Columns) */}
-          <Row gap="$3xl" alignItems="flex-start" zIndex={1}>
+          <Row gap="$xl" $gtMd={{ gap: "$3xl" }} alignItems="flex-start" zIndex={1}>
             {/* Column 1 */}
             <Column gap="$xs" alignItems="flex-start">
               <Link href="/" style={{ textDecoration: "none" }}>
@@ -148,7 +153,7 @@ export function FooterSection() {
               </Link>
             </Column>
           </Row>
-        </Row>
+        </Column>
 
         {/* Bottom Section: Copyright + TrustPilot */}
         <Row justifyContent="space-between" alignItems="center" flexWrap="wrap" gap="$md">

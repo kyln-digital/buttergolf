@@ -10,6 +10,7 @@ export function CategoriesSection() {
   const trackRef = useRef<HTMLDivElement>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Check for reduced motion preference (memoized)
   const prefersReducedMotion = useMemo(() => {
@@ -25,6 +26,11 @@ export function CategoriesSection() {
 
   useEffect(() => {
     setIsMounted(true); // eslint-disable-line react-hooks/set-state-in-effect -- Required for hydration
+    const mq = window.matchMedia("(max-width: 768px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, []);
 
   // Calculate animation duration based on number of items
@@ -50,7 +56,6 @@ export function CategoriesSection() {
         style={{
           position: "relative",
           width: "100%",
-          overflowX: "hidden",
           overflowY: "visible",
           WebkitOverflowScrolling: "touch",
           padding: "20px 0",
@@ -65,26 +70,28 @@ export function CategoriesSection() {
           ref={trackRef}
           style={{
             display: "flex",
-            gap: "24px",
-            willChange: "transform",
-            // CSS animation for infinite scroll
+            gap: "16px",
+            paddingLeft: "16px",
+            paddingRight: "16px",
+            willChange: isMobile ? "auto" : "transform",
+            // Disable animation on mobile — user scrolls manually
             animation:
-              isMounted && !prefersReducedMotion
+              isMounted && !prefersReducedMotion && !isMobile
                 ? `scroll-infinite ${animationDuration}s linear infinite`
                 : "none",
             animationPlayState: isPaused ? "paused" : "running",
           }}
           className="categories-track"
         >
-          {duplicatedCategories.map((category, index) => (
+          {(isMobile ? CATEGORIES : duplicatedCategories).map((category, index) => (
             <Link
               key={`${category.slug}-${index}`}
               href={`/category/${category.slug}`}
               className="category-card"
               style={{
                 position: "relative",
-                width: "296px",
-                height: "329px", // 9:10 aspect ratio (296 * 1.1111)
+                width: "clamp(220px, 40vw, 296px)",
+                aspectRatio: "9 / 10",
                 borderRadius: "14px",
                 flexShrink: 0,
                 textDecoration: "none",
@@ -128,7 +135,7 @@ export function CategoriesSection() {
                     bottom: "16px",
                     left: "16px",
                     fontFamily: "var(--font-urbanist)",
-                    fontSize: "24px",
+                    fontSize: "clamp(18px, 4vw, 24px)",
                     fontWeight: 600,
                     lineHeight: 1,
                     color: "#FFFAD2",
@@ -150,11 +157,18 @@ export function CategoriesSection() {
             transform: translateX(0);
           }
           100% {
-            /* Move exactly one set of categories (320px card + 24px gap) */
-            transform: translateX(calc(-1 * ${CATEGORIES.length} * (296px + 24px)));
+            /* Move exactly one set of categories (card + gap); use fixed width for animation */
+            transform: translateX(calc(-1 * ${CATEGORIES.length} * (260px + 16px)));
           }
         }
 
+        /* Desktop: clip the infinite scroll animation */
+        .categories-carousel-container {
+          overflow-x: hidden;
+          overflow-y: visible;
+        }
+
+        /* Mobile: manual touch scroll replaces auto-animation */
         @media (max-width: 768px) {
           .categories-carousel-container {
             overflow-x: auto;
@@ -163,19 +177,19 @@ export function CategoriesSection() {
             scroll-snap-type: x mandatory;
             scrollbar-width: none;
             -ms-overflow-style: none;
+            cursor: grab;
+          }
+
+          .categories-carousel-container:active {
+            cursor: grabbing;
           }
 
           .categories-carousel-container::-webkit-scrollbar {
             display: none;
           }
 
-          .categories-track {
-            animation: none !important;
-          }
-
           .categories-track > a {
             scroll-snap-align: center;
-            width: 280px;
           }
         }
 

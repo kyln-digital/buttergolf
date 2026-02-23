@@ -222,7 +222,7 @@ export function ButterHeader() {
               $gtMd={{ display: "none" }}
               onPress={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Menu"
-              color="$text"
+              color="$textInverse"
             >
               <MenuIcon />
             </Button>
@@ -323,6 +323,61 @@ export function ButterHeader() {
               Selling
             </Text>
           </Link>
+
+          {/* Quick links - Favourites, Messages, Orders, Account */}
+          <Link
+            href="/favourites"
+            style={{ textDecoration: "none" }}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <Text
+              size="$7"
+              weight={isActive("/favourites") ? "bold" : "normal"}
+              color={isActive("/favourites") ? "$primary" : "$text"}
+            >
+              Wishlist
+            </Text>
+          </Link>
+          <Link
+            href="/messages"
+            style={{ textDecoration: "none" }}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <Text
+              size="$7"
+              weight={isActive("/messages") ? "bold" : "normal"}
+              color={isActive("/messages") ? "$primary" : "$text"}
+            >
+              Messages
+            </Text>
+          </Link>
+          <Link
+            href="/orders"
+            style={{ textDecoration: "none" }}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <Text
+              size="$7"
+              weight={isActive("/orders") ? "bold" : "normal"}
+              color={isActive("/orders") ? "$primary" : "$text"}
+            >
+              Orders
+            </Text>
+          </Link>
+          <Link
+            href="/account"
+            style={{ textDecoration: "none" }}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <Text
+              size="$7"
+              weight={isActive("/account") ? "bold" : "normal"}
+              color={isActive("/account") ? "$primary" : "$text"}
+            >
+              Account
+            </Text>
+          </Link>
+
           {/* Visual Divider */}
           <Row height={1} backgroundColor="$border" marginVertical="$4" width="100%" />
 

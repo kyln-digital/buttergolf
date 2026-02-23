@@ -45,7 +45,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  themeColor: "#E25F2F", // Pure Butter orange
+  themeColor: "#F45314", // Spiced Clementine (brand primary)
 };
 
 export const metadata: Metadata = {
@@ -107,8 +107,8 @@ export default function RootLayout({
           </CartProvider>
         </NextTamaguiProvider>
         <Analytics />
-        {/* Tidio chat - excluded from mobile-onboarding WebView */}
-        <ConditionalLayout excludeRoutes={["/mobile-onboarding"]}>
+        {/* Tidio chat - only visible on home and help centre (FAQs) */}
+        <ConditionalLayout includeRoutes={["/", "/help-centre", "/help-centre/*"]}>
           <Script
             src="//code.tidio.co/ba25ralqm9iybtdmfwzusfi6xuyd2qag.js"
             strategy="afterInteractive"

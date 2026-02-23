@@ -168,44 +168,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                 maxWidth: "calc(100% - 420px - 32px)",
               }}
             >
-              {/* Gallery Row: Thumbnails + Main Image */}
-              <Row gap="$sm" alignItems="flex-start">
-                {/* Thumbnail Gallery - Left Side */}
-                {product.images.length > 1 && (
-                  <Column gap="$sm" flexShrink={0}>
-                    {product.images.map((img, index) => (
-                      <Card
-                        key={img.id}
-                        variant="outlined"
-                        padding="$0"
-                        cursor="pointer"
-                        onPress={() => setSelectedImageIndex(index)}
-                        borderColor={index === selectedImageIndex ? "$primary" : "$border"}
-                        borderWidth={index === selectedImageIndex ? 3 : 1}
-                        backgroundColor="$surface"
-                        hoverStyle={{
-                          borderColor: "$primary",
-                          transform: "scale(1.05)",
-                        }}
-                        animation="quick"
-                        width={64}
-                        height={64}
-                        overflow="hidden"
-                        borderRadius="$lg"
-                        position="relative"
-                      >
-                        <Image
-                          source={{ uri: img.url }}
-                          width="100%"
-                          height="100%"
-                          objectFit="cover"
-                          alt={`${product.title} - Image ${index + 1}`}
-                        />
-                      </Card>
-                    ))}
-                  </Column>
-                )}
-
+              {/* Gallery: Main Image + Thumbnails */}
+              <Column gap="$sm">
                 {/* Main Image */}
                 <Card
                   variant="outlined"
@@ -216,8 +180,9 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   cursor="pointer"
                   onPress={() => setLightboxOpen(true)}
                   position="relative"
-                  flex={1}
-                  height={600}
+                  width="100%"
+                  height={400}
+                  $gtSm={{ height: 500 }}
                   $gtMd={{ height: 650 }}
                 >
                   <Image
@@ -246,7 +211,44 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                     </Row>
                   )}
                 </Card>
-              </Row>
+
+                {/* Thumbnail Gallery - Horizontal strip below main image */}
+                {product.images.length > 1 && (
+                  <Row gap="$sm" flexWrap="wrap" $gtMd={{ flexWrap: "nowrap", overflowX: "auto" }}>
+                    {product.images.map((img, index) => (
+                      <Card
+                        key={img.id}
+                        variant="outlined"
+                        padding="$0"
+                        cursor="pointer"
+                        onPress={() => setSelectedImageIndex(index)}
+                        borderColor={index === selectedImageIndex ? "$primary" : "$border"}
+                        borderWidth={index === selectedImageIndex ? 3 : 1}
+                        backgroundColor="$surface"
+                        hoverStyle={{
+                          borderColor: "$primary",
+                          transform: "scale(1.05)",
+                        }}
+                        animation="quick"
+                        width={56}
+                        height={56}
+                        $gtSm={{ width: 64, height: 64 }}
+                        overflow="hidden"
+                        borderRadius="$lg"
+                        position="relative"
+                      >
+                        <Image
+                          source={{ uri: img.url }}
+                          width="100%"
+                          height="100%"
+                          objectFit="cover"
+                          alt={`${product.title} - Image ${index + 1}`}
+                        />
+                      </Card>
+                    ))}
+                  </Row>
+                )}
+              </Column>
             </Column>
 
             {/* Right Column - Product Information */}

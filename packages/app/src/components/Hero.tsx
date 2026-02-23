@@ -167,15 +167,19 @@ function HeroHeading({
   return (
     <Heading
       level={1}
-      size="$9"
-      lineHeight="$9"
+      $gtSm={{ textAlign: "left", fontSize: "$9", lineHeight: "$9" }}
       $md={{ fontSize: "$11", lineHeight: "$11" }}
       $lg={{ fontSize: "$14", lineHeight: "$14" }}
       color="$text"
       fontWeight="700"
       textAlign="center"
-      $gtSm={{ textAlign: "left", fontSize: "$9", lineHeight: "$9" }}
-      style={{ whiteSpace: "normal", wordBreak: "keep-all" }}
+      style={{
+        // Inline style overrides the level variant's fontSize on web for mobile sizes
+        fontSize: isMobile ? 32 : undefined,
+        lineHeight: isMobile ? 40 : undefined,
+        whiteSpace: "normal",
+        wordBreak: "keep-all",
+      }}
     >
       {text}
     </Heading>
@@ -284,21 +288,19 @@ export function Hero({
     >
       <View
         width="100%"
-        height={320}
-        $gtSm={{ height: 350 }}
-        $gtMd={{ height: 400, width: "80%" }}
-        minHeight={minHeight}
+        $gtSm={{ height: 350, minHeight: minHeight }}
+        $gtMd={{ height: 400, width: "80%", minHeight: minHeight }}
         maxHeight={maxHeight}
         borderRadius="$2xl"
         position="relative"
       >
-        {/* Background Container - Clipped for rounded corners */}
+        {/* Background Container - uses inset positioning to fill auto-height parent on mobile */}
         <View
           position="absolute"
           top={0}
           left={0}
-          width="100%"
-          height="100%"
+          right={0}
+          bottom={0}
           borderRadius="$2xl"
           overflow="hidden"
           zIndex={0}
@@ -321,19 +323,21 @@ export function Hero({
         </View>
 
         {/* Content Container - NOT clipped, allows image overflow */}
-        <Row width="100%" height="100%" position="relative" zIndex={1}>
+        <Row width="100%" height="auto" $gtSm={{ height: "100%" }} position="relative" zIndex={1}>
           {/* Left Side - Text Content */}
           <Column
             width="100%"
             justifyContent="center"
             alignItems="center"
-            paddingLeft="$6"
-            paddingRight="$6"
+            paddingHorizontal="$6"
+            paddingVertical="$8"
             $gtSm={{
               width: "55%",
               paddingLeft: "$8",
               paddingRight: "$2",
+              paddingVertical: 0,
               alignItems: "flex-start",
+              height: "100%",
             }}
             $gtMd={{ width: "60%", paddingLeft: "$12", paddingRight: "$4" }}
           >

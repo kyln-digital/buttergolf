@@ -1,6 +1,11 @@
 "use client";
 
-import { Row, BuySellToggle as SharedBuySellToggle, type BuySellMode } from "@buttergolf/ui";
+import {
+  Row,
+  BuySellToggle as SharedBuySellToggle,
+  type BuySellMode,
+  useMedia,
+} from "@buttergolf/ui";
 
 interface BuySellToggleProps {
   activeMode: BuySellMode;
@@ -12,8 +17,13 @@ interface BuySellToggleProps {
  *
  * Wraps the shared BuySellToggle with web-specific container styling.
  * Uses the desktop variant for wider button widths.
+ * Hidden on mobile — selling is accessible via the bottom nav "Sell" tab.
  */
 export function BuySellToggle({ activeMode, onModeChange }: Readonly<BuySellToggleProps>) {
+  const media = useMedia();
+
+  if (!media.gtSm) return null;
+
   return (
     <Row
       width="100%"

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useUser } from "@clerk/nextjs";
-import { Column } from "@buttergolf/ui";
+import { Column, useMedia } from "@buttergolf/ui";
 import { HeroStatic } from "./marketplace/HeroStatic";
 import { BuySellToggle } from "./marketplace/BuySellToggle";
 import { CategoriesSection } from "./marketplace/CategoriesSection";
@@ -22,6 +22,7 @@ interface MarketplaceHomeClientProps {
 export default function MarketplaceHomeClient({ products }: Readonly<MarketplaceHomeClientProps>) {
   const [activeMode, setActiveMode] = useState<"buying" | "selling">("buying");
   const { isSignedIn } = useUser();
+  const media = useMedia();
 
   return (
     <Column width="100%">
@@ -30,12 +31,14 @@ export default function MarketplaceHomeClient({ products }: Readonly<Marketplace
         <HeroStatic />
       </AnimatedView>
 
-      {/* Buy/Sell Toggle - Immediate page load animation (delay removed to fix cascade) */}
-      <AnimatedView delay={0}>
-        <Column paddingTop="$6" paddingBottom="$4" backgroundColor="$background">
-          <BuySellToggle activeMode={activeMode} onModeChange={setActiveMode} />
-        </Column>
-      </AnimatedView>
+      {/* Buy/Sell Toggle - desktop only (mobile uses bottom nav for selling) */}
+      {media.gtSm && (
+        <AnimatedView delay={0}>
+          <Column paddingTop="$6" paddingBottom="$4" backgroundColor="$background">
+            <BuySellToggle activeMode={activeMode} onModeChange={setActiveMode} />
+          </Column>
+        </AnimatedView>
+      )}
 
       {/* Conditionally render based on active mode */}
       {activeMode === "buying" ? (
