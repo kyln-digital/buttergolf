@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import { Column, Row, Text, Button, Heading, ScrollView, Spinner } from "@buttergolf/ui";
-import { Button as TamaguiButton, View } from "tamagui";
+import { Column, Row, Text, Button, Heading, ScrollView, Spinner, View } from "@buttergolf/ui";
 import {
   ArrowLeft,
   Package,
@@ -89,15 +88,9 @@ function StatCard({ label, value, icon, color = "$primary", onPress }: StatCardP
 
   if (onPress) {
     return (
-      <TamaguiButton
-        unstyled
-        flex={1}
-        minWidth={150}
-        pressStyle={{ opacity: 0.8 }}
-        onPress={onPress}
-      >
+      <Button unstyled flex={1} minWidth={150} pressStyle={{ opacity: 0.8 }} onPress={onPress}>
         {content}
-      </TamaguiButton>
+      </Button>
     );
   }
 
@@ -112,7 +105,7 @@ interface QuickActionProps {
 
 function QuickAction({ icon, label, onPress }: QuickActionProps) {
   return (
-    <TamaguiButton
+    <Button
       unstyled
       backgroundColor="$surface"
       borderRadius="$lg"
@@ -138,7 +131,7 @@ function QuickAction({ icon, label, onPress }: QuickActionProps) {
         </Text>
         <ChevronRight size={20} color="$textMuted" />
       </Row>
-    </TamaguiButton>
+    </Button>
   );
 }
 
@@ -187,7 +180,7 @@ export function SellerDashboardScreen({
           borderBottomWidth={1}
           borderBottomColor="$border"
         >
-          <TamaguiButton
+          <Button
             chromeless
             circular
             size="$4"
@@ -224,7 +217,7 @@ export function SellerDashboardScreen({
         borderBottomWidth={1}
         borderBottomColor="$border"
       >
-        <TamaguiButton
+        <Button
           chromeless
           circular
           size="$4"
@@ -234,7 +227,7 @@ export function SellerDashboardScreen({
         <Heading level={4} flex={1}>
           Seller Dashboard
         </Heading>
-        <TamaguiButton
+        <Button
           chromeless
           circular
           size="$4"
@@ -329,7 +322,7 @@ export function SellerDashboardScreen({
 
         {/* Pending Orders Alert */}
         {stats && stats.pendingOrders > 0 && (
-          <TamaguiButton
+          <Button
             unstyled
             backgroundColor="$warningLight"
             borderRadius="$lg"
@@ -352,7 +345,7 @@ export function SellerDashboardScreen({
               </Column>
               <ChevronRight size={20} color="$warning" />
             </Row>
-          </TamaguiButton>
+          </Button>
         )}
 
         {/* Quick Actions */}

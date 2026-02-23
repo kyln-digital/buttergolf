@@ -224,8 +224,9 @@ export function SellerOnboardingScreen({
 
         {/* Footer note */}
         <Text size="$3" color="$textSecondary" textAlign="center" maxWidth={280} marginTop="$lg">
-          You'll be redirected to Stripe to verify your identity and set up payouts. This usually
-          takes 2-3 minutes.
+          {
+            "You'll be redirected to Stripe to verify your identity and set up payouts. This usually takes 2-3 minutes."
+          }
         </Text>
       </YStack>
     </View>

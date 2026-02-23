@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Column, Row, Text, Button, Heading, ScrollView, Spinner } from "@buttergolf/ui";
-import { Button as TamaguiButton, View } from "tamagui";
+import { Column, Row, Text, Button, Heading, ScrollView, Spinner, View } from "@buttergolf/ui";
 import {
   ArrowLeft,
   Package,
