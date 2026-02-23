@@ -24,7 +24,7 @@ export function ProductsScreen({ onFetchProducts }: Readonly<ProductsScreenProps
     setLoading(true);
     try {
       const fetchedProducts = await onFetchProducts();
-      console.log(`Fetched ${fetchedProducts.length} products`);
+      console.info(`Fetched ${fetchedProducts.length} products`);
       setProducts(fetchedProducts);
     } catch (error) {
       console.error("Failed to fetch products:", error);

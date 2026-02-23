@@ -112,7 +112,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
         >
           <Heart
             size={22}
-            fill={isFavourite ? theme.primary.val : "none"}
+            fill={isFavourite ? "$primary" : "none"}
             color={isFavourite ? "$primary" : "$textSecondary"}
             strokeWidth={1.5}
           />

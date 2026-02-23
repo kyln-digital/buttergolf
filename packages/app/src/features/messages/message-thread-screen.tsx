@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Column, Row, Text, Button, View, Image, ChatMessageList, ChatInput } from "@buttergolf/ui";
+import { Column, Row, Text, Button, Image, ChatMessageList, ChatInput } from "@buttergolf/ui";
 import type { ChatMessage } from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft } from "@tamagui/lucide-icons";
@@ -506,7 +506,7 @@ export function MessageThreadScreen({
   );
 
   const handleAcceptOffer = useCallback(
-    async (offerId: string) => {
+    async (_offerId: string) => {
       if (!onAcceptOffer) return;
       try {
         await onAcceptOffer();
@@ -518,7 +518,7 @@ export function MessageThreadScreen({
   );
 
   const handleRejectOffer = useCallback(
-    async (offerId: string) => {
+    async (_offerId: string) => {
       if (!onRejectOffer) return;
       try {
         await onRejectOffer();

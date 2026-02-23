@@ -13,7 +13,6 @@ import {
   Card,
   Badge,
 } from "@buttergolf/ui";
-import { Button as TamaguiButton } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MessageCircle, ChevronRight, RefreshCw } from "@tamagui/lucide-icons";
 import { MobileBottomNav } from "../../components/mobile";
@@ -232,7 +231,7 @@ export function MessagesScreen({
             )}
           </Column>
           {!loading && (
-            <TamaguiButton
+            <Button
               chromeless
               circular
               size="$4"
@@ -246,7 +245,7 @@ export function MessagesScreen({
               ) : (
                 <RefreshCw size={20} color="$text" />
               )}
-            </TamaguiButton>
+            </Button>
           )}
         </Row>
       </Column>
@@ -279,7 +278,7 @@ export function MessagesScreen({
             No messages yet
           </Heading>
           <Text size="$5" color="$textSecondary" textAlign="center">
-            When you buy or sell items, you'll be able to message with the other party
+            {"When you buy or sell items, you'll be able to message with the other party"}
           </Text>
           <Button
             size="$5"
