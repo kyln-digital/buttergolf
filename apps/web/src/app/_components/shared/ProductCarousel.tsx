@@ -108,6 +108,7 @@ export function ProductCarousel({
       {/* Pagination Dots (Desktop Only) */}
       <Row gap="$sm" justifyContent="center" display={isDesktop ? "flex" : "none"}>
         {scrollSnaps.map((_, index) => (
+          // eslint-disable-next-line react/forbid-elements
           <button
             key={index}
             onClick={() => scrollTo(index)}
