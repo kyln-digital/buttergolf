@@ -42,7 +42,7 @@ function HeartIcon({ filled }: Readonly<{ filled: boolean }>) {
     <Heart
       size={20}
       color={filled ? "$primary" : "$textInverse"}
-      fill={filled ? "$primary" : "transparent"}
+      fill={filled ? "currentColor" : "transparent"}
       opacity={filled ? 1 : 0.9}
       strokeWidth={2}
     />
