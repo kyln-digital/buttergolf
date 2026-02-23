@@ -70,7 +70,7 @@ export interface TwoFactorFormData {
  * Field-level validation error
  */
 export interface FieldError {
-  field: keyof any;
+  field: string;
   message: string;
 }
 

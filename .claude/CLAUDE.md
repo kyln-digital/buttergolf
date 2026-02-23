@@ -472,6 +472,7 @@ pnpm dev:mobile       # Start Expo dev server
 
 # Building
 pnpm build            # Build all apps
+pnpm check            # REQUIRED final validation (format + lint + type-check)
 pnpm check-types      # TypeScript validation
 
 # Database
@@ -487,6 +488,10 @@ pnpm format           # Format with Prettier
 # Cleaning
 pnpm clean-install    # Remove node_modules and reinstall
 ```
+
+### Required Validation Rule
+
+- REQUIRED for agents: run `pnpm check` at the end of every coding task and remedy any errors it reports before finishing.
 
 ### Adding Dependencies
 

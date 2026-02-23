@@ -134,6 +134,7 @@ pnpm dev:mobile    # Start Expo dev server
 pnpm build         # Build all apps and packages
 pnpm build:web     # Build web app only
 pnpm build:mobile  # Build mobile app only
+pnpm check         # REQUIRED final validation (format + lint + type-check)
 
 # Type checking
 pnpm check-types   # Run TypeScript compiler across workspace
@@ -1148,6 +1149,7 @@ Each app extends this base configuration.
 
 ### Type Checking
 
+- REQUIRED for agents: run `pnpm check` at the end of every coding task and remedy any errors it reports before finishing.
 - Run `pnpm check-types` before committing
 - Strict mode is enabled across the workspace
 - No implicit any, unused locals, or unused parameters allowed
