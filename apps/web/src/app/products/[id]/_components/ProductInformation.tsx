@@ -243,6 +243,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
               width="100%"
               height={56}
               disabled={product.isSold}
+              onPress={() => setPopoverOpen(true)}
             >
               Make an offer
             </Button>
