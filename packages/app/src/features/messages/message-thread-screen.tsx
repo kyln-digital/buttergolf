@@ -99,6 +99,61 @@ interface MessageThreadScreenProps {
   onRejectOffer?: () => Promise<unknown>;
 }
 
+type ChatMessageType = NonNullable<ChatMessage["type"]>;
+type ChatOfferStatus = NonNullable<ChatMessage["offerStatus"]>;
+
+const CHAT_MESSAGE_TYPES: ReadonlySet<ChatMessageType> = new Set([
+  "TEXT",
+  "OFFER",
+  "COUNTER_OFFER",
+  "OFFER_ACCEPTED",
+  "OFFER_REJECTED",
+  "OFFER_EXPIRED",
+  "SYSTEM",
+]);
+
+const CHAT_OFFER_STATUSES: ReadonlySet<ChatOfferStatus> = new Set([
+  "PENDING",
+  "ACCEPTED",
+  "REJECTED",
+  "EXPIRED",
+  "COUNTERED",
+]);
+
+function toChatMessageType(value: string | null | undefined): ChatMessage["type"] {
+  if (!value) return undefined;
+  return CHAT_MESSAGE_TYPES.has(value as ChatMessageType) ? (value as ChatMessageType) : undefined;
+}
+
+function toChatOfferStatus(value: string | null | undefined): ChatMessage["offerStatus"] {
+  if (!value) return undefined;
+  return CHAT_OFFER_STATUSES.has(value as ChatOfferStatus) ? (value as ChatOfferStatus) : undefined;
+}
+
+function toChatMessage(msg: {
+  id: string;
+  senderId: string;
+  content: string;
+  createdAt: string;
+  isRead: boolean;
+  type?: string | null;
+  offerAmount?: number | null;
+  offerId?: string | null;
+  offerStatus?: string | null;
+}): ChatMessage {
+  return {
+    id: msg.id,
+    senderId: msg.senderId,
+    content: msg.content,
+    createdAt: msg.createdAt,
+    isRead: msg.isRead,
+    type: toChatMessageType(msg.type),
+    offerAmount: msg.offerAmount ?? undefined,
+    offerId: msg.offerId ?? undefined,
+    offerStatus: toChatOfferStatus(msg.offerStatus),
+  };
+}
+
 export function MessageThreadScreen({
   orderId,
   currentUserId,
@@ -196,17 +251,7 @@ export function MessageThreadScreen({
     setLoadingMore(true);
     try {
       const data = await onFetchMessages(orderId, nextCursor);
-      const older = data.messages.map((msg) => ({
-        id: msg.id,
-        senderId: msg.senderId,
-        content: msg.content,
-        createdAt: msg.createdAt,
-        isRead: msg.isRead,
-        type: msg.type ?? undefined,
-        offerAmount: msg.offerAmount ?? undefined,
-        offerId: msg.offerId ?? undefined,
-        offerStatus: msg.offerStatus ?? undefined,
-      }));
+      const older = data.messages.map(toChatMessage);
       // Prepend older messages
       setMessages((prev) => {
         const existingIds = new Set(prev.map((m) => m.id));
@@ -233,19 +278,7 @@ export function MessageThreadScreen({
         if (onFetchMessages) {
           const data = await onFetchMessages(orderId);
           if (!cancelled) {
-            mergeMessages(
-              data.messages.map((msg) => ({
-                id: msg.id,
-                senderId: msg.senderId,
-                content: msg.content,
-                createdAt: msg.createdAt,
-                isRead: msg.isRead,
-                type: msg.type ?? undefined,
-                offerAmount: msg.offerAmount ?? undefined,
-                offerId: msg.offerId ?? undefined,
-                offerStatus: msg.offerStatus ?? undefined,
-              }))
-            );
+            mergeMessages(data.messages.map(toChatMessage));
             setHasMore(data.hasMore ?? false);
             setNextCursor(data.nextCursor ?? null);
           }
@@ -284,19 +317,7 @@ export function MessageThreadScreen({
           // handles the sender's own messages.
           if (data.message.senderId === currentUserId) return;
 
-          mergeMessages([
-            {
-              id: data.message.id,
-              senderId: data.message.senderId,
-              content: data.message.content,
-              createdAt: data.message.createdAt,
-              isRead: data.message.isRead,
-              type: data.message.type ?? undefined,
-              offerAmount: data.message.offerAmount ?? undefined,
-              offerId: data.message.offerId ?? undefined,
-              offerStatus: data.message.offerStatus ?? undefined,
-            },
-          ]);
+          mergeMessages([toChatMessage(data.message)]);
         } else if (data.type === "messages_read" && !cancelled) {
           // The other party read our messages — update isRead for all
           // messages we sent that are still marked unread.
@@ -367,19 +388,7 @@ export function MessageThreadScreen({
     const interval = setInterval(async () => {
       try {
         const data = await onFetchMessages(orderId);
-        mergeMessages(
-          data.messages.map((msg) => ({
-            id: msg.id,
-            senderId: msg.senderId,
-            content: msg.content,
-            createdAt: msg.createdAt,
-            isRead: msg.isRead,
-            type: msg.type ?? undefined,
-            offerAmount: msg.offerAmount ?? undefined,
-            offerId: msg.offerId ?? undefined,
-            offerStatus: msg.offerStatus ?? undefined,
-          }))
-        );
+        mergeMessages(data.messages.map(toChatMessage));
       } catch {
         // Silent — polling failures don't surface to the user
       }

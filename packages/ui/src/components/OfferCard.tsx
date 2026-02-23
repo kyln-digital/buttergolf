@@ -52,7 +52,7 @@ function getOfferLabel(type: MessageType, isOwnMessage: boolean): string {
   }
 }
 
-function getStatusColor(type: MessageType): string {
+function getStatusColor(type: MessageType): "$primary" | "$success" | "$error" | "$textTertiary" {
   switch (type) {
     case "OFFER":
     case "COUNTER_OFFER":
