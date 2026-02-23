@@ -489,6 +489,13 @@ pnpm format           # Format with Prettier
 pnpm clean-install    # Remove node_modules and reinstall
 ```
 
+### Python Command Policy (CRITICAL)
+
+- Never run `python` directly in this repository.
+- Always execute Python through Poetry: `poetry run python ...`
+- For module execution, use: `poetry run python -m <module>`
+- If Poetry is unavailable or not configured, stop and report the issue instead of falling back to `python`.
+
 ### Required Validation Rule
 
 - REQUIRED for agents: run `pnpm check` at the end of every coding task and remedy any errors it reports before finishing.

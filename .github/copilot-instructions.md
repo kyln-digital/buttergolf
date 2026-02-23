@@ -156,6 +156,13 @@ pnpm db:seed            # Seed database with sample data
 # See docs/AUTH_SETUP_CLERK.md for details. Ensure env vars are set before running apps.
 ```
 
+## Python Command Policy (CRITICAL)
+
+- Never run `python` directly in this repository.
+- Always execute Python through Poetry: `poetry run python ...`
+- For module execution, use: `poetry run python -m <module>`
+- If Poetry is unavailable or not configured, stop and report the issue instead of falling back to `python`.
+
 ## Package Naming Convention
 
 All internal packages use the `@buttergolf/` namespace:
