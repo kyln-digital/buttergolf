@@ -22,7 +22,7 @@
 
 "use client";
 
-import { useState, useCallback, type ReactNode } from "react";
+import { useState, useCallback, type ReactNode, type ComponentType } from "react";
 import { Tabs, styled, SizableText, View, type TabsProps, type GetProps } from "tamagui";
 
 // ─── Tab Trigger ─────────────────────────────────────────────────────────────
@@ -59,10 +59,11 @@ const StyledTabTrigger = styled(Tabs.Tab, {
 });
 
 interface SegmentedTabTriggerProps extends GetProps<typeof StyledTabTrigger> {
-  /** Icon element rendered before label */
+  // @ts-ignore — ReactNode conflicts with Tamagui's token index signature; valid at runtime
   icon?: ReactNode;
   /** Badge count displayed after label */
   count?: number;
+  // @ts-ignore — ReactNode conflicts with Tamagui's token index signature; valid at runtime
   children: ReactNode;
 }
 
@@ -72,8 +73,12 @@ function SegmentedTabTrigger({
   children,
   ...props
 }: Readonly<SegmentedTabTriggerProps>) {
+  // styled(Tabs.Tab) has a token index signature that blocks ReactNode children/icon props.
+  // Cast to any locally; public SegmentedTabTriggerProps interface stays typed for callers.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const Trigger = StyledTabTrigger as ComponentType<any>;
   return (
-    <StyledTabTrigger {...props}>
+    <Trigger {...props}>
       {icon}
       {typeof children === "string" ? (
         <SizableText size="$4" fontWeight="500" color="inherit">
@@ -87,7 +92,7 @@ function SegmentedTabTrigger({
           ({count})
         </SizableText>
       )}
-    </StyledTabTrigger>
+    </Trigger>
   );
 }
 
@@ -158,8 +163,11 @@ function SegmentedTabList({ children, activeValue }: Readonly<SegmentedTabListPr
 
   const activeLayout = activeValue ? tabLayouts[activeValue] : undefined;
 
+  // styled(Tabs.List) children types are overly strict; cast to accept arbitrary ReactNode
+  const TabList = StyledTabList as ComponentType<{ children?: ReactNode }>;
+
   return (
-    <StyledTabList>
+    <TabList>
       {/* Wrap children to inject onLayout tracking */}
       <View flexDirection="row" position="relative">
         {/* Tab triggers with layout tracking */}
@@ -188,7 +196,7 @@ function SegmentedTabList({ children, activeValue }: Readonly<SegmentedTabListPr
         {/* Animated underline indicator */}
         {activeLayout && <UnderlineIndicator x={activeLayout.x} width={activeLayout.width} />}
       </View>
-    </StyledTabList>
+    </TabList>
   );
 }
 

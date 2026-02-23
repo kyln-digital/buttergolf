@@ -98,9 +98,13 @@ export function SwitchWithLabel({
 }: SwitchWithLabelProps) {
   const switchId = id ?? `switch-${label.toLowerCase().replace(/\s+/g, "-")}`;
 
+  // styled() adds a Tamagui token index signature that blocks checked/onCheckedChange/children
+  // types. Cast locally to any so the JSX tree is unchecked; public Switch export stays typed.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const S = Switch as any;
   return (
     <XStack alignItems="center" gap="$3">
-      <Switch
+      <S
         id={switchId}
         size={size}
         checked={checked}
@@ -108,8 +112,8 @@ export function SwitchWithLabel({
         onCheckedChange={onCheckedChange}
         disabled={disabled}
       >
-        <Switch.Thumb animation="bouncy" />
-      </Switch>
+        <S.Thumb animation="bouncy" />
+      </S>
       <Label
         htmlFor={switchId}
         size={size}
