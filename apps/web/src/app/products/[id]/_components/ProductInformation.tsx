@@ -26,7 +26,6 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
   const [offerAmount, setOfferAmount] = useState("");
   const [offerError, setOfferError] = useState("");
   const [submittingOffer, setSubmittingOffer] = useState(false);
-  const [popoverOpen, setPopoverOpen] = useState(false);
 
   const handleSubmitOffer = async () => {
     const amount = Number.parseFloat(offerAmount);
@@ -46,7 +45,6 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
 
     try {
       await onSubmitOffer(amount);
-      setPopoverOpen(false);
       setOfferAmount("");
     } catch (err) {
       setOfferError(err instanceof Error ? err.message : "Failed to submit. Try again.");
@@ -227,49 +225,43 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
 
         {/* Make an Offer Popover */}
         <Popover
-          placement="top"
-          open={popoverOpen}
+          placement="bottom"
           onOpenChange={(open) => {
-            setPopoverOpen(open);
             if (!open) {
               setOfferAmount("");
               setOfferError("");
             }
           }}
         >
-          <Popover.Anchor>
-            <Button
-              butterVariant="secondary"
+          <Popover.Trigger asChild>
+            <TamaguiButton
               size="$5"
               width="100%"
               height={56}
+              backgroundColor="$cloudMist"
+              borderWidth={1}
+              borderColor="$border"
+              color="$text"
+              borderRadius="$full"
+              fontFamily="$body"
+              fontWeight="700"
+              cursor="pointer"
+              boxShadow="0px 1px 4px rgba(0, 0, 0, 0.2)"
               disabled={product.isSold}
-              onPress={() => setPopoverOpen(true)}
+              hoverStyle={{ backgroundColor: "$cloudMistHover", borderColor: "$borderHover" }}
+              pressStyle={{ backgroundColor: "$cloudMistPress", scale: 0.98 }}
             >
               Make an offer
-            </Button>
-          </Popover.Anchor>
+            </TamaguiButton>
+          </Popover.Trigger>
+
           <Popover.Content
             backgroundColor="$surface"
             borderRadius="$lg"
             padding="$4"
             borderWidth={1}
             borderColor="$border"
-            shadowColor="$shadowColor"
-            shadowRadius={20}
-            shadowOffset={{ width: 0, height: 10 }}
-            shadowOpacity={0.15}
             elevate
-            animation={[
-              "medium",
-              {
-                opacity: {
-                  overshootClamping: true,
-                },
-              },
-            ]}
-            enterStyle={{ y: -10, opacity: 0 }}
-            exitStyle={{ y: -10, opacity: 0 }}
           >
             <Column gap="$3" width={280}>
               <Text size="$5" fontWeight="600" color="$text">
@@ -320,16 +312,17 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
               )}
 
               <Row gap="$2" justifyContent="flex-end">
-                <Button
-                  size="$3"
-                  backgroundColor="transparent"
-                  color="$textSecondary"
-                  borderRadius="$full"
-                  paddingHorizontal="$3"
-                  onPress={() => setPopoverOpen(false)}
-                >
-                  Cancel
-                </Button>
+                <Popover.Close asChild>
+                  <TamaguiButton
+                    size="$3"
+                    backgroundColor="transparent"
+                    color="$textSecondary"
+                    borderRadius="$full"
+                    paddingHorizontal="$3"
+                  >
+                    Cancel
+                  </TamaguiButton>
+                </Popover.Close>
                 <Button
                   butterVariant="primary"
                   size="$3"
@@ -343,16 +336,6 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
           </Popover.Content>
         </Popover>
       </Column>
-
-      {/* TEST ONLY: docs-exact pattern — Popover.Trigger asChild with plain Tamagui Button */}
-      <Popover placement="top">
-        <Popover.Trigger asChild>
-          <TamaguiButton>Test: docs pattern (plain Tamagui Button)</TamaguiButton>
-        </Popover.Trigger>
-        <Popover.Content borderWidth={1} borderColor="$borderColor" padding="$4">
-          <Text>✓ Popover.Trigger asChild works with plain Tamagui Button</Text>
-        </Popover.Content>
-      </Popover>
     </Column>
   );
 }
