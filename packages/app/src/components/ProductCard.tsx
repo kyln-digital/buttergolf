@@ -14,7 +14,6 @@ import {
   Button,
 } from "@buttergolf/ui";
 import { Heart } from "@tamagui/lucide-icons";
-import { useTheme } from "tamagui";
 import type { ProductCardData } from "../types/product";
 
 export interface ProductCardProps {
@@ -25,15 +24,26 @@ export interface ProductCardProps {
   onQuickView?: (productId: string) => void;
 }
 
-// Heart icon component — uses Tamagui lucide icon which is cross-platform
+/**
+ * Heart icon component (cross-platform via Tamagui Lucide).
+ *
+ * IMPORTANT: Do not use raw CSS colour strings here (for example rgba(...)).
+ * Even though Lucide's base icon prop allows string values, Tamagui wraps the
+ * icon props with themed token typing in this context, and raw colour literals
+ * can fail TypeScript with:
+ * "Type 'string' is not assignable to type GetThemeValueForKey<'color'>".
+ *
+ * Keep colour values as theme tokens (for example "$primary", "$textInverse")
+ * and use opacity for subtle unfilled-state styling. This preserves the visual
+ * appearance and prevents repeated type-regression fixes.
+ */
 function HeartIcon({ filled }: Readonly<{ filled: boolean }>) {
-  const theme = useTheme();
-  const filledColor = String(theme.primary.val);
   return (
     <Heart
       size={20}
-      color={filled ? filledColor : "rgba(255,255,255,0.9)"}
-      fill={filled ? filledColor : "transparent"}
+      color={filled ? "$primary" : "$textInverse"}
+      fill={filled ? "$primary" : "transparent"}
+      opacity={filled ? 1 : 0.9}
       strokeWidth={2}
     />
   );
