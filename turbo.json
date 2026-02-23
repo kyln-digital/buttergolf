@@ -45,7 +45,9 @@
         "SITE_URL",
         "ANALYZE",
         "DISABLE_EXTRACTION",
-        "CI"
+        "CI",
+        "REDIS_URL",
+        "SUPABASE_SERVICE_ROLE_KEY"
       ]
     },
     "db:generate": {

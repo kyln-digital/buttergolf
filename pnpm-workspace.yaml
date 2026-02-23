@@ -51,7 +51,7 @@ catalog:
   eslint: 9.28.0
   eslint-config-expo: 10.0.0
   eslint-config-next: 16.1.6
-  expo: 54.0.32
+  expo: 54.0.33
   expo-auth-session: 7.0.10
   expo-font: 14.0.11
   expo-image-picker: 17.0.10

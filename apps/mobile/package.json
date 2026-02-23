@@ -67,5 +67,13 @@
     "react-native-svg-transformer": "^1.5.2",
     "typescript": "catalog:"
   },
+  "expo": {
+    "install": {
+      "exclude": [
+        "@stripe/stripe-react-native",
+        "@types/react"
+      ]
+    }
+  },
   "private": true
 }
