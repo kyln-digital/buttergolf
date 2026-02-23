@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ComponentType, type ReactNode } from "react";
 import { Moon, Sun, Monitor } from "@tamagui/lucide-icons";
 import { XStack, SizableText, Button, styled, type GetProps } from "tamagui";
 import { useTheme, type ThemeMode } from "@buttergolf/app/src/hooks/useTheme";
@@ -99,9 +99,19 @@ export function ThemeSwitcher({
     return <ThemeToggleButton onPress={toggle} onThemeChange={onThemeChange} />;
   }
 
+  // styled(XStack) loses base prop types when variants are defined in this Tamagui version;
+  // cast locally to restore onPress, aria-*, children, fontWeight, etc.
+  const RowEl = Row as unknown as ComponentType<GetProps<typeof XStack>>;
+  const ToggleEl = ToggleButton as unknown as ComponentType<
+    GetProps<typeof XStack> & { active?: boolean; children?: ReactNode }
+  >;
+  const LabelText = Text as unknown as ComponentType<
+    GetProps<typeof SizableText> & { children?: ReactNode }
+  >;
+
   // Full mode: segmented control
   return (
-    <Row
+    <RowEl
       backgroundColor="$surface"
       borderRadius="$lg"
       borderWidth={1}
@@ -113,28 +123,28 @@ export function ThemeSwitcher({
       {THEME_OPTIONS.map(({ mode: optionMode, label, Icon }) => {
         const isActive = currentMode === optionMode;
         return (
-          <ToggleButton
+          <ToggleEl
             key={optionMode}
             active={isActive}
             onPress={() => handleModeChange(optionMode)}
-            accessibilityRole="button"
-            accessibilityState={{ selected: isActive }}
-            accessibilityLabel={`Set theme to ${label}`}
+            role="button"
+            aria-selected={isActive}
+            aria-label={`Set theme to ${label}`}
           >
             <Icon size={18} color={isActive ? "$textInverse" : "$text"} />
             {showLabels && (
-              <Text
+              <LabelText
                 size="$4"
                 color={isActive ? "$textInverse" : "$text"}
                 fontWeight={isActive ? "600" : "400"}
               >
                 {label}
-              </Text>
+              </LabelText>
             )}
-          </ToggleButton>
+          </ToggleEl>
         );
       })}
-    </Row>
+    </RowEl>
   );
 }
 
@@ -190,7 +200,7 @@ export function ThemeToggleButton({
   // to prevent layout shift while avoiding hydration mismatch
   if (!mounted) {
     return (
-      <Button chromeless circular size="$4" accessibilityRole="button" aria-hidden {...props}>
+      <Button chromeless circular size="$4" role="button" aria-hidden {...props}>
         <Sun size={iconSize} color="$text" style={{ opacity: 0 }} />
       </Button>
     );
@@ -202,8 +212,8 @@ export function ThemeToggleButton({
       circular
       size="$4"
       onPress={handleToggle}
-      accessibilityLabel={label}
-      accessibilityRole="button"
+      aria-label={label}
+      role="button"
       {...props}
     >
       <Icon size={iconSize} color="$text" />

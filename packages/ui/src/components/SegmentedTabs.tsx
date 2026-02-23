@@ -22,7 +22,7 @@
 
 "use client";
 
-import { useState, useCallback, type ReactNode } from "react";
+import { useState, useCallback, type ReactNode, type ComponentType } from "react";
 import { Tabs, styled, SizableText, View, type TabsProps, type GetProps } from "tamagui";
 
 // ─── Tab Trigger ─────────────────────────────────────────────────────────────
@@ -72,8 +72,12 @@ function SegmentedTabTrigger({
   children,
   ...props
 }: Readonly<SegmentedTabTriggerProps>) {
+  // styled(Tabs.Tab) narrows children to string in this Tamagui version; cast to accept ReactNode
+  const Trigger = StyledTabTrigger as ComponentType<
+    GetProps<typeof StyledTabTrigger> & { children?: ReactNode }
+  >;
   return (
-    <StyledTabTrigger {...props}>
+    <Trigger {...props}>
       {icon}
       {typeof children === "string" ? (
         <SizableText size="$4" fontWeight="500" color="inherit">
@@ -87,7 +91,7 @@ function SegmentedTabTrigger({
           ({count})
         </SizableText>
       )}
-    </StyledTabTrigger>
+    </Trigger>
   );
 }
 
@@ -158,8 +162,11 @@ function SegmentedTabList({ children, activeValue }: Readonly<SegmentedTabListPr
 
   const activeLayout = activeValue ? tabLayouts[activeValue] : undefined;
 
+  // styled(Tabs.List) children types are overly strict; cast to accept arbitrary ReactNode
+  const TabList = StyledTabList as ComponentType<{ children?: ReactNode }>;
+
   return (
-    <StyledTabList>
+    <TabList>
       {/* Wrap children to inject onLayout tracking */}
       <View flexDirection="row" position="relative">
         {/* Tab triggers with layout tracking */}
@@ -188,7 +195,7 @@ function SegmentedTabList({ children, activeValue }: Readonly<SegmentedTabListPr
         {/* Animated underline indicator */}
         {activeLayout && <UnderlineIndicator x={activeLayout.x} width={activeLayout.width} />}
       </View>
-    </StyledTabList>
+    </TabList>
   );
 }
 

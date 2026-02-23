@@ -57,7 +57,9 @@ const SwitchThumb = styled(TamaguiSwitch.Thumb, {
 });
 
 // Main Switch component as compound component
-export const Switch = SwitchFrame as typeof SwitchFrame & {
+// Cast through unknown to restore the base TamaguiSwitch prop types (checked, onCheckedChange, etc.)
+// that styled() loses in this Tamagui version.
+export const Switch = SwitchFrame as unknown as typeof TamaguiSwitch & {
   Thumb: typeof SwitchThumb;
 };
 

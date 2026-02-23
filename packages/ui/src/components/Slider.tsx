@@ -131,7 +131,9 @@ const SliderThumb = styled(TamaguiSlider.Thumb, {
 });
 
 // Main Slider component as compound component
-export const Slider = SliderFrame as typeof SliderFrame & {
+// Cast through unknown to restore the base TamaguiSlider prop types (value, defaultValue, etc.)
+// that styled() loses in this Tamagui version.
+export const Slider = SliderFrame as unknown as typeof TamaguiSlider & {
   Track: typeof SliderTrack;
   TrackActive: typeof SliderTrackActive;
   Thumb: typeof SliderThumb;
