@@ -1,20 +1,10 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import {
-  Column,
-  Row,
-  ScrollView,
-  Text,
-  Heading,
-  Spinner,
-  Button,
-  Image,
-  Card,
-  Badge,
-} from "@buttergolf/ui";
+import { FlatList, RefreshControl, Platform } from "react-native";
+import { Column, Row, Text, Heading, Spinner, Button, ConversationListItem } from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MessageCircle, ChevronRight, RefreshCw } from "@tamagui/lucide-icons";
+import { MessageCircle } from "@tamagui/lucide-icons";
 import { MobileBottomNav } from "../../components/mobile";
 import { formatDistanceToNow } from "date-fns";
 
@@ -55,6 +45,14 @@ interface MessagesScreenProps {
   onMessagesPress?: () => void;
   onLoginPress?: () => void;
   onAccountPress?: () => void;
+}
+
+function formatTimestamp(dateString: string): string {
+  try {
+    return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+  } catch {
+    return "";
+  }
 }
 
 export function MessagesScreen({
@@ -126,7 +124,7 @@ export function MessagesScreen({
       } catch (err) {
         console.error("Error refreshing conversations:", err);
       }
-    }, 30000); // Refresh every 30 seconds
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [onFetchConversations]);
@@ -167,9 +165,31 @@ export function MessagesScreen({
 
   const totalUnread = conversations.reduce((sum, conv) => sum + conv.unreadCount, 0);
 
+  const renderConversationItem = useCallback(
+    ({ item }: { item: Conversation }) => (
+      <ConversationListItem
+        productImage={item.productImage}
+        productTitle={item.productTitle}
+        otherUserName={item.otherUserName}
+        otherUserImage={item.otherUserImage}
+        lastMessage={item.lastMessagePreview}
+        timestamp={formatTimestamp(item.lastMessageAt)}
+        unreadCount={item.unreadCount}
+        userRole={item.userRole}
+        activeOfferStatus={item.activeOfferStatus}
+        activeOfferAmount={item.activeOfferAmount}
+        productSold={item.productSold}
+        onPress={() => onConversationPress?.(item)}
+      />
+    ),
+    [onConversationPress]
+  );
+
+  const keyExtractor = useCallback((item: Conversation) => item.id, []);
+
   if (!isAuthenticated) {
     return (
-      <Column width="100%" height="100%" paddingTop={insets.top}>
+      <Column width="100%" height="100%" paddingTop={insets.top} backgroundColor="$background">
         <Column
           flex={1}
           alignItems="center"
@@ -177,7 +197,16 @@ export function MessagesScreen({
           gap="$lg"
           paddingHorizontal="$lg"
         >
-          <MessageCircle size={64} color="$primary" />
+          <Column
+            width={80}
+            height={80}
+            borderRadius={40}
+            backgroundColor="$backgroundHover"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <MessageCircle size={40} color="$primary" />
+          </Column>
           <Heading level={2} textAlign="center">
             Sign in to Message
           </Heading>
@@ -210,60 +239,56 @@ export function MessagesScreen({
   }
 
   return (
-    <Column width="100%" height="100%" paddingTop={insets.top}>
-      {/* Header - no flex so content below can center */}
-      <Column
-        gap="$md"
-        paddingHorizontal="$md"
-        paddingVertical="$md"
-        borderBottomWidth={1}
-        borderBottomColor="$border"
-      >
-        <Row alignItems="center" justifyContent="space-between">
-          <Column flex={1}>
-            <Heading level={1} size="$8">
-              Messages
-            </Heading>
-            {totalUnread > 0 && (
-              <Text size="$4" color="$textSecondary">
-                {totalUnread} unread
-              </Text>
-            )}
-          </Column>
-          {!loading && (
-            <Button
-              chromeless
-              circular
-              size="$4"
-              onPress={handleRefresh}
-              disabled={refreshing}
-              opacity={refreshing ? 0.5 : 1}
-              accessibilityLabel="Refresh messages"
+    <Column width="100%" height="100%" paddingTop={insets.top} backgroundColor="$background">
+      {/* Header */}
+      <Column paddingHorizontal="$lg" paddingTop="$md" paddingBottom="$sm">
+        <Row alignItems="baseline" gap="$sm">
+          <Heading level={1} size="$10">
+            Messages
+          </Heading>
+          {totalUnread > 0 && (
+            <Column
+              backgroundColor="$primary"
+              borderRadius="$full"
+              minWidth={24}
+              height={24}
+              alignItems="center"
+              justifyContent="center"
+              paddingHorizontal="$xs"
             >
-              {refreshing ? (
-                <Spinner size="sm" color="$primary" />
-              ) : (
-                <RefreshCw size={20} color="$text" />
-              )}
-            </Button>
+              <Text size="$2" color="$textInverse" fontWeight="700">
+                {totalUnread > 99 ? "99+" : totalUnread}
+              </Text>
+            </Column>
           )}
         </Row>
       </Column>
 
+      {/* Error banner */}
       {error && (
-        <Column paddingHorizontal="$md" paddingVertical="$md" gap="$md">
-          <Card backgroundColor="$error" opacity={0.1}>
-            <Text color="$error" size="$4">
-              {error}
-            </Text>
-          </Card>
-        </Column>
+        <Row
+          backgroundColor="$errorLight"
+          paddingHorizontal="$md"
+          paddingVertical="$sm"
+          alignItems="center"
+          gap="$sm"
+        >
+          <Text size="$3" color="$error" flex={1}>
+            {error}
+          </Text>
+          <Text size="$3" color="$error" weight="semibold" onPress={() => setError(null)}>
+            Dismiss
+          </Text>
+        </Row>
       )}
 
+      {/* Content */}
       {loading ? (
         <Column flex={1} alignItems="center" justifyContent="center" gap="$md">
           <Spinner size="lg" color="$primary" />
-          <Text color="$textSecondary">Loading messages...</Text>
+          <Text color="$textSecondary" size="$4">
+            Loading messages...
+          </Text>
         </Column>
       ) : conversations.length === 0 ? (
         <Column
@@ -271,10 +296,19 @@ export function MessagesScreen({
           alignItems="center"
           justifyContent="center"
           gap="$lg"
-          paddingHorizontal="$lg"
+          paddingHorizontal="$xl"
         >
-          <MessageCircle size={56} color="$textTertiary" />
-          <Heading level={2} textAlign="center">
+          <Column
+            width={80}
+            height={80}
+            borderRadius={40}
+            backgroundColor="$backgroundHover"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <MessageCircle size={40} color="$textTertiary" />
+          </Column>
+          <Heading level={3} textAlign="center">
             No messages yet
           </Heading>
           <Text size="$5" color="$textSecondary" textAlign="center">
@@ -292,109 +326,31 @@ export function MessagesScreen({
           </Button>
         </Column>
       ) : (
-        <ScrollView flex={1} showsVerticalScrollIndicator={false}>
-          <Column gap="$md" paddingHorizontal="$md" paddingVertical="$md">
-            {conversations.map((conversation) => (
-              <Card
-                key={conversation.id}
-                variant="elevated"
-                paddingHorizontal="$md"
-                paddingVertical="$md"
-                onPress={() => onConversationPress?.(conversation)}
-                pressStyle={{ opacity: 0.7 }}
-                cursor="pointer"
-              >
-                <Row gap="$md" alignItems="flex-start">
-                  {/* Product Image */}
-                  {conversation.productImage && (
-                    <Image
-                      source={{ uri: conversation.productImage }}
-                      width={64}
-                      height={64}
-                      borderRadius="$md"
-                      backgroundColor="$surface"
-                    />
-                  )}
-
-                  {/* Message Content */}
-                  <Column flex={1} gap="$sm">
-                    <Row alignItems="center" justifyContent="space-between">
-                      <Column flex={1} gap="$xs">
-                        <Text size="$5" weight="bold" numberOfLines={1}>
-                          {conversation.productTitle}
-                        </Text>
-                        <Text size="$4" color="$textSecondary" numberOfLines={1}>
-                          {conversation.otherUserName}
-                        </Text>
-                      </Column>
-                      {conversation.unreadCount > 0 && (
-                        <Badge size="sm" backgroundColor="$primary">
-                          <Text size="$2" color="$textInverse" fontWeight="600">
-                            {conversation.unreadCount}
-                          </Text>
-                        </Badge>
-                      )}
-                    </Row>
-
-                    <Text
-                      size="$4"
-                      color="$textSecondary"
-                      numberOfLines={1}
-                      opacity={conversation.unreadCount > 0 ? 1 : 0.7}
-                    >
-                      {conversation.lastMessagePreview || "No messages yet"}
-                    </Text>
-
-                    <Row alignItems="center" justifyContent="space-between">
-                      <Row gap="$sm" alignItems="center" flex={1}>
-                        <Text size="$3" color="$textTertiary">
-                          {formatDistanceToNow(new Date(conversation.lastMessageAt), {
-                            addSuffix: true,
-                          })}
-                        </Text>
-                        {conversation.activeOfferStatus === "PENDING" && (
-                          <Badge size="sm" backgroundColor="$warning">
-                            <Text size="$1" color="$textInverse" fontWeight="600">
-                              Offer £{conversation.activeOfferAmount?.toFixed(0)}
-                            </Text>
-                          </Badge>
-                        )}
-                        {conversation.activeOfferStatus === "COUNTERED" && (
-                          <Badge size="sm" backgroundColor="$info">
-                            <Text size="$1" color="$textInverse" fontWeight="600">
-                              Counter £{conversation.activeOfferAmount?.toFixed(0)}
-                            </Text>
-                          </Badge>
-                        )}
-                        {conversation.activeOfferStatus === "ACCEPTED" && (
-                          <Badge size="sm" backgroundColor="$success">
-                            <Text size="$1" color="$textInverse" fontWeight="600">
-                              Accepted
-                            </Text>
-                          </Badge>
-                        )}
-                      </Row>
-                      <ChevronRight size={16} color="$textTertiary" />
-                    </Row>
-                  </Column>
-                </Row>
-              </Card>
-            ))}
-            {hasMore && (
+        <FlatList
+          data={conversations}
+          renderItem={renderConversationItem}
+          keyExtractor={keyExtractor}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor="#F45314"
+              colors={["#F45314"]}
+            />
+          }
+          onEndReached={hasMore ? handleLoadMore : undefined}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={
+            loadingMore ? (
               <Column alignItems="center" paddingVertical="$md">
-                {loadingMore ? (
-                  <Spinner size="sm" color="$primary" />
-                ) : (
-                  <Button chromeless size="$4" onPress={handleLoadMore}>
-                    <Text size="$4" color="$primary">
-                      Load more
-                    </Text>
-                  </Button>
-                )}
+                <Spinner size="sm" color="$primary" />
               </Column>
-            )}
-          </Column>
-        </ScrollView>
+            ) : null
+          }
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={Platform.OS === "web" ? { paddingBottom: 16 } : undefined}
+        />
       )}
 
       <MobileBottomNav

@@ -1,10 +1,28 @@
 import { useState, useCallback, memo } from "react";
 import { Sheet } from "@tamagui/sheet";
-import { useStripe, CollectionMode, AddressCollectionMode } from "@stripe/stripe-react-native";
 import { InteractionManager } from "react-native";
 import { Column, Row, Text, Button, Heading, Card, Spinner } from "@buttergolf/ui";
 import { Info, Lock, Package, CheckCircle } from "@tamagui/lucide-icons";
 import { addBreadcrumb } from "../lib/breadcrumbs";
+
+// Lazy-load Stripe to avoid native module crash in Expo Go
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _useStripe: (() => any) | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _CollectionMode: any = {};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _AddressCollectionMode: any = {};
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const stripeMod = require("@stripe/stripe-react-native");
+  _useStripe = stripeMod.useStripe;
+  _CollectionMode = stripeMod.CollectionMode;
+  _AddressCollectionMode = stripeMod.AddressCollectionMode;
+} catch {
+  // Stripe native module not available (Expo Go)
+}
+const CollectionMode = _CollectionMode;
+const AddressCollectionMode = _AddressCollectionMode;
 
 // Shipping options matching the web API
 const SHIPPING_OPTIONS = [
@@ -126,7 +144,10 @@ const SheetContents = memo(function SheetContents({
   getToken,
 }: SheetContentsProps) {
   // useStripe is now always available since StripeProvider is at root level
-  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  // Guard against missing native module (Expo Go)
+  const stripeHook = _useStripe ? _useStripe() : null;
+  const initPaymentSheet = stripeHook?.initPaymentSheet;
+  const presentPaymentSheet = stripeHook?.presentPaymentSheet;
 
   const [shippingOption, setShippingOption] = useState<ShippingOptionId>("standard");
   const [isProcessing, setIsProcessing] = useState(false);

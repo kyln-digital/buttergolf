@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { KeyboardAvoidingView, Platform } from "react-native";
 import { Column, Row, Text, Button, Image, ChatMessageList, ChatInput } from "@buttergolf/ui";
 import type { ChatMessage } from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -548,114 +549,156 @@ export function MessageThreadScreen({
   }, [failedContent]);
 
   return (
-    <Column width="100%" height="100%" paddingTop={insets.top} backgroundColor="$background">
-      {/* Header */}
-      <Row
-        alignItems="center"
-        gap="$md"
-        paddingHorizontal="$md"
-        paddingVertical="$md"
-        borderBottomWidth={1}
-        borderBottomColor="$border"
-        backgroundColor="$surface"
-      >
-        <Button
-          size="$4"
-          backgroundColor="transparent"
-          borderWidth={0}
-          onPress={onBack}
-          paddingHorizontal="$md"
-        >
-          <ArrowLeft size={24} color="$text" />
-        </Button>
-
-        {productImage && (
-          <Image
-            source={{ uri: productImage }}
-            width={40}
-            height={40}
-            borderRadius="$md"
-            alt={productTitle}
-          />
-        )}
-
-        <Column flex={1} gap="$xs">
-          <Text size="$6" weight="bold" numberOfLines={1}>
-            {productTitle}
-          </Text>
-          <Text size="$4" color="$textSecondary" numberOfLines={1}>
-            {otherUserName}
-          </Text>
-        </Column>
-      </Row>
-
-      {/* Error / Retry Banner */}
-      {error && (
+    <KeyboardAvoidingView
+      style={{ flex: 1, width: "100%" }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={0}
+    >
+      <Column width="100%" height="100%" paddingTop={insets.top} backgroundColor="$background">
+        {/* Header */}
         <Row
-          backgroundColor="$errorLight"
-          paddingHorizontal="$md"
-          paddingVertical="$sm"
           alignItems="center"
           gap="$sm"
+          paddingHorizontal="$sm"
+          paddingVertical="$sm"
+          borderBottomWidth={1}
+          borderBottomColor="$border"
+          backgroundColor="$surface"
         >
-          <Text size="$3" color="$error" flex={1}>
-            {error}
-          </Text>
-          {failedContent ? (
-            <Text size="$3" color="$error" weight="semibold" cursor="pointer" onPress={handleRetry}>
-              Retry
+          <Button
+            size="$4"
+            backgroundColor="transparent"
+            borderWidth={0}
+            onPress={onBack}
+            paddingHorizontal="$xs"
+          >
+            <ArrowLeft size={24} color="$text" />
+          </Button>
+
+          {/* User avatar with product thumbnail overlay */}
+          <Column width={44} height={44} position="relative">
+            {otherUserImage ? (
+              <Image
+                source={{ uri: otherUserImage }}
+                width={44}
+                height={44}
+                borderRadius={22}
+                alt={otherUserName}
+              />
+            ) : (
+              <Column
+                width={44}
+                height={44}
+                borderRadius={22}
+                backgroundColor="$backgroundHover"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Text size="$6" fontWeight="700" color="$textSecondary">
+                  {otherUserName?.charAt(0)?.toUpperCase() || "?"}
+                </Text>
+              </Column>
+            )}
+            {productImage && (
+              <Image
+                source={{ uri: productImage }}
+                width={22}
+                height={22}
+                borderRadius={4}
+                alt={productTitle}
+                position="absolute"
+                bottom={-2}
+                right={-4}
+                borderWidth={2}
+                borderColor="$surface"
+              />
+            )}
+          </Column>
+
+          <Column flex={1} gap={2}>
+            <Text size="$5" fontWeight="600" numberOfLines={1}>
+              {otherUserName}
             </Text>
-          ) : (
-            <Text
-              size="$3"
-              color="$error"
-              weight="semibold"
-              cursor="pointer"
-              onPress={() => setError(null)}
-            >
-              Dismiss
+            <Text size="$3" color="$textSecondary" numberOfLines={1}>
+              {productTitle}
             </Text>
-          )}
+          </Column>
         </Row>
-      )}
 
-      {/* Messages */}
-      <ChatMessageList
-        messages={messages}
-        currentUserId={currentUserId}
-        otherUserName={otherUserName}
-        otherUserImage={otherUserImage}
-        loading={loading}
-        emptyMessage={`Start a conversation with ${otherUserName}`}
-        getStableKey={getStableKey}
-        onLoadMore={hasMore ? loadOlderMessages : undefined}
-        loadingMore={loadingMore}
-        onAcceptOffer={handleAcceptOffer}
-        onRejectOffer={handleRejectOffer}
-        onCounterOffer={handleCounterOffer}
-      />
+        {/* Error / Retry Banner */}
+        {error && (
+          <Row
+            backgroundColor="$errorLight"
+            paddingHorizontal="$md"
+            paddingVertical="$sm"
+            alignItems="center"
+            gap="$sm"
+          >
+            <Text size="$3" color="$error" flex={1}>
+              {error}
+            </Text>
+            {failedContent ? (
+              <Text
+                size="$3"
+                color="$error"
+                weight="semibold"
+                cursor="pointer"
+                onPress={handleRetry}
+              >
+                Retry
+              </Text>
+            ) : (
+              <Text
+                size="$3"
+                color="$error"
+                weight="semibold"
+                cursor="pointer"
+                onPress={() => setError(null)}
+              >
+                Dismiss
+              </Text>
+            )}
+          </Row>
+        )}
 
-      {/* Input */}
-      <Column paddingBottom={Math.max(insets.bottom, 8)}>
-        <ChatInput
-          value={newMessage}
-          onChangeText={setNewMessage}
-          onSend={handleSend}
-          sending={sending}
-          maxLength={MESSAGE_LIMITS.MAX_LENGTH}
-          showOfferButton={showOfferButton}
-          offerMode={offerMode}
-          isCounterMode={isCounterMode}
-          onToggleOfferMode={() => {
-            setOfferMode((prev) => !prev);
-            setIsCounterMode(false);
-            setOfferAmount("");
-          }}
-          offerAmount={offerAmount}
-          onOfferAmountChange={setOfferAmount}
-          onSendOffer={handleSendOffer}
+        {/* Messages */}
+        <ChatMessageList
+          messages={messages}
+          currentUserId={currentUserId}
+          otherUserName={otherUserName}
+          otherUserImage={otherUserImage}
+          loading={loading}
+          emptyMessage={`Start a conversation with ${otherUserName}`}
+          getStableKey={getStableKey}
+          onLoadMore={hasMore ? loadOlderMessages : undefined}
+          loadingMore={loadingMore}
+          onAcceptOffer={handleAcceptOffer}
+          onRejectOffer={handleRejectOffer}
+          onCounterOffer={handleCounterOffer}
         />
+
+        {/* Input */}
+        <Column paddingBottom={Math.max(insets.bottom, 8)}>
+          <ChatInput
+            value={newMessage}
+            onChangeText={setNewMessage}
+            onSend={handleSend}
+            sending={sending}
+            maxLength={MESSAGE_LIMITS.MAX_LENGTH}
+            showOfferButton={showOfferButton}
+            offerMode={offerMode}
+            isCounterMode={isCounterMode}
+            onToggleOfferMode={() => {
+              setOfferMode((prev) => !prev);
+              setIsCounterMode(false);
+              setOfferAmount("");
+            }}
+            offerAmount={offerAmount}
+            onOfferAmountChange={setOfferAmount}
+            onSendOffer={handleSendOffer}
+          />
+        </Column>
       </Column>
-    </Column>
+    </KeyboardAvoidingView>
   );
 }

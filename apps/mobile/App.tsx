@@ -68,7 +68,7 @@ import {
   useUser,
 } from "@clerk/clerk-expo";
 import { addBreadcrumb } from "./lib/breadcrumbs";
-import { StripeProvider } from "@stripe/stripe-react-native";
+import { SafeStripeProvider, isStripeAvailable } from "./lib/stripe-safe";
 import {
   deferredFetch,
   deferredGet,
@@ -1976,12 +1976,15 @@ export default function App() {
 
   console.info("[Clerk] Publishable key:", clerkPublishableKey ? "LOADED" : "MISSING");
   console.info("[Stripe] Publishable key:", stripePublishableKey ? "LOADED" : "MISSING");
+  console.info("[Stripe] Native module available:", isStripeAvailable ? "YES" : "NO (Expo Go)");
 
   // CRITICAL: If required keys are missing, show error screen
-  if (!clerkPublishableKey || !stripePublishableKey) {
+  // Stripe key is only required when the native module is available (dev builds)
+  if (!clerkPublishableKey || (isStripeAvailable && !stripePublishableKey)) {
     const missingKeys: string[] = [];
     if (!clerkPublishableKey) missingKeys.push("EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY");
-    if (!stripePublishableKey) missingKeys.push("EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY");
+    if (isStripeAvailable && !stripePublishableKey)
+      missingKeys.push("EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY");
 
     return (
       <SafeAreaProvider>
@@ -2018,7 +2021,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <StripeProvider publishableKey={stripePublishableKey}>
+      <SafeStripeProvider publishableKey={stripePublishableKey || ""}>
         <ClerkProvider tokenCache={tokenCache} publishableKey={clerkPublishableKey}>
           {/* Official Tamagui Expo pattern: use useColorScheme() for theme */}
           <PortalProvider shouldAddRootHost>
@@ -2229,7 +2232,7 @@ export default function App() {
             </Provider>
           </PortalProvider>
         </ClerkProvider>
-      </StripeProvider>
+      </SafeStripeProvider>
     </SafeAreaProvider>
   );
 }

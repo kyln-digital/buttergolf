@@ -221,6 +221,7 @@ export function ChatMessageList({
       showsVerticalScrollIndicator={false}
       paddingHorizontal="$md"
       paddingVertical="$md"
+      keyboardShouldPersistTaps="handled"
     >
       <Column gap="$sm" paddingBottom="$md">
         {onLoadMore && (
