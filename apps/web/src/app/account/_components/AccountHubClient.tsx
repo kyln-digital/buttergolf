@@ -165,7 +165,9 @@ export function AccountHubClient({
           hoverStyle={{ backgroundColor: "$backgroundHover" }}
           onPress={() => {
             // Open Clerk user profile modal
-            clerkUser?.update && router.push("/account/profile");
+            if (clerkUser?.update) {
+              void router.push("/account/profile");
+            }
           }}
         >
           <Row alignItems="center" gap="$4">
