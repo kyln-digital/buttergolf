@@ -41,11 +41,9 @@ const prisma: PrismaClient = (() => {
   const instance =
     globalForPrisma.prisma ??
     new PrismaClientRuntime({
-      // eslint-disable-next-line turbo/no-undeclared-env-vars
       log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
     });
 
-  // eslint-disable-next-line turbo/no-undeclared-env-vars
   if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = instance;
 
   return instance;
