@@ -26,6 +26,7 @@
   "devDependencies": {
     "@buttergolf/eslint-config": "workspace:*",
     "@buttergolf/typescript-config": "workspace:*",
+    "dotenv": "^17.3.1",
     "eslint": "catalog:",
     "prisma": "catalog:",
     "tsx": "catalog:",
