@@ -175,8 +175,8 @@ function HeroHeading({
       textAlign="center"
       style={{
         // Inline style overrides the level variant's fontSize on web for mobile sizes
-        fontSize: isMobile ? 22 : undefined,
-        lineHeight: isMobile ? 1.25 : undefined,
+        fontSize: isMobile ? 32 : undefined,
+        lineHeight: isMobile ? 1.2 : undefined,
         whiteSpace: "normal",
         wordBreak: "keep-all",
       }}
