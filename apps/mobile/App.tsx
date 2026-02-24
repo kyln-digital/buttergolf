@@ -1342,15 +1342,23 @@ function FavouritesScreenWrapper({
       });
   }, []);
 
-  // Handle Make Offer - create conversation and navigate to message thread
+  // Handle Make Offer - create conversation, post offer, and navigate to message thread
   const handleMakeOffer = useCallback(
-    async (productId: string) => {
+    async (productId: string, _price: number, offerAmount: number) => {
       try {
         const data = await deferredPost<{ conversationId: string }>(
           `${apiUrl}/api/conversations`,
           { productId },
           { getToken }
         );
+
+        // Submit the offer before navigating
+        await deferredPost(
+          `${apiUrl}/api/conversations/${data.conversationId}/offer`,
+          { amount: offerAmount },
+          { getToken }
+        );
+
         navigation.navigate("MessageThread", {
           conversationId: data.conversationId,
           productTitle: "Product",
@@ -1713,13 +1721,21 @@ function ProductDetailScreenWrapper({
   }, []);
 
   const handleMakeOffer = useCallback(
-    async (id: string) => {
+    async (id: string, _price: number, offerAmount: number) => {
       try {
         const data = await deferredPost<{ conversationId: string }>(
           `${apiUrl}/api/conversations`,
           { productId: id },
           { getToken }
         );
+
+        // Submit the offer before navigating
+        await deferredPost(
+          `${apiUrl}/api/conversations/${data.conversationId}/offer`,
+          { amount: offerAmount },
+          { getToken }
+        );
+
         navigation.navigate("MessageThread", {
           conversationId: data.conversationId,
           productTitle: "Product",
