@@ -334,8 +334,12 @@ export function PayoutSetupWizard({ initialStatus, onComplete, onExit }: PayoutS
               fields: "currently_due",
               futureRequirements: "omit",
               requirements: {
-                // Keep seller type fixed; allow edits to all other fields if Stripe needs them.
-                exclude: ["business_type"],
+                // Keep seller type fixed and hide business profile fields for individual sellers.
+                exclude: [
+                  "business_type",
+                  "business_profile.url",
+                  "business_profile.product_description",
+                ],
               },
             }}
           />

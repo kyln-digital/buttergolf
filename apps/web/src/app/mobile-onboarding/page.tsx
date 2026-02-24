@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { loadConnectAndInitialize } from "@stripe/connect-js";
 import { ConnectAccountOnboarding, ConnectComponentsProvider } from "@stripe/react-connect-js";
@@ -55,6 +55,7 @@ export default function MobileOnboardingPage() {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasRedirectedRef = useRef(false);
 
   // Signal ready to React Native
   useEffect(() => {
@@ -138,10 +139,52 @@ export default function MobileOnboardingPage() {
     postMessageToRN({ type: "step_change", step: stepChange.step });
   }, []);
 
-  const handleExit = useCallback(() => {
-    // Onboarding exited - could be complete or cancelled
-    postMessageToRN({ type: "exit", success: true });
+  const returnToApp = useCallback((reason: "complete" | "exit") => {
+    if (hasRedirectedRef.current) return;
+    hasRedirectedRef.current = true;
+
+    const deepLink = `buttergolf://seller/onboarding/complete?reason=${reason}`;
+    postMessageToRN({ type: "exit", success: true, reason });
+    window.location.href = deepLink;
   }, []);
+
+  const handleExit = useCallback(() => {
+    // Embedded onboarding exited (close button / done)
+    returnToApp("exit");
+  }, [returnToApp]);
+
+  // Auto-return to app once Stripe marks details as submitted.
+  // This handles the "Account onboarded" state without requiring the user to manually close.
+  useEffect(() => {
+    if (!token || loading) return;
+
+    const baseUrl = apiUrl || "";
+    const interval = window.setInterval(async () => {
+      if (hasRedirectedRef.current) return;
+
+      try {
+        const response = await fetch(`${baseUrl}/api/stripe/connect/account`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (data?.onboardingComplete) {
+          returnToApp("complete");
+        }
+      } catch {
+        // Ignore polling failures; user can still exit manually.
+      }
+    }, 1500);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [token, loading, apiUrl, returnToApp]);
 
   // Loading state
   if (loading) {
@@ -210,9 +253,13 @@ export default function MobileOnboardingPage() {
             fields: "currently_due",
             futureRequirements: "omit",
             // Keep seller type fixed to individual for ButterGolf's current seller model.
-            // Avoid excluding additional fields here so users can resolve anything Stripe flags.
+            // Hide business profile fields for individual sellers to avoid irrelevant UX.
             requirements: {
-              exclude: ["business_type"],
+              exclude: [
+                "business_type",
+                "business_profile.url",
+                "business_profile.product_description",
+              ],
             },
           }}
         />

@@ -359,9 +359,13 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
                 // This minimizes backtracking and keeps later remediation explicit.
                 fields: "currently_due",
                 futureRequirements: "omit",
-                // Keep seller type fixed; avoid hiding other requirements that may need edits.
+                // Keep seller type fixed and hide business profile fields for individual sellers.
                 requirements: {
-                  exclude: ["business_type"],
+                  exclude: [
+                    "business_type",
+                    "business_profile.url",
+                    "business_profile.product_description",
+                  ],
                 },
               }}
             />
