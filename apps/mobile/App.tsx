@@ -1977,13 +1977,23 @@ export default function App() {
   // Debug: Verify environment keys are loaded
   const clerkPublishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
   const stripePublishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  const stripeMerchantIdentifierEnv = process.env.EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER;
   const stripeMerchantIdentifier =
-    (process.env.EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER ?? DEFAULT_STRIPE_MERCHANT_IDENTIFIER) ||
-    "";
+    stripeMerchantIdentifierEnv ?? DEFAULT_STRIPE_MERCHANT_IDENTIFIER;
 
   console.info("[Clerk] Publishable key:", clerkPublishableKey ? "LOADED" : "MISSING");
   console.info("[Stripe] Publishable key:", stripePublishableKey ? "LOADED" : "MISSING");
-  console.info("[Stripe] Merchant identifier:", stripeMerchantIdentifier ? "LOADED" : "MISSING");
+  if (stripeMerchantIdentifierEnv) {
+    console.info(
+      "[Stripe] Merchant identifier:",
+      "LOADED_FROM_ENV (EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER)"
+    );
+  } else {
+    console.info(
+      "[Stripe] Merchant identifier:",
+      `USING_DEFAULT (${DEFAULT_STRIPE_MERCHANT_IDENTIFIER}) - set EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER to override`
+    );
+  }
   console.info("[Stripe] Native module available:", isStripeAvailable ? "YES" : "NO (Expo Go)");
 
   // CRITICAL: If required keys are missing, show error screen
