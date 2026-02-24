@@ -330,14 +330,15 @@ export function PayoutSetupWizard({ initialStatus, onComplete, onExit }: PayoutS
             onExit={handleOnboardingExit}
             onStepChange={handleStepChange}
             collectionOptions={{
-              fields: "eventually_due",
-              futureRequirements: "include",
+              // First-pass onboarding: collect currently due requirements only.
+              fields: "currently_due",
+              futureRequirements: "omit",
               requirements: {
+                // Keep seller type fixed and hide business profile fields for individual sellers.
                 exclude: [
                   "business_type",
                   "business_profile.url",
                   "business_profile.product_description",
-                  ...(status.phone ? ["individual.phone"] : []),
                 ],
               },
             }}

@@ -41,7 +41,7 @@ export default function NotificationsPage() {
       id: "messages",
       label: "Messages",
       description: "Get notified when you receive a new message from a buyer or seller",
-      icon: <MessageCircle size={22} color="$info" />,
+      icon: <MessageCircle size={22} color="$secondary" />,
       enabled: true,
     },
     {

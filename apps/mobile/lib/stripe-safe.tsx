@@ -7,8 +7,23 @@
  */
 import React from "react";
 
+/**
+ * Default Apple Pay merchant identifier for ButterGolf.
+ *
+ * This is required for iOS Apple Pay integration with `@stripe/stripe-react-native`.
+ * The value must match a Merchant ID configured in Apple Developer and linked to Stripe.
+ *
+ * Override per environment with `EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER`.
+ * Typical format: `merchant.{domain}.{app}`.
+ *
+ * Apple docs:
+ * https://developer.apple.com/documentation/passkit/apple_pay/setting_up_apple_pay
+ */
+export const DEFAULT_STRIPE_MERCHANT_IDENTIFIER = "merchant.com.buttergolf.app";
+
 type StripeProviderProps = {
   publishableKey: string;
+  merchantIdentifier?: string;
   children: React.ReactNode;
 };
 
@@ -31,10 +46,18 @@ export const isStripeAvailable = _stripeAvailable;
  * Renders `<StripeProvider>` when native modules are available,
  * otherwise renders children directly (passthrough).
  */
-export function SafeStripeProvider({ publishableKey, children }: StripeProviderProps) {
+export function SafeStripeProvider({
+  publishableKey,
+  merchantIdentifier,
+  children,
+}: StripeProviderProps) {
   if (_StripeProvider) {
     const Provider = _StripeProvider;
-    return <Provider publishableKey={publishableKey}>{children}</Provider>;
+    return (
+      <Provider publishableKey={publishableKey} merchantIdentifier={merchantIdentifier}>
+        {children}
+      </Provider>
+    );
   }
   return <>{children}</>;
 }

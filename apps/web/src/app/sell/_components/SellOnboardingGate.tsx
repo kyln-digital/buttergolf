@@ -355,19 +355,16 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
               onExit={handleOnboardingExit}
               onStepChange={handleStepChange}
               collectionOptions={{
-                fields: "eventually_due",
-                futureRequirements: "include",
-                // Exclude fields we've already collected or pre-filled
-                // - business_type: set to 'individual' at account creation
-                // - business_profile.*: pre-filled with sensible defaults
-                // - individual.phone: only excluded if we collected it in our form
+                // First-pass onboarding: collect only currently due requirements.
+                // This minimizes backtracking and keeps later remediation explicit.
+                fields: "currently_due",
+                futureRequirements: "omit",
+                // Keep seller type fixed and hide business profile fields for individual sellers.
                 requirements: {
                   exclude: [
                     "business_type",
                     "business_profile.url",
                     "business_profile.product_description",
-                    // Exclude phone if we collected it - Stripe will use the pre-filled value
-                    ...(status.phone ? ["individual.phone"] : []),
                   ],
                 },
               }}

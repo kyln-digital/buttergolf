@@ -95,8 +95,8 @@ export interface SellerSalesScreenProps {
 
 type FilterTab = "all" | "pending" | "shipped" | "delivered";
 
-type SalesStatusColorToken = "$warning" | "$info" | "$success" | "$error";
-type SalesStatusBgToken = "$warningLight" | "$infoLight" | "$successLight" | "$errorLight";
+type SalesStatusColorToken = "$warning" | "$secondary" | "$success" | "$error";
+type SalesStatusBgToken = "$warningLight" | "$secondaryLight" | "$successLight" | "$errorLight";
 
 const statusConfig: Record<
   OrderStatus,
@@ -113,11 +113,16 @@ const statusConfig: Record<
     bgColor: "$warningLight",
     icon: <Clock size={16} />,
   },
-  SHIPPED: { label: "Shipped", color: "$info", bgColor: "$infoLight", icon: <Truck size={16} /> },
+  SHIPPED: {
+    label: "Shipped",
+    color: "$secondary",
+    bgColor: "$secondaryLight",
+    icon: <Truck size={16} />,
+  },
   IN_TRANSIT: {
     label: "In Transit",
-    color: "$info",
-    bgColor: "$infoLight",
+    color: "$secondary",
+    bgColor: "$secondaryLight",
     icon: <Truck size={16} />,
   },
   DELIVERED: {

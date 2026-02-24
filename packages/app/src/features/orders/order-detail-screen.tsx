@@ -431,7 +431,7 @@ export function OrderDetailScreen({
           </Text>
         </Column>
         <Badge
-          backgroundColor={isBuyer ? "$info" : "$success"}
+          backgroundColor={isBuyer ? "$secondary" : "$success"}
           borderRadius="$full"
           paddingHorizontal="$2"
         >

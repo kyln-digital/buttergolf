@@ -177,7 +177,7 @@ export async function POST(request: Request) {
       refresh_url: `${baseUrl}/seller/onboarding/refresh`,
       return_url: `${baseUrl}/seller/onboarding/complete`,
       type: "account_onboarding",
-      collect: "eventually_due",
+      collect: "currently_due",
     });
 
     console.info(

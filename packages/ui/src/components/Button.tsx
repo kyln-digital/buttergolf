@@ -143,9 +143,11 @@ export type ButtonProps = GetProps<typeof ButtonBase>;
 /**
  * When `chromeless` is passed without an explicit `butterVariant`,
  * skip the default primary variant so chromeless styling is not overridden.
+ * Also skip the default for `unstyled` buttons so custom surface styles are respected.
  * Otherwise, default to `butterVariant="primary"` for backward compatibility.
  */
 export const Button = ButtonBase.styleable<ButtonProps>((props, ref) => {
-  const butterVariant = props.butterVariant ?? (props.chromeless ? undefined : "primary");
+  const butterVariant =
+    props.butterVariant ?? (props.chromeless || props.unstyled ? undefined : "primary");
   return <ButtonBase ref={ref} {...props} butterVariant={butterVariant} />;
 });

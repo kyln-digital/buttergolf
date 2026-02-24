@@ -112,7 +112,7 @@ export default function SellerDashboardPage() {
         <StatCard
           title="Total Views"
           value={stats?.totalViews ?? 0}
-          icon={<Eye size={24} color="$info" />}
+          icon={<Eye size={24} color="$secondary" />}
         />
         <StatCard
           title="Favorites"

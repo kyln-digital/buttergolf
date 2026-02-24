@@ -51,11 +51,11 @@ export default function PaymentMethodsPage() {
         </Card>
 
         {/* Info Card */}
-        <Card variant="filled" padding="$lg" backgroundColor="$infoLight">
+        <Card variant="filled" padding="$lg" backgroundColor="$secondaryLight">
           <Row gap="$md" alignItems="flex-start">
-            <Lightbulb size={20} color="$info" />
+            <Lightbulb size={20} color="$secondary" />
             <Column gap="$xs" flex={1}>
-              <Text weight="medium" color="$info">
+              <Text weight="medium" color="$secondary">
                 Looking for payout settings?
               </Text>
               <Text size="$4" color="$textSecondary">
