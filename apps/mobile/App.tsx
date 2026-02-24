@@ -1430,11 +1430,15 @@ function MessagesScreenWrapper({
   isAuthenticated: boolean;
 }) {
   const { getToken } = useAuth();
+  const { user } = useUser();
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
   const fetchConversations = useCallback(
     async (page?: number) => {
-      console.info("[MessagesScreenWrapper] Fetching conversations", { page });
+      console.info("[MessagesScreenWrapper] Fetching conversations", {
+        page,
+        clerkUserId: user?.id,
+      });
 
       const qs = page && page > 1 ? `?page=${page}` : "";
       const response = await deferredFetch(`${apiUrl}/api/conversations${qs}`, { getToken });
@@ -1449,9 +1453,15 @@ function MessagesScreenWrapper({
         throw new Error(`Failed to fetch conversations: ${response.status} - ${errorText}`);
       }
 
-      return response.json();
+      const data = await response.json();
+      console.info("[MessagesScreenWrapper] Conversations fetched", {
+        count: Array.isArray(data?.conversations) ? data.conversations.length : 0,
+        hasMore: Boolean(data?.hasMore),
+        page: data?.page,
+      });
+      return data;
     },
-    [getToken, apiUrl]
+    [getToken, apiUrl, user?.id]
   );
 
   return (
