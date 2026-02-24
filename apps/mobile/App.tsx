@@ -699,7 +699,7 @@ function AccountScreenWrapper({ navigation }: { navigation: any }) {
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
   // Get seller status from context (already fetched at app level)
-  const { status: sellerStatus } = useSellerStatusContext();
+  const { status: sellerStatus, refresh: refreshSellerStatus } = useSellerStatusContext();
 
   // Fetch pending orders count
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
@@ -735,6 +735,41 @@ function AccountScreenWrapper({ navigation }: { navigation: any }) {
     // After signOut, Clerk will automatically switch to SignedOut state
   }, [signOut]);
 
+  const handleStartSellerOnboarding = useCallback(async () => {
+    if (!apiUrl) {
+      Alert.alert("Configuration Error", "API URL is not configured.");
+      return;
+    }
+
+    try {
+      const session = await deferredPost<{ token: string }>(
+        `${apiUrl}/api/stripe/connect/mobile-session`,
+        {},
+        { getToken }
+      );
+
+      if (!session?.token) {
+        throw new Error("Failed to create onboarding session");
+      }
+
+      const onboardingUrl = `${apiUrl}/mobile-onboarding?token=${encodeURIComponent(session.token)}&apiUrl=${encodeURIComponent(apiUrl)}`;
+      const WebBrowser = await import("expo-web-browser");
+      const result = await WebBrowser.openAuthSessionAsync(
+        onboardingUrl,
+        "buttergolf://seller/onboarding/complete"
+      );
+
+      if (result.type === "success") {
+        await refreshSellerStatus(true);
+      }
+    } catch (err) {
+      Alert.alert(
+        "Unable to start payout setup",
+        err instanceof Error ? err.message : "Please try again."
+      );
+    }
+  }, [apiUrl, getToken, refreshSellerStatus]);
+
   return (
     <AccountScreen
       user={
@@ -756,7 +791,9 @@ function AccountScreenWrapper({ navigation }: { navigation: any }) {
       onViewOrders={() => navigation.navigate("Orders")}
       onViewFavourites={() => navigation.navigate("Favourites")}
       onViewSellerDashboard={() => navigation.navigate("SellerDashboard")}
-      onStartSellerOnboarding={() => navigation.navigate("Sell")}
+      onStartSellerOnboarding={() => {
+        void handleStartSellerOnboarding();
+      }}
       onViewAddresses={() => navigation.navigate("Addresses")}
       onViewPayments={() => {
         // TODO: Implement payments WebView for Stripe Connect
@@ -1049,6 +1086,7 @@ function HelpSupportScreenWrapper({ navigation }: { navigation: any }) {
 function SellerDashboardScreenWrapper({ navigation }: { navigation: any }) {
   const { getToken } = useAuth();
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+  const { refresh: refreshSellerStatus } = useSellerStatusContext();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1071,6 +1109,41 @@ function SellerDashboardScreenWrapper({ navigation }: { navigation: any }) {
     void fetchStats();
   }, [fetchStats]);
 
+  const handleOpenPayoutSetup = useCallback(async () => {
+    if (!apiUrl) {
+      Alert.alert("Configuration Error", "API URL is not configured.");
+      return;
+    }
+
+    try {
+      const session = await deferredPost<{ token: string }>(
+        `${apiUrl}/api/stripe/connect/mobile-session`,
+        {},
+        { getToken }
+      );
+
+      if (!session?.token) {
+        throw new Error("Failed to create onboarding session");
+      }
+
+      const onboardingUrl = `${apiUrl}/mobile-onboarding?token=${encodeURIComponent(session.token)}&apiUrl=${encodeURIComponent(apiUrl)}`;
+      const WebBrowser = await import("expo-web-browser");
+      const result = await WebBrowser.openAuthSessionAsync(
+        onboardingUrl,
+        "buttergolf://seller/onboarding/complete"
+      );
+
+      if (result.type === "success") {
+        await refreshSellerStatus(true);
+      }
+    } catch (err) {
+      Alert.alert(
+        "Unable to start payout setup",
+        err instanceof Error ? err.message : "Please try again."
+      );
+    }
+  }, [apiUrl, getToken, refreshSellerStatus]);
+
   return (
     <SellerDashboardScreen
       stats={stats}
@@ -1083,7 +1156,7 @@ function SellerDashboardScreenWrapper({ navigation }: { navigation: any }) {
         Alert.alert("Coming Soon", "Payment settings will be available soon.");
       }}
       onViewPayouts={() => {
-        Alert.alert("Coming Soon", "Payout settings will be available soon.");
+        void handleOpenPayoutSetup();
       }}
       onViewSettings={() => navigation.navigate("Account")}
       onBack={() => navigation.goBack()}
