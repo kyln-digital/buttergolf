@@ -94,7 +94,7 @@ interface SalesOrdersListProps {
 
 const STATUS_CONFIG: Record<OrderStatus, { label: string; fg: ColorTokens; bg: ColorTokens }> = {
   PAYMENT_CONFIRMED: { label: "Awaiting Label", fg: "$primary", bg: "$primaryLight" },
-  LABEL_GENERATED: { label: "Ready to Ship", fg: "$info", bg: "$infoLight" },
+  LABEL_GENERATED: { label: "Ready to Ship", fg: "$secondary", bg: "$secondaryLight" },
   SHIPPED: { label: "Shipped", fg: "$primary", bg: "$primaryLight" },
   DELIVERED: { label: "Delivered", fg: "$success", bg: "$successLight" },
   CANCELLED: { label: "Cancelled", fg: "$textSecondary", bg: "$border" },
@@ -108,8 +108,8 @@ const PAYMENT_STATUS_CONFIG: Record<
   HELD: { label: "Payment Held", fg: "$primary", bg: "$primaryLight", icon: Clock },
   PENDING_SELLER_ONBOARDING: {
     label: "Complete Verification",
-    fg: "$info",
-    bg: "$infoLight",
+    fg: "$secondary",
+    bg: "$secondaryLight",
     icon: AlertCircle,
   },
   RELEASED: { label: "Payment Released", fg: "$success", bg: "$successLight", icon: CheckCircle },
@@ -325,11 +325,11 @@ function OrderCard({ order }: { order: Order }) {
               )}
               {order.paymentHoldStatus === "PENDING_SELLER_ONBOARDING" && (
                 <Column gap="$xs">
-                  <Text size="$2" color="$info">
+                  <Text size="$2" color="$secondary">
                     Buyer confirmed receipt. Complete verification to receive payment.
                   </Text>
                   <Link href="/sell" style={{ textDecoration: "none" }}>
-                    <Text size="$2" fontWeight="600" color="$info">
+                    <Text size="$2" fontWeight="600" color="$secondary">
                       Complete Verification →
                     </Text>
                   </Link>
@@ -513,7 +513,11 @@ export function SalesOrdersList({ orders, stats }: SalesOrdersListProps) {
           value={stats.awaitingLabel}
           icon={<Clock size={20} color="$primary" />}
         />
-        <StatCard label="Shipped" value={stats.shipped} icon={<Truck size={20} color="$info" />} />
+        <StatCard
+          label="Shipped"
+          value={stats.shipped}
+          icon={<Truck size={20} color="$secondary" />}
+        />
         <StatCard
           label="Delivered"
           value={stats.delivered}

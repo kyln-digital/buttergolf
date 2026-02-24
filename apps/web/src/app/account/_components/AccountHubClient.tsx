@@ -219,7 +219,7 @@ export function AccountHubClient({
           />
 
           <AccountMenuItem
-            icon={<MessageCircle size={22} color="$info" />}
+            icon={<MessageCircle size={22} color="$secondary" />}
             label="Messages"
             description="Chat with buyers and sellers"
             badge={unreadMessagesCount > 0 ? unreadMessagesCount : undefined}
@@ -292,7 +292,7 @@ export function AccountHubClient({
           </Text>
 
           <AccountMenuItem
-            icon={<MapPin size={22} color="$info" />}
+            icon={<MapPin size={22} color="$secondary" />}
             label="Addresses"
             description="Manage shipping addresses"
             onPress={() => router.push("/account/addresses")}

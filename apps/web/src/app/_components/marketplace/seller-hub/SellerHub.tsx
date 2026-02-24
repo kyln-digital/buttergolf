@@ -319,7 +319,7 @@ export function SellerHub() {
             <Card variant="elevated" padding="$lg" flex={1} minWidth={200}>
               <Column gap="$sm">
                 <Row alignItems="center" gap="$sm">
-                  <Eye size={20} color="$info" />
+                  <Eye size={20} color="$secondary" />
                   <Text color="$textSecondary">Total Views</Text>
                 </Row>
                 <Text size="$9" weight="bold">

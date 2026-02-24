@@ -2077,12 +2077,13 @@ export default function App() {
   const clerkPublishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
   const stripePublishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
   const stripeMerchantIdentifierEnv = process.env.EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER;
+  const stripeMerchantIdentifierFromEnv = stripeMerchantIdentifierEnv?.trim() || "";
   const stripeMerchantIdentifier =
-    stripeMerchantIdentifierEnv ?? DEFAULT_STRIPE_MERCHANT_IDENTIFIER;
+    stripeMerchantIdentifierFromEnv || DEFAULT_STRIPE_MERCHANT_IDENTIFIER;
 
   console.info("[Clerk] Publishable key:", clerkPublishableKey ? "LOADED" : "MISSING");
   console.info("[Stripe] Publishable key:", stripePublishableKey ? "LOADED" : "MISSING");
-  if (stripeMerchantIdentifierEnv) {
+  if (stripeMerchantIdentifierFromEnv) {
     console.info(
       "[Stripe] Merchant identifier:",
       "LOADED_FROM_ENV (EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER)"

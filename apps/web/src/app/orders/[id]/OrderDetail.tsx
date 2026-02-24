@@ -546,7 +546,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
 
             {/* Carrier/Tracking Info Box */}
             {order.carrier && (
-              <View backgroundColor="$infoLight" borderRadius="$md" padding="$md">
+              <View backgroundColor="$secondaryLight" borderRadius="$md" padding="$md">
                 <Column gap="$sm">
                   <Text fontWeight="600" size="$5">
                     {order.carrier} {order.service && `- ${order.service}`}
@@ -818,14 +818,14 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
             {order.userRole === "buyer" && order.paymentHoldStatus === "HELD" && (
               <Column gap="$md">
                 <View
-                  backgroundColor="$infoLight"
+                  backgroundColor="$secondaryLight"
                   borderRadius="$md"
                   padding="$md"
                   borderLeftWidth={4}
-                  borderLeftColor="$info"
+                  borderLeftColor="$secondary"
                 >
                   <Column gap="$sm">
-                    <Text fontWeight="600" color="$info">
+                    <Text fontWeight="600" color="$secondary">
                       Your payment is protected
                     </Text>
                     <Text size="$4" color="$textSecondary">
@@ -920,14 +920,14 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
             {order.userRole === "buyer" &&
               order.paymentHoldStatus === "PENDING_SELLER_ONBOARDING" && (
                 <View
-                  backgroundColor="$infoLight"
+                  backgroundColor="$secondaryLight"
                   borderRadius="$md"
                   padding="$md"
                   borderLeftWidth={4}
-                  borderLeftColor="$info"
+                  borderLeftColor="$secondary"
                 >
                   <Column gap="$sm">
-                    <Text fontWeight="600" color="$info">
+                    <Text fontWeight="600" color="$secondary">
                       Your payment is protected
                     </Text>
                     <Text size="$4" color="$textSecondary">
@@ -984,14 +984,14 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
 
                 {order.paymentHoldStatus === "PENDING_SELLER_ONBOARDING" && (
                   <View
-                    backgroundColor="$infoLight"
+                    backgroundColor="$secondaryLight"
                     borderRadius="$md"
                     padding="$md"
                     borderLeftWidth={4}
-                    borderLeftColor="$info"
+                    borderLeftColor="$secondary"
                   >
                     <Column gap="$sm">
-                      <Text fontWeight="600" color="$info">
+                      <Text fontWeight="600" color="$secondary">
                         Complete verification to receive payment
                       </Text>
                       <Text size="$4" color="$textSecondary">
