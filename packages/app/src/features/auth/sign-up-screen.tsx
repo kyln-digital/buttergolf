@@ -175,7 +175,7 @@ export function SignUpScreen({
       case "fair":
         return "$warning";
       case "good":
-        return "$info";
+        return "$secondary";
       case "strong":
         return "$success";
     }

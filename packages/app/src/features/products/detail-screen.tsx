@@ -32,7 +32,7 @@ function getConditionLabel(rating: number): string {
 // Helper to get condition color - returns theme token
 function getConditionColor(rating: number) {
   if (rating >= 9) return "$success" as const;
-  if (rating >= 7) return "$info" as const;
+  if (rating >= 7) return "$secondary" as const;
   if (rating >= 5) return "$warning" as const;
   return "$error" as const;
 }

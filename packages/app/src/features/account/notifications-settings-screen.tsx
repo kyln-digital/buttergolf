@@ -148,7 +148,7 @@ export function NotificationSettingsScreen({
           />
 
           <SettingItem
-            icon={<MessageCircle size={22} color="$info" />}
+            icon={<MessageCircle size={22} color="$secondary" />}
             title="Messages"
             description="Receive alerts for new messages"
             value={settings.messageNotifications}

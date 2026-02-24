@@ -68,7 +68,11 @@ import {
   useUser,
 } from "@clerk/clerk-expo";
 import { addBreadcrumb } from "./lib/breadcrumbs";
-import { SafeStripeProvider, isStripeAvailable } from "./lib/stripe-safe";
+import {
+  DEFAULT_STRIPE_MERCHANT_IDENTIFIER,
+  SafeStripeProvider,
+  isStripeAvailable,
+} from "./lib/stripe-safe";
 import {
   deferredFetch,
   deferredGet,
@@ -1973,18 +1977,31 @@ export default function App() {
   // Debug: Verify environment keys are loaded
   const clerkPublishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
   const stripePublishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  const stripeMerchantIdentifier =
+    (process.env.EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER ?? DEFAULT_STRIPE_MERCHANT_IDENTIFIER) ||
+    "";
 
   console.info("[Clerk] Publishable key:", clerkPublishableKey ? "LOADED" : "MISSING");
   console.info("[Stripe] Publishable key:", stripePublishableKey ? "LOADED" : "MISSING");
+  console.info("[Stripe] Merchant identifier:", stripeMerchantIdentifier ? "LOADED" : "MISSING");
   console.info("[Stripe] Native module available:", isStripeAvailable ? "YES" : "NO (Expo Go)");
 
   // CRITICAL: If required keys are missing, show error screen
   // Stripe key is only required when the native module is available (dev builds)
-  if (!clerkPublishableKey || (isStripeAvailable && !stripePublishableKey)) {
+  // iOS Apple Pay requires merchant identifier in StripeProvider initialization
+  const requiresStripeIosMerchantIdentifier = Platform.OS === "ios" && isStripeAvailable;
+
+  if (
+    !clerkPublishableKey ||
+    (isStripeAvailable && !stripePublishableKey) ||
+    (requiresStripeIosMerchantIdentifier && !stripeMerchantIdentifier)
+  ) {
     const missingKeys: string[] = [];
     if (!clerkPublishableKey) missingKeys.push("EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY");
     if (isStripeAvailable && !stripePublishableKey)
       missingKeys.push("EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY");
+    if (requiresStripeIosMerchantIdentifier && !stripeMerchantIdentifier)
+      missingKeys.push("EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER");
 
     return (
       <SafeAreaProvider>
@@ -2021,7 +2038,10 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <SafeStripeProvider publishableKey={stripePublishableKey || ""}>
+      <SafeStripeProvider
+        publishableKey={stripePublishableKey || ""}
+        merchantIdentifier={Platform.OS === "ios" ? stripeMerchantIdentifier : undefined}
+      >
         <ClerkProvider tokenCache={tokenCache} publishableKey={clerkPublishableKey}>
           {/* Official Tamagui Expo pattern: use useColorScheme() for theme */}
           <PortalProvider shouldAddRootHost>

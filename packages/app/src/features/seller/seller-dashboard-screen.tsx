@@ -53,7 +53,7 @@ export interface SellerDashboardScreenProps {
   onRefresh?: () => void;
 }
 
-type StatColorToken = "$primary" | "$success" | "$warning" | "$info" | "$error" | "$text";
+type StatColorToken = "$primary" | "$success" | "$warning" | "$secondary" | "$error" | "$text";
 
 interface StatCardProps {
   label: string;
@@ -278,7 +278,7 @@ export function SellerDashboardScreen({
           <StatCard
             label="Active Listings"
             value={stats?.activeListings ?? 0}
-            icon={<Package size={18} color="$info" />}
+            icon={<Package size={18} color="$secondary" />}
             onPress={onViewListings}
           />
         </Row>

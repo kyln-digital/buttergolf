@@ -7,8 +7,11 @@
  */
 import React from "react";
 
+export const DEFAULT_STRIPE_MERCHANT_IDENTIFIER = "merchant.com.buttergolf.app";
+
 type StripeProviderProps = {
   publishableKey: string;
+  merchantIdentifier?: string;
   children: React.ReactNode;
 };
 
@@ -31,10 +34,18 @@ export const isStripeAvailable = _stripeAvailable;
  * Renders `<StripeProvider>` when native modules are available,
  * otherwise renders children directly (passthrough).
  */
-export function SafeStripeProvider({ publishableKey, children }: StripeProviderProps) {
+export function SafeStripeProvider({
+  publishableKey,
+  merchantIdentifier,
+  children,
+}: StripeProviderProps) {
   if (_StripeProvider) {
     const Provider = _StripeProvider;
-    return <Provider publishableKey={publishableKey}>{children}</Provider>;
+    return (
+      <Provider publishableKey={publishableKey} merchantIdentifier={merchantIdentifier}>
+        {children}
+      </Provider>
+    );
   }
   return <>{children}</>;
 }
