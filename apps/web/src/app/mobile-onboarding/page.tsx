@@ -205,17 +205,14 @@ export default function MobileOnboardingPage() {
           onExit={handleExit}
           onStepChange={handleStepChange}
           collectionOptions={{
-            fields: "eventually_due",
-            futureRequirements: "include",
-            // Exclude business profile fields (pre-filled at account creation)
-            // and business_type (set to 'individual' at account creation)
-            // This removes confusing "Business type" and "Professional details" sections
+            // First-pass onboarding: collect only currently due requirements.
+            // This reduces late surprises and keeps the initial flow shorter.
+            fields: "currently_due",
+            futureRequirements: "omit",
+            // Keep seller type fixed to individual for ButterGolf's current seller model.
+            // Avoid excluding additional fields here so users can resolve anything Stripe flags.
             requirements: {
-              exclude: [
-                "business_type",
-                "business_profile.url",
-                "business_profile.product_description",
-              ],
+              exclude: ["business_type"],
             },
           }}
         />

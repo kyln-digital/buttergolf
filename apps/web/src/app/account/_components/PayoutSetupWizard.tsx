@@ -330,15 +330,12 @@ export function PayoutSetupWizard({ initialStatus, onComplete, onExit }: PayoutS
             onExit={handleOnboardingExit}
             onStepChange={handleStepChange}
             collectionOptions={{
-              fields: "eventually_due",
-              futureRequirements: "include",
+              // First-pass onboarding: collect currently due requirements only.
+              fields: "currently_due",
+              futureRequirements: "omit",
               requirements: {
-                exclude: [
-                  "business_type",
-                  "business_profile.url",
-                  "business_profile.product_description",
-                  ...(status.phone ? ["individual.phone"] : []),
-                ],
+                // Keep seller type fixed; allow edits to all other fields if Stripe needs them.
+                exclude: ["business_type"],
               },
             }}
           />

@@ -199,7 +199,6 @@ export async function POST(request: Request) {
         business_type: "individual",
         // Pre-populate individual details from our database
         // Phone in E.164 format (+447XXXXXXXXX) is pre-filled if collected in our form
-        // This allows us to exclude individual.phone from the onboarding flow
         individual: {
           first_name: user.firstName || undefined,
           last_name: user.lastName || undefined,

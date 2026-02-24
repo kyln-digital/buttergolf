@@ -790,7 +790,7 @@ function AccountScreenWrapper({ navigation }: { navigation: any }) {
       onEditProfile={() => navigation.navigate("ProfileEdit")}
       onViewOrders={() => navigation.navigate("Orders")}
       onViewFavourites={() => navigation.navigate("Favourites")}
-      onViewSellerDashboard={() => navigation.navigate("SellerDashboard")}
+      onViewSellerDashboard={() => navigation.navigate("SellerSales")}
       onStartSellerOnboarding={() => {
         void handleStartSellerOnboarding();
       }}
