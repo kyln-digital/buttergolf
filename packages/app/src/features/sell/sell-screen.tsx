@@ -181,9 +181,9 @@ export function SellScreen({
           aria-label={currentStep === 1 ? "Close" : "Go back"}
         >
           {currentStep === 1 ? (
-            <X size={24} color="$text" />
+            <X size={24} color="$pureWhite" />
           ) : (
-            <ArrowLeft size={24} color="$text" />
+            <ArrowLeft size={24} color="$pureWhite" />
           )}
         </Button>
 
@@ -288,12 +288,7 @@ export function SellScreen({
             onPress={goToNextStep}
             disabled={!canProceed()}
           >
-            <Text
-              fontFamily="$heading"
-              size="$6"
-              fontWeight="700"
-              color={canProceed() ? "$pureWhite" : "$textSecondary"}
-            >
+            <Text fontFamily="$heading" size="$6" fontWeight="700" color="$pureWhite">
               Continue
             </Text>
           </Button>
