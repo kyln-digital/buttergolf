@@ -362,6 +362,7 @@ export function ImageCropModal({
                 maxHeight: "50vh",
               }}
             >
+              {/* eslint-disable-next-line @next/next/no-img-element -- img required for react-image-crop ref */}
               <img
                 ref={imgRef}
                 src={imageSrc}

@@ -221,13 +221,13 @@ function formatDaysUntil(dateString: string): string {
 export function OrderDetailScreen({
   orderId,
   currentUserId,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   getToken: _getToken,
   onFetchOrder,
   onFetchTracking,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   onFetchMessages: _onFetchMessages,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   onSendMessage: _onSendMessage,
   onConfirmReceipt,
   onSubmitRating,
