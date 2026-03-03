@@ -89,7 +89,8 @@ const ButtonBase = styled(TamaguiButton, {
         backgroundColor: "$cloudMist",
         borderWidth: 1,
         borderColor: "$border",
-        color: "$text", // Dark text on light grey for good contrast
+        // Keep text dark on this light surface in both light and dark themes.
+        color: "$ironstone",
         ...buttonShadow,
 
         hoverStyle: {
