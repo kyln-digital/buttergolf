@@ -51,13 +51,13 @@ export default async function AccountPage() {
           status: { in: ["PAYMENT_CONFIRMED", "LABEL_GENERATED", "SHIPPED"] },
         },
       }),
-      // Count unread messages (messages on orders where user is buyer or seller, from other party)
+      // Count unread messages (messages in conversations where user is buyer or seller, from other party)
       prisma.message
         .count({
           where: {
             OR: [
-              { order: { buyerId: user.id }, senderId: { not: user.id }, isRead: false },
-              { order: { sellerId: user.id }, senderId: { not: user.id }, isRead: false },
+              { conversation: { buyerId: user.id }, senderId: { not: user.id }, isRead: false },
+              { conversation: { sellerId: user.id }, senderId: { not: user.id }, isRead: false },
             ],
           },
         })

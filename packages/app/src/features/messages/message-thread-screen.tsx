@@ -24,8 +24,8 @@ export interface EventSourceLike {
 }
 
 interface MessageThreadScreenProps {
-  /** Order ID for this conversation */
-  orderId: string;
+  /** Conversation ID */
+  conversationId: string;
   /** Current user ID */
   currentUserId: string;
   /** Current user's role (buyer or seller) */
@@ -40,15 +40,15 @@ interface MessageThreadScreenProps {
   productImage?: string | null;
   /** Pre-loaded messages (skips loading state) */
   initialMessages?: ChatMessage[];
-  /** Callback to fetch messages for this order.
+  /** Callback to fetch messages for this conversation.
    *  Accepts an optional cursor for pagination (load older messages). */
   onFetchMessages?: (
-    orderId: string,
+    conversationId: string,
     cursor?: string
   ) => Promise<{
     messages: Array<{
       id: string;
-      orderId: string;
+      conversationId: string;
       senderId: string;
       senderName: string;
       senderImage: string | null;
@@ -68,11 +68,11 @@ interface MessageThreadScreenProps {
   }>;
   /** Callback to send a message */
   onSendMessage?: (
-    orderId: string,
+    conversationId: string,
     content: string
   ) => Promise<{
     id: string;
-    orderId: string;
+    conversationId: string;
     senderId: string;
     senderName: string;
     senderImage: string | null;
@@ -81,7 +81,7 @@ interface MessageThreadScreenProps {
     isRead: boolean;
   }>;
   /** Callback to mark messages as read */
-  onMarkAsRead?: (orderId: string) => Promise<void>;
+  onMarkAsRead?: (conversationId: string) => Promise<void>;
   /** Navigate back */
   onBack?: () => void;
   /** Factory to create a realtime connection. Defaults to native EventSource on web.
@@ -155,7 +155,7 @@ function toChatMessage(msg: {
 }
 
 export function MessageThreadScreen({
-  orderId,
+  conversationId,
   currentUserId,
   otherUserName,
   otherUserImage,
@@ -254,7 +254,7 @@ export function MessageThreadScreen({
     if (!onFetchMessages || !nextCursor || loadingMore) return;
     setLoadingMore(true);
     try {
-      const data = await onFetchMessages(orderId, nextCursor);
+      const data = await onFetchMessages(conversationId, nextCursor);
       const older = data.messages.map(toChatMessage);
       // Prepend older messages
       setMessages((prev) => {
@@ -269,7 +269,7 @@ export function MessageThreadScreen({
     } finally {
       setLoadingMore(false);
     }
-  }, [onFetchMessages, orderId, nextCursor, loadingMore]);
+  }, [onFetchMessages, conversationId, nextCursor, loadingMore]);
 
   // Fetch initial messages and setup SSE
   useEffect(() => {
@@ -280,7 +280,7 @@ export function MessageThreadScreen({
         // Always re-sync from DB on mount, even when initialMessages were
         // server-rendered, because layout remounts can provide stale props.
         if (onFetchMessages) {
-          const data = await onFetchMessages(orderId);
+          const data = await onFetchMessages(conversationId);
           if (!cancelled) {
             mergeMessages(data.messages.map(toChatMessage));
             setHasMore(data.hasMore ?? false);
@@ -289,7 +289,7 @@ export function MessageThreadScreen({
         }
 
         if (onMarkAsRead && !cancelled) {
-          await onMarkAsRead(orderId).catch(() => {});
+          await onMarkAsRead(conversationId).catch(() => {});
         }
       } catch (err) {
         if (!cancelled) {
@@ -307,7 +307,7 @@ export function MessageThreadScreen({
     // Setup realtime stream for messages with auto-reconnect.
     // Uses createEventSource factory if provided (mobile/Supabase), falls back
     // to native EventSource (web). Reconnects with exponential backoff on failure.
-    const channelUrl = `/api/orders/${orderId}/messages/stream`;
+    const channelUrl = `/api/conversations/${conversationId}/messages/stream`;
     let currentSource: EventSourceLike | null = null;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     let reconnectDelay = 1000; // Start at 1s, double each attempt, cap at 30s
@@ -425,7 +425,14 @@ export function MessageThreadScreen({
 
     // is intentionally read from a ref so that a new server-side array
     // reference does not tear down and recreate the realtime connection.
-  }, [orderId, currentUserId, onFetchMessages, onMarkAsRead, mergeMessages, createEventSourceProp]);
+  }, [
+    conversationId,
+    currentUserId,
+    onFetchMessages,
+    onMarkAsRead,
+    mergeMessages,
+    createEventSourceProp,
+  ]);
 
   // 10-second polling sync — always enabled to guarantee eventual consistency
   // from database state across remounts/network mode changes.
@@ -434,7 +441,7 @@ export function MessageThreadScreen({
 
     const interval = setInterval(async () => {
       try {
-        const data = await onFetchMessages(orderId);
+        const data = await onFetchMessages(conversationId);
         mergeMessages(data.messages.map(toChatMessage));
       } catch {
         // Silent — polling failures don't surface to the user
@@ -442,7 +449,7 @@ export function MessageThreadScreen({
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [orderId, onFetchMessages, mergeMessages]);
+  }, [conversationId, onFetchMessages, mergeMessages]);
 
   const handleSend = useCallback(async () => {
     if (!newMessage.trim() || sending || isOverLimit) return;
@@ -467,7 +474,7 @@ export function MessageThreadScreen({
 
     try {
       if (onSendMessage) {
-        const message = await onSendMessage(orderId, content);
+        const message = await onSendMessage(conversationId, content);
 
         // Record the stable key so ChatMessageList keeps the same React key
         // for this message (avoids unmount/remount animation glitch).
@@ -521,7 +528,7 @@ export function MessageThreadScreen({
     } finally {
       setSending(false);
     }
-  }, [newMessage, sending, isOverLimit, orderId, currentUserId, onSendMessage]);
+  }, [newMessage, sending, isOverLimit, conversationId, currentUserId, onSendMessage]);
 
   const handleSendOffer = useCallback(
     async (amount: number, message?: string) => {

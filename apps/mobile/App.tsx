@@ -110,7 +110,7 @@ SplashScreen.preventAutoHideAsync();
 
 interface Message {
   id: string;
-  orderId: string;
+  conversationId: string;
   senderId: string;
   senderName: string;
   senderImage: string | null;
@@ -1705,7 +1705,7 @@ function MessageThreadScreenWrapper({
 
   return (
     <MessageThreadScreen
-      orderId={conversationId}
+      conversationId={conversationId}
       currentUserId={user?.id || ""}
       userRole={userRole}
       otherUserName={otherUserName}
