@@ -122,7 +122,7 @@ function DateSeparator({ label }: { label: string }) {
   return (
     <Row alignItems="center" gap="$md" paddingVertical="$sm">
       <View flex={1} height={1} backgroundColor="$border" />
-      <Text size="$2" color="$textTertiary">
+      <Text size="$2" color="$textSecondary">
         {label}
       </Text>
       <View flex={1} height={1} backgroundColor="$border" />
