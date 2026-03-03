@@ -6,7 +6,7 @@ import {
   Theme as NavigationTheme,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { brandColors } from "@buttergolf/constants";
+import { brandColors, LISTING_PRICE_LIMITS } from "@buttergolf/constants";
 import {
   Provider,
   RoundsScreen,
@@ -397,13 +397,24 @@ async function submitListingToApi(
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
   if (!apiUrl) throw new Error("API URL not configured");
 
+  const parsedPrice = Number.parseFloat(data.price);
+  if (
+    Number.isNaN(parsedPrice) ||
+    parsedPrice < LISTING_PRICE_LIMITS.MIN ||
+    parsedPrice > LISTING_PRICE_LIMITS.MAX
+  ) {
+    throw new Error(
+      `Price must be between GBP ${LISTING_PRICE_LIMITS.MIN} and GBP ${LISTING_PRICE_LIMITS.MAX}`
+    );
+  }
+
   // Generate a unique request ID for idempotency
   const requestId = `mobile-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
   const payload = {
     title: data.title,
     description: data.description,
-    price: parseFloat(data.price),
+    price: parsedPrice,
     categoryId: data.categoryId,
     brandId: data.brandId,
     modelId: data.modelId || undefined,

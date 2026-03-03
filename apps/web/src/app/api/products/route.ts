@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { prisma, ProductCondition } from "@buttergolf/db";
+import { LISTING_PRICE_LIMITS, getListingPriceBoundsMessage } from "@buttergolf/constants";
 import { getUserIdFromRequest } from "@/lib/auth";
 
 // Map slider values to ProductCondition enum for backwards compatibility
@@ -159,6 +160,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    const parsedPrice = Number(price);
+    if (
+      Number.isNaN(parsedPrice) ||
+      parsedPrice < LISTING_PRICE_LIMITS.MIN ||
+      parsedPrice > LISTING_PRICE_LIMITS.MAX
+    ) {
+      return NextResponse.json({ error: getListingPriceBoundsMessage() }, { status: 400 });
+    }
+
     if (!images || images.length === 0) {
       return NextResponse.json({ error: "At least one image is required" }, { status: 400 });
     }
@@ -234,7 +244,7 @@ export async function POST(request: Request) {
       data: {
         title,
         description,
-        price: Number(price),
+        price: parsedPrice,
         condition: mapSlidersToConditionEnum(
           gripCondition || 7,
           headCondition || 7,

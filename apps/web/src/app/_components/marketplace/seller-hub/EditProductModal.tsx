@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Column, Row, Heading, Text, Button, Input, Card } from "@buttergolf/ui";
 import { useTheme } from "tamagui";
+import { LISTING_PRICE_LIMITS, getListingPriceBoundsMessage } from "@buttergolf/constants";
 import type { SellerProduct } from "./SellerProductCard";
 
 interface EditProductModalProps {
@@ -110,9 +111,20 @@ export function EditProductModal({ product, onClose, onSave }: EditProductModalP
     }
 
     try {
+      const parsedPrice = Number.parseFloat(formData.price);
+      if (
+        Number.isNaN(parsedPrice) ||
+        parsedPrice < LISTING_PRICE_LIMITS.MIN ||
+        parsedPrice > LISTING_PRICE_LIMITS.MAX
+      ) {
+        setError(getListingPriceBoundsMessage());
+        setLoading(false);
+        return;
+      }
+
       await onSave(product.id, {
         ...formData,
-        price: Number.parseFloat(formData.price),
+        price: parsedPrice,
       });
       onClose();
     } catch (err) {
@@ -207,8 +219,13 @@ export function EditProductModal({ product, onClose, onSave }: EditProductModalP
                     placeholder="0.00"
                     size="$4"
                     inputMode="decimal"
+                    min={LISTING_PRICE_LIMITS.MIN}
+                    max={LISTING_PRICE_LIMITS.MAX}
                     required
                   />
+                  <Text size="$2" color="$textSecondary">
+                    GBP {LISTING_PRICE_LIMITS.MIN} - GBP {LISTING_PRICE_LIMITS.MAX}
+                  </Text>
                 </Column>
 
                 <Column gap="$xs" flex={1} minWidth={200}>
