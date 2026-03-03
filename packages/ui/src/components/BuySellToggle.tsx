@@ -60,19 +60,20 @@ const StyledTab = styled(Tabs.Tab, {
   // Disable Tamagui's default tab unstyled prop
   unstyled: true,
 
-  // Default inactive state - use $cloudMist for consistency with secondary buttons
-  backgroundColor: "$cloudMist",
-  borderColor: "$border",
+  // Default inactive state mirrors secondary control surface tokens.
+  backgroundColor: "$controlSecondaryBg",
+  borderColor: "$controlSecondaryBg",
 
   // Web shadows for inactive
   boxShadow: "0px 1px 3px 0px rgba(0, 0, 0, 0.15)",
 
   hoverStyle: {
     opacity: 0.9,
-    backgroundColor: "$cloudMistHover",
+    backgroundColor: "$controlSecondaryBgHover",
   },
 
   pressStyle: {
+    backgroundColor: "$controlSecondaryBgPress",
     scale: 0.98,
     opacity: 0.9,
   },
@@ -102,11 +103,18 @@ const StyledTab = styled(Tabs.Tab, {
       },
       false: {
         // Light grey - matches secondary button
-        backgroundColor: "$cloudMist",
-        borderColor: "$border",
+        backgroundColor: "$controlSecondaryBg",
+        borderColor: "$controlSecondaryBg",
         boxShadow: "0px 1px 3px 0px rgba(0, 0, 0, 0.15)",
         hoverStyle: {
-          backgroundColor: "$cloudMistHover",
+          backgroundColor: "$controlSecondaryBgHover",
+          borderColor: "$controlSecondaryBgHover",
+          opacity: 0.95,
+        },
+        pressStyle: {
+          backgroundColor: "$controlSecondaryBgPress",
+          borderColor: "$controlSecondaryBgPress",
+          scale: 0.98,
           opacity: 0.95,
         },
       },

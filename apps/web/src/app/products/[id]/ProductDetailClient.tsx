@@ -197,7 +197,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                     width="100%"
                     height="100%"
                     objectFit="contain"
-                    backgroundColor="$background"
+                    backgroundColor="$surface"
                     alt={product.title}
                   />
 
