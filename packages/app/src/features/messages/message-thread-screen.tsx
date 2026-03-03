@@ -318,12 +318,25 @@ export function MessageThreadScreen({
     const handleMessage = (event: { data: string }) => {
       try {
         const data = JSON.parse(event.data);
+        const legacyBareMessage =
+          data &&
+          typeof data === "object" &&
+          typeof data.id === "string" &&
+          typeof data.senderId === "string" &&
+          typeof data.content === "string" &&
+          typeof data.createdAt === "string";
+
         if (data.type === "new_message" && data.message && !cancelled) {
           // Skip self-echoed messages — our optimistic update already
           // handles the sender's own messages.
           if (data.message.senderId === currentUserId) return;
 
           mergeMessages([toChatMessage(data.message)]);
+        } else if (legacyBareMessage && !cancelled) {
+          // Backward compatibility for older realtime payloads that broadcast
+          // a bare message object without the { type, message } envelope.
+          if (data.senderId === currentUserId) return;
+          mergeMessages([toChatMessage(data)]);
         } else if (data.type === "offer_update" && data.offerId && !cancelled) {
           const updatedStatus = toChatOfferStatus(
             typeof data.status === "string" ? data.status : undefined

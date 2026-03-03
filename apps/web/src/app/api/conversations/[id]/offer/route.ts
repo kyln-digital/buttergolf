@@ -3,6 +3,7 @@ import { prisma } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
 import { checkRateLimit, rateLimitResponse } from "@/middleware/rate-limit";
 import { broadcastToConversation } from "@/lib/supabase-realtime";
+import { toNewMessageBroadcast, toOfferUpdateBroadcast } from "@/lib/conversation-broadcast";
 import { sendNewOfferEmail } from "@/lib/email";
 import { sendPushNotifications } from "@/lib/push-notifications";
 
@@ -137,24 +138,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Fire-and-forget: broadcast, email, push
     const seller = conversation.seller;
 
-    broadcastToConversation(conversationId, "new_message", {
-      id: message.id,
-      conversationId: message.conversationId,
-      senderId: message.senderId,
-      content: message.content,
-      type: message.type,
-      offerAmount: message.offerAmount,
-      offerId: offer.id,
-      offerStatus: offer.status,
-      createdAt: message.createdAt,
-      isRead: message.isRead,
-    }).catch((err) => console.error("[Broadcast] Error:", err));
+    broadcastToConversation(
+      conversationId,
+      "new_message",
+      toNewMessageBroadcast(message, { offerId: offer.id, offerStatus: offer.status })
+    ).catch((err) => console.error("[Broadcast] Error:", err));
 
-    broadcastToConversation(conversationId, "offer_update", {
-      offerId: offer.id,
-      status: "PENDING",
-      amount,
-    }).catch((err) => console.error("[Broadcast] Offer update error:", err));
+    broadcastToConversation(
+      conversationId,
+      "offer_update",
+      toOfferUpdateBroadcast({
+        offerId: offer.id,
+        status: "PENDING",
+        amount,
+      })
+    ).catch((err) => console.error("[Broadcast] Offer update error:", err));
 
     sendNewOfferEmail({
       sellerEmail: seller.email,
