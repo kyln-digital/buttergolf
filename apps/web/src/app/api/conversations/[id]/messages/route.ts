@@ -88,6 +88,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const messages = await prisma.message.findMany({
       where: { conversationId },
       include: {
+        offer: {
+          select: {
+            status: true,
+          },
+        },
         sender: {
           select: {
             id: true,
@@ -110,11 +115,15 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     // Reverse to chronological (oldest first)
     messages.reverse();
 
-    const messagesWithRole = messages.map((msg) => ({
-      ...msg,
-      senderRole: msg.senderId === conversation.buyerId ? "buyer" : "seller",
-      isOwnMessage: msg.senderId === user.id,
-    }));
+    const messagesWithRole = messages.map((msg) => {
+      const { offer, ...rest } = msg;
+      return {
+        ...rest,
+        offerStatus: offer?.status ?? null,
+        senderRole: msg.senderId === conversation.buyerId ? "buyer" : "seller",
+        isOwnMessage: msg.senderId === user.id,
+      };
+    });
 
     // Return conversation metadata alongside messages
     const isBuyer = user.id === conversation.buyerId;

@@ -138,8 +138,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const seller = conversation.seller;
 
     broadcastToConversation(conversationId, "new_message", {
-      ...message,
+      id: message.id,
+      conversationId: message.conversationId,
+      senderId: message.senderId,
+      content: message.content,
+      type: message.type,
+      offerAmount: message.offerAmount,
       offerId: offer.id,
+      offerStatus: offer.status,
+      createdAt: message.createdAt,
+      isRead: message.isRead,
     }).catch((err) => console.error("[Broadcast] Error:", err));
 
     broadcastToConversation(conversationId, "offer_update", {

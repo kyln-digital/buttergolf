@@ -152,9 +152,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Fire-and-forget: broadcast, email, push
     const recipient = isSeller ? offer.buyer : offer.seller;
 
-    broadcastToConversation(conversationId, "new_message", msg).catch((err) =>
-      console.error("[Broadcast] Error:", err)
-    );
+    broadcastToConversation(conversationId, "new_message", {
+      id: msg.id,
+      conversationId: msg.conversationId,
+      senderId: msg.senderId,
+      content: msg.content,
+      type: msg.type,
+      offerAmount: msg.offerAmount,
+      offerId: msg.offerId,
+      offerStatus: updatedOffer.status,
+      createdAt: msg.createdAt,
+      isRead: msg.isRead,
+    }).catch((err) => console.error("[Broadcast] Error:", err));
 
     broadcastToConversation(conversationId, "offer_update", {
       offerId: offer.id,

@@ -232,7 +232,11 @@ export function MessageThreadScreen({
           existing.content !== msg.content ||
           existing.isRead !== msg.isRead ||
           existing.createdAt !== msg.createdAt ||
-          existing.senderId !== msg.senderId
+          existing.senderId !== msg.senderId ||
+          existing.type !== msg.type ||
+          existing.offerAmount !== msg.offerAmount ||
+          existing.offerId !== msg.offerId ||
+          existing.offerStatus !== msg.offerStatus
         ) {
           byId.set(msg.id, msg);
           changed = true;
@@ -320,6 +324,36 @@ export function MessageThreadScreen({
           if (data.message.senderId === currentUserId) return;
 
           mergeMessages([toChatMessage(data.message)]);
+        } else if (data.type === "offer_update" && data.offerId && !cancelled) {
+          const updatedStatus = toChatOfferStatus(
+            typeof data.status === "string" ? data.status : undefined
+          );
+          const updatedAmount = typeof data.amount === "number" ? data.amount : undefined;
+
+          if (updatedStatus || updatedAmount != null) {
+            setMessages((prev) => {
+              let changed = false;
+              const next = prev.map((m) => {
+                if (m.offerId !== data.offerId) return m;
+
+                const nextStatus = updatedStatus ?? m.offerStatus;
+                const nextAmount = updatedAmount ?? m.offerAmount;
+
+                if (nextStatus === m.offerStatus && nextAmount === m.offerAmount) {
+                  return m;
+                }
+
+                changed = true;
+                return {
+                  ...m,
+                  offerStatus: nextStatus,
+                  offerAmount: nextAmount,
+                };
+              });
+
+              return changed ? next : prev;
+            });
+          }
         } else if (data.type === "messages_read" && !cancelled) {
           // The other party read our messages — update isRead for all
           // messages we sent that are still marked unread.
