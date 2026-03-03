@@ -91,7 +91,7 @@ export default function NotificationsPage() {
             ← Back to Account
           </Button>
           <Heading level={2}>Notifications</Heading>
-          <Text color="$textSecondary">Choose what notifications you'd like to receive</Text>
+          <Text color="$textSecondary">Choose what notifications you&apos;d like to receive</Text>
         </Column>
 
         {/* Email Notifications Section */}

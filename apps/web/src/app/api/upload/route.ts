@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import { getUserIdFromRequest } from "@/lib/auth";
 import {
   logError,
-  logWarning,
   UPLOAD_CLOUDINARY_CONFIG_MISSING,
   UPLOAD_FAILED,
   UPLOAD_BACKGROUND_REMOVAL_FAILED,

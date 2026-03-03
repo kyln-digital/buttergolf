@@ -199,7 +199,7 @@ export function Hero({
   subtitle,
   primaryCta,
   secondaryCta,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   backgroundImage: _backgroundImage,
   heroImage,
   showHeroImage = true,

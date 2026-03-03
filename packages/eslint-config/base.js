@@ -56,6 +56,17 @@ export const config = [
   {
     rules: {
       // ========================================================================
+      // UNUSED VARIABLES - Allow underscore-prefixed variables as intentionally unused
+      // ========================================================================
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+      // ========================================================================
       // IMPORT RESTRICTIONS - Enforce correct import paths in monorepo
       // ========================================================================
       "no-restricted-imports": [

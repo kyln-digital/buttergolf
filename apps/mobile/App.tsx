@@ -226,7 +226,6 @@ function SignOutButton() {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _HeaderRightComponent = () => <SignOutButton />;
 
 // Function to fetch products from API
@@ -456,7 +455,7 @@ async function submitListingToApi(
 }
 
 // Legacy non-auth submit (kept for parity with existing call sites)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 async function _submitListing(data: SellFormData): Promise<{ id: string }> {
   return submitListingToApi(data, null);
 }

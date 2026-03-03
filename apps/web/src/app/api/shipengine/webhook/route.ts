@@ -9,9 +9,6 @@ import {
   sendDeliveredEmail,
 } from "@/lib/email";
 
-// ShipEngine webhook events we care about
-type ShipEngineEvent = "track" | "shipment.created" | "label.created" | "label.voided";
-
 interface ShipEngineTrackingWebhookPayload {
   resource_url: string;
   resource_type: "API_TRACK" | "LABEL" | "SHIPMENT";

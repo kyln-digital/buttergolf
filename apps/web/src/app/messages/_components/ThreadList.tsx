@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Column, Row, Text, Heading, Badge, ScrollView } from "@buttergolf/ui";
-import { View, Image } from "tamagui";
+import { Column, Row, Text, Heading, Badge, ScrollView, View, Image } from "@buttergolf/ui";
 import { MessageSquare } from "@tamagui/lucide-icons";
 import { formatDistanceToNow } from "date-fns";
 import type { Conversation } from "../MessagesLayout";

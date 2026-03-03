@@ -552,7 +552,6 @@ export function MessageThreadScreen({
   );
 
   const handleAcceptOffer = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async (_offerId: string) => {
       if (!onAcceptOffer) return;
       try {
@@ -565,7 +564,6 @@ export function MessageThreadScreen({
   );
 
   const handleRejectOffer = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async (_offerId: string) => {
       if (!onRejectOffer) return;
       try {
@@ -577,7 +575,6 @@ export function MessageThreadScreen({
     [onRejectOffer]
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleCounterOffer = useCallback(async (_offerId: string) => {
     setOfferMode(true);
     setIsCounterMode(true);

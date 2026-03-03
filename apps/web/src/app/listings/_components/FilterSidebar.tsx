@@ -1,6 +1,6 @@
 "use client";
 
-import { Column, Row, Button, Text, SwitchWithLabel } from "@buttergolf/ui";
+import { Column, Button, Text, SwitchWithLabel } from "@buttergolf/ui";
 import { FilterSection } from "./FilterSection";
 import { CategoryFilter } from "./CategoryFilter";
 import { ConditionFilter } from "./ConditionFilter";

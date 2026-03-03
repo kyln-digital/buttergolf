@@ -60,6 +60,7 @@ export function StripeEmbeddedCheckout({
   const handleComplete = useCallback(() => {
     // The return_url in the session handles the redirect
     // This callback fires when checkout completes successfully
+    // eslint-disable-next-line no-console
     console.log("Checkout completed");
   }, []);
 

@@ -13,8 +13,6 @@ import {
   Download,
   ExternalLink,
   AlertCircle,
-  DollarSign,
-  Shield,
 } from "@tamagui/lucide-icons";
 
 type OrderStatus =

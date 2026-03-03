@@ -76,126 +76,130 @@ export function ImageUpload({
   };
 
   return (
-    <Column gap="$md" width="100%">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
-        onChange={handleFileChange}
-        style={{ display: "none" }}
-      />
+    <>
+      {/* pointerEvents fallback for browsers with incomplete inert support */}
+      <Column gap="$md" width="100%" style={{ pointerEvents: cropModalOpen ? "none" : "auto" }}>
+        {/* eslint-disable-next-line react/forbid-elements -- hidden file input, no DS equivalent */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+          onChange={handleFileChange}
+          style={{ display: "none" }}
+        />
 
-      {/* Large Upload Area */}
-      <Column
-        backgroundColor={dragActive ? "$primaryLight" : "$surface"}
-        borderWidth={2}
-        borderColor={dragActive ? "$primary" : "$border"}
-        borderStyle="dashed"
-        borderRadius="$xl"
-        padding="$10"
-        alignItems="center"
-        justifyContent="center"
-        minHeight={currentImages.length === 0 ? 280 : 180}
-        cursor="pointer"
-        animation="quick"
-        width="100%"
-        hoverStyle={{
-          borderColor: "$primary",
-          backgroundColor: "$primaryLight",
-        }}
-        onPress={currentImages.length < maxImages ? handleButtonClick : undefined}
-        {...{
-          onDragEnter: handleDrag,
-          onDragLeave: handleDrag,
-          onDragOver: handleDrag,
-          onDrop: handleDrop,
-        }}
-      >
-        {uploading ? (
-          <Column gap="$md" alignItems="center">
-            <Spinner size="lg" color="$primary" />
-            <Text size="$4" color="$textSecondary" textAlign="center">
-              Uploading... {progress.toString()}%
-            </Text>
-          </Column>
-        ) : (
-          <Column gap="$md" alignItems="center" width="100%" maxWidth={500}>
-            <Column
-              width={64}
-              height={64}
-              borderRadius="$full"
-              backgroundColor="$primaryLight"
-              alignItems="center"
-              justifyContent="center"
-            >
-              <Text size="$12">+</Text>
-            </Column>
-            <Column gap="$xs" alignItems="center">
-              <Text size="$6" weight="semibold" textAlign="center" color="$text">
-                {currentImages.length === 0 ? "Upload photos" : "Add more photos"}
-              </Text>
-              <Text size="$3" color="$textSecondary" textAlign="center" lineHeight={20}>
-                or drag and drop
+        {/* Large Upload Area */}
+        <Column
+          backgroundColor={dragActive ? "$primaryLight" : "$surface"}
+          borderWidth={2}
+          borderColor={dragActive ? "$primary" : "$border"}
+          borderStyle="dashed"
+          borderRadius="$xl"
+          padding="$10"
+          alignItems="center"
+          justifyContent="center"
+          minHeight={currentImages.length === 0 ? 280 : 180}
+          cursor="pointer"
+          animation="quick"
+          width="100%"
+          hoverStyle={{
+            borderColor: "$primary",
+            backgroundColor: "$primaryLight",
+          }}
+          onPress={currentImages.length < maxImages ? handleButtonClick : undefined}
+          {...{
+            onDragEnter: handleDrag,
+            onDragLeave: handleDrag,
+            onDragOver: handleDrag,
+            onDrop: handleDrop,
+          }}
+        >
+          {uploading ? (
+            <Column gap="$md" alignItems="center">
+              <Spinner size="lg" color="$primary" />
+              <Text size="$4" color="$textSecondary" textAlign="center">
+                Uploading... {progress.toString()}%
               </Text>
             </Column>
-            <Text size="$2" color="$primary" textAlign="center">
-              {currentImages.length}/{maxImages} photos • Max 10MB each
-            </Text>
+          ) : (
+            <Column gap="$md" alignItems="center" width="100%" maxWidth={500}>
+              <Column
+                width={64}
+                height={64}
+                borderRadius="$full"
+                backgroundColor="$primaryLight"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Text size="$12">+</Text>
+              </Column>
+              <Column gap="$xs" alignItems="center">
+                <Text size="$6" weight="semibold" textAlign="center" color="$text">
+                  {currentImages.length === 0 ? "Upload photos" : "Add more photos"}
+                </Text>
+                <Text size="$3" color="$textSecondary" textAlign="center" lineHeight={20}>
+                  or drag and drop
+                </Text>
+              </Column>
+              <Text size="$2" color="$primary" textAlign="center">
+                {currentImages.length}/{maxImages} photos • Max 10MB each
+              </Text>
+            </Column>
+          )}
+        </Column>
+
+        {error && (
+          <Text size="$3" color="$error" textAlign="center">
+            {error}
+          </Text>
+        )}
+
+        {/* Image Grid */}
+        {currentImages.length > 0 && (
+          <Column gap="$sm">
+            <Row gap="$md" flexWrap="wrap">
+              {currentImages.map((url, index) => (
+                <Column
+                  key={url}
+                  position="relative"
+                  backgroundColor="$surface"
+                  borderRadius="$lg"
+                  overflow="hidden"
+                  borderWidth={1}
+                  borderColor="$border"
+                  width={140}
+                  height={140}
+                  hoverStyle={{
+                    borderColor: "$primary",
+                  }}
+                >
+                  <Image
+                    source={{ uri: url }}
+                    width={140}
+                    height={140}
+                    objectFit="cover"
+                    alt="Uploaded product image"
+                  />
+                  {index === 0 && (
+                    <Column
+                      position="absolute"
+                      bottom={0}
+                      left={0}
+                      right={0}
+                      backgroundColor="rgba(0, 0, 0, 0.7)"
+                      padding="$xs"
+                    >
+                      <Text size="$2" color="$textInverse" textAlign="center" fontWeight="600">
+                        Cover photo
+                      </Text>
+                    </Column>
+                  )}
+                </Column>
+              ))}
+            </Row>
           </Column>
         )}
       </Column>
-
-      {error && (
-        <Text size="$3" color="$error" textAlign="center">
-          {error}
-        </Text>
-      )}
-
-      {/* Image Grid */}
-      {currentImages.length > 0 && (
-        <Column gap="$sm">
-          <Row gap="$md" flexWrap="wrap">
-            {currentImages.map((url, index) => (
-              <Column
-                key={url}
-                position="relative"
-                backgroundColor="$surface"
-                borderRadius="$lg"
-                overflow="hidden"
-                borderWidth={1}
-                borderColor="$border"
-                width={140}
-                height={140}
-                hoverStyle={{
-                  borderColor: "$primary",
-                }}
-              >
-                <Image
-                  source={{ uri: url }}
-                  width={140}
-                  height={140}
-                  objectFit="cover"
-                  alt="Uploaded product image"
-                />
-                {index === 0 && (
-                  <Column
-                    position="absolute"
-                    bottom={0}
-                    left={0}
-                    right={0}
-                    backgroundColor="rgba(0, 0, 0, 0.7)"
-                    padding="$xs"
-                  >
-                    <Text size="$2" color="$textInverse" textAlign="center" fontWeight="600">
-                      Cover photo
-                    </Text>
-                  </Column>
-                )}
-              </Column>
-            ))}
-          </Row>
-        </Column>
-      )}
 
       {/* Crop Modal */}
       {fileToCrop && (
@@ -244,6 +248,6 @@ export function ImageUpload({
           }}
         />
       )}
-    </Column>
+    </>
   );
 }
