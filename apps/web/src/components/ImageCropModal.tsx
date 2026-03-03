@@ -100,6 +100,9 @@ export function ImageCropModal({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previouslyFocusedElementRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -175,6 +178,23 @@ export function ImageCropModal({
   }, [open, isMounted]);
 
   useEffect(() => {
+    if (!open || !isMounted) {
+      return;
+    }
+
+    previouslyFocusedElementRef.current = document.activeElement as HTMLElement | null;
+
+    const focusTimer = window.setTimeout(() => {
+      closeButtonRef.current?.focus();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(focusTimer);
+      previouslyFocusedElementRef.current?.focus();
+    };
+  }, [open, isMounted]);
+
+  useEffect(() => {
     if (!open) {
       return;
     }
@@ -185,8 +205,52 @@ export function ImageCropModal({
       }
     };
 
+    const handleTabKey = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") {
+        return;
+      }
+
+      const container = modalRef.current;
+      if (!container) {
+        return;
+      }
+
+      const focusableElements = Array.from(
+        container.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement as HTMLElement | null;
+
+      if (event.shiftKey) {
+        if (activeElement === firstElement || !container.contains(activeElement)) {
+          event.preventDefault();
+          lastElement.focus();
+        }
+        return;
+      }
+
+      if (activeElement === lastElement || !container.contains(activeElement)) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
     window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
+    window.addEventListener("keydown", handleTabKey);
+
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+      window.removeEventListener("keydown", handleTabKey);
+    };
   }, [open, isProcessing, onCancel]);
 
   const handleApplyCrop = async () => {
@@ -210,6 +274,7 @@ export function ImageCropModal({
 
   const modalContent = (
     <div
+      ref={modalRef}
       role="dialog"
       aria-modal="true"
       aria-label="Image crop modal"
@@ -264,6 +329,7 @@ export function ImageCropModal({
             </Column>
             {/* Close button */}
             <Button
+              ref={closeButtonRef}
               size="$3"
               chromeless
               onPress={onCancel}
