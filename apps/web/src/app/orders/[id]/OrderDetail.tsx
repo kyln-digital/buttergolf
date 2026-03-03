@@ -394,6 +394,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
   // Fetch tracking events on mount
   useEffect(() => {
     fetchTrackingEvents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order.id, order.trackingCode]);
 
   // Poll for updates when shipment is active (IN_TRANSIT or OUT_FOR_DELIVERY)
@@ -409,6 +410,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
     }, 15000);
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order.shipmentStatus, order.trackingCode, order.id]);
 
   return (
@@ -601,7 +603,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                           style={
                             {
                               animation: isLoadingTracking ? "spin 1s linear infinite" : "none",
-                            } as any
+                            } as React.CSSProperties
                           }
                         />
                       }

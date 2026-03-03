@@ -246,6 +246,7 @@ export function SellFormClient() {
     userAddedText,
     categories,
     generateTitle,
+    formData.title,
   ]);
 
   // Load categories on mount

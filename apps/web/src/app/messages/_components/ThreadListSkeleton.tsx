@@ -15,7 +15,7 @@ function SkeletonPulse({
     <View
       width={width}
       height={height}
-      borderRadius={borderRadius as any}
+      borderRadius={borderRadius as unknown as number}
       backgroundColor="$border"
       opacity={0.6}
       animation="lazy"
