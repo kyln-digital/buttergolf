@@ -8,6 +8,32 @@ import { Column, Row, Text, Heading, Spinner, Button, Card } from "@buttergolf/u
 import { SellerDashboardNav } from "./_components/SellerDashboardNav";
 import Link from "next/link";
 
+const STRIPE_EMBEDDED_ROUTES = [
+  "/seller/payments",
+  "/seller/payouts",
+  "/seller/documents",
+  "/seller/settings",
+];
+
+function SetupCallout() {
+  return (
+    <Card variant="outlined" padding="$md">
+      <Column gap="$sm">
+        <Heading level={4}>Complete Seller Setup</Heading>
+        <Text color="$textSecondary">
+          To use payments, payouts, tax documents, and account settings, complete Stripe seller
+          onboarding.
+        </Text>
+        <Link href="/account" style={{ textDecoration: "none", width: "fit-content" }}>
+          <Button butterVariant="primary" size="$4">
+            Complete Seller Setup
+          </Button>
+        </Link>
+      </Column>
+    </Card>
+  );
+}
+
 /**
  * Seller Dashboard Layout
  *
@@ -24,28 +50,7 @@ import Link from "next/link";
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { stripeConnectInstance, loading, error, hasAccount } = useStripeConnect();
-  const isStripeEmbeddedRoute =
-    pathname?.startsWith("/seller/payments") ||
-    pathname?.startsWith("/seller/payouts") ||
-    pathname?.startsWith("/seller/documents") ||
-    pathname?.startsWith("/seller/settings");
-
-  const setupCallout = (
-    <Card variant="outlined" padding="$md">
-      <Column gap="$sm">
-        <Heading level={4}>Complete Seller Setup</Heading>
-        <Text color="$textSecondary">
-          To use payments, payouts, tax documents, and account settings, complete Stripe seller
-          onboarding.
-        </Text>
-        <Link href="/account" style={{ textDecoration: "none", width: "fit-content" }}>
-          <Button butterVariant="primary" size="$4">
-            Complete Seller Setup
-          </Button>
-        </Link>
-      </Column>
-    </Card>
-  );
+  const isStripeEmbeddedRoute = STRIPE_EMBEDDED_ROUTES.some((r) => pathname?.startsWith(r));
 
   // Loading state
   if (loading) {
@@ -142,7 +147,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
         <SellerDashboardNav />
 
         <Column flex={1} padding="$lg" backgroundColor="$background" gap="$md">
-          {!hasAccount && setupCallout}
+          {!hasAccount && <SetupCallout />}
           {error && !isStripeEmbeddedRoute && (
             <Card variant="outlined" padding="$md">
               <Text color="$textSecondary">{error}</Text>

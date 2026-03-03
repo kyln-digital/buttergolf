@@ -168,7 +168,7 @@ export function ImageCropModal({
 
     return () => {
       document.body.style.overflow = originalOverflow;
-      if (appRoot) {
+      if (appRoot && appRoot.isConnected) {
         if (!hadInert) {
           appRoot.removeAttribute("inert");
         }
@@ -199,13 +199,12 @@ export function ImageCropModal({
       return;
     }
 
-    const handleEscape = (event: KeyboardEvent) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !isProcessing) {
         onCancel();
+        return;
       }
-    };
 
-    const handleTabKey = (event: KeyboardEvent) => {
       if (event.key !== "Tab") {
         return;
       }
@@ -244,12 +243,10 @@ export function ImageCropModal({
       }
     };
 
-    window.addEventListener("keydown", handleEscape);
-    window.addEventListener("keydown", handleTabKey);
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.removeEventListener("keydown", handleEscape);
-      window.removeEventListener("keydown", handleTabKey);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [open, isProcessing, onCancel]);
 
@@ -288,6 +285,7 @@ export function ImageCropModal({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        // Must sit above Clerk modals (~99999) and navigation dropdowns
         zIndex: 100000,
         padding: "16px",
       }}

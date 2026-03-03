@@ -77,6 +77,7 @@ export function ImageUpload({
 
   return (
     <>
+      {/* pointerEvents fallback for browsers with incomplete inert support */}
       <Column gap="$md" width="100%" style={{ pointerEvents: cropModalOpen ? "none" : "auto" }}>
         <input
           ref={fileInputRef}
