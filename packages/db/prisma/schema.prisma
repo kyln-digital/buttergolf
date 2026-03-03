@@ -241,7 +241,6 @@ model Order {
   seller               User           @relation("SellerOrders", fields: [sellerId], references: [id])
   toAddress            Address        @relation("ToAddress", fields: [toAddressId], references: [id])
   sellerRating         SellerRating?
-  messages             Message[]
   conversation         Conversation?
 
   @@index([sellerId])
@@ -257,7 +256,6 @@ model Order {
 model Message {
   id             String      @id @default(cuid())
   conversationId String
-  orderId        String?     // Legacy: kept for backward compat during migration
   senderId       String
   content        String
   type           MessageType @default(TEXT)
@@ -267,12 +265,10 @@ model Message {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  order          Order?       @relation(fields: [orderId], references: [id], onDelete: Cascade)
   offer          Offer?       @relation(fields: [offerId], references: [id], onDelete: SetNull)
   sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
-  @@index([orderId])
   @@index([senderId])
   @@index([createdAt])
   @@index([offerId])

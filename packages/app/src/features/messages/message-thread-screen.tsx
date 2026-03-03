@@ -307,7 +307,7 @@ export function MessageThreadScreen({
     // Setup realtime stream for messages with auto-reconnect.
     // Uses createEventSource factory if provided (mobile/Supabase), falls back
     // to native EventSource (web). Reconnects with exponential backoff on failure.
-    const channelUrl = `/api/orders/${orderId}/messages/stream`;
+    const channelUrl = `/api/conversations/${orderId}/messages/stream`;
     let currentSource: EventSourceLike | null = null;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     let reconnectDelay = 1000; // Start at 1s, double each attempt, cap at 30s
