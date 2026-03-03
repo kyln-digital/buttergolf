@@ -462,6 +462,20 @@ export function SellFormClient() {
     }));
   };
 
+  const handleRemoveImage = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleReorderImages = (reorderedUrls: string[]) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: reorderedUrls,
+    }));
+  };
+
   return (
     <Column backgroundColor="$background" minHeight="100vh" alignItems="center" width="100%">
       <Column
@@ -502,6 +516,8 @@ export function SellFormClient() {
                     <Column flex={2} minWidth={300} width="100%">
                       <ImageUpload
                         onUploadComplete={handleImageUpload}
+                        onRemoveImage={handleRemoveImage}
+                        onReorderImages={handleReorderImages}
                         currentImages={formData.images}
                         maxImages={5}
                       />
