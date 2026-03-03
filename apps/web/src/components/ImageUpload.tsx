@@ -55,7 +55,7 @@ function SortableImageItem({
   };
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <Column
         position="relative"
         backgroundColor="$surface"
@@ -66,8 +66,6 @@ function SortableImageItem({
         width={140}
         height={140}
         cursor="grab"
-        {...attributes}
-        {...listeners}
       >
         <Image
           source={{ uri: url }}
