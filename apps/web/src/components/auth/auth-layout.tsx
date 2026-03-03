@@ -102,7 +102,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           {children}
 
           {/* Terms & Privacy */}
-          <Text size="$3" color="$textSecondary" textAlign="center" paddingHorizontal="$lg">
+          <Text size="$3" color="$textMuted" textAlign="center" paddingHorizontal="$lg">
             By continuing, you agree to our{" "}
             <Link href="/terms" style={{ textDecoration: "underline" }}>
               Terms of Service
