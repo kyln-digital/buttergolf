@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { Column, Row, Button, Text, Heading, Spinner, View } from "@buttergolf/ui";
@@ -97,7 +98,12 @@ export function ImageCropModal({
   const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
   const [imageSrc, setImageSrc] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Calculate a centered 4:3 aspect ratio crop when the image loads
   const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -141,6 +147,34 @@ export function ImageCropModal({
     }
   }, [imageFile]);
 
+  useEffect(() => {
+    if (!open || !isMounted) {
+      return;
+    }
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [open, isMounted]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !isProcessing) {
+        onCancel();
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [open, isProcessing, onCancel]);
+
   const handleApplyCrop = async () => {
     if (!completedCrop || !imgRef.current) {
       return;
@@ -158,10 +192,13 @@ export function ImageCropModal({
     }
   };
 
-  if (!open) return null;
+  if (!open || !isMounted) return null;
 
-  return (
+  const modalContent = (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Image crop modal"
       style={{
         position: "fixed",
         top: 0,
@@ -172,7 +209,7 @@ export function ImageCropModal({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        zIndex: 1000,
+        zIndex: 2000,
         padding: "16px",
       }}
       onClick={(e) => {
@@ -310,4 +347,6 @@ export function ImageCropModal({
       </Column>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
