@@ -3,8 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { useMedia } from "tamagui";
-import { Column, Row } from "@buttergolf/ui";
-import { View } from "tamagui";
+import { Column, Row, View } from "@buttergolf/ui";
 import { ThreadList } from "./_components/ThreadList";
 
 export interface Conversation {
@@ -86,7 +85,9 @@ export function MessagesLayout({
           borderColor="$border"
           style={containerStyle}
         >
-          {children}
+          <View flex={1} minHeight={0}>
+            {children}
+          </View>
         </Column>
       );
     }
