@@ -25,7 +25,7 @@ function LoadingSkeleton() {
       borderRadius="$lg"
       position="relative"
       overflow="hidden"
-      animation="quick"
+      transition="quick"
     />
   );
 }

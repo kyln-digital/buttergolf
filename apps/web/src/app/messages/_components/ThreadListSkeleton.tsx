@@ -18,7 +18,7 @@ function SkeletonPulse({
       borderRadius={borderRadius as unknown as number}
       backgroundColor="$border"
       opacity={0.6}
-      animation="lazy"
+      transition="lazy"
       enterStyle={{ opacity: 0.3 }}
     />
   );

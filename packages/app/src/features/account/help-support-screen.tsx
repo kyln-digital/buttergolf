@@ -236,15 +236,15 @@ export function HelpSupportScreen({
                       <Text size="$4" fontWeight="500" flex={1}>
                         {item.question}
                       </Text>
-                      <Square animation="medium" rotate={open ? "180deg" : "0deg"}>
+                      <Square transition="medium" rotate={open ? "180deg" : "0deg"}>
                         <ChevronDown size={20} color="$textMuted" />
                       </Square>
                     </>
                   )}
                 </Accordion.Trigger>
-                <Accordion.HeightAnimator animation="medium">
+                <Accordion.HeightAnimator transition="medium">
                   <Accordion.Content
-                    animation="medium"
+                    transition="medium"
                     backgroundColor="$gray100"
                     borderRadius="$lg"
                     padding="$4"

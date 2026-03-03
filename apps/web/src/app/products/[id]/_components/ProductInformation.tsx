@@ -96,7 +96,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
           borderColor={isFavourite ? "$primary" : "$border"}
           backgroundColor={isFavourite ? "$primaryLight" : "transparent"}
           onPress={() => setIsFavourite(!isFavourite)}
-          animation="quick"
+          transition="quick"
           aria-label={isFavourite ? "Remove from favourites" : "Add to favourites"}
         >
           <Heart

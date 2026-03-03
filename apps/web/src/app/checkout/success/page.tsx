@@ -271,7 +271,7 @@ function CheckoutSuccessContent() {
             justifyContent="center"
             width={100}
             height={100}
-            animation="bouncy"
+            transition="bouncy"
             enterStyle={{ scale: 0.5, opacity: 0 }}
             scale={1}
             opacity={1}

@@ -16,26 +16,26 @@ catalog:
   "@stripe/react-stripe-js": 5.6.0
   "@stripe/stripe-js": 8.8.0
   "@stripe/stripe-react-native": 0.58.0
-  "@tamagui/animations-css": 1.144.3
-  "@tamagui/animations-react-native": 1.144.3
-  "@tamagui/babel-plugin": 1.144.3
-  "@tamagui/card": 1.144.3
-  "@tamagui/cli": 1.144.3
-  "@tamagui/config": 1.144.3
-  "@tamagui/core": 1.144.3
-  "@tamagui/font-inter": 1.144.3
-  "@tamagui/lucide-icons": 1.144.3
-  "@tamagui/next-plugin": 1.144.3
-  "@tamagui/next-theme": 1.144.3
-  "@tamagui/polyfill-dev": 1.144.3
-  "@tamagui/popover": 1.144.3
-  "@tamagui/portal": 1.144.3
-  "@tamagui/sheet": 1.144.3
-  "@tamagui/shorthands": 1.144.3
-  "@tamagui/slider": 1.144.3
-  "@tamagui/switch": 1.144.3
-  "@tamagui/themes": 1.144.3
-  "@tamagui/toast": 1.144.3
+  "@tamagui/animations-css": 2.0.0-rc.22
+  "@tamagui/animations-react-native": 2.0.0-rc.22
+  "@tamagui/babel-plugin": 2.0.0-rc.22
+  "@tamagui/card": 2.0.0-rc.22
+  "@tamagui/cli": 2.0.0-rc.22
+  "@tamagui/config": 2.0.0-rc.22
+  "@tamagui/core": 2.0.0-rc.22
+  "@tamagui/font-inter": 2.0.0-rc.22
+  "@tamagui/lucide-icons": 2.0.0-rc.22
+  "@tamagui/next-plugin": 2.0.0-rc.22
+  "@tamagui/next-theme": 2.0.0-rc.22
+  "@tamagui/polyfill-dev": 2.0.0-rc.22
+  "@tamagui/popover": 2.0.0-rc.22
+  "@tamagui/portal": 2.0.0-rc.22
+  "@tamagui/sheet": 2.0.0-rc.22
+  "@tamagui/shorthands": 2.0.0-rc.22
+  "@tamagui/slider": 2.0.0-rc.22
+  "@tamagui/switch": 2.0.0-rc.22
+  "@tamagui/themes": 2.0.0-rc.22
+  "@tamagui/toast": 2.0.0-rc.22
   "@types/canvas-confetti": 1.9.0
   "@types/node": 22.15.30
   "@types/react": 19.2.14
@@ -85,7 +85,7 @@ catalog:
   solito: 5.0.0
   stripe: 19.3.1
   svix: 1.85.0
-  tamagui: 1.144.3
+  tamagui: 2.0.0-rc.22
   tsx: 4.20.6
   typescript: 5.9.3
   uuid: 13.0.0

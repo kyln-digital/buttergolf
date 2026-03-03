@@ -530,7 +530,7 @@ export function DetailsStep({
   return (
     <Column
       flex={1}
-      animation="quick"
+      transition="quick"
       enterStyle={{
         opacity: 0,
         x: direction === "forward" ? 50 : -50,
@@ -631,7 +631,7 @@ export function DetailsStep({
                     checked={formData.headCoverIncluded}
                     onCheckedChange={(checked) => onUpdate({ headCoverIncluded: !!checked })}
                   >
-                    <Switch.Thumb animation="quick" />
+                    <Switch.Thumb transition="quick" />
                   </Switch>
                 </Row>
               </TouchableOpacity>

@@ -25,7 +25,8 @@
  * ```
  */
 
-import { Button as TamaguiButton, styled, GetProps } from "tamagui";
+import type { ReactNode } from "react";
+import { Button as TamaguiButton, styled, GetProps, type ColorTokens } from "tamagui";
 import { Platform } from "react-native";
 
 /**
@@ -52,7 +53,9 @@ const ButtonBase = styled(TamaguiButton, {
   name: "Button",
 
   // Base styles for all buttons
-  fontFamily: "$body",
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore — fontWeight inherits to button text via CSS; TS types for styled config don't include text props in v2 RC
+  // TODO: remove @ts-ignore once Tamagui v2 stable ships with corrected styled() text-prop types
   fontWeight: "700",
   cursor: "pointer",
   borderRadius: "$full",
@@ -138,7 +141,14 @@ const ButtonBase = styled(TamaguiButton, {
   } as const,
 });
 
-export type ButtonProps = GetProps<typeof ButtonBase>;
+export type ButtonProps = GetProps<typeof ButtonBase> & {
+  /** Text colour for the button label. Forwarded to Tamagui's ButtonContext in v2. */
+  color?: ColorTokens | string;
+  /** Font weight for the button label. Inherited by button text via CSS in v2. */
+  fontWeight?: string | number;
+  /** Explicit children type — fixes Tamagui v2 type-inference that narrows children to token unions. */
+  children?: ReactNode;
+};
 
 /**
  * When `chromeless` is passed without an explicit `butterVariant`,

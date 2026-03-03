@@ -97,7 +97,7 @@ export function CategoryGrid() {
                 borderRadius="$xs"
                 overflow="hidden"
                 cursor="pointer"
-                animation="medium"
+                transition="medium"
                 shadowColor="$shadowColor"
                 shadowOffset={{ width: 0, height: 14 }}
                 shadowRadius={28}

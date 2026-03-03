@@ -107,7 +107,7 @@ export function ChatBubble({
       gap="$sm"
       alignItems="flex-end"
       flexDirection={isOwnMessage ? "row-reverse" : "row"}
-      animation={animated ? "medium" : undefined}
+      transition={animated ? "medium" : undefined}
       enterStyle={animated ? { opacity: 0, x: isOwnMessage ? 40 : -40 } : undefined}
       opacity={animated ? 1 : undefined}
       x={0}

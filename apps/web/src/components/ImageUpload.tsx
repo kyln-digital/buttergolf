@@ -299,7 +299,7 @@ export function ImageUpload({
           justifyContent="center"
           minHeight={currentImages.length === 0 ? 280 : 100}
           cursor={currentImages.length < maxImages ? "pointer" : "default"}
-          animation="quick"
+          transition="quick"
           width="100%"
           hoverStyle={
             currentImages.length < maxImages

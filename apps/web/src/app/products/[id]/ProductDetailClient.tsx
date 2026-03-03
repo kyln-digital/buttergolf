@@ -237,7 +237,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                           borderColor: "$primary",
                           transform: "scale(1.05)",
                         }}
-                        animation="quick"
+                        transition="quick"
                         width={56}
                         height={56}
                         $gtSm={{ width: 64, height: 64 }}

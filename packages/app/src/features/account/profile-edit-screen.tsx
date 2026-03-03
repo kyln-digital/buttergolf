@@ -241,9 +241,9 @@ export function ProfileEditScreen({
               Email
             </Text>
             <Input
-              size="$5"
+              size="md"
               value={user?.email || ""}
-              editable={false}
+              readOnly
               backgroundColor="$gray100"
               color="$textSecondary"
             />

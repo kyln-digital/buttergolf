@@ -18,6 +18,7 @@
  * ```
  */
 
+import type { ReactNode, ForwardRefExoticComponent } from "react";
 import {
   styled,
   GetProps,
@@ -30,21 +31,39 @@ import {
 export { XStack, YStack, View } from "tamagui";
 export type { XStackProps, YStackProps, ViewProps } from "tamagui";
 
+/**
+ * Tamagui v2's styled() incorrectly infers `children` as a theme-token union instead of
+ * ReactNode.  This helper restores the correct children type while preserving every other
+ * property on the component (staticConfig, styleable, display name, etc.).
+ *
+ * TODO: remove this workaround once the upstream type regression is fixed in Tamagui v2 stable.
+ * Track: https://github.com/tamagui/tamagui/issues (search "children token union type")
+ */
+type WithReactChildren<C> =
+  C extends ForwardRefExoticComponent<infer P>
+    ? ForwardRefExoticComponent<Omit<P, "children"> & { children?: ReactNode }> &
+        Omit<C, keyof ForwardRefExoticComponent<unknown>>
+    : C;
+
+function withReactChildren<C>(component: C): WithReactChildren<C> {
+  return component as WithReactChildren<C>;
+}
+
 // Row - Semantic name for horizontal layout (XStack)
 // Minimal shim - preserves all XStack behavior and props
-export const Row = styled(TamaguiXStack, {
+const _Row = styled(TamaguiXStack, {
   name: "Row",
 });
 
 // Column - Semantic name for vertical layout (YStack)
 // Minimal shim - preserves all YStack behavior and props
-export const Column = styled(TamaguiYStack, {
+const _Column = styled(TamaguiYStack, {
   name: "Column",
 });
 
 // Container - Max-width wrapper for content
 // Useful utility for constraining content width
-export const Container = styled(TamaguiYStack, {
+const _Container = styled(TamaguiYStack, {
   name: "Container",
 
   width: "100%",
@@ -68,12 +87,17 @@ export const Container = styled(TamaguiYStack, {
 
 // Spacer - Flexible space component
 // Use with flex prop: <Spacer flex={1} />
-export const Spacer = styled(TamaguiView, {
+const _Spacer = styled(TamaguiView, {
   name: "Spacer",
   flex: 1,
 });
 
-export type RowProps = GetProps<typeof Row>;
-export type ColumnProps = GetProps<typeof Column>;
-export type ContainerProps = GetProps<typeof Container>;
-export type SpacerProps = GetProps<typeof Spacer>;
+export const Row = withReactChildren(_Row);
+export const Column = withReactChildren(_Column);
+export const Container = withReactChildren(_Container);
+export const Spacer = withReactChildren(_Spacer);
+
+export type RowProps = GetProps<typeof _Row>;
+export type ColumnProps = GetProps<typeof _Column>;
+export type ContainerProps = GetProps<typeof _Container>;
+export type SpacerProps = GetProps<typeof _Spacer>;

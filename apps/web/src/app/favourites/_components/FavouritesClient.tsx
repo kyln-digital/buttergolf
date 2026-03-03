@@ -52,7 +52,7 @@ function LoadingSkeleton() {
       borderRadius="$lg"
       position="relative"
       overflow="hidden"
-      animation="quick"
+      transition="quick"
     />
   );
 }
@@ -324,7 +324,7 @@ export function FavouritesClient() {
             justifyContent="center"
             paddingVertical="$3xl"
             gap="$xl"
-            animation="medium"
+            transition="medium"
             enterStyle={{ opacity: 0, y: 20 }}
             opacity={1}
             y={0}
@@ -411,7 +411,7 @@ export function FavouritesClient() {
       {undoProduct && (
         <View
           style={{ position: "fixed", bottom: 24, left: "50%", zIndex: 9999 }}
-          animation="medium"
+          transition="medium"
           enterStyle={{ opacity: 0, y: 10 }}
           opacity={1}
           y={0}

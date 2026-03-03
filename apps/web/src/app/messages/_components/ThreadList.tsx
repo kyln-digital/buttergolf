@@ -119,7 +119,7 @@ export function ThreadList({ conversations, activeConversationId, loading }: Thr
                       backgroundColor: isActive ? "$primaryLight" : "$backgroundPress",
                     }}
                     cursor="pointer"
-                    animation="quick"
+                    transition="quick"
                   >
                     {/* Avatar */}
                     {conversation.otherUserImage ? (

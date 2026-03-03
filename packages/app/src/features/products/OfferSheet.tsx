@@ -79,7 +79,7 @@ export function OfferSheet({
       zIndex={100_000}
     >
       <Sheet.Overlay
-        animation="lazy"
+        transition="lazy"
         enterStyle={{ opacity: 0 }}
         exitStyle={{ opacity: 0 }}
         backgroundColor="rgba(0,0,0,0.5)"

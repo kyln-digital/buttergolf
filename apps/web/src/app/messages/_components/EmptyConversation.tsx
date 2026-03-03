@@ -11,7 +11,7 @@ export function EmptyConversation() {
       justifyContent="center"
       gap="$lg"
       padding="$xl"
-      animation="medium"
+      transition="medium"
       enterStyle={{ opacity: 0, y: 10 }}
       opacity={1}
       y={0}

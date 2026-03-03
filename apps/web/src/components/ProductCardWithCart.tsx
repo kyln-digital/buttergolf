@@ -23,7 +23,7 @@ export function ProductCardWithCart({ product }: Readonly<ProductCardWithCartPro
     <Card
       variant="elevated"
       padding={0}
-      animation="bouncy"
+      transition="bouncy"
       backgroundColor="$surface"
       borderColor="$border"
       hoverStyle={{
