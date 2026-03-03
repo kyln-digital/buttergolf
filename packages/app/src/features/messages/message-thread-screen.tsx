@@ -2,10 +2,9 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { KeyboardAvoidingView, Platform } from "react-native";
-import { Column, Row, Text, Button, Image, ChatMessageList, ChatInput } from "@buttergolf/ui";
+import { Column, Row, Text, Image, ChatMessageList, ChatInput } from "@buttergolf/ui";
 import type { ChatMessage } from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ArrowLeft } from "@tamagui/lucide-icons";
 
 const MESSAGE_LIMITS = {
   MAX_LENGTH: 2000,
@@ -166,7 +165,6 @@ export function MessageThreadScreen({
   onFetchMessages,
   onSendMessage,
   onMarkAsRead,
-  onBack,
   createEventSource: createEventSourceProp,
   showOfferButton = false,
   onMakeOffer,
@@ -612,16 +610,6 @@ export function MessageThreadScreen({
           borderBottomColor="$border"
           backgroundColor="$surface"
         >
-          <Button
-            size="$4"
-            backgroundColor="transparent"
-            borderWidth={0}
-            onPress={onBack}
-            paddingHorizontal="$xs"
-          >
-            <ArrowLeft size={24} color="$text" />
-          </Button>
-
           {/* User avatar with product thumbnail overlay */}
           <Column width={44} height={44} position="relative">
             {otherUserImage ? (
