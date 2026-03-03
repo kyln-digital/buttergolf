@@ -1,7 +1,6 @@
 "use client";
 
-import { Column, Row } from "@buttergolf/ui";
-import { View } from "tamagui";
+import { Column, Row, View } from "@buttergolf/ui";
 
 function SkeletonPulse({
   width,

@@ -11,8 +11,8 @@ import {
   Heading,
   Container,
   SegmentedTabs,
+  View,
 } from "@buttergolf/ui";
-import { View } from "tamagui";
 import Link from "next/link";
 import Image from "next/image";
 import { ShoppingBag, Package, Eye, Download, ExternalLink } from "@tamagui/lucide-icons";

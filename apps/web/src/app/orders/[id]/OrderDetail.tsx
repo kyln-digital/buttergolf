@@ -16,8 +16,8 @@ import {
   Button,
   Separator,
   Container,
+  View,
 } from "@buttergolf/ui";
-import { View } from "tamagui";
 import { buildTrackingUrl } from "@/lib/utils/format";
 import {
   Package,

@@ -1,5 +1,5 @@
 import { prisma } from "@buttergolf/db";
-import { PENDING_ADDRESS, SHIPENGINE_CARRIER_CODES } from "./constants";
+import { SHIPENGINE_CARRIER_CODES } from "./constants";
 import { buildTrackingUrl } from "./utils/format";
 import { sendLabelGeneratedEmail } from "./email";
 import {

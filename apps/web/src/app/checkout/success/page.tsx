@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { Column, Text, Heading, Button, Card, Spinner, Row, Image, Badge } from "@buttergolf/ui";
+import { Column, Text, Heading, Button, Card, Spinner, Row, Image } from "@buttergolf/ui";
 import { Lock, ShieldCheck, MapPin, Mail, Check } from "@tamagui/lucide-icons";
 import Link from "next/link";
 import confetti from "canvas-confetti";
