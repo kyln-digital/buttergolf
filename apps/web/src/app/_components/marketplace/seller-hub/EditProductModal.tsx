@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Column, Row, Heading, Text, Button, Input, Card } from "@buttergolf/ui";
 import { useTheme } from "tamagui";
 import { LISTING_PRICE_LIMITS, getListingPriceBoundsMessage } from "@buttergolf/constants";
-import type { SellerProduct } from "./SellerProductCard";
+import { ImageUpload } from "@/components/ImageUpload";
+import type { SellerProduct, SellerProductImage } from "./SellerProductCard";
 
 interface EditProductModalProps {
   product: SellerProduct;
@@ -44,6 +45,40 @@ export function EditProductModal({ product, onClose, onSave }: EditProductModalP
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
+
+  // Image state: current URLs for display, mapping URL→DB id for existing images, removed DB ids
+  const [imageUrls, setImageUrls] = useState<string[]>(
+    product.images.map((img: SellerProductImage) => img.url)
+  );
+  const [imageIdMap] = useState<Map<string, string>>(() => {
+    const map = new Map<string, string>();
+    for (const img of product.images) {
+      map.set(img.url, img.id);
+    }
+    return map;
+  });
+  const [removedImageIds, setRemovedImageIds] = useState<string[]>([]);
+
+  const handleImageUploadComplete = useCallback((url: string) => {
+    setImageUrls((prev) => [...prev, url]);
+  }, []);
+
+  const handleRemoveImage = useCallback(
+    (index: number) => {
+      const url = imageUrls[index];
+      if (!url) return;
+      const dbId = imageIdMap.get(url);
+      if (dbId) {
+        setRemovedImageIds((prev) => [...prev, dbId]);
+      }
+      setImageUrls((prev) => prev.filter((_, i) => i !== index));
+    },
+    [imageUrls, imageIdMap]
+  );
+
+  const handleReorderImages = useCallback((urls: string[]) => {
+    setImageUrls(urls);
+  }, []);
 
   const [formData, setFormData] = useState({
     title: product.title,
@@ -122,9 +157,20 @@ export function EditProductModal({ product, onClose, onSave }: EditProductModalP
         return;
       }
 
+      if (imageUrls.length === 0) {
+        setError("Please add at least one image");
+        setLoading(false);
+        return;
+      }
+
       await onSave(product.id, {
         ...formData,
         price: parsedPrice,
+        images: imageUrls.map((url, i) => ({ url, sortOrder: i })),
+        removedImageIds,
+      } as Partial<SellerProduct> & {
+        images: { url: string; sortOrder: number }[];
+        removedImageIds: string[];
       });
       onClose();
     } catch (err) {
@@ -173,6 +219,18 @@ export function EditProductModal({ product, onClose, onSave }: EditProductModalP
 
             {/* Form Fields */}
             <Column gap="$lg" padding="$lg">
+              {/* Images */}
+              <Column gap="$xs">
+                <Text weight="medium">Photos *</Text>
+                <ImageUpload
+                  onUploadComplete={handleImageUploadComplete}
+                  onRemoveImage={handleRemoveImage}
+                  onReorderImages={handleReorderImages}
+                  maxImages={5}
+                  currentImages={imageUrls}
+                />
+              </Column>
+
               {/* Title */}
               <Column gap="$xs">
                 <Text weight="medium">Title *</Text>
