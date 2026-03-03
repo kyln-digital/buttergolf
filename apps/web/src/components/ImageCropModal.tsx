@@ -153,10 +153,24 @@ export function ImageCropModal({
     }
 
     const originalOverflow = document.body.style.overflow;
+    const appRoot = document.getElementById("__next");
+    const hadInert = appRoot?.hasAttribute("inert") ?? false;
+    const originalAppPointerEvents = appRoot?.style.pointerEvents;
+
     document.body.style.overflow = "hidden";
+    appRoot?.setAttribute("inert", "");
+    if (appRoot) {
+      appRoot.style.pointerEvents = "none";
+    }
 
     return () => {
       document.body.style.overflow = originalOverflow;
+      if (appRoot) {
+        if (!hadInert) {
+          appRoot.removeAttribute("inert");
+        }
+        appRoot.style.pointerEvents = originalAppPointerEvents ?? "";
+      }
     };
   }, [open, isMounted]);
 
@@ -209,7 +223,7 @@ export function ImageCropModal({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        zIndex: 2000,
+        zIndex: 100000,
         padding: "16px",
       }}
       onClick={(e) => {
