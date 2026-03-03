@@ -71,6 +71,8 @@ export const config = [
       ...pluginReactHooks.configs.recommended.rules,
       // React scope no longer necessary with new JSX transform.
       "react/react-in-jsx-scope": "off",
+      // TypeScript handles prop types validation, no need for prop-types rule
+      "react/prop-types": "off",
       // Prevent fontSize prop on Text components - use size="$token" instead
       // Using fontSize bypasses Tamagui's variant system and causes lineHeight issues on React Native
       "react/forbid-component-props": [

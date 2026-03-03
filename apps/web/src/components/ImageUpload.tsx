@@ -269,163 +269,167 @@ export function ImageUpload({
   const emptySlotCount = maxImages - currentImages.length;
 
   return (
-    <Column gap="$md" width="100%">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
-        onChange={handleFileChange}
-        style={{ display: "none" }}
-      />
+    <>
+      {/* pointerEvents fallback for browsers with incomplete inert support */}
+      <Column gap="$md" width="100%" style={{ pointerEvents: cropModalOpen ? "none" : "auto" }}>
+        {/* eslint-disable-next-line react/forbid-elements -- hidden file input, no DS equivalent */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+          onChange={handleFileChange}
+          style={{ display: "none" }}
+        />
 
-      {/* Upload Area — compact if images exist */}
-      <Column
-        backgroundColor={dragActive ? "$primaryLight" : "$surface"}
-        borderWidth={2}
-        borderColor={dragActive ? "$primary" : "$border"}
-        borderStyle="dashed"
-        borderRadius="$xl"
-        padding={currentImages.length === 0 ? "$10" : "$6"}
-        alignItems="center"
-        justifyContent="center"
-        minHeight={currentImages.length === 0 ? 280 : 100}
-        cursor={currentImages.length < maxImages ? "pointer" : "default"}
-        animation="quick"
-        width="100%"
-        hoverStyle={
-          currentImages.length < maxImages
-            ? { borderColor: "$primary", backgroundColor: "$primaryLight" }
-            : {}
-        }
-        onPress={currentImages.length < maxImages ? handleButtonClick : undefined}
-        {...{
-          onDragEnter: handleDrag,
-          onDragLeave: handleDrag,
-          onDragOver: handleDrag,
-          onDrop: handleDrop,
-        }}
-      >
-        {uploading ? (
-          <Column gap="$md" alignItems="center">
-            <Spinner size="lg" color="$primary" />
-            <Text size="$4" color="$textSecondary" textAlign="center">
-              Uploading... {progress.toString()}%
+        {/* Upload Area — compact if images exist */}
+        <Column
+          backgroundColor={dragActive ? "$primaryLight" : "$surface"}
+          borderWidth={2}
+          borderColor={dragActive ? "$primary" : "$border"}
+          borderStyle="dashed"
+          borderRadius="$xl"
+          padding={currentImages.length === 0 ? "$10" : "$6"}
+          alignItems="center"
+          justifyContent="center"
+          minHeight={currentImages.length === 0 ? 280 : 100}
+          cursor={currentImages.length < maxImages ? "pointer" : "default"}
+          animation="quick"
+          width="100%"
+          hoverStyle={
+            currentImages.length < maxImages
+              ? { borderColor: "$primary", backgroundColor: "$primaryLight" }
+              : {}
+          }
+          onPress={currentImages.length < maxImages ? handleButtonClick : undefined}
+          {...{
+            onDragEnter: handleDrag,
+            onDragLeave: handleDrag,
+            onDragOver: handleDrag,
+            onDrop: handleDrop,
+          }}
+        >
+          {uploading ? (
+            <Column gap="$md" alignItems="center">
+              <Spinner size="lg" color="$primary" />
+              <Text size="$4" color="$textSecondary" textAlign="center">
+                Uploading... {progress.toString()}%
+              </Text>
+            </Column>
+          ) : currentImages.length === 0 ? (
+            <Column gap="$md" alignItems="center" width="100%" maxWidth={500}>
+              <Column
+                width={64}
+                height={64}
+                borderRadius="$full"
+                backgroundColor="$primaryLight"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Text size="$12">+</Text>
+              </Column>
+              <Column gap="$xs" alignItems="center">
+                <Text size="$6" weight="semibold" textAlign="center" color="$text">
+                  Upload photos
+                </Text>
+                <Text size="$3" color="$textSecondary" textAlign="center" lineHeight={20}>
+                  or drag and drop
+                </Text>
+                <Text size="$2" color="$textMuted" textAlign="center" lineHeight={18}>
+                  Your first photo will be the cover image. We&apos;ll automatically remove the
+                  background and add our brand pattern.
+                </Text>
+              </Column>
+              <Text size="$2" color="$primary" textAlign="center">
+                0/{maxImages} photos • Max 10MB each
+              </Text>
+            </Column>
+          ) : currentImages.length < maxImages ? (
+            <Row gap="$sm" alignItems="center">
+              <Column
+                width={36}
+                height={36}
+                borderRadius="$full"
+                backgroundColor="$primaryLight"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Text size="$7">+</Text>
+              </Column>
+              <Column gap="$xs">
+                <Text size="$4" weight="semibold" color="$text">
+                  Add more photos
+                </Text>
+                <Text size="$2" color="$primary">
+                  {currentImages.length}/{maxImages} photos
+                </Text>
+              </Column>
+            </Row>
+          ) : (
+            <Text size="$3" color="$textSecondary" textAlign="center">
+              Maximum {maxImages} photos reached
             </Text>
-          </Column>
-        ) : currentImages.length === 0 ? (
-          <Column gap="$md" alignItems="center" width="100%" maxWidth={500}>
-            <Column
-              width={64}
-              height={64}
-              borderRadius="$full"
-              backgroundColor="$primaryLight"
-              alignItems="center"
-              justifyContent="center"
-            >
-              <Text size="$12">+</Text>
-            </Column>
-            <Column gap="$xs" alignItems="center">
-              <Text size="$6" weight="semibold" textAlign="center" color="$text">
-                Upload photos
-              </Text>
-              <Text size="$3" color="$textSecondary" textAlign="center" lineHeight={20}>
-                or drag and drop
-              </Text>
-              <Text size="$2" color="$textMuted" textAlign="center" lineHeight={18}>
-                Your first photo will be the cover image. We&apos;ll automatically remove the
-                background and add our brand pattern.
-              </Text>
-            </Column>
-            <Text size="$2" color="$primary" textAlign="center">
-              0/{maxImages} photos • Max 10MB each
-            </Text>
-          </Column>
-        ) : currentImages.length < maxImages ? (
-          <Row gap="$sm" alignItems="center">
-            <Column
-              width={36}
-              height={36}
-              borderRadius="$full"
-              backgroundColor="$primaryLight"
-              alignItems="center"
-              justifyContent="center"
-            >
-              <Text size="$7">+</Text>
-            </Column>
-            <Column gap="$xs">
-              <Text size="$4" weight="semibold" color="$text">
-                Add more photos
-              </Text>
-              <Text size="$2" color="$primary">
-                {currentImages.length}/{maxImages} photos
-              </Text>
-            </Column>
-          </Row>
-        ) : (
-          <Text size="$3" color="$textSecondary" textAlign="center">
-            Maximum {maxImages} photos reached
+          )}
+        </Column>
+
+        {error && (
+          <Text size="$3" color="$error" textAlign="center">
+            {error}
           </Text>
         )}
+
+        {/* Image Grid — sortable */}
+        {currentImages.length > 0 && (
+          <Column gap="$sm">
+            <Text size="$2" color="$textSecondary">
+              Drag to reorder • First image is your cover photo
+            </Text>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext items={currentImages} strategy={rectSortingStrategy}>
+                <Row gap="$md" flexWrap="wrap">
+                  {currentImages.map((url, index) => (
+                    <SortableImageItem
+                      key={url}
+                      url={url}
+                      index={index}
+                      onRemove={handleRemove}
+                      onSetCover={handleSetCover}
+                    />
+                  ))}
+
+                  {/* Empty placeholder slots */}
+                  {Array.from({ length: emptySlotCount }).map((_, i) => (
+                    <Column
+                      key={`empty-${i}`}
+                      width={140}
+                      height={140}
+                      borderRadius="$lg"
+                      borderWidth={2}
+                      borderColor="$border"
+                      borderStyle="dashed"
+                      alignItems="center"
+                      justifyContent="center"
+                      opacity={0.4}
+                      cursor="pointer"
+                      onPress={handleButtonClick}
+                    >
+                      <Text size="$7" color="$textMuted">
+                        +
+                      </Text>
+                      <Text size="$1" color="$textMuted">
+                        {currentImages.length + i + 1}
+                      </Text>
+                    </Column>
+                  ))}
+                </Row>
+              </SortableContext>
+            </DndContext>
+          </Column>
+        )}
       </Column>
-
-      {error && (
-        <Text size="$3" color="$error" textAlign="center">
-          {error}
-        </Text>
-      )}
-
-      {/* Image Grid — sortable */}
-      {currentImages.length > 0 && (
-        <Column gap="$sm">
-          <Text size="$2" color="$textSecondary">
-            Drag to reorder • First image is your cover photo
-          </Text>
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext items={currentImages} strategy={rectSortingStrategy}>
-              <Row gap="$md" flexWrap="wrap">
-                {currentImages.map((url, index) => (
-                  <SortableImageItem
-                    key={url}
-                    url={url}
-                    index={index}
-                    onRemove={handleRemove}
-                    onSetCover={handleSetCover}
-                  />
-                ))}
-
-                {/* Empty placeholder slots */}
-                {Array.from({ length: emptySlotCount }).map((_, i) => (
-                  <Column
-                    key={`empty-${i}`}
-                    width={140}
-                    height={140}
-                    borderRadius="$lg"
-                    borderWidth={2}
-                    borderColor="$border"
-                    borderStyle="dashed"
-                    alignItems="center"
-                    justifyContent="center"
-                    opacity={0.4}
-                    cursor="pointer"
-                    onPress={handleButtonClick}
-                  >
-                    <Text size="$7" color="$textMuted">
-                      +
-                    </Text>
-                    <Text size="$1" color="$textMuted">
-                      {currentImages.length + i + 1}
-                    </Text>
-                  </Column>
-                ))}
-              </Row>
-            </SortableContext>
-          </DndContext>
-        </Column>
-      )}
 
       {/* Crop Modal */}
       {fileToCrop && (
@@ -454,6 +458,6 @@ export function ImageUpload({
           }}
         />
       )}
-    </Column>
+    </>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Column, Row, View, Text } from "@buttergolf/ui";
+import { Column, View, Text } from "@buttergolf/ui";
 import { ProductCard } from "@/components/ProductCard";
 import { DotPagination } from "@/components/DotPagination";
 import type { ProductCardData } from "@buttergolf/app";

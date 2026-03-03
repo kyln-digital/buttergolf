@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Column, Row, Text, Heading, Badge, ScrollView } from "@buttergolf/ui";
-import { View, Image } from "tamagui";
+import { Column, Row, Text, Heading, Badge, ScrollView, View, Image } from "@buttergolf/ui";
 import { MessageSquare } from "@tamagui/lucide-icons";
 import { formatDistanceToNow } from "date-fns";
 import type { Conversation } from "../MessagesLayout";
@@ -176,10 +175,16 @@ export function ThreadList({ conversations, activeConversationId, loading }: Thr
                       {offerBadge && (
                         <Row alignItems="center" gap="$xs">
                           <Badge variant={offerBadge.variant} size="sm">
-                            {offerBadge.label}
-                            {conversation.activeOfferAmount != null
-                              ? ` £${conversation.activeOfferAmount.toFixed(2)}`
-                              : ""}
+                            <Text
+                              size="$2"
+                              weight="semibold"
+                              color={offerBadge.variant === "primary" ? "$textInverse" : "$text"}
+                            >
+                              {offerBadge.label}
+                              {conversation.activeOfferAmount != null
+                                ? ` £${conversation.activeOfferAmount.toFixed(2)}`
+                                : ""}
+                            </Text>
                           </Badge>
                         </Row>
                       )}

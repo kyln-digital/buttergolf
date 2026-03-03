@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import { FlatList, RefreshControl, Platform } from "react-native";
 import { Column, Row, Text, Heading, Spinner, Button, ConversationListItem } from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MessageCircle, AlertTriangle, RefreshCw } from "@tamagui/lucide-icons";
+import { MessageCircle, AlertTriangle } from "@tamagui/lucide-icons";
 import { MobileBottomNav } from "../../components/mobile";
 import { formatDistanceToNow } from "date-fns";
 

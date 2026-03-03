@@ -3,8 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { useMedia } from "tamagui";
-import { Column, Row } from "@buttergolf/ui";
-import { View } from "tamagui";
+import { Column, Row, View } from "@buttergolf/ui";
 import { ThreadList } from "./_components/ThreadList";
 
 export interface Conversation {
@@ -80,12 +79,15 @@ export function MessagesLayout({
         <Column
           width="100%"
           height="100%"
+          minHeight={0}
           borderRadius="$lg"
           borderWidth={1}
           borderColor="$border"
           style={containerStyle}
         >
-          {children}
+          <View flex={1} minHeight={0}>
+            {children}
+          </View>
         </Column>
       );
     }
@@ -94,6 +96,7 @@ export function MessagesLayout({
       <Column
         width="100%"
         height="100%"
+        minHeight={0}
         borderRadius="$lg"
         borderWidth={1}
         borderColor="$border"
@@ -109,6 +112,7 @@ export function MessagesLayout({
     <Row
       width="100%"
       height="100%"
+      minHeight={0}
       borderRadius="$lg"
       borderWidth={1}
       borderColor="$border"
@@ -119,6 +123,7 @@ export function MessagesLayout({
         width={360}
         minWidth={360}
         height="100%"
+        minHeight={0}
         borderRightWidth={1}
         borderRightColor="$border"
         backgroundColor="$surface"
@@ -130,8 +135,10 @@ export function MessagesLayout({
       </Column>
 
       {/* Right pane — Conversation or empty state */}
-      <Column flex={1} height="100%" backgroundColor="$background">
-        {children}
+      <Column flex={1} height="100%" minHeight={0} backgroundColor="$background">
+        <View flex={1} minHeight={0}>
+          {children}
+        </View>
       </Column>
     </Row>
   );

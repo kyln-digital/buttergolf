@@ -1,6 +1,5 @@
 import Stripe from "stripe";
 import { prisma } from "@buttergolf/db";
-import { stripe } from "@/lib/stripe";
 import {
   sendOrderConfirmationEmail,
   sendNewSaleEmail,

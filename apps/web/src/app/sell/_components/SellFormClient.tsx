@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable react/forbid-elements -- Complex form with inline-styled select/textarea elements */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
@@ -246,6 +247,7 @@ export function SellFormClient() {
     userAddedText,
     categories,
     generateTitle,
+    formData.title,
   ]);
 
   // Load categories on mount

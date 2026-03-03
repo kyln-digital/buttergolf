@@ -3,11 +3,11 @@ import { NextResponse } from "next/server";
 import { getUserIdFromRequest } from "@/lib/auth";
 import {
   logError,
-  logWarning,
   UPLOAD_CLOUDINARY_CONFIG_MISSING,
   UPLOAD_FAILED,
   UPLOAD_BACKGROUND_REMOVAL_FAILED,
   UPLOAD_CONVERSION_FAILED,
+  PRODUCT_IMAGE_ASPECT_RATIO,
 } from "@buttergolf/constants";
 
 // Cloudinary configuration
@@ -192,12 +192,14 @@ export async function POST(request: Request): Promise<NextResponse> {
           flags: "layer_apply",
         },
         {
-          // Crop the final result back to the original (cropped) image dimensions
-          // gravity: "center" ensures we crop equally from all sides, keeping the original image intact
-          crop: "crop",
+          // Preserve the canonical product frame without additional tight cropping.
+          // This avoids a "zoomed/clipped" look after background removal.
+          // Anchor to original width so Cloudinary always materializes a 4:3 frame.
+          crop: "pad",
           width: "iw",
-          height: "ih",
+          aspect_ratio: `${PRODUCT_IMAGE_ASPECT_RATIO}`,
           gravity: "center",
+          background: "rgb:FFFAD2",
         },
       ];
     }

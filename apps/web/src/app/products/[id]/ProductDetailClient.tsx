@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
 import { Column, Row, Container, Text, Button, Card, Image } from "@buttergolf/ui";
+import { PRODUCT_IMAGE_ASPECT_RATIO } from "@buttergolf/constants";
 import { ProductInformation } from "./_components/ProductInformation";
 import { BuyNowSheet } from "./_components/BuyNowSheet";
 
@@ -189,15 +190,14 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   onPress={() => setLightboxOpen(true)}
                   position="relative"
                   width="100%"
-                  height={400}
-                  $gtSm={{ height: 500 }}
-                  $gtMd={{ height: 650 }}
+                  aspectRatio={PRODUCT_IMAGE_ASPECT_RATIO}
                 >
                   <Image
                     source={{ uri: selectedImage.url }}
                     width="100%"
                     height="100%"
                     objectFit="contain"
+                    backgroundColor="$surface"
                     alt={product.title}
                   />
 

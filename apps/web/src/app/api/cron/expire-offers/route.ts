@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
 import { broadcastToConversation } from "@/lib/supabase-realtime";
+import { toNewMessageBroadcast, toOfferUpdateBroadcast } from "@/lib/conversation-broadcast";
 import { sendPushNotifications } from "@/lib/push-notifications";
 
 // Vercel Cron configuration
@@ -85,15 +86,21 @@ export async function GET(request: NextRequest) {
           }),
         ]);
 
-        broadcastToConversation(offer.conversationId, "new_message", msg).catch((err) =>
-          console.error(`[Broadcast] Error for offer ${offer.id}:`, err)
-        );
+        broadcastToConversation(
+          offer.conversationId,
+          "new_message",
+          toNewMessageBroadcast(msg, { offerStatus: "EXPIRED" })
+        ).catch((err) => console.error(`[Broadcast] Error for offer ${offer.id}:`, err));
 
-        broadcastToConversation(offer.conversationId, "offer_update", {
-          offerId: offer.id,
-          status: "EXPIRED",
-          amount: currentAmount,
-        }).catch((err) => console.error(`[Broadcast] Offer update error for ${offer.id}:`, err));
+        broadcastToConversation(
+          offer.conversationId,
+          "offer_update",
+          toOfferUpdateBroadcast({
+            offerId: offer.id,
+            status: "EXPIRED",
+            amount: currentAmount,
+          })
+        ).catch((err) => console.error(`[Broadcast] Offer update error for ${offer.id}:`, err));
 
         const pushMessage = `Your offer of £${currentAmount.toFixed(2)} on ${offer.product.title} has expired.`;
 

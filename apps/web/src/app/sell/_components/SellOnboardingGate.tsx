@@ -77,6 +77,7 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
     if (newStep !== wizardStep) {
       setWizardStep(newStep);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status.hasAccount, status.onboardingComplete, status.accountStatus, status.phone]);
 
   // Auto-initialize Stripe onboarding when in stripe step
@@ -84,6 +85,7 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
     if (wizardStep === "stripe" && !stripeConnectInstance && !loading) {
       initializeOnboarding();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wizardStep]);
 
   async function handlePhoneSubmit(phone: string) {

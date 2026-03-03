@@ -115,6 +115,22 @@ export async function POST(request: Request) {
       isDraft,
     } = body;
 
+    // Defensive sanitisation: the client should send string URLs, but we occasionally
+    // receive null/empty entries (e.g. interrupted cover-photo flow). Filter these out
+    // so Prisma never receives invalid nested image records.
+    const normalisedImages = Array.isArray(images)
+      ? images
+          .map((entry) => {
+            if (typeof entry === "string") return entry.trim();
+            if (entry && typeof entry === "object" && "url" in entry) {
+              const urlValue = (entry as { url?: unknown }).url;
+              return typeof urlValue === "string" ? urlValue.trim() : "";
+            }
+            return "";
+          })
+          .filter((url) => url.length > 0)
+      : [];
+
     // ============================================================
     // IDEMPOTENCY CHECK
     // Prevent duplicate product creation from double-submissions
@@ -169,7 +185,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: getListingPriceBoundsMessage() }, { status: 400 });
     }
 
-    if (!images || images.length === 0) {
+    if (normalisedImages.length === 0) {
       return NextResponse.json({ error: "At least one image is required" }, { status: 400 });
     }
 
@@ -272,7 +288,7 @@ export async function POST(request: Request) {
         // Draft status
         isDraft: isDraft || false,
         images: {
-          create: images.map((url: string, index: number) => ({
+          create: normalisedImages.map((url: string, index: number) => ({
             url,
             sortOrder: index,
           })),

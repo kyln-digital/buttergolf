@@ -2,10 +2,9 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { KeyboardAvoidingView, Platform } from "react-native";
-import { Column, Row, Text, Button, Image, ChatMessageList, ChatInput } from "@buttergolf/ui";
+import { Column, Row, Text, Image, ChatMessageList, ChatInput } from "@buttergolf/ui";
 import type { ChatMessage } from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ArrowLeft } from "@tamagui/lucide-icons";
 
 const MESSAGE_LIMITS = {
   MAX_LENGTH: 2000,
@@ -166,7 +165,6 @@ export function MessageThreadScreen({
   onFetchMessages,
   onSendMessage,
   onMarkAsRead,
-  onBack,
   createEventSource: createEventSourceProp,
   showOfferButton = false,
   onMakeOffer,
@@ -232,7 +230,11 @@ export function MessageThreadScreen({
           existing.content !== msg.content ||
           existing.isRead !== msg.isRead ||
           existing.createdAt !== msg.createdAt ||
-          existing.senderId !== msg.senderId
+          existing.senderId !== msg.senderId ||
+          existing.type !== msg.type ||
+          existing.offerAmount !== msg.offerAmount ||
+          existing.offerId !== msg.offerId ||
+          existing.offerStatus !== msg.offerStatus
         ) {
           byId.set(msg.id, msg);
           changed = true;
@@ -314,12 +316,55 @@ export function MessageThreadScreen({
     const handleMessage = (event: { data: string }) => {
       try {
         const data = JSON.parse(event.data);
+        const legacyBareMessage =
+          data &&
+          typeof data === "object" &&
+          typeof data.id === "string" &&
+          typeof data.senderId === "string" &&
+          typeof data.content === "string" &&
+          typeof data.createdAt === "string";
+
         if (data.type === "new_message" && data.message && !cancelled) {
           // Skip self-echoed messages — our optimistic update already
           // handles the sender's own messages.
           if (data.message.senderId === currentUserId) return;
 
           mergeMessages([toChatMessage(data.message)]);
+        } else if (legacyBareMessage && !cancelled) {
+          // Backward compatibility for older realtime payloads that broadcast
+          // a bare message object without the { type, message } envelope.
+          if (data.senderId === currentUserId) return;
+          mergeMessages([toChatMessage(data)]);
+        } else if (data.type === "offer_update" && data.offerId && !cancelled) {
+          const updatedStatus = toChatOfferStatus(
+            typeof data.status === "string" ? data.status : undefined
+          );
+          const updatedAmount = typeof data.amount === "number" ? data.amount : undefined;
+
+          if (updatedStatus || updatedAmount != null) {
+            setMessages((prev) => {
+              let changed = false;
+              const next = prev.map((m) => {
+                if (m.offerId !== data.offerId) return m;
+
+                const nextStatus = updatedStatus ?? m.offerStatus;
+                const nextAmount = updatedAmount ?? m.offerAmount;
+
+                if (nextStatus === m.offerStatus && nextAmount === m.offerAmount) {
+                  return m;
+                }
+
+                changed = true;
+                return {
+                  ...m,
+                  offerStatus: nextStatus,
+                  offerAmount: nextAmount,
+                };
+              });
+
+              return changed ? next : prev;
+            });
+          }
         } else if (data.type === "messages_read" && !cancelled) {
           // The other party read our messages — update isRead for all
           // messages we sent that are still marked unread.
@@ -507,7 +552,6 @@ export function MessageThreadScreen({
   );
 
   const handleAcceptOffer = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async (_offerId: string) => {
       if (!onAcceptOffer) return;
       try {
@@ -520,7 +564,6 @@ export function MessageThreadScreen({
   );
 
   const handleRejectOffer = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async (_offerId: string) => {
       if (!onRejectOffer) return;
       try {
@@ -532,7 +575,6 @@ export function MessageThreadScreen({
     [onRejectOffer]
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleCounterOffer = useCallback(async (_offerId: string) => {
     setOfferMode(true);
     setIsCounterMode(true);
@@ -565,16 +607,6 @@ export function MessageThreadScreen({
           borderBottomColor="$border"
           backgroundColor="$surface"
         >
-          <Button
-            size="$4"
-            backgroundColor="transparent"
-            borderWidth={0}
-            onPress={onBack}
-            paddingHorizontal="$xs"
-          >
-            <ArrowLeft size={24} color="$text" />
-          </Button>
-
           {/* User avatar with product thumbnail overlay */}
           <Column width={44} height={44} position="relative">
             {otherUserImage ? (
@@ -661,24 +693,26 @@ export function MessageThreadScreen({
           </Row>
         )}
 
-        {/* Messages */}
-        <ChatMessageList
-          messages={messages}
-          currentUserId={currentUserId}
-          otherUserName={otherUserName}
-          otherUserImage={otherUserImage}
-          loading={loading}
-          emptyMessage={`Start a conversation with ${otherUserName}`}
-          getStableKey={getStableKey}
-          onLoadMore={hasMore ? loadOlderMessages : undefined}
-          loadingMore={loadingMore}
-          onAcceptOffer={handleAcceptOffer}
-          onRejectOffer={handleRejectOffer}
-          onCounterOffer={handleCounterOffer}
-        />
+        {/* Messages (scrollable region) */}
+        <Column flex={1} minHeight={0}>
+          <ChatMessageList
+            messages={messages}
+            currentUserId={currentUserId}
+            otherUserName={otherUserName}
+            otherUserImage={otherUserImage}
+            loading={loading}
+            emptyMessage={`Start a conversation with ${otherUserName}`}
+            getStableKey={getStableKey}
+            onLoadMore={hasMore ? loadOlderMessages : undefined}
+            loadingMore={loadingMore}
+            onAcceptOffer={handleAcceptOffer}
+            onRejectOffer={handleRejectOffer}
+            onCounterOffer={handleCounterOffer}
+          />
+        </Column>
 
         {/* Input */}
-        <Column paddingBottom={Math.max(insets.bottom, 8)}>
+        <Column marginTop="auto" flexShrink={0} paddingBottom={Math.max(insets.bottom, 8)}>
           <ChatInput
             value={newMessage}
             onChangeText={setNewMessage}
