@@ -5,6 +5,7 @@ import { RATE_LIMITS, MESSAGE_LIMITS } from "@/lib/constants";
 import { sendNewMessageEmail } from "@/lib/email";
 import { getUserIdFromRequest } from "@/lib/auth";
 import { broadcastToConversation } from "@/lib/supabase-realtime";
+import { toNewMessageBroadcast } from "@/lib/conversation-broadcast";
 import { sendMessageNotification } from "@/lib/push-notifications";
 
 /**
@@ -88,6 +89,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const messages = await prisma.message.findMany({
       where: { conversationId },
       include: {
+        offer: {
+          select: {
+            status: true,
+          },
+        },
         sender: {
           select: {
             id: true,
@@ -110,11 +116,15 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     // Reverse to chronological (oldest first)
     messages.reverse();
 
-    const messagesWithRole = messages.map((msg) => ({
-      ...msg,
-      senderRole: msg.senderId === conversation.buyerId ? "buyer" : "seller",
-      isOwnMessage: msg.senderId === user.id,
-    }));
+    const messagesWithRole = messages.map((msg) => {
+      const { offer, ...rest } = msg;
+      return {
+        ...rest,
+        offerStatus: offer?.status ?? null,
+        senderRole: msg.senderId === conversation.buyerId ? "buyer" : "seller",
+        isOwnMessage: msg.senderId === user.id,
+      };
+    });
 
     // Return conversation metadata alongside messages
     const isBuyer = user.id === conversation.buyerId;
@@ -267,20 +277,22 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     });
 
     // Broadcast via Supabase Realtime (async, non-blocking)
-    broadcastToConversation(conversationId, "new_message", {
-      type: "new_message",
-      message: {
-        id: message.id,
-        conversationId: message.conversationId,
-        senderId: message.senderId,
-        senderName,
-        senderImage: message.sender.imageUrl,
-        content: message.content,
-        type: message.type,
-        createdAt: message.createdAt.toISOString(),
-        isRead: false,
-      },
-    }).catch((err) => {
+    broadcastToConversation(
+      conversationId,
+      "new_message",
+      toNewMessageBroadcast(
+        {
+          id: message.id,
+          conversationId: message.conversationId,
+          senderId: message.senderId,
+          content: message.content,
+          type: message.type,
+          createdAt: message.createdAt,
+          isRead: false,
+        },
+        {}
+      )
+    ).catch((err) => {
       console.error(
         `[Supabase] Failed to broadcast message for conversation ${conversationId}:`,
         err

@@ -348,6 +348,18 @@ model Waitlist {
   @@map("waitlist")
 }
 
+model NewsletterSubscriber {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  source       String   @default("homepage")
+  subscribedAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([subscribedAt])
+  @@map("newsletter_subscribers")
+}
+
 model ProductPromotion {
   id              String          @id @default(cuid())
   productId       String

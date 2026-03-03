@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
 import { broadcastToConversation } from "@/lib/supabase-realtime";
+import { toNewMessageBroadcast, toOfferUpdateBroadcast } from "@/lib/conversation-broadcast";
 import { sendOfferRejectedEmail } from "@/lib/email";
 import { sendPushNotifications } from "@/lib/push-notifications";
 
@@ -95,15 +96,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Notify the other party
     const otherParty = isSeller ? offer.buyer : offer.seller;
 
-    broadcastToConversation(conversationId, "new_message", msg).catch((err) =>
-      console.error("[Broadcast] Error:", err)
-    );
+    broadcastToConversation(
+      conversationId,
+      "new_message",
+      toNewMessageBroadcast(msg, { offerStatus: updatedOffer.status })
+    ).catch((err) => console.error("[Broadcast] Error:", err));
 
-    broadcastToConversation(conversationId, "offer_update", {
-      offerId: offer.id,
-      status: "REJECTED",
-      amount: currentAmount,
-    }).catch((err) => console.error("[Broadcast] Offer update error:", err));
+    broadcastToConversation(
+      conversationId,
+      "offer_update",
+      toOfferUpdateBroadcast({
+        offerId: offer.id,
+        status: "REJECTED",
+        amount: currentAmount,
+      })
+    ).catch((err) => console.error("[Broadcast] Offer update error:", err));
 
     // Email the other party regardless of who rejected
     sendOfferRejectedEmail({

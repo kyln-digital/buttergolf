@@ -176,10 +176,16 @@ export function ThreadList({ conversations, activeConversationId, loading }: Thr
                       {offerBadge && (
                         <Row alignItems="center" gap="$xs">
                           <Badge variant={offerBadge.variant} size="sm">
-                            {offerBadge.label}
-                            {conversation.activeOfferAmount != null
-                              ? ` £${conversation.activeOfferAmount.toFixed(2)}`
-                              : ""}
+                            <Text
+                              size="$2"
+                              weight="semibold"
+                              color={offerBadge.variant === "primary" ? "$textInverse" : "$text"}
+                            >
+                              {offerBadge.label}
+                              {conversation.activeOfferAmount != null
+                                ? ` £${conversation.activeOfferAmount.toFixed(2)}`
+                                : ""}
+                            </Text>
                           </Badge>
                         </Row>
                       )}
