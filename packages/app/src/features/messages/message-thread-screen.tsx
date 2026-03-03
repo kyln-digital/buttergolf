@@ -696,24 +696,26 @@ export function MessageThreadScreen({
           </Row>
         )}
 
-        {/* Messages */}
-        <ChatMessageList
-          messages={messages}
-          currentUserId={currentUserId}
-          otherUserName={otherUserName}
-          otherUserImage={otherUserImage}
-          loading={loading}
-          emptyMessage={`Start a conversation with ${otherUserName}`}
-          getStableKey={getStableKey}
-          onLoadMore={hasMore ? loadOlderMessages : undefined}
-          loadingMore={loadingMore}
-          onAcceptOffer={handleAcceptOffer}
-          onRejectOffer={handleRejectOffer}
-          onCounterOffer={handleCounterOffer}
-        />
+        {/* Messages (scrollable region) */}
+        <Column flex={1} minHeight={0}>
+          <ChatMessageList
+            messages={messages}
+            currentUserId={currentUserId}
+            otherUserName={otherUserName}
+            otherUserImage={otherUserImage}
+            loading={loading}
+            emptyMessage={`Start a conversation with ${otherUserName}`}
+            getStableKey={getStableKey}
+            onLoadMore={hasMore ? loadOlderMessages : undefined}
+            loadingMore={loadingMore}
+            onAcceptOffer={handleAcceptOffer}
+            onRejectOffer={handleRejectOffer}
+            onCounterOffer={handleCounterOffer}
+          />
+        </Column>
 
         {/* Input */}
-        <Column paddingBottom={Math.max(insets.bottom, 8)}>
+        <Column marginTop="auto" flexShrink={0} paddingBottom={Math.max(insets.bottom, 8)}>
           <ChatInput
             value={newMessage}
             onChangeText={setNewMessage}
