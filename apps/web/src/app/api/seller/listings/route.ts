@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
         include: {
           images: {
             orderBy: { sortOrder: "asc" },
-            take: 1,
+            select: { id: true, url: true, sortOrder: true },
           },
           category: {
             select: {
@@ -149,7 +149,11 @@ export async function GET(request: NextRequest) {
         favourites: product.favourites.length,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
-        images: product.images.map((img) => img.url),
+        images: product.images.map((img) => ({
+          id: img.id,
+          url: img.url,
+          sortOrder: img.sortOrder,
+        })),
         offersCount: product.offers.length,
         pendingOffersCount: product.offers.filter((o) => o.status === "PENDING").length,
       })),

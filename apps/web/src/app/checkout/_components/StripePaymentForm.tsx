@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
@@ -310,8 +310,6 @@ interface CheckoutFormProps {
   shippingOption: (typeof SHIPPING_OPTIONS)[number];
   paymentIntentId: string;
   onSuccess: (paymentIntentId: string) => void;
-  onError: (error: string) => void;
-  onCancel?: () => void;
   onBack: () => void;
 }
 
@@ -320,8 +318,6 @@ function CheckoutForm({
   shippingOption,
   paymentIntentId,
   onSuccess,
-  onError,
-  onCancel,
   onBack,
 }: CheckoutFormProps) {
   const stripe = useStripe();

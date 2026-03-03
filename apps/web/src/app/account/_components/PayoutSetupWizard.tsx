@@ -71,6 +71,7 @@ export function PayoutSetupWizard({ initialStatus, onComplete, onExit }: PayoutS
     if (newStep !== wizardStep) {
       setWizardStep(newStep);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status.hasAccount, status.onboardingComplete, status.accountStatus, status.phone]);
 
   // Auto-initialize Stripe onboarding when in stripe step
@@ -79,6 +80,7 @@ export function PayoutSetupWizard({ initialStatus, onComplete, onExit }: PayoutS
     if (wizardStep === "stripe" && !stripeConnectInstance && !loading) {
       initializeOnboarding();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wizardStep]);
 
   async function handlePhoneSubmit(phone: string) {

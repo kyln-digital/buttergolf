@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable react/forbid-elements -- WebView-only page rendered in RN WebView, no design system available */
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { loadConnectAndInitialize } from "@stripe/connect-js";

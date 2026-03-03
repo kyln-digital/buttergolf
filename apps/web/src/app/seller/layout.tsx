@@ -3,9 +3,36 @@
 import { ConnectComponentsProvider } from "@stripe/react-connect-js";
 import { ConnectNotificationBanner } from "@stripe/react-connect-js";
 import { useStripeConnect } from "@/hooks/useStripeConnect";
+import { usePathname } from "next/navigation";
 import { Column, Row, Text, Heading, Spinner, Button, Card } from "@buttergolf/ui";
 import { SellerDashboardNav } from "./_components/SellerDashboardNav";
 import Link from "next/link";
+
+const STRIPE_EMBEDDED_ROUTES = [
+  "/seller/payments",
+  "/seller/payouts",
+  "/seller/documents",
+  "/seller/settings",
+];
+
+function SetupCallout() {
+  return (
+    <Card variant="outlined" padding="$md">
+      <Column gap="$sm">
+        <Heading level={4}>Complete Seller Setup</Heading>
+        <Text color="$textSecondary">
+          To use payments, payouts, tax documents, and account settings, complete Stripe seller
+          onboarding.
+        </Text>
+        <Link href="/account" style={{ textDecoration: "none", width: "fit-content" }}>
+          <Button butterVariant="primary" size="$4">
+            Complete Seller Setup
+          </Button>
+        </Link>
+      </Column>
+    </Card>
+  );
+}
 
 /**
  * Seller Dashboard Layout
@@ -21,7 +48,9 @@ import Link from "next/link";
  * - Has Account: Shows full dashboard with navigation
  */
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const { stripeConnectInstance, loading, error, hasAccount } = useStripeConnect();
+  const isStripeEmbeddedRoute = STRIPE_EMBEDDED_ROUTES.some((r) => pathname?.startsWith(r));
 
   // Loading state
   if (loading) {
@@ -33,8 +62,8 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
     );
   }
 
-  // Error state
-  if (error) {
+  // Error state blocks Stripe-only routes. Core seller routes remain usable.
+  if (error && isStripeEmbeddedRoute) {
     return (
       <Column fullWidth minHeight="60vh" alignItems="center" justifyContent="center" padding="$xl">
         <Card variant="elevated" padding="$xl" maxWidth={500}>
@@ -56,8 +85,8 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
     );
   }
 
-  // No account state - prompt to complete onboarding
-  if (!hasAccount) {
+  // No account state blocks Stripe-only routes.
+  if (!hasAccount && isStripeEmbeddedRoute) {
     return (
       <Column fullWidth minHeight="60vh" alignItems="center" justifyContent="center" padding="$xl">
         <Card variant="elevated" padding="$xl" maxWidth={500}>
@@ -78,8 +107,8 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
     );
   }
 
-  // No Connect instance (shouldn't happen if hasAccount is true, but safety check)
-  if (!stripeConnectInstance) {
+  // Missing Connect instance only blocks Stripe-only routes.
+  if (!stripeConnectInstance && isStripeEmbeddedRoute) {
     return (
       <Column fullWidth minHeight="60vh" alignItems="center" justifyContent="center" gap="$md">
         <Text color="$textSecondary">Unable to initialize seller dashboard. Please try again.</Text>
@@ -92,23 +121,41 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
     );
   }
 
-  // Main dashboard layout
+  // Stripe pages: render with Connect provider so embedded components work.
+  if (isStripeEmbeddedRoute && stripeConnectInstance) {
+    return (
+      <ConnectComponentsProvider connectInstance={stripeConnectInstance}>
+        <Column fullWidth minHeight="calc(100vh - 80px)">
+          <ConnectNotificationBanner />
+
+          <Row fullWidth flex={1}>
+            <SellerDashboardNav />
+
+            <Column flex={1} padding="$lg" backgroundColor="$background">
+              {children}
+            </Column>
+          </Row>
+        </Column>
+      </ConnectComponentsProvider>
+    );
+  }
+
+  // Core seller routes (dashboard, sales, listings) remain accessible without Connect setup.
   return (
-    <ConnectComponentsProvider connectInstance={stripeConnectInstance}>
-      <Column fullWidth minHeight="calc(100vh - 80px)">
-        {/* Notification Banner - shows compliance alerts at top */}
-        <ConnectNotificationBanner />
+    <Column fullWidth minHeight="calc(100vh - 80px)">
+      <Row fullWidth flex={1}>
+        <SellerDashboardNav />
 
-        <Row fullWidth flex={1}>
-          {/* Sidebar Navigation */}
-          <SellerDashboardNav />
-
-          {/* Main Content Area */}
-          <Column flex={1} padding="$lg" backgroundColor="$background">
-            {children}
-          </Column>
-        </Row>
-      </Column>
-    </ConnectComponentsProvider>
+        <Column flex={1} padding="$lg" backgroundColor="$background" gap="$md">
+          {!hasAccount && <SetupCallout />}
+          {error && !isStripeEmbeddedRoute && (
+            <Card variant="outlined" padding="$md">
+              <Text color="$textSecondary">{error}</Text>
+            </Card>
+          )}
+          {children}
+        </Column>
+      </Row>
+    </Column>
   );
 }

@@ -40,8 +40,8 @@ export default function PaymentMethodsPage() {
             <Column gap="$sm" alignItems="center">
               <Heading level={3}>Coming Soon</Heading>
               <Text color="$textSecondary" textAlign="center" maxWidth={400}>
-                We're working on letting you save payment methods for faster checkout. For now,
-                you'll enter your payment details at checkout.
+                We&apos;re working on letting you save payment methods for faster checkout. For now,
+                you&apos;ll enter your payment details at checkout.
               </Text>
             </Column>
             <Button butterVariant="primary" size="$4" onPress={() => router.push("/account")}>

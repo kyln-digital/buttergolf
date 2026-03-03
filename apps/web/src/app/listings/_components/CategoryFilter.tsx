@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Column, Text, RadioGroup, Radio, RadioIndicator, Label, Row } from "@buttergolf/ui";
+import { RadioGroup, Radio, RadioIndicator, Label, Row } from "@buttergolf/ui";
 import { CATEGORIES } from "@buttergolf/db";
 
 interface CategoryFilterProps {

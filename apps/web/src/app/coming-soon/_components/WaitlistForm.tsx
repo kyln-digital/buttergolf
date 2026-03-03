@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable react/forbid-elements -- Coming-soon page with fully inline-styled form elements */
 import { useState, FormEvent } from "react";
 
 type FormStatus = "idle" | "submitting" | "success" | "error";

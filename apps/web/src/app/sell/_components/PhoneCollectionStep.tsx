@@ -150,6 +150,7 @@ export function PhoneCollectionStep({
       </Column>
 
       {/* Custom styles for phone input to match design system */}
+      {/* eslint-disable-next-line react/no-unknown-property -- Next.js styled-jsx syntax */}
       <style jsx global>{`
         .phone-input-wrapper .PhoneInput {
           display: flex;

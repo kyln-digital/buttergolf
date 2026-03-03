@@ -1,7 +1,7 @@
 "use client";
 
 import { Column, Row, Text, View, Badge } from "@buttergolf/ui";
-import { Package, Truck, MapPin, CheckCircle, Circle } from "@tamagui/lucide-icons";
+import { Package, Truck, MapPin, CheckCircle } from "@tamagui/lucide-icons";
 import type { ShipmentStatus } from "@buttergolf/db";
 
 interface OrderTracking {

@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable react/forbid-elements -- Complex form with inline-styled select/textarea elements */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
@@ -246,6 +247,7 @@ export function SellFormClient() {
     userAddedText,
     categories,
     generateTitle,
+    formData.title,
   ]);
 
   // Load categories on mount
@@ -460,6 +462,20 @@ export function SellFormClient() {
     }));
   };
 
+  const handleRemoveImage = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleReorderImages = (reorderedUrls: string[]) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: reorderedUrls,
+    }));
+  };
+
   return (
     <Column backgroundColor="$background" minHeight="100vh" alignItems="center" width="100%">
       <Column
@@ -500,6 +516,8 @@ export function SellFormClient() {
                     <Column flex={2} minWidth={300} width="100%">
                       <ImageUpload
                         onUploadComplete={handleImageUpload}
+                        onRemoveImage={handleRemoveImage}
+                        onReorderImages={handleReorderImages}
                         currentImages={formData.images}
                         maxImages={5}
                       />
