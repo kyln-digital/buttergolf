@@ -32,18 +32,20 @@ export interface ImageUploadProps {
 
 /** A single sortable image thumbnail with delete + set-as-cover controls */
 function SortableImageItem({
+  id,
   url,
   index,
   onRemove,
   onSetCover,
 }: {
+  id: string;
   url: string;
   index: number;
   onRemove: (index: number) => void;
   onSetCover: (index: number) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: url,
+    id,
   });
 
   const style: React.CSSProperties = {
@@ -203,18 +205,22 @@ export function ImageUpload({
     [currentImages, onReorderImages]
   );
 
+  // Stable unique IDs for each image slot to avoid issues with duplicate URLs.
+  // Uses index-based IDs so DnD kit can track items even if URLs repeat.
+  const sortableIds = currentImages.map((_, i) => `img-${i}`);
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event;
       if (!over || active.id === over.id || !onReorderImages) return;
 
-      const oldIndex = currentImages.indexOf(active.id as string);
-      const newIndex = currentImages.indexOf(over.id as string);
+      const oldIndex = sortableIds.indexOf(active.id as string);
+      const newIndex = sortableIds.indexOf(over.id as string);
       if (oldIndex === -1 || newIndex === -1) return;
 
       onReorderImages(arrayMove(currentImages, oldIndex, newIndex));
     },
-    [currentImages, onReorderImages]
+    [sortableIds, currentImages, onReorderImages]
   );
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -388,11 +394,12 @@ export function ImageUpload({
               collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}
             >
-              <SortableContext items={currentImages} strategy={rectSortingStrategy}>
+              <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
                 <Row gap="$md" flexWrap="wrap">
                   {currentImages.map((url, index) => (
                     <SortableImageItem
-                      key={url}
+                      key={sortableIds[index]}
+                      id={sortableIds[index]}
                       url={url}
                       index={index}
                       onRemove={handleRemove}

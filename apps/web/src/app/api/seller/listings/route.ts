@@ -72,6 +72,7 @@ export async function GET(request: NextRequest) {
         include: {
           images: {
             orderBy: { sortOrder: "asc" },
+            select: { id: true, url: true, sortOrder: true },
           },
           category: {
             select: {

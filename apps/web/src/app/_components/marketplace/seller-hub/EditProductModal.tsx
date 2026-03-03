@@ -70,18 +70,16 @@ export function EditProductModal({ product, onClose, onSave }: EditProductModalP
 
   const handleRemoveImage = useCallback(
     (index: number) => {
-      setImageUrls((prev) => {
-        const url = prev[index];
-        if (url) {
-          const dbId = imageIdMap.get(url);
-          if (dbId) {
-            setRemovedImageIds((ids) => [...ids, dbId]);
-          }
+      const url = imageUrls[index];
+      if (url) {
+        const dbId = imageIdMap.get(url);
+        if (dbId) {
+          setRemovedImageIds((ids) => [...ids, dbId]);
         }
-        return prev.filter((_, i) => i !== index);
-      });
+      }
+      setImageUrls((prev) => prev.filter((_, i) => i !== index));
     },
-    [imageIdMap]
+    [imageUrls, imageIdMap]
   );
 
   const handleReorderImages = useCallback((urls: string[]) => {
