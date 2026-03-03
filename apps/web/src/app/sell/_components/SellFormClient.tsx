@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
+import { LISTING_PRICE_LIMITS, getListingPriceBoundsMessage } from "@buttergolf/constants";
 import {
   Column,
   Row,
@@ -349,6 +350,18 @@ export function SellFormClient() {
       return;
     }
 
+    const parsedPrice = Number.parseFloat(formData.price);
+    if (
+      Number.isNaN(parsedPrice) ||
+      parsedPrice < LISTING_PRICE_LIMITS.MIN ||
+      parsedPrice > LISTING_PRICE_LIMITS.MAX
+    ) {
+      setError(getListingPriceBoundsMessage());
+      setLoading(false);
+      isSubmittingRef.current = false;
+      return;
+    }
+
     try {
       const response = await fetch("/api/products", {
         method: "POST",
@@ -357,7 +370,7 @@ export function SellFormClient() {
         },
         body: JSON.stringify({
           ...formData,
-          price: Number.parseFloat(formData.price),
+          price: parsedPrice,
           // Don't send brandName (display only)
           brandName: undefined,
           // Request ID for server-side idempotency
@@ -394,6 +407,19 @@ export function SellFormClient() {
     setLoading(true);
     setError(null);
 
+    const parsedPrice = Number.parseFloat(formData.price);
+    if (
+      formData.price &&
+      (Number.isNaN(parsedPrice) ||
+        parsedPrice < LISTING_PRICE_LIMITS.MIN ||
+        parsedPrice > LISTING_PRICE_LIMITS.MAX)
+    ) {
+      setError(getListingPriceBoundsMessage());
+      setLoading(false);
+      isSubmittingRef.current = false;
+      return;
+    }
+
     try {
       const response = await fetch("/api/products", {
         method: "POST",
@@ -402,7 +428,7 @@ export function SellFormClient() {
         },
         body: JSON.stringify({
           ...formData,
-          price: formData.price ? Number.parseFloat(formData.price) : 0,
+          price: formData.price ? parsedPrice : 0,
           // Don't send brandName (display only)
           brandName: undefined,
           // Request ID for server-side idempotency
@@ -951,9 +977,14 @@ export function SellFormClient() {
                         width="100%"
                         required
                         inputMode="decimal"
+                        min={LISTING_PRICE_LIMITS.MIN}
+                        max={LISTING_PRICE_LIMITS.MAX}
                       />
                     </Row>
-                    <HelperText>Enter your asking price in GBP</HelperText>
+                    <HelperText>
+                      Enter your asking price in GBP ({LISTING_PRICE_LIMITS.MIN} -{" "}
+                      {LISTING_PRICE_LIMITS.MAX})
+                    </HelperText>
                   </Column>
 
                   {/* Error Message */}

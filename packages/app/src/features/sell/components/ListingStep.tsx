@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { TextInput, Keyboard } from "react-native";
 import { Column, Row, Text, View, Input, ScrollView, useTheme } from "@buttergolf/ui";
+import { LISTING_PRICE_LIMITS } from "@buttergolf/constants";
 import { Sparkles, Type, FileText, PoundSterling, Lightbulb } from "@tamagui/lucide-icons";
 
 import type { SellFormData } from "../types";
@@ -89,6 +90,12 @@ export function ListingStep({ formData, onUpdate, direction }: Readonly<ListingS
     if (parts[1] && parts[1].length > 2) {
       return;
     }
+
+    const parsed = Number.parseFloat(cleaned);
+    if (!Number.isNaN(parsed) && parsed > LISTING_PRICE_LIMITS.MAX) {
+      return;
+    }
+
     onUpdate({ price: cleaned });
   };
 
@@ -277,7 +284,8 @@ export function ListingStep({ formData, onUpdate, direction }: Readonly<ListingS
             <Row gap="$1" alignItems="center">
               <Lightbulb size={12} color="$textSecondary" />
               <Text size="$3" color="$textSecondary">
-                Set a competitive price - check similar listings for guidance
+                Set a competitive price between GBP {LISTING_PRICE_LIMITS.MIN} and GBP{" "}
+                {LISTING_PRICE_LIMITS.MAX}
               </Text>
             </Row>
           </Column>

@@ -59,6 +59,16 @@ export function createSupabaseEventSource(url: string): EventSourceLike {
     for (const fn of messageListeners) fn({ data });
   };
 
+  const emitBroadcastPayload = (eventType: string, payload: unknown) => {
+    const base = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
+    emitMessage(
+      JSON.stringify({
+        ...base,
+        type: typeof base.type === "string" ? base.type : eventType,
+      })
+    );
+  };
+
   const emitError = () => {
     for (const fn of errorListeners) fn({ data: "" });
   };
@@ -67,13 +77,13 @@ export function createSupabaseEventSource(url: string): EventSourceLike {
 
   channel
     .on("broadcast", { event: "new_message" }, ({ payload }) => {
-      emitMessage(JSON.stringify(payload));
+      emitBroadcastPayload("new_message", payload);
     })
     .on("broadcast", { event: "messages_read" }, ({ payload }) => {
-      emitMessage(JSON.stringify(payload));
+      emitBroadcastPayload("messages_read", payload);
     })
     .on("broadcast", { event: "offer_update" }, ({ payload }) => {
-      emitMessage(JSON.stringify(payload));
+      emitBroadcastPayload("offer_update", payload);
     })
     .subscribe((status) => {
       if (status === "SUBSCRIBED") {

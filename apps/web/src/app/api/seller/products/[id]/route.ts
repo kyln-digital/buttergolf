@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, ProductCondition } from "@buttergolf/db";
+import { LISTING_PRICE_LIMITS, getListingPriceBoundsMessage } from "@buttergolf/constants";
 import { getUserIdFromRequest } from "@/lib/auth";
 
 /**
@@ -85,8 +86,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     // Validate price if provided
     if (updateData.price !== undefined) {
       const price = Number(updateData.price);
-      if (Number.isNaN(price) || price <= 0) {
-        return NextResponse.json({ error: "Invalid price" }, { status: 400 });
+      if (
+        Number.isNaN(price) ||
+        price < LISTING_PRICE_LIMITS.MIN ||
+        price > LISTING_PRICE_LIMITS.MAX
+      ) {
+        return NextResponse.json({ error: getListingPriceBoundsMessage() }, { status: 400 });
       }
       updateData.price = price;
     }

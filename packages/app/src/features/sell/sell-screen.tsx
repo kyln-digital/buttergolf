@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { Column, Row, Text, Button, View } from "@buttergolf/ui";
+import { LISTING_PRICE_LIMITS } from "@buttergolf/constants";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, X } from "@tamagui/lucide-icons";
 
@@ -137,13 +138,18 @@ export function SellScreen({
         // Category and brand are required
         // Condition sliders have default values so no explicit check needed
         return formData.categoryId !== "" && formData.brandId !== "";
-      case 3:
+      case 3: {
+        const price = Number.parseFloat(formData.price);
+
         return (
           formData.title.trim() !== "" &&
           formData.description.trim() !== "" &&
           formData.price !== "" &&
-          Number.parseFloat(formData.price) > 0
+          !Number.isNaN(price) &&
+          price >= LISTING_PRICE_LIMITS.MIN &&
+          price <= LISTING_PRICE_LIMITS.MAX
         );
+      }
       case 4:
         return true;
       default:
