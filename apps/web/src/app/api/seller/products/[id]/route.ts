@@ -2,19 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma, ProductCondition } from "@buttergolf/db";
 import { LISTING_PRICE_LIMITS, getListingPriceBoundsMessage } from "@buttergolf/constants";
 import { getUserIdFromRequest } from "@/lib/auth";
-import { v2 as cloudinary } from "cloudinary";
-
-cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
-/** Extract Cloudinary public_id from a secure_url */
-function extractPublicId(url: string): string | null {
-  const match = url.match(/\/upload\/(?:v\d+\/)?(.+)\.\w+$/);
-  return match?.[1] ?? null;
-}
+import { cloudinary, extractPublicId, isValidCloudinaryUrl } from "@/lib/cloudinary";
 
 /**
  * PATCH /api/seller/products/[id]
@@ -145,29 +133,39 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
       // Sync images: create new ones and update sort order
       if (Array.isArray(body.images)) {
+        const imageOps = [];
         for (let i = 0; i < body.images.length; i++) {
           const img = body.images[i];
           if (!img?.url || typeof img.url !== "string") continue;
+
+          if (!isValidCloudinaryUrl(img.url)) continue;
 
           if (existingUrlSet.has(img.url)) {
             // Existing image — update sort order
             const existing = existingImages.find((e: { url: string }) => e.url === img.url);
             if (existing) {
-              await prisma.productImage.update({
-                where: { id: existing.id },
-                data: { sortOrder: i },
-              });
+              imageOps.push(
+                prisma.productImage.update({
+                  where: { id: existing.id },
+                  data: { sortOrder: i },
+                })
+              );
             }
           } else {
             // New image — create record
-            await prisma.productImage.create({
-              data: {
-                url: img.url,
-                sortOrder: i,
-                productId,
-              },
-            });
+            imageOps.push(
+              prisma.productImage.create({
+                data: {
+                  url: img.url,
+                  sortOrder: i,
+                  productId,
+                },
+              })
+            );
           }
+        }
+        if (imageOps.length > 0) {
+          await prisma.$transaction(imageOps);
         }
       }
     }

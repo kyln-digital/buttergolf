@@ -7,10 +7,15 @@ import { LISTING_PRICE_LIMITS, getListingPriceBoundsMessage } from "@buttergolf/
 import { ImageUpload } from "@/components/ImageUpload";
 import type { SellerProduct, SellerProductImage } from "./SellerProductCard";
 
+export interface ProductSavePayload extends Omit<Partial<SellerProduct>, "images"> {
+  images: { url: string; sortOrder: number }[];
+  removedImageIds: string[];
+}
+
 interface EditProductModalProps {
   product: SellerProduct;
   onClose: () => void;
-  onSave: (productId: string, updates: Partial<SellerProduct>) => Promise<void>;
+  onSave: (productId: string, updates: ProductSavePayload) => Promise<void>;
 }
 
 interface Category {
@@ -65,15 +70,18 @@ export function EditProductModal({ product, onClose, onSave }: EditProductModalP
 
   const handleRemoveImage = useCallback(
     (index: number) => {
-      const url = imageUrls[index];
-      if (!url) return;
-      const dbId = imageIdMap.get(url);
-      if (dbId) {
-        setRemovedImageIds((prev) => [...prev, dbId]);
-      }
-      setImageUrls((prev) => prev.filter((_, i) => i !== index));
+      setImageUrls((prev) => {
+        const url = prev[index];
+        if (url) {
+          const dbId = imageIdMap.get(url);
+          if (dbId) {
+            setRemovedImageIds((ids) => [...ids, dbId]);
+          }
+        }
+        return prev.filter((_, i) => i !== index);
+      });
     },
-    [imageUrls, imageIdMap]
+    [imageIdMap]
   );
 
   const handleReorderImages = useCallback((urls: string[]) => {
@@ -168,9 +176,6 @@ export function EditProductModal({ product, onClose, onSave }: EditProductModalP
         price: parsedPrice,
         images: imageUrls.map((url, i) => ({ url, sortOrder: i })),
         removedImageIds,
-      } as Partial<SellerProduct> & {
-        images: { url: string; sortOrder: number }[];
-        removedImageIds: string[];
       });
       onClose();
     } catch (err) {

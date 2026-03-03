@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { v2 as cloudinary } from "cloudinary";
 import { prisma } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
-
-cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+import { cloudinary, extractPublicId } from "@/lib/cloudinary";
 
 /**
  * DELETE /api/images/[id]
@@ -71,19 +65,5 @@ export async function DELETE(
   } catch (error) {
     console.error("Error deleting image:", error);
     return NextResponse.json({ error: "Failed to delete image" }, { status: 500 });
-  }
-}
-
-/**
- * Extracts the Cloudinary public_id from a secure_url.
- * e.g. "https://res.cloudinary.com/x/image/upload/v123/products/abc.jpg"
- *   → "products/abc"
- */
-function extractPublicId(url: string): string | null {
-  try {
-    const match = url.match(/\/upload\/(?:v\d+\/)?(.+)\.\w+$/);
-    return match?.[1] ?? null;
-  } catch {
-    return null;
   }
 }
