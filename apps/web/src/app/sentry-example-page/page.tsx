@@ -68,6 +68,7 @@ export default function Page() {
           .
         </p>
 
+        {/* eslint-disable-next-line react/forbid-elements -- Sentry auto-generated test page */}
         <button
           type="button"
           onClick={async () => {

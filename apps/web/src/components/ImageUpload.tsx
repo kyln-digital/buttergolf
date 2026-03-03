@@ -79,6 +79,7 @@ export function ImageUpload({
     <>
       {/* pointerEvents fallback for browsers with incomplete inert support */}
       <Column gap="$md" width="100%" style={{ pointerEvents: cropModalOpen ? "none" : "auto" }}>
+        {/* eslint-disable-next-line react/forbid-elements -- hidden file input, no DS equivalent */}
         <input
           ref={fileInputRef}
           type="file"
