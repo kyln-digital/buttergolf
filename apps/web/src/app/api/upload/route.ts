@@ -195,7 +195,9 @@ export async function POST(request: Request): Promise<NextResponse> {
         {
           // Preserve the canonical product frame without additional tight cropping.
           // This avoids a "zoomed/clipped" look after background removal.
+          // Anchor to original width so Cloudinary always materializes a 4:3 frame.
           crop: "pad",
+          width: "iw",
           aspect_ratio: `${PRODUCT_IMAGE_ASPECT_RATIO}`,
           gravity: "center",
           background: "rgb:FFFAD2",
