@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "expo start --ios",
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "ios:local:build": "eas build --platform ios --local",
     "ios:local:build:auto": "eas build --platform ios --local --non-interactive",
     "ios:local:submit": "sh -c 'IPA_PATH=$(ls -t build-*.ipa 2>/dev/null | head -n 1); if [ -z \"$IPA_PATH\" ]; then IPA_PATH=$(find ~/Library/Developer/Xcode/Archives -name \"*.ipa\" -print 2>/dev/null | tail -n 1); fi; if [ -z \"$IPA_PATH\" ]; then IPA_PATH=$(find . -maxdepth 3 -name \"*.ipa\" -print 2>/dev/null | head -n 1); fi; if [ -z \"$IPA_PATH\" ]; then echo \"No .ipa found. Run local build first.\"; exit 1; fi; echo \"Submitting: $IPA_PATH\"; eas submit --platform ios --non-interactive --path \"$IPA_PATH\"'",
@@ -34,6 +34,7 @@
     "burnt": "^0.13.0",
     "expo": "catalog:",
     "expo-auth-session": "catalog:",
+    "expo-dev-client": "^6.0.20",
     "expo-font": "catalog:",
     "expo-image-picker": "catalog:",
     "expo-notifications": "catalog:",

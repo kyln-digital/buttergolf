@@ -64,6 +64,11 @@ export default async function MessageThreadPage({
       messages: {
         orderBy: { createdAt: "asc" },
         include: {
+          offer: {
+            select: {
+              status: true,
+            },
+          },
           sender: {
             select: {
               id: true,
@@ -126,7 +131,7 @@ export default async function MessageThreadPage({
         type: m.type,
         offerAmount: m.offerAmount ?? undefined,
         offerId: m.offerId ?? undefined,
-        offerStatus: undefined,
+        offerStatus: m.offer?.status ?? null,
       }))}
     />
   );

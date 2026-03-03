@@ -467,11 +467,11 @@ const SheetContents = memo(function SheetContents({
         </Card>
 
         {/* Payment Hold Info Banner */}
-        <Card variant="outlined" padding="$sm" borderColor="$info" backgroundColor="$infoLight">
+        <Card variant="outlined" padding="$sm" borderColor="$border" backgroundColor="$surface">
           <Row gap="$sm" alignItems="center">
-            <Lock size={16} color="$info" />
+            <Lock size={16} color="$secondary" />
             <Column gap="$xs" flex={1}>
-              <Text size="$3" color="$info" fontWeight="600">
+              <Text size="$3" color="$secondary" fontWeight="600">
                 Payment held securely
               </Text>
               <Text size="$2" color="$textSecondary">

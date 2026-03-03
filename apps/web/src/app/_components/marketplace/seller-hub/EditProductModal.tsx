@@ -1,14 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Column, Row, Heading, Text, Button, Input, Card } from "@buttergolf/ui";
 import { useTheme } from "tamagui";
-import type { SellerProduct } from "./SellerProductCard";
+import { LISTING_PRICE_LIMITS, getListingPriceBoundsMessage } from "@buttergolf/constants";
+import { ImageUpload } from "@/components/ImageUpload";
+import type { SellerProduct, SellerProductImage } from "./SellerProductCard";
+
+export interface ProductSavePayload extends Omit<Partial<SellerProduct>, "images"> {
+  images: { url: string; sortOrder: number }[];
+  removedImageIds: string[];
+}
 
 interface EditProductModalProps {
   product: SellerProduct;
   onClose: () => void;
-  onSave: (productId: string, updates: Partial<SellerProduct>) => Promise<void>;
+  onSave: (productId: string, updates: ProductSavePayload) => Promise<void>;
 }
 
 interface Category {
@@ -43,6 +50,41 @@ export function EditProductModal({ product, onClose, onSave }: EditProductModalP
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
+
+  // Image state: current URLs for display, mapping URL→DB id for existing images, removed DB ids
+  const [imageUrls, setImageUrls] = useState<string[]>(
+    product.images.map((img: SellerProductImage) => img.url)
+  );
+  const [imageIdMap] = useState<Map<string, string>>(() => {
+    const map = new Map<string, string>();
+    for (const img of product.images) {
+      map.set(img.url, img.id);
+    }
+    return map;
+  });
+  const [removedImageIds, setRemovedImageIds] = useState<string[]>([]);
+
+  const handleImageUploadComplete = useCallback((url: string) => {
+    setImageUrls((prev) => [...prev, url]);
+  }, []);
+
+  const handleRemoveImage = useCallback(
+    (index: number) => {
+      const url = imageUrls[index];
+      if (url) {
+        const dbId = imageIdMap.get(url);
+        if (dbId) {
+          setRemovedImageIds((ids) => [...ids, dbId]);
+        }
+      }
+      setImageUrls((prev) => prev.filter((_, i) => i !== index));
+    },
+    [imageUrls, imageIdMap]
+  );
+
+  const handleReorderImages = useCallback((urls: string[]) => {
+    setImageUrls(urls);
+  }, []);
 
   const [formData, setFormData] = useState({
     title: product.title,
@@ -110,9 +152,28 @@ export function EditProductModal({ product, onClose, onSave }: EditProductModalP
     }
 
     try {
+      const parsedPrice = Number.parseFloat(formData.price);
+      if (
+        Number.isNaN(parsedPrice) ||
+        parsedPrice < LISTING_PRICE_LIMITS.MIN ||
+        parsedPrice > LISTING_PRICE_LIMITS.MAX
+      ) {
+        setError(getListingPriceBoundsMessage());
+        setLoading(false);
+        return;
+      }
+
+      if (imageUrls.length === 0) {
+        setError("Please add at least one image");
+        setLoading(false);
+        return;
+      }
+
       await onSave(product.id, {
         ...formData,
-        price: Number.parseFloat(formData.price),
+        price: parsedPrice,
+        images: imageUrls.map((url, i) => ({ url, sortOrder: i })),
+        removedImageIds,
       });
       onClose();
     } catch (err) {
@@ -161,6 +222,18 @@ export function EditProductModal({ product, onClose, onSave }: EditProductModalP
 
             {/* Form Fields */}
             <Column gap="$lg" padding="$lg">
+              {/* Images */}
+              <Column gap="$xs">
+                <Text weight="medium">Photos *</Text>
+                <ImageUpload
+                  onUploadComplete={handleImageUploadComplete}
+                  onRemoveImage={handleRemoveImage}
+                  onReorderImages={handleReorderImages}
+                  maxImages={5}
+                  currentImages={imageUrls}
+                />
+              </Column>
+
               {/* Title */}
               <Column gap="$xs">
                 <Text weight="medium">Title *</Text>
@@ -207,8 +280,13 @@ export function EditProductModal({ product, onClose, onSave }: EditProductModalP
                     placeholder="0.00"
                     size="$4"
                     inputMode="decimal"
+                    min={LISTING_PRICE_LIMITS.MIN}
+                    max={LISTING_PRICE_LIMITS.MAX}
                     required
                   />
+                  <Text size="$2" color="$textSecondary">
+                    GBP {LISTING_PRICE_LIMITS.MIN} - GBP {LISTING_PRICE_LIMITS.MAX}
+                  </Text>
                 </Column>
 
                 <Column gap="$xs" flex={1} minWidth={200}>

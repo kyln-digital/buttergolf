@@ -86,20 +86,20 @@ const ButtonBase = styled(TamaguiButton, {
 
       secondary: {
         // Light grey background - secondary actions, "Shop now", "Cancel"
-        backgroundColor: "$cloudMist",
+        backgroundColor: "$controlSecondaryBg",
         borderWidth: 1,
-        borderColor: "$border",
-        color: "$text", // Dark text on light grey for good contrast
+        borderColor: "$controlSecondaryBg",
+        color: "$controlSecondaryText",
         ...buttonShadow,
 
         hoverStyle: {
-          backgroundColor: "$cloudMistHover",
-          borderColor: "$borderHover",
+          backgroundColor: "$controlSecondaryBgHover",
+          borderColor: "$controlSecondaryBgHover",
         },
 
         pressStyle: {
-          backgroundColor: "$cloudMistPress",
-          borderColor: "$border",
+          backgroundColor: "$controlSecondaryBgPress",
+          borderColor: "$controlSecondaryBgPress",
           scale: 0.98,
         },
 
@@ -136,11 +136,18 @@ const ButtonBase = styled(TamaguiButton, {
       },
     },
   } as const,
-
-  defaultVariants: {
-    butterVariant: "primary" as const,
-  },
 });
 
-export const Button = ButtonBase;
 export type ButtonProps = GetProps<typeof ButtonBase>;
+
+/**
+ * When `chromeless` is passed without an explicit `butterVariant`,
+ * skip the default primary variant so chromeless styling is not overridden.
+ * Also skip the default for `unstyled` buttons so custom surface styles are respected.
+ * Otherwise, default to `butterVariant="primary"` for backward compatibility.
+ */
+export const Button = ButtonBase.styleable<ButtonProps>((props, ref) => {
+  const butterVariant =
+    props.butterVariant ?? (props.chromeless || props.unstyled ? undefined : "primary");
+  return <ButtonBase ref={ref} {...props} butterVariant={butterVariant} />;
+});

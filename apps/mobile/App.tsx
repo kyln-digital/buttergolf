@@ -6,7 +6,7 @@ import {
   Theme as NavigationTheme,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { brandColors } from "@buttergolf/constants";
+import { brandColors, LISTING_PRICE_LIMITS } from "@buttergolf/constants";
 import {
   Provider,
   RoundsScreen,
@@ -68,7 +68,11 @@ import {
   useUser,
 } from "@clerk/clerk-expo";
 import { addBreadcrumb } from "./lib/breadcrumbs";
-import { SafeStripeProvider, isStripeAvailable } from "./lib/stripe-safe";
+import {
+  DEFAULT_STRIPE_MERCHANT_IDENTIFIER,
+  SafeStripeProvider,
+  isStripeAvailable,
+} from "./lib/stripe-safe";
 import {
   deferredFetch,
   deferredGet,
@@ -106,7 +110,7 @@ SplashScreen.preventAutoHideAsync();
 
 interface Message {
   id: string;
-  orderId: string;
+  conversationId: string;
   senderId: string;
   senderName: string;
   senderImage: string | null;
@@ -222,7 +226,6 @@ function SignOutButton() {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _HeaderRightComponent = () => <SignOutButton />;
 
 // Function to fetch products from API
@@ -393,13 +396,24 @@ async function submitListingToApi(
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
   if (!apiUrl) throw new Error("API URL not configured");
 
+  const parsedPrice = Number.parseFloat(data.price);
+  if (
+    Number.isNaN(parsedPrice) ||
+    parsedPrice < LISTING_PRICE_LIMITS.MIN ||
+    parsedPrice > LISTING_PRICE_LIMITS.MAX
+  ) {
+    throw new Error(
+      `Price must be between GBP ${LISTING_PRICE_LIMITS.MIN} and GBP ${LISTING_PRICE_LIMITS.MAX}`
+    );
+  }
+
   // Generate a unique request ID for idempotency
   const requestId = `mobile-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
   const payload = {
     title: data.title,
     description: data.description,
-    price: parseFloat(data.price),
+    price: parsedPrice,
     categoryId: data.categoryId,
     brandId: data.brandId,
     modelId: data.modelId || undefined,
@@ -441,7 +455,7 @@ async function submitListingToApi(
 }
 
 // Legacy non-auth submit (kept for parity with existing call sites)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 async function _submitListing(data: SellFormData): Promise<{ id: string }> {
   return submitListingToApi(data, null);
 }
@@ -695,7 +709,7 @@ function AccountScreenWrapper({ navigation }: { navigation: any }) {
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
   // Get seller status from context (already fetched at app level)
-  const { status: sellerStatus } = useSellerStatusContext();
+  const { status: sellerStatus, refresh: refreshSellerStatus } = useSellerStatusContext();
 
   // Fetch pending orders count
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
@@ -731,6 +745,41 @@ function AccountScreenWrapper({ navigation }: { navigation: any }) {
     // After signOut, Clerk will automatically switch to SignedOut state
   }, [signOut]);
 
+  const handleStartSellerOnboarding = useCallback(async () => {
+    if (!apiUrl) {
+      Alert.alert("Configuration Error", "API URL is not configured.");
+      return;
+    }
+
+    try {
+      const session = await deferredPost<{ token: string }>(
+        `${apiUrl}/api/stripe/connect/mobile-session`,
+        {},
+        { getToken }
+      );
+
+      if (!session?.token) {
+        throw new Error("Failed to create onboarding session");
+      }
+
+      const onboardingUrl = `${apiUrl}/mobile-onboarding?token=${encodeURIComponent(session.token)}&apiUrl=${encodeURIComponent(apiUrl)}`;
+      const WebBrowser = await import("expo-web-browser");
+      const result = await WebBrowser.openAuthSessionAsync(
+        onboardingUrl,
+        "buttergolf://seller/onboarding/complete"
+      );
+
+      if (result.type === "success") {
+        await refreshSellerStatus(true);
+      }
+    } catch (err) {
+      Alert.alert(
+        "Unable to start payout setup",
+        err instanceof Error ? err.message : "Please try again."
+      );
+    }
+  }, [apiUrl, getToken, refreshSellerStatus]);
+
   return (
     <AccountScreen
       user={
@@ -751,8 +800,10 @@ function AccountScreenWrapper({ navigation }: { navigation: any }) {
       onEditProfile={() => navigation.navigate("ProfileEdit")}
       onViewOrders={() => navigation.navigate("Orders")}
       onViewFavourites={() => navigation.navigate("Favourites")}
-      onViewSellerDashboard={() => navigation.navigate("SellerDashboard")}
-      onStartSellerOnboarding={() => navigation.navigate("Sell")}
+      onViewSellerDashboard={() => navigation.navigate("SellerSales")}
+      onStartSellerOnboarding={() => {
+        void handleStartSellerOnboarding();
+      }}
       onViewAddresses={() => navigation.navigate("Addresses")}
       onViewPayments={() => {
         // TODO: Implement payments WebView for Stripe Connect
@@ -1045,6 +1096,7 @@ function HelpSupportScreenWrapper({ navigation }: { navigation: any }) {
 function SellerDashboardScreenWrapper({ navigation }: { navigation: any }) {
   const { getToken } = useAuth();
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+  const { refresh: refreshSellerStatus } = useSellerStatusContext();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1067,6 +1119,41 @@ function SellerDashboardScreenWrapper({ navigation }: { navigation: any }) {
     void fetchStats();
   }, [fetchStats]);
 
+  const handleOpenPayoutSetup = useCallback(async () => {
+    if (!apiUrl) {
+      Alert.alert("Configuration Error", "API URL is not configured.");
+      return;
+    }
+
+    try {
+      const session = await deferredPost<{ token: string }>(
+        `${apiUrl}/api/stripe/connect/mobile-session`,
+        {},
+        { getToken }
+      );
+
+      if (!session?.token) {
+        throw new Error("Failed to create onboarding session");
+      }
+
+      const onboardingUrl = `${apiUrl}/mobile-onboarding?token=${encodeURIComponent(session.token)}&apiUrl=${encodeURIComponent(apiUrl)}`;
+      const WebBrowser = await import("expo-web-browser");
+      const result = await WebBrowser.openAuthSessionAsync(
+        onboardingUrl,
+        "buttergolf://seller/onboarding/complete"
+      );
+
+      if (result.type === "success") {
+        await refreshSellerStatus(true);
+      }
+    } catch (err) {
+      Alert.alert(
+        "Unable to start payout setup",
+        err instanceof Error ? err.message : "Please try again."
+      );
+    }
+  }, [apiUrl, getToken, refreshSellerStatus]);
+
   return (
     <SellerDashboardScreen
       stats={stats}
@@ -1079,7 +1166,7 @@ function SellerDashboardScreenWrapper({ navigation }: { navigation: any }) {
         Alert.alert("Coming Soon", "Payment settings will be available soon.");
       }}
       onViewPayouts={() => {
-        Alert.alert("Coming Soon", "Payout settings will be available soon.");
+        void handleOpenPayoutSetup();
       }}
       onViewSettings={() => navigation.navigate("Account")}
       onBack={() => navigation.goBack()}
@@ -1338,15 +1425,23 @@ function FavouritesScreenWrapper({
       });
   }, []);
 
-  // Handle Make Offer - create conversation and navigate to message thread
+  // Handle Make Offer - create conversation, post offer, and navigate to message thread
   const handleMakeOffer = useCallback(
-    async (productId: string) => {
+    async (productId: string, _price: number, offerAmount: number) => {
       try {
         const data = await deferredPost<{ conversationId: string }>(
           `${apiUrl}/api/conversations`,
           { productId },
           { getToken }
         );
+
+        // Submit the offer before navigating
+        await deferredPost(
+          `${apiUrl}/api/conversations/${data.conversationId}/offer`,
+          { amount: offerAmount },
+          { getToken }
+        );
+
         navigation.navigate("MessageThread", {
           conversationId: data.conversationId,
           productTitle: "Product",
@@ -1426,11 +1521,15 @@ function MessagesScreenWrapper({
   isAuthenticated: boolean;
 }) {
   const { getToken } = useAuth();
+  const { user } = useUser();
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
   const fetchConversations = useCallback(
     async (page?: number) => {
-      console.info("[MessagesScreenWrapper] Fetching conversations", { page });
+      console.info("[MessagesScreenWrapper] Fetching conversations", {
+        page,
+        clerkUserId: user?.id,
+      });
 
       const qs = page && page > 1 ? `?page=${page}` : "";
       const response = await deferredFetch(`${apiUrl}/api/conversations${qs}`, { getToken });
@@ -1445,9 +1544,15 @@ function MessagesScreenWrapper({
         throw new Error(`Failed to fetch conversations: ${response.status} - ${errorText}`);
       }
 
-      return response.json();
+      const data = await response.json();
+      console.info("[MessagesScreenWrapper] Conversations fetched", {
+        count: Array.isArray(data?.conversations) ? data.conversations.length : 0,
+        hasMore: Boolean(data?.hasMore),
+        page: data?.page,
+      });
+      return data;
     },
-    [getToken, apiUrl]
+    [getToken, apiUrl, user?.id]
   );
 
   return (
@@ -1600,7 +1705,7 @@ function MessageThreadScreenWrapper({
 
   return (
     <MessageThreadScreen
-      orderId={conversationId}
+      conversationId={conversationId}
       currentUserId={user?.id || ""}
       userRole={userRole}
       otherUserName={otherUserName}
@@ -1699,13 +1804,21 @@ function ProductDetailScreenWrapper({
   }, []);
 
   const handleMakeOffer = useCallback(
-    async (id: string) => {
+    async (id: string, _price: number, offerAmount: number) => {
       try {
         const data = await deferredPost<{ conversationId: string }>(
           `${apiUrl}/api/conversations`,
           { productId: id },
           { getToken }
         );
+
+        // Submit the offer before navigating
+        await deferredPost(
+          `${apiUrl}/api/conversations/${data.conversationId}/offer`,
+          { amount: offerAmount },
+          { getToken }
+        );
+
         navigation.navigate("MessageThread", {
           conversationId: data.conversationId,
           productTitle: "Product",
@@ -1973,18 +2086,42 @@ export default function App() {
   // Debug: Verify environment keys are loaded
   const clerkPublishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
   const stripePublishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  const stripeMerchantIdentifierEnv = process.env.EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER;
+  const stripeMerchantIdentifierFromEnv = stripeMerchantIdentifierEnv?.trim() || "";
+  const stripeMerchantIdentifier =
+    stripeMerchantIdentifierFromEnv || DEFAULT_STRIPE_MERCHANT_IDENTIFIER;
 
   console.info("[Clerk] Publishable key:", clerkPublishableKey ? "LOADED" : "MISSING");
   console.info("[Stripe] Publishable key:", stripePublishableKey ? "LOADED" : "MISSING");
+  if (stripeMerchantIdentifierFromEnv) {
+    console.info(
+      "[Stripe] Merchant identifier:",
+      "LOADED_FROM_ENV (EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER)"
+    );
+  } else {
+    console.info(
+      "[Stripe] Merchant identifier:",
+      `USING_DEFAULT (${DEFAULT_STRIPE_MERCHANT_IDENTIFIER}) - set EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER to override`
+    );
+  }
   console.info("[Stripe] Native module available:", isStripeAvailable ? "YES" : "NO (Expo Go)");
 
   // CRITICAL: If required keys are missing, show error screen
   // Stripe key is only required when the native module is available (dev builds)
-  if (!clerkPublishableKey || (isStripeAvailable && !stripePublishableKey)) {
+  // iOS Apple Pay requires merchant identifier in StripeProvider initialization
+  const requiresStripeIosMerchantIdentifier = Platform.OS === "ios" && isStripeAvailable;
+
+  if (
+    !clerkPublishableKey ||
+    (isStripeAvailable && !stripePublishableKey) ||
+    (requiresStripeIosMerchantIdentifier && !stripeMerchantIdentifier)
+  ) {
     const missingKeys: string[] = [];
     if (!clerkPublishableKey) missingKeys.push("EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY");
     if (isStripeAvailable && !stripePublishableKey)
       missingKeys.push("EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY");
+    if (requiresStripeIosMerchantIdentifier && !stripeMerchantIdentifier)
+      missingKeys.push("EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER");
 
     return (
       <SafeAreaProvider>
@@ -2021,7 +2158,10 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <SafeStripeProvider publishableKey={stripePublishableKey || ""}>
+      <SafeStripeProvider
+        publishableKey={stripePublishableKey || ""}
+        merchantIdentifier={Platform.OS === "ios" ? stripeMerchantIdentifier : undefined}
+      >
         <ClerkProvider tokenCache={tokenCache} publishableKey={clerkPublishableKey}>
           {/* Official Tamagui Expo pattern: use useColorScheme() for theme */}
           <PortalProvider shouldAddRootHost>

@@ -1,6 +1,54 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
-import { getUserIdFromRequest } from "@/lib/auth";
+import { getClerkUserFromRequest } from "@/lib/auth";
+
+async function resolveConversationUser(request: Request) {
+  const userData = await getClerkUserFromRequest(request);
+  if (!userData) {
+    return { user: null, error: "Unauthorized", status: 401 as const };
+  }
+
+  let user = await prisma.user.findUnique({
+    where: { clerkId: userData.userId },
+    select: { id: true },
+  });
+
+  if (!userData.email) {
+    if (!user) {
+      return { user: null, error: "User not found", status: 404 as const };
+    }
+    return { user, error: null, status: 200 as const };
+  }
+
+  if (!user) {
+    const userByEmail = await prisma.user.findUnique({
+      where: { email: userData.email },
+      select: { id: true, clerkId: true },
+    });
+
+    if (userByEmail) {
+      if (userByEmail.clerkId !== userData.userId) {
+        await prisma.user.update({
+          where: { id: userByEmail.id },
+          data: { clerkId: userData.userId },
+        });
+      }
+      user = { id: userByEmail.id };
+    } else {
+      user = await prisma.user.create({
+        data: {
+          clerkId: userData.userId,
+          email: userData.email,
+          firstName: userData.firstName || "",
+          lastName: userData.lastName || "",
+        },
+        select: { id: true },
+      });
+    }
+  }
+
+  return { user, error: null, status: 200 as const };
+}
 
 /**
  * GET /api/conversations
@@ -19,18 +67,12 @@ import { getUserIdFromRequest } from "@/lib/auth";
  */
 export async function GET(req: Request) {
   try {
-    const clerkId = await getUserIdFromRequest(req);
-    if (!clerkId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const resolvedUser = await resolveConversationUser(req);
+    if (!resolvedUser.user) {
+      return NextResponse.json({ error: resolvedUser.error }, { status: resolvedUser.status });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { clerkId },
-      select: { id: true },
-    });
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
+    const user = resolvedUser.user;
 
     const url = new URL(req.url);
     const page = Math.max(parseInt(url.searchParams.get("page") ?? "1", 10), 1);
@@ -198,18 +240,12 @@ export async function GET(req: Request) {
  */
 export async function POST(req: Request) {
   try {
-    const clerkId = await getUserIdFromRequest(req);
-    if (!clerkId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const resolvedUser = await resolveConversationUser(req);
+    if (!resolvedUser.user) {
+      return NextResponse.json({ error: resolvedUser.error }, { status: resolvedUser.status });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { clerkId },
-      select: { id: true },
-    });
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
+    const user = resolvedUser.user;
 
     const body = await req.json();
     const { productId } = body;

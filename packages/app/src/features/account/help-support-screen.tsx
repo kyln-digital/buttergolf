@@ -1,5 +1,4 @@
 "use client";
-/* eslint-disable react/prop-types */
 
 import React, { useState } from "react";
 import {
@@ -102,7 +101,7 @@ export function HelpSupportScreen({
     if (question.includes("track") || question.includes("order"))
       return <Package size={20} color="$primary" />;
     if (question.includes("payment")) return <CreditCard size={20} color="$warning" />;
-    if (question.includes("return")) return <RefreshCw size={20} color="$info" />;
+    if (question.includes("return")) return <RefreshCw size={20} color="$secondary" />;
     return <HelpCircle size={20} color="$textSecondary" />;
   };
 
@@ -190,11 +189,11 @@ export function HelpSupportScreen({
                   width={44}
                   height={44}
                   borderRadius="$full"
-                  backgroundColor="$infoLight"
+                  backgroundColor="$secondaryLight"
                   alignItems="center"
                   justifyContent="center"
                 >
-                  <MessageCircle size={22} color="$info" />
+                  <MessageCircle size={22} color="$secondary" />
                 </View>
                 <Column flex={1}>
                   <Text size="$4" fontWeight="500">

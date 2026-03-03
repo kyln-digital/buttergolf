@@ -255,7 +255,7 @@ export function AccountScreen({
           </Text>
 
           <AccountMenuItem
-            icon={<MapPin size={22} color="$info" />}
+            icon={<MapPin size={22} color="$secondary" />}
             label="Addresses"
             description="Manage shipping addresses"
             onPress={onViewAddresses}

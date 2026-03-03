@@ -19,6 +19,7 @@ import { useLink } from "solito/navigation";
 import { routes } from "../../navigation";
 import { ArrowLeft, Heart, Eye } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { OfferSheet } from "./OfferSheet";
 
 // Helper to format condition rating (1-10) to label
 function getConditionLabel(rating: number): string {
@@ -32,7 +33,7 @@ function getConditionLabel(rating: number): string {
 // Helper to get condition color - returns theme token
 function getConditionColor(rating: number) {
   if (rating >= 9) return "$success" as const;
-  if (rating >= 7) return "$info" as const;
+  if (rating >= 7) return "$secondary" as const;
   if (rating >= 5) return "$warning" as const;
   return "$error" as const;
 }
@@ -44,8 +45,8 @@ interface ProductDetailScreenProps {
   onBack?: () => void;
   /** Callback when user wants to buy now - receives productId and price */
   onBuyNow?: (productId: string, price: number) => void;
-  /** Callback when user wants to make an offer - receives productId and price */
-  onMakeOffer?: (productId: string, price: number) => void;
+  /** Callback when user wants to make an offer - receives productId, price, and the offer amount */
+  onMakeOffer?: (productId: string, price: number, offerAmount: number) => Promise<void>;
   /** Whether the user is authenticated (for showing proper auth prompts) */
   isAuthenticated?: boolean;
 }
@@ -62,6 +63,7 @@ export function ProductDetailScreen({
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [offerSheetOpen, setOfferSheetOpen] = useState(false);
 
   // Use Solito link for web, but prefer onBack prop for mobile navigation
   const backLink = useLink({ href: routes.products });
@@ -485,7 +487,7 @@ export function ProductDetailScreen({
                   butterVariant="secondary"
                   size="$5"
                   width="100%"
-                  onPress={() => onMakeOffer?.(product.id, product.price)}
+                  onPress={() => setOfferSheetOpen(true)}
                   disabled={!isAuthenticated}
                 >
                   {isAuthenticated ? "Make an Offer" : "Sign in to Make Offer"}
@@ -501,6 +503,18 @@ export function ProductDetailScreen({
           </Column>
         </Column>
       </Column>
+
+      {/* Offer Sheet */}
+      {product && (
+        <OfferSheet
+          open={offerSheetOpen}
+          onOpenChange={setOfferSheetOpen}
+          productPrice={product.price}
+          onSubmit={async (amount) => {
+            await onMakeOffer?.(product.id, product.price, amount);
+          }}
+        />
+      )}
     </ScrollView>
   );
 }

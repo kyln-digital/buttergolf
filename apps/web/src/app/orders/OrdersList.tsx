@@ -11,8 +11,8 @@ import {
   Heading,
   Container,
   SegmentedTabs,
+  View,
 } from "@buttergolf/ui";
-import { View } from "tamagui";
 import Link from "next/link";
 import Image from "next/image";
 import { ShoppingBag, Package, Eye, Download, ExternalLink } from "@tamagui/lucide-icons";
@@ -176,7 +176,7 @@ export function OrdersList({ orders }: Readonly<OrdersListProps>) {
                     ? "You haven't purchased anything yet."
                     : "You haven't sold anything yet."}
               </Text>
-              <Link href="/shop" style={{ textDecoration: "none" }}>
+              <Link href="/listings" style={{ textDecoration: "none" }}>
                 <Button butterVariant="primary" size="$4">
                   Start Shopping
                 </Button>

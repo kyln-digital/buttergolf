@@ -6,7 +6,7 @@ import { Column, Row, Text, Card } from "@buttergolf/ui";
  */
 export function PhotoTipsCard() {
   return (
-    <Card variant="filled" padding="$md" backgroundColor="$infoLight" borderRadius="$lg">
+    <Card variant="filled" padding="$md" backgroundColor="$secondaryLight" borderRadius="$lg">
       <Column gap="$md">
         {/* Card Title */}
         <Text size="$5" fontWeight="600" color="$text">

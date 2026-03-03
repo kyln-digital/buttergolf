@@ -1,5 +1,6 @@
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
+import { Platform } from "react-native";
 import { addBreadcrumb } from "./breadcrumbs";
 import { deferredFetch } from "./apiClient";
 import {
@@ -28,6 +29,8 @@ export async function registerForPushNotificationsAsync(
   }
 
   try {
+    const isIosSimulator = Platform.OS === "ios" && Constants.isDevice !== true;
+
     // Get the project ID from app.json
     const projectId = Constants.expoConfig?.extra?.eas?.projectId;
     if (!projectId) {
@@ -61,6 +64,19 @@ export async function registerForPushNotificationsAsync(
       return null;
     }
 
+    if (isIosSimulator) {
+      addBreadcrumb(
+        "turbomodule.notifications",
+        "Skipping Expo push token on iOS simulator",
+        {},
+        "warning"
+      );
+      console.info(
+        "[Notifications] Skipping Expo push token on iOS simulator. Use a physical iOS device to receive push tokens."
+      );
+      return null;
+    }
+
     // Get the Expo push token
     addBreadcrumb("turbomodule.notifications", "Getting Expo push token");
     const pushToken = await Notifications.getExpoPushTokenAsync({
@@ -91,6 +107,23 @@ export async function registerForPushNotificationsAsync(
 
     return pushToken.data;
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const isExpectedIosEntitlementError =
+      Platform.OS === "ios" && errorMessage.includes("aps-environment");
+
+    if (isExpectedIosEntitlementError) {
+      addBreadcrumb(
+        "turbomodule.notifications",
+        "Expected iOS push entitlement limitation in development",
+        { error: errorMessage },
+        "warning"
+      );
+      console.info(
+        "[Notifications] Push token unavailable for this iOS development build (missing aps-environment entitlement). Use a physical device build with push entitlements enabled."
+      );
+      return null;
+    }
+
     addBreadcrumb(
       "turbomodule.notifications",
       "Registration failed",

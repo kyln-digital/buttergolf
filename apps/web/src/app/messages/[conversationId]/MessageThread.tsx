@@ -151,9 +151,9 @@ export function MessageThread({
   }, [conversationId]);
 
   return (
-    <div style={{ width: "100%", height: "100%" }}>
+    <div style={{ width: "100%", height: "100%", display: "flex", flex: 1, minHeight: 0 }}>
       <MessageThreadScreen
-        orderId={conversationId}
+        conversationId={conversationId}
         currentUserId={currentUserId}
         userRole={userRole}
         otherUserName={otherUserName}

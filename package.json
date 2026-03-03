@@ -24,6 +24,7 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md}\"",
+    "typecheck": "turbo run check-types",
     "check-types": "turbo run check-types",
     "check": "pnpm format && pnpm lint && pnpm check-types",
     "check-deps": "check-dependency-version-consistency .",
@@ -77,7 +78,7 @@
       "unrs-resolver"
     ]
   },
-  "packageManager": "pnpm@10.28.0",
+  "packageManager": "pnpm@10.30.2",
   "engines": {
     "node": ">=18"
   },

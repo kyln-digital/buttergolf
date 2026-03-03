@@ -2,18 +2,8 @@
 
 import { useState } from "react";
 import { Column, Row, Text, Button, Heading, Popover, Input } from "@buttergolf/ui";
-import { Button as TamaguiButton } from "tamagui";
 import { Heart, Info } from "@tamagui/lucide-icons";
 import type { Product } from "../ProductDetailClient";
-
-interface User {
-  id: string;
-  firstName: string | null;
-  lastName: string | null;
-  imageUrl: string | null;
-  averageRating?: number | null;
-  ratingCount?: number;
-}
 
 interface ProductInformationProps {
   product: Product;
@@ -111,7 +101,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
         >
           <Heart
             size={22}
-            fill={isFavourite ? "$primary" : "transparent"}
+            fill={isFavourite ? "currentColor" : "transparent"}
             color={isFavourite ? "$primary" : "$textSecondary"}
             opacity={isFavourite ? 1 : 0.9}
             strokeWidth={1.5}
@@ -234,7 +224,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
           }}
         >
           <Popover.Trigger asChild>
-            <TamaguiButton
+            <Button
               size="$5"
               width="100%"
               height={56}
@@ -252,7 +242,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
               pressStyle={{ backgroundColor: "$cloudMistPress", scale: 0.98 }}
             >
               Make an offer
-            </TamaguiButton>
+            </Button>
           </Popover.Trigger>
 
           <Popover.Content
@@ -314,7 +304,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
 
               <Row gap="$2" justifyContent="flex-end">
                 <Popover.Close asChild>
-                  <TamaguiButton
+                  <Button
                     size="$3"
                     backgroundColor="transparent"
                     color="$textSecondary"
@@ -322,7 +312,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
                     paddingHorizontal="$3"
                   >
                     Cancel
-                  </TamaguiButton>
+                  </Button>
                 </Popover.Close>
                 <Button
                   butterVariant="primary"

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, ProductCondition } from "@buttergolf/db";
+import { LISTING_PRICE_LIMITS, getListingPriceBoundsMessage } from "@buttergolf/constants";
 import { getUserIdFromRequest } from "@/lib/auth";
+import { cloudinary, extractPublicId, isValidCloudinaryUrl } from "@/lib/cloudinary";
 
 /**
  * PATCH /api/seller/products/[id]
@@ -85,23 +87,89 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     // Validate price if provided
     if (updateData.price !== undefined) {
       const price = Number(updateData.price);
-      if (Number.isNaN(price) || price <= 0) {
-        return NextResponse.json({ error: "Invalid price" }, { status: 400 });
+      if (
+        Number.isNaN(price) ||
+        price < LISTING_PRICE_LIMITS.MIN ||
+        price > LISTING_PRICE_LIMITS.MAX
+      ) {
+        return NextResponse.json({ error: getListingPriceBoundsMessage() }, { status: 400 });
       }
       updateData.price = price;
     }
 
-    // Update product
-    const updatedProduct = await prisma.product.update({
-      where: { id: productId },
-      data: updateData,
-      include: {
-        images: {
-          orderBy: { sortOrder: "asc" },
+    // Handle image mutations + product update in a single transaction.
+    // images and removedImageIds are processed separately from allowedFields
+    // because they require multi-step logic (delete, create, reorder) rather
+    // than a direct Prisma data assignment.
+    const MAX_IMAGE_IDS = 20; // safety cap
+
+    const updatedProduct = await prisma.$transaction(async (tx) => {
+      if (body.images || body.removedImageIds) {
+        const existingImages = await tx.productImage.findMany({
+          where: { productId },
+          select: { id: true, url: true },
+        });
+        const existingUrlSet = new Set(existingImages.map((img) => img.url));
+        const existingIdSet = new Set(existingImages.map((img) => img.id));
+
+        // Delete removed images (capped to prevent abuse)
+        const removedIds: string[] = Array.isArray(body.removedImageIds)
+          ? body.removedImageIds
+              .slice(0, MAX_IMAGE_IDS)
+              .filter((id: unknown) => typeof id === "string" && existingIdSet.has(id as string))
+          : [];
+
+        const urlsToCleanup: string[] = [];
+
+        if (removedIds.length > 0) {
+          const toDelete = existingImages.filter((img) => removedIds.includes(img.id));
+          urlsToCleanup.push(...toDelete.map((img) => img.url));
+          await tx.productImage.deleteMany({
+            where: { id: { in: removedIds }, productId },
+          });
+        }
+
+        // Sync images: create new ones and update sort order
+        if (Array.isArray(body.images)) {
+          for (let i = 0; i < Math.min(body.images.length, MAX_IMAGE_IDS); i++) {
+            const img = body.images[i];
+            if (!img?.url || typeof img.url !== "string") continue;
+            if (!isValidCloudinaryUrl(img.url)) continue;
+
+            if (existingUrlSet.has(img.url)) {
+              const existing = existingImages.find((e) => e.url === img.url);
+              if (existing) {
+                await tx.productImage.update({
+                  where: { id: existing.id },
+                  data: { sortOrder: i },
+                });
+              }
+            } else {
+              await tx.productImage.create({
+                data: { url: img.url, sortOrder: i, productId },
+              });
+            }
+          }
+        }
+
+        // Best-effort Cloudinary cleanup after DB ops succeed (fire-and-forget)
+        for (const cdnUrl of urlsToCleanup) {
+          const publicId = extractPublicId(cdnUrl);
+          if (publicId) {
+            cloudinary.uploader.destroy(publicId).catch(() => {});
+          }
+        }
+      }
+
+      return tx.product.update({
+        where: { id: productId },
+        data: updateData,
+        include: {
+          images: { orderBy: { sortOrder: "asc" } },
+          category: true,
+          brand: true,
         },
-        category: true,
-        brand: true,
-      },
+      });
     });
 
     return NextResponse.json(updatedProduct);

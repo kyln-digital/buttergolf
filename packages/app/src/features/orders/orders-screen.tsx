@@ -84,7 +84,7 @@ export interface OrdersScreenProps {
 }
 
 type OrderStatusColorToken =
-  | "$info"
+  | "$secondary"
   | "$warning"
   | "$primary"
   | "$success"
@@ -98,7 +98,11 @@ function getStatusConfig(status: OrderStatus): {
 } {
   switch (status) {
     case "PAYMENT_CONFIRMED":
-      return { label: "Confirmed", color: "$info", icon: <Clock size={14} color="$info" /> };
+      return {
+        label: "Confirmed",
+        color: "$secondary",
+        icon: <Clock size={14} color="$secondary" />,
+      };
     case "LABEL_GENERATED":
       return {
         label: "Label Ready",

@@ -1,7 +1,6 @@
 "use client";
 
-import { Column, Row } from "@buttergolf/ui";
-import { View } from "tamagui";
+import { Column, Row, View } from "@buttergolf/ui";
 
 function SkeletonPulse({
   width,
@@ -16,7 +15,7 @@ function SkeletonPulse({
     <View
       width={width}
       height={height}
-      borderRadius={borderRadius as any}
+      borderRadius={borderRadius as unknown as number}
       backgroundColor="$border"
       opacity={0.6}
       animation="lazy"

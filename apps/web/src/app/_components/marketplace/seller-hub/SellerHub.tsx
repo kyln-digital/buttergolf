@@ -8,7 +8,7 @@ import { useTheme } from "tamagui";
 import { Plus, Package, Eye, Heart, Tag } from "@tamagui/lucide-icons";
 import Link from "next/link";
 import { SellerProductCard, type SellerProduct } from "./SellerProductCard";
-import { EditProductModal } from "./EditProductModal";
+import { EditProductModal, type ProductSavePayload } from "./EditProductModal";
 
 interface SellerHubStats {
   totalListings: number;
@@ -173,7 +173,7 @@ export function SellerHub() {
     }
   };
 
-  const handleSaveEdit = async (productId: string, updates: Partial<SellerProduct>) => {
+  const handleSaveEdit = async (productId: string, updates: ProductSavePayload) => {
     const response = await fetch(`/api/seller/products/${productId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -319,7 +319,7 @@ export function SellerHub() {
             <Card variant="elevated" padding="$lg" flex={1} minWidth={200}>
               <Column gap="$sm">
                 <Row alignItems="center" gap="$sm">
-                  <Eye size={20} color="$info" />
+                  <Eye size={20} color="$secondary" />
                   <Text color="$textSecondary">Total Views</Text>
                 </Row>
                 <Text size="$9" weight="bold">

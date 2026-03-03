@@ -145,7 +145,7 @@ export function ResetPasswordScreen({
       case "fair":
         return "$warning";
       case "good":
-        return "$info";
+        return "$secondary";
       case "strong":
         return "$success";
     }

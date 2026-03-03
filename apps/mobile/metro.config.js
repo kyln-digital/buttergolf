@@ -2,11 +2,13 @@
 const { getDefaultConfig } = require("expo/metro-config");
 const path = require("path");
 
-const config = getDefaultConfig(__dirname);
-
 // Monorepo root
 const projectRoot = __dirname;
 const monorepoRoot = path.resolve(projectRoot, "../..");
+const config = getDefaultConfig(projectRoot);
+
+// Ensure Metro can resolve and watch workspace packages/assets in the monorepo.
+config.watchFolders = [monorepoRoot];
 
 // Singleton packages that must resolve to single instance
 // These are hoisted to monorepo root via .npmrc public-hoist-pattern
@@ -39,6 +41,11 @@ config.transformer = {
 config.resolver = {
   ...config.resolver,
   extraNodeModules,
+  nodeModulesPaths: [
+    path.resolve(projectRoot, "node_modules"),
+    path.resolve(monorepoRoot, "node_modules"),
+  ],
+  disableHierarchicalLookup: true,
   assetExts: config.resolver.assetExts.filter((ext) => ext !== "svg"),
   sourceExts: [...config.resolver.sourceExts, "svg"],
   // Block web-only packages from being bundled (SharedArrayBuffer crashes Hermes)

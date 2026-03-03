@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { Column, Row, Text, Button, View } from "@buttergolf/ui";
+import { LISTING_PRICE_LIMITS } from "@buttergolf/constants";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, X } from "@tamagui/lucide-icons";
 
@@ -137,13 +138,18 @@ export function SellScreen({
         // Category and brand are required
         // Condition sliders have default values so no explicit check needed
         return formData.categoryId !== "" && formData.brandId !== "";
-      case 3:
+      case 3: {
+        const price = Number.parseFloat(formData.price);
+
         return (
           formData.title.trim() !== "" &&
           formData.description.trim() !== "" &&
           formData.price !== "" &&
-          Number.parseFloat(formData.price) > 0
+          !Number.isNaN(price) &&
+          price >= LISTING_PRICE_LIMITS.MIN &&
+          price <= LISTING_PRICE_LIMITS.MAX
         );
+      }
       case 4:
         return true;
       default:
@@ -181,9 +187,9 @@ export function SellScreen({
           aria-label={currentStep === 1 ? "Close" : "Go back"}
         >
           {currentStep === 1 ? (
-            <X size={24} color="$text" />
+            <X size={24} color="$pureWhite" />
           ) : (
-            <ArrowLeft size={24} color="$text" />
+            <ArrowLeft size={24} color="$pureWhite" />
           )}
         </Button>
 
@@ -288,12 +294,7 @@ export function SellScreen({
             onPress={goToNextStep}
             disabled={!canProceed()}
           >
-            <Text
-              fontFamily="$heading"
-              size="$6"
-              fontWeight="700"
-              color={canProceed() ? "$pureWhite" : "$textSecondary"}
-            >
+            <Text fontFamily="$heading" size="$6" fontWeight="700" color="$pureWhite">
               Continue
             </Text>
           </Button>

@@ -77,8 +77,10 @@
     },
     "owner": "vortexalchemist",
     "plugins": [
+      "expo-dev-client",
       "expo-updates",
       "expo-web-browser",
+      "expo-notifications",
       [
         "@stripe/stripe-react-native",
         {

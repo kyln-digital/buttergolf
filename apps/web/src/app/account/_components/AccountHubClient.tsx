@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useClerk, useUser } from "@clerk/nextjs";
 import { Column, Row, Text, Button, Badge, Container, ThemeSwitcher } from "@buttergolf/ui";
-import { Avatar, Button as TamaguiButton } from "tamagui";
+import { Avatar } from "tamagui";
 import {
   LogOut,
   Palette,
@@ -154,7 +154,7 @@ export function AccountHubClient({
     <Container size="md" paddingHorizontal="$md" paddingVertical="$xl">
       <Column gap="$xl" width="100%">
         {/* Profile Header Card */}
-        <TamaguiButton
+        <Button
           unstyled
           backgroundColor="$surface"
           borderRadius="$lg"
@@ -201,7 +201,7 @@ export function AccountHubClient({
             {/* Edit indicator */}
             <Edit3 size={20} color="$textMuted" />
           </Row>
-        </TamaguiButton>
+        </Button>
 
         {/* Shopping Section */}
         <Column gap="$3">
@@ -219,7 +219,7 @@ export function AccountHubClient({
           />
 
           <AccountMenuItem
-            icon={<MessageCircle size={22} color="$info" />}
+            icon={<MessageCircle size={22} color="$secondary" />}
             label="Messages"
             description="Chat with buyers and sellers"
             badge={unreadMessagesCount > 0 ? unreadMessagesCount : undefined}
@@ -253,7 +253,7 @@ export function AccountHubClient({
           />
 
           {/* Payout Setup */}
-          <TamaguiButton
+          <Button
             unstyled
             backgroundColor="$surface"
             borderRadius="$lg"
@@ -282,7 +282,7 @@ export function AccountHubClient({
               </Column>
               {getPayoutStatusBadge()}
             </Row>
-          </TamaguiButton>
+          </Button>
         </Column>
 
         {/* Account Section */}
@@ -292,7 +292,7 @@ export function AccountHubClient({
           </Text>
 
           <AccountMenuItem
-            icon={<MapPin size={22} color="$info" />}
+            icon={<MapPin size={22} color="$secondary" />}
             label="Addresses"
             description="Manage shipping addresses"
             onPress={() => router.push("/account/addresses")}

@@ -28,26 +28,19 @@ function getSupabaseClient(): SupabaseClient {
  * Create a Supabase Realtime channel subscription that implements the
  * EventSourceLike interface consumed by MessageThreadScreen.
  *
- * Supports both conversation-based and legacy order-based URLs:
- * - /conversations/{conversationId}/messages → conversation:{conversationId}
- * - /orders/{orderId}/messages              → order-messages:{orderId} (legacy)
+ * Channel: conversation:{conversationId}
  *
  * Uses Supabase Broadcast channels with a shared client singleton.
  * Channel per conversation for isolation. Supabase handles reconnection internally.
  */
 export function createSupabaseEventSource(url: string): EventSourceLike {
-  // Try conversation-based URL first, then fall back to order-based
   const convMatch = url.match(/\/conversations\/([^/]+)/);
-  const orderMatch = url.match(/\/orders\/([^/]+)/);
 
-  let channelName: string;
-  if (convMatch?.[1]) {
-    channelName = `conversation:${convMatch[1]}`;
-  } else if (orderMatch?.[1]) {
-    channelName = `order-messages:${orderMatch[1]}`;
-  } else {
-    throw new Error(`Cannot extract conversationId or orderId from URL: ${url}`);
+  if (!convMatch?.[1]) {
+    throw new Error(`Cannot extract conversationId from URL: ${url}`);
   }
+
+  const channelName = `conversation:${convMatch[1]}`;
 
   const supabase = getSupabaseClient();
 
@@ -59,6 +52,16 @@ export function createSupabaseEventSource(url: string): EventSourceLike {
     for (const fn of messageListeners) fn({ data });
   };
 
+  const emitBroadcastPayload = (eventType: string, payload: unknown) => {
+    const base = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
+    emitMessage(
+      JSON.stringify({
+        ...base,
+        type: typeof base.type === "string" ? base.type : eventType,
+      })
+    );
+  };
+
   const emitError = () => {
     for (const fn of errorListeners) fn({ data: "" });
   };
@@ -67,13 +70,13 @@ export function createSupabaseEventSource(url: string): EventSourceLike {
 
   channel
     .on("broadcast", { event: "new_message" }, ({ payload }) => {
-      emitMessage(JSON.stringify(payload));
+      emitBroadcastPayload("new_message", payload);
     })
     .on("broadcast", { event: "messages_read" }, ({ payload }) => {
-      emitMessage(JSON.stringify(payload));
+      emitBroadcastPayload("messages_read", payload);
     })
     .on("broadcast", { event: "offer_update" }, ({ payload }) => {
-      emitMessage(JSON.stringify(payload));
+      emitBroadcastPayload("offer_update", payload);
     })
     .subscribe((status) => {
       if (status === "SUBSCRIBED") {
@@ -95,62 +98,15 @@ export function createSupabaseEventSource(url: string): EventSourceLike {
 }
 
 // ============================================================================
-// SERVER-SIDE: Broadcast to order channel via REST API
-// ============================================================================
-
-/**
- * Broadcast a real-time event to all subscribers of an order's message channel.
- *
- * Uses the Supabase Realtime REST API — a single HTTP POST, no persistent
- * WebSocket needed. Ideal for serverless functions (Vercel).
- *
- * Falls back silently when Supabase is not configured.
- */
-export async function broadcastToOrder(
-  orderId: string,
-  event: string,
-  payload: Record<string, unknown>
-): Promise<void> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !serviceKey) {
-    console.warn("[Supabase] Not configured, skipping broadcast");
-    return;
-  }
-
-  const response = await fetch(`${supabaseUrl}/realtime/v1/api/broadcast`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${serviceKey}`,
-      apikey: serviceKey,
-    },
-    body: JSON.stringify({
-      messages: [
-        {
-          topic: `realtime:order-messages:${orderId}`,
-          event,
-          payload,
-        },
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    throw new Error(`Supabase broadcast failed (${response.status}): ${text}`);
-  }
-}
-
-// ============================================================================
 // SERVER-SIDE: Broadcast to conversation channel via REST API
 // ============================================================================
 
 /**
  * Broadcast a real-time event to all subscribers of a conversation channel.
  *
- * This is the conversation-based equivalent of broadcastToOrder.
+ * Uses the Supabase Realtime REST API — a single HTTP POST, no persistent
+ * WebSocket needed. Ideal for serverless functions (Vercel).
+ *
  * Channel: `conversation:{conversationId}`
  */
 export async function broadcastToConversation(

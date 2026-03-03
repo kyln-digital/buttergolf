@@ -16,8 +16,8 @@ import {
   Button,
   Separator,
   Container,
+  View,
 } from "@buttergolf/ui";
-import { View } from "tamagui";
 import { buildTrackingUrl } from "@/lib/utils/format";
 import {
   Package,
@@ -394,6 +394,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
   // Fetch tracking events on mount
   useEffect(() => {
     fetchTrackingEvents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order.id, order.trackingCode]);
 
   // Poll for updates when shipment is active (IN_TRANSIT or OUT_FOR_DELIVERY)
@@ -409,6 +410,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
     }, 15000);
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order.shipmentStatus, order.trackingCode, order.id]);
 
   return (
@@ -546,7 +548,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
 
             {/* Carrier/Tracking Info Box */}
             {order.carrier && (
-              <View backgroundColor="$infoLight" borderRadius="$md" padding="$md">
+              <View backgroundColor="$secondaryLight" borderRadius="$md" padding="$md">
                 <Column gap="$sm">
                   <Text fontWeight="600" size="$5">
                     {order.carrier} {order.service && `- ${order.service}`}
@@ -601,7 +603,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                           style={
                             {
                               animation: isLoadingTracking ? "spin 1s linear infinite" : "none",
-                            } as any
+                            } as React.CSSProperties
                           }
                         />
                       }
@@ -818,14 +820,14 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
             {order.userRole === "buyer" && order.paymentHoldStatus === "HELD" && (
               <Column gap="$md">
                 <View
-                  backgroundColor="$infoLight"
+                  backgroundColor="$secondaryLight"
                   borderRadius="$md"
                   padding="$md"
                   borderLeftWidth={4}
-                  borderLeftColor="$info"
+                  borderLeftColor="$secondary"
                 >
                   <Column gap="$sm">
-                    <Text fontWeight="600" color="$info">
+                    <Text fontWeight="600" color="$secondary">
                       Your payment is protected
                     </Text>
                     <Text size="$4" color="$textSecondary">
@@ -920,14 +922,14 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
             {order.userRole === "buyer" &&
               order.paymentHoldStatus === "PENDING_SELLER_ONBOARDING" && (
                 <View
-                  backgroundColor="$infoLight"
+                  backgroundColor="$secondaryLight"
                   borderRadius="$md"
                   padding="$md"
                   borderLeftWidth={4}
-                  borderLeftColor="$info"
+                  borderLeftColor="$secondary"
                 >
                   <Column gap="$sm">
-                    <Text fontWeight="600" color="$info">
+                    <Text fontWeight="600" color="$secondary">
                       Your payment is protected
                     </Text>
                     <Text size="$4" color="$textSecondary">
@@ -984,14 +986,14 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
 
                 {order.paymentHoldStatus === "PENDING_SELLER_ONBOARDING" && (
                   <View
-                    backgroundColor="$infoLight"
+                    backgroundColor="$secondaryLight"
                     borderRadius="$md"
                     padding="$md"
                     borderLeftWidth={4}
-                    borderLeftColor="$info"
+                    borderLeftColor="$secondary"
                   >
                     <Column gap="$sm">
-                      <Text fontWeight="600" color="$info">
+                      <Text fontWeight="600" color="$secondary">
                         Complete verification to receive payment
                       </Text>
                       <Text size="$4" color="$textSecondary">
