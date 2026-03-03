@@ -88,18 +88,18 @@ const ButtonBase = styled(TamaguiButton, {
         // Light grey background - secondary actions, "Shop now", "Cancel"
         backgroundColor: "$controlSecondaryBg",
         borderWidth: 1,
-        borderColor: "$border",
+        borderColor: "$controlSecondaryBg",
         color: "$controlSecondaryText",
         ...buttonShadow,
 
         hoverStyle: {
           backgroundColor: "$controlSecondaryBgHover",
-          borderColor: "$borderHover",
+          borderColor: "$controlSecondaryBgHover",
         },
 
         pressStyle: {
           backgroundColor: "$controlSecondaryBgPress",
-          borderColor: "$border",
+          borderColor: "$controlSecondaryBgPress",
           scale: 0.98,
         },
 
