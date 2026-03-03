@@ -177,7 +177,7 @@ export function BuySellToggle({
           <SizableText
             size="$5"
             fontWeight={activeMode === "buying" ? "600" : "500"}
-            color={activeMode === "buying" ? "$white" : "$ironstone"}
+            color={activeMode === "buying" ? "$white" : "$controlSecondaryText"}
           >
             Buying
           </SizableText>
@@ -192,7 +192,7 @@ export function BuySellToggle({
           <SizableText
             size="$5"
             fontWeight={activeMode === "selling" ? "600" : "500"}
-            color={activeMode === "selling" ? "$white" : "$ironstone"}
+            color={activeMode === "selling" ? "$white" : "$controlSecondaryText"}
           >
             Selling
           </SizableText>

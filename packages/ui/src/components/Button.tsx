@@ -86,20 +86,19 @@ const ButtonBase = styled(TamaguiButton, {
 
       secondary: {
         // Light grey background - secondary actions, "Shop now", "Cancel"
-        backgroundColor: "$cloudMist",
+        backgroundColor: "$controlSecondaryBg",
         borderWidth: 1,
         borderColor: "$border",
-        // Keep text dark on this light surface in both light and dark themes.
-        color: "$ironstone",
+        color: "$controlSecondaryText",
         ...buttonShadow,
 
         hoverStyle: {
-          backgroundColor: "$cloudMistHover",
+          backgroundColor: "$controlSecondaryBgHover",
           borderColor: "$borderHover",
         },
 
         pressStyle: {
-          backgroundColor: "$cloudMistPress",
+          backgroundColor: "$controlSecondaryBgPress",
           borderColor: "$border",
           scale: 0.98,
         },

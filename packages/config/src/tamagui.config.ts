@@ -488,6 +488,12 @@ const lightTheme = {
   infoLight: brandColors.infoLight,
   infoDark: brandColors.infoDark,
 
+  // Secondary control surface tokens (used by CTA secondary buttons and mode toggles)
+  controlSecondaryBg: brandColors.cloudMist,
+  controlSecondaryBgHover: brandColors.cloudMistHover,
+  controlSecondaryBgPress: brandColors.cloudMistPress,
+  controlSecondaryText: brandColors.ironstone,
+
   // Text semantic colors
   text: brandColors.ironstone,
   textSecondary: brandColors.slateSmoke,
@@ -577,6 +583,12 @@ const darkTheme = {
   info: brandColors.infoBase,
   infoLight: brandColors.ironstone,
   infoDark: brandColors.infoLight,
+
+  // Secondary control surface tokens (keep contrast-safe light surface in dark mode)
+  controlSecondaryBg: brandColors.cloudMist,
+  controlSecondaryBgHover: brandColors.cloudMistHover,
+  controlSecondaryBgPress: brandColors.cloudMistPress,
+  controlSecondaryText: brandColors.ironstone,
 
   // Text semantic colors - override for dark mode
   text: brandColors.pureWhite,
