@@ -210,7 +210,7 @@ export function AccountHubClient({
           </Text>
 
           <AccountMenuItem
-            icon={<ShoppingBag size={22} color="$primary" />}
+            icon={<ShoppingBag size={22} color="$text" />}
             label="My Orders"
             description="View your purchase history"
             badge={pendingOrdersCount > 0 ? pendingOrdersCount : undefined}
@@ -219,7 +219,7 @@ export function AccountHubClient({
           />
 
           <AccountMenuItem
-            icon={<MessageCircle size={22} color="$secondary" />}
+            icon={<MessageCircle size={22} color="$text" />}
             label="Messages"
             description="Chat with buyers and sellers"
             badge={unreadMessagesCount > 0 ? unreadMessagesCount : undefined}
@@ -228,7 +228,7 @@ export function AccountHubClient({
           />
 
           <AccountMenuItem
-            icon={<Heart size={22} color="$error" />}
+            icon={<Heart size={22} color="$text" />}
             label="Favourites"
             description="Your saved items"
             onPress={() => router.push("/favourites")}
@@ -292,14 +292,14 @@ export function AccountHubClient({
           </Text>
 
           <AccountMenuItem
-            icon={<MapPin size={22} color="$secondary" />}
+            icon={<MapPin size={22} color="$text" />}
             label="Addresses"
             description="Manage shipping addresses"
             onPress={() => router.push("/account/addresses")}
           />
 
           <AccountMenuItem
-            icon={<CreditCard size={22} color="$warning" />}
+            icon={<CreditCard size={22} color="$text" />}
             label="Payment Methods"
             description="Manage payment options"
             onPress={() => router.push("/account/payment-methods")}
