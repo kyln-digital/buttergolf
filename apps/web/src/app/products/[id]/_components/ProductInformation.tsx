@@ -317,11 +317,11 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
                 />
               </Row>
 
-              {offerError && (
+              {offerError ? (
                 <Text size="$2" color="$error">
                   {offerError}
                 </Text>
-              )}
+              ) : null}
 
               <Row gap="$2" justifyContent="flex-end">
                 <Popover.Close asChild>
@@ -348,25 +348,6 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
           </Popover.Content>
         </Popover>
       </Column>
-
-      <style>{`
-        @keyframes offerPopoverEnter {
-          from {
-            opacity: 0;
-            transform: translateY(-18px) scale(0.92);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .offer-popover-content {
-            animation-duration: 1ms !important;
-          }
-        }
-      `}</style>
     </Column>
   );
 }

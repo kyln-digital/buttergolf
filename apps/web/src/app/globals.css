@@ -93,3 +93,20 @@ a {
     color 200ms ease,
     border-color 200ms ease;
 }
+
+@keyframes offerPopoverEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .offer-popover-content {
+    animation-duration: 1ms !important;
+  }
+}
