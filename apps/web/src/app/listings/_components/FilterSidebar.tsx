@@ -39,7 +39,7 @@ export function FilterSidebar({
       minHeight={200}
       backgroundColor="$surface"
       borderWidth={1}
-      borderColor="$border"
+      borderColor="$fieldBorder"
       borderRadius="$md"
       padding="$lg"
       gap="$lg"

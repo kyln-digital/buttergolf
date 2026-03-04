@@ -40,6 +40,8 @@ interface FavouritesScreenProps {
   onMessagesPress?: () => void;
   onLoginPress?: () => void;
   onAccountPress?: () => void;
+  /** Trigger to force refetch when parent knows data may be stale */
+  refreshKey?: number;
 }
 
 export function FavouritesScreen({
@@ -56,6 +58,7 @@ export function FavouritesScreen({
   onMessagesPress,
   onLoginPress,
   onAccountPress,
+  refreshKey,
 }: Readonly<FavouritesScreenProps>) {
   const insets = useSafeAreaInsets();
   const [products, setProducts] = useState<FavouriteProduct[]>([]);
@@ -64,7 +67,7 @@ export function FavouritesScreen({
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [offerProduct, setOfferProduct] = useState<{ id: string; price: number } | null>(null);
 
-  // Fetch favourites on mount
+  // Fetch favourites on mount and when parent requests a refresh.
   useEffect(() => {
     if (!onFetchFavourites) {
       setLoading(false);
@@ -98,7 +101,7 @@ export function FavouritesScreen({
     return () => {
       cancelled = true;
     };
-  }, [onFetchFavourites]);
+  }, [onFetchFavourites, refreshKey]);
 
   // Handle removing a favourite
   const handleRemove = useCallback(

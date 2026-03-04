@@ -4,6 +4,7 @@ import {
   DarkTheme,
   DefaultTheme,
   Theme as NavigationTheme,
+  useFocusEffect,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { brandColors, LISTING_PRICE_LIMITS } from "@buttergolf/constants";
@@ -1368,6 +1369,7 @@ function FavouritesScreenWrapper({
 
   // State for checkout sheet
   const [checkoutSheetOpen, setCheckoutSheetOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<{
     id: string;
     title: string;
@@ -1394,6 +1396,22 @@ function FavouritesScreenWrapper({
 
     return response.json();
   }, [getToken, apiUrl]);
+
+  // Refresh on every focus so profile favourites stays in sync with listing hearts.
+  // A short follow-up refresh accounts for deferred writes that complete just after navigation.
+  useFocusEffect(
+    useCallback(() => {
+      setRefreshKey((prev) => prev + 1);
+
+      const delayedRefresh = setTimeout(() => {
+        setRefreshKey((prev) => prev + 1);
+      }, 700);
+
+      return () => {
+        clearTimeout(delayedRefresh);
+      };
+    }, [])
+  );
 
   const removeFavourite = useCallback(
     async (productId: string) => {
@@ -1480,6 +1498,7 @@ function FavouritesScreenWrapper({
       <FavouritesScreen
         isAuthenticated={isAuthenticated}
         onFetchFavourites={fetchFavourites}
+        refreshKey={refreshKey}
         onRemoveFavourite={removeFavourite}
         onBack={() => navigation.goBack()}
         onViewProduct={(id) => navigation.navigate("ProductDetail", { id })}
