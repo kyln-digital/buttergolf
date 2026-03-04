@@ -26,17 +26,37 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
-function getOfferBadge(
-  status: string | null
-): { label: string; variant: "warning" | "primary" } | null {
-  switch (status) {
-    case "PENDING":
-      return { label: "Offer", variant: "warning" };
-    case "COUNTERED":
-      return { label: "Counter", variant: "primary" };
-    default:
-      return null;
+function getConversationStatus(
+  productSold: boolean,
+  activeOfferStatus: string | null,
+  lastMessageType: string | null,
+  lastMessagePreview: string | null
+): { label: string; color: "$warning" | "$primary" | "$success" } | null {
+  if (productSold) {
+    return { label: "Sold", color: "$warning" };
   }
+
+  if (lastMessageType === "OFFER_ACCEPTED") {
+    return { label: "Accepted", color: "$success" };
+  }
+
+  switch (activeOfferStatus) {
+    case "PENDING":
+      return { label: "Offer", color: "$primary" };
+    case "COUNTERED":
+      return { label: "Counter", color: "$primary" };
+    case "ACCEPTED":
+      return { label: "Accepted", color: "$success" };
+    default:
+      break;
+  }
+
+  const preview = (lastMessagePreview || "").toLowerCase();
+  if (preview.includes("offer accepted")) {
+    return { label: "Accepted", color: "$success" };
+  }
+
+  return null;
 }
 
 export function ThreadList({ conversations, activeConversationId, loading }: ThreadListProps) {
@@ -101,7 +121,12 @@ export function ThreadList({ conversations, activeConversationId, loading }: Thr
             {conversations.map((conversation) => {
               const isActive = conversation.id === activeConversationId;
               const hasUnread = conversation.unreadCount > 0;
-              const offerBadge = getOfferBadge(conversation.activeOfferStatus);
+              const conversationStatus = getConversationStatus(
+                conversation.productSold,
+                conversation.activeOfferStatus,
+                conversation.lastMessageType,
+                conversation.lastMessagePreview
+              );
 
               return (
                 <ConversationRow
@@ -109,7 +134,7 @@ export function ThreadList({ conversations, activeConversationId, loading }: Thr
                   conversation={conversation}
                   isActive={isActive}
                   hasUnread={hasUnread}
-                  offerBadge={offerBadge}
+                  conversationStatus={conversationStatus}
                   onListingPress={() => setSelectedListing(conversation)}
                 />
               );
@@ -136,7 +161,7 @@ interface ConversationRowProps {
   conversation: Conversation;
   isActive: boolean;
   hasUnread: boolean;
-  offerBadge: { label: string; variant: "warning" | "primary" } | null;
+  conversationStatus: { label: string; color: "$warning" | "$primary" | "$success" } | null;
   onListingPress: () => void;
 }
 
@@ -144,7 +169,7 @@ function ConversationRow({
   conversation,
   isActive,
   hasUnread,
-  offerBadge,
+  conversationStatus,
   onListingPress,
 }: Readonly<ConversationRowProps>) {
   return (
@@ -252,9 +277,9 @@ function ConversationRow({
             </Text>
           </Button>
 
-          {conversation.productSold && (
-            <Text size="$2" color="$warning" weight="semibold" flexShrink={0}>
-              Sold
+          {conversationStatus && (
+            <Text size="$2" color={conversationStatus.color} weight="semibold" flexShrink={0}>
+              {conversationStatus.label}
             </Text>
           )}
         </Row>
@@ -273,18 +298,6 @@ function ConversationRow({
           </Link>
 
           <Row alignItems="center" gap="$xs" flexShrink={0}>
-            {offerBadge && (
-              <Badge variant={offerBadge.variant} size="sm">
-                <Text
-                  size="$1"
-                  weight="semibold"
-                  color={offerBadge.variant === "primary" ? "$textInverse" : "$text"}
-                >
-                  {offerBadge.label}
-                </Text>
-              </Badge>
-            )}
-
             {hasUnread && (
               <View
                 backgroundColor="$primary"

@@ -129,9 +129,9 @@ export async function GET(req: Request) {
           orderBy: { createdAt: "desc" },
           take: 1,
         },
-        // Latest active offer (PENDING or COUNTERED)
+        // Latest inbox-visible offer status (including accepted)
         offers: {
-          where: { status: { in: ["PENDING", "COUNTERED"] } },
+          where: { status: { in: ["PENDING", "COUNTERED", "ACCEPTED"] } },
           select: {
             id: true,
             amount: true,
@@ -217,6 +217,7 @@ export async function GET(req: Request) {
         otherUserAverageRating: otherUser.averageRating,
         otherUserRatingCount: otherUser.ratingCount,
         lastMessagePreview,
+        lastMessageType: lastMessage?.type ?? null,
         lastMessageAt: lastMessage?.createdAt
           ? lastMessage.createdAt.toISOString()
           : conv.updatedAt.toISOString(),

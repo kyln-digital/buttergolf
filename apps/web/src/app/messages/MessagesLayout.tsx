@@ -19,6 +19,7 @@ export interface Conversation {
   otherUserAverageRating: number | null;
   otherUserRatingCount: number;
   lastMessagePreview: string | null;
+  lastMessageType: string | null;
   lastMessageAt: string;
   unreadCount: number;
   userRole: "buyer" | "seller";

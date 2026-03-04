@@ -78,7 +78,8 @@ export default async function MessagesLayoutPage({ children }: { children: React
         },
       },
       offers: {
-        where: { status: { in: ["PENDING", "COUNTERED"] } },
+        // Pull the latest offer status shown in inbox rows, including accepted offers.
+        where: { status: { in: ["PENDING", "COUNTERED", "ACCEPTED"] } },
         select: {
           id: true,
           amount: true,
@@ -158,6 +159,7 @@ export default async function MessagesLayoutPage({ children }: { children: React
       otherUserAverageRating: otherUser.averageRating,
       otherUserRatingCount: otherUser.ratingCount,
       lastMessagePreview,
+      lastMessageType: lastMessage?.type ?? null,
       lastMessageAt: lastMessage?.createdAt?.toISOString() || conv.updatedAt.toISOString(),
       unreadCount: conv._count.messages,
       userRole: isBuyer ? ("buyer" as const) : ("seller" as const),
