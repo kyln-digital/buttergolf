@@ -108,12 +108,32 @@ export function SellerProductCard({
             style={{ objectFit: "cover" }}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
+          <Button
+            chromeless
+            size="$3"
+            position="absolute"
+            top={12}
+            right={12}
+            width={32}
+            height={32}
+            minWidth={32}
+            padding={0}
+            borderRadius="$full"
+            backgroundColor="$overlayDark50"
+            hoverStyle={{ backgroundColor: "$error" }}
+            pressStyle={{ backgroundColor: "$errorDark" }}
+            onPress={handleDelete}
+            disabled={isDeleting || isUpdating}
+            aria-label="Delete listing"
+          >
+            <Trash2 size={14} color="$textInverse" />
+          </Button>
           {product.isSold && (
             <div
               style={{
                 position: "absolute",
                 top: 12,
-                right: 12,
+                right: 52,
               }}
             >
               <Badge variant="error" size="md">
@@ -126,7 +146,7 @@ export function SellerProductCard({
               style={{
                 position: "absolute",
                 top: 12,
-                right: 12,
+                right: 52,
               }}
             >
               <Badge variant="warning" size="md">
@@ -196,7 +216,7 @@ export function SellerProductCard({
             <Badge variant="neutral" size="sm">
               {product.categoryName}
             </Badge>
-            <Text size="$2" color="$textMuted">
+            <Text size="$2" color="$textSecondary">
               Listed {new Date(product.createdAt).toLocaleDateString()}
             </Text>
           </Row>
@@ -206,74 +226,42 @@ export function SellerProductCard({
             {/* Boost Button - Only show for active listings */}
             {!product.isSold && (
               <Button
-                size="$3"
-                backgroundColor="$primaryLight"
-                color="$primary"
-                borderRadius="$full"
-                paddingHorizontal="$3"
-                paddingVertical="$2"
+                butterVariant="secondary"
+                size="$4"
+                flex={1}
                 onPress={() => setShowPromotionSheet(true)}
                 disabled={isDeleting || isUpdating}
               >
                 <Row gap="$xs" alignItems="center">
-                  <Zap size={14} color="$primary" />
-                  <Text color="$primary" weight="semibold">
+                  <Zap size={14} color="$text" />
+                  <Text color="$text" weight="semibold">
                     Boost
                   </Text>
                 </Row>
               </Button>
             )}
             <Button
-              size="$3"
-              backgroundColor="transparent"
-              color="$primary"
-              borderWidth={2}
-              borderColor="$primary"
-              borderRadius="$full"
-              paddingHorizontal="$3"
-              paddingVertical="$2"
+              butterVariant="secondary"
+              size="$4"
               flex={1}
-              shadowColor="transparent"
-              shadowOffset={{ width: 0, height: 0 }}
-              shadowOpacity={0}
-              shadowRadius={0}
-              elevation={0}
-              style={{ boxShadow: "none" }}
               onPress={() => onEdit(product)}
               disabled={isDeleting || isUpdating}
             >
               <Row gap="$xs" alignItems="center">
-                <Edit3 size={14} color="$primary" />
-                <Text color="$primary" weight="semibold">
+                <Edit3 size={14} color="$text" />
+                <Text color="$text" weight="semibold">
                   Edit
                 </Text>
               </Row>
             </Button>
             <Button
-              size="$3"
-              backgroundColor={product.isSold ? "$secondary" : "$primary"}
-              color="$textInverse"
-              borderRadius="$full"
-              paddingHorizontal="$3"
-              paddingVertical="$2"
+              butterVariant={product.isSold ? "secondary" : "primary"}
+              size="$4"
               flex={1}
               onPress={handleMarkSold}
               disabled={isDeleting || isUpdating}
             >
               {isUpdating ? "..." : product.isSold ? "Relist" : "Mark Sold"}
-            </Button>
-            <Button
-              size="$3"
-              backgroundColor="$error"
-              color="$textInverse"
-              borderRadius="$full"
-              paddingHorizontal="$3"
-              paddingVertical="$2"
-              onPress={handleDelete}
-              disabled={isDeleting || isUpdating}
-              aria-label="Delete listing"
-            >
-              <Trash2 size={14} color="white" />
             </Button>
           </Row>
         </Column>
