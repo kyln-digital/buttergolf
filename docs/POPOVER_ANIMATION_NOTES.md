@@ -49,3 +49,47 @@ Don't:
 - Confirm popover opens (`onOpenChange` true).
 - Check computed styles on the content node.
 - If it is mounted but invisible (`opacity: 0` + `pointer-events: none`), remove container-level Tamagui enter/exit animation and use the working pattern above.
+
+## Dev Warning: `Unexpected text node` in `<Column>`
+
+### Symptom
+
+In dev, console repeatedly logs:
+
+- `Unexpected text node: . A text node cannot be a child of a <Column>.`
+
+### Root Cause
+
+Using `&&` with a string state can produce an empty string child:
+
+- `offerError && <Text>...</Text>`
+
+When `offerError === ""`, React evaluates the expression to `""` (a text node), not `null`.
+Tamagui `Column` (View-like) rejects raw text-node children, so it warns.
+
+### Fix Pattern
+
+Use an explicit ternary so the false branch is `null`:
+
+```tsx
+{
+  offerError ? (
+    <Text size="$2" color="$error">
+      {offerError}
+    </Text>
+  ) : null;
+}
+```
+
+Avoid this pattern for string-based state in non-Text containers:
+
+```tsx
+{
+  offerError && <Text>{offerError}</Text>;
+}
+```
+
+### Notes
+
+- This warning is unrelated to the Next.js `global-error.css` preload message.
+- The `global-error.css` preload message is usually benign dev noise.
