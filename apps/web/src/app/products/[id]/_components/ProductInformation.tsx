@@ -216,6 +216,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
         {/* Make an Offer Popover */}
         <Popover
           placement="bottom"
+          offset={8}
           onOpenChange={(open) => {
             if (!open) {
               setOfferAmount("");
