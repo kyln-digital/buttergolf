@@ -3,12 +3,20 @@
 import { useRef, useEffect, useCallback, useState } from "react";
 
 export type AutoSaveStatus = "idle" | "saving" | "saved" | "error";
+export type AutoSaveResult = "saved" | "skipped" | "error";
 
 interface UseAutoSaveOptions<T> {
   /** The data to autosave */
   data: T;
-  /** Async function that performs the save. Receives the data and returns true on success. */
-  onSave: (data: T) => Promise<boolean>;
+  /**
+   * Async function that performs the save.
+   *
+   * Return values:
+   * - "saved" (or true): persisted successfully
+   * - "skipped": intentionally not persisted (for example, no meaningful data yet)
+   * - "error" (or false): persistence failed
+   */
+  onSave: (data: T) => Promise<AutoSaveResult | boolean>;
   /** Debounce delay in ms (default: 10000 — 10 seconds of inactivity) */
   debounceMs?: number;
   /** Whether autosave is enabled (default: true) */
@@ -54,10 +62,13 @@ export function useAutoSave<T>({
 
     setStatus("saving");
     try {
-      const success = await onSaveRef.current(JSON.parse(dataJson) as T);
-      if (success) {
+      const result = await onSaveRef.current(JSON.parse(dataJson) as T);
+
+      if (result === true || result === "saved") {
         lastSavedJson.current = dataJson;
         setStatus("saved");
+      } else if (result === "skipped") {
+        setStatus("idle");
       } else {
         setStatus("error");
       }

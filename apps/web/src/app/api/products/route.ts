@@ -131,6 +131,9 @@ export async function POST(request: Request) {
           .filter((url) => url.length > 0)
       : [];
 
+    const normalisedCategoryId =
+      typeof categoryId === "string" && categoryId.trim().length > 0 ? categoryId : null;
+
     // ============================================================
     // IDEMPOTENCY CHECK
     // Prevent duplicate product creation from double-submissions
@@ -171,19 +174,34 @@ export async function POST(request: Request) {
       }
     }
 
-    // Validate required fields — drafts need title + category (FK constraint)
-    if (isDraft) {
-      if (!title) {
-        return NextResponse.json({ error: "Title is required to save a draft" }, { status: 400 });
-      }
-      if (!categoryId) {
+    let resolvedCategoryId = normalisedCategoryId;
+
+    // Drafts can be saved from any partial state. Because Product.categoryId is required
+    // in the schema, pick a stable fallback category when the user has not selected one yet.
+    if (isDraft && !resolvedCategoryId) {
+      const fallbackCategory =
+        (await prisma.category.findFirst({
+          where: { slug: "accessories" },
+          select: { id: true },
+        })) ??
+        (await prisma.category.findFirst({
+          orderBy: { createdAt: "asc" },
+          select: { id: true },
+        }));
+
+      if (!fallbackCategory) {
         return NextResponse.json(
-          { error: "Please select a category before saving a draft" },
-          { status: 400 }
+          { error: "Unable to save draft: no categories are configured." },
+          { status: 500 }
         );
       }
-    } else {
-      if (!title || !description || !price || !categoryId) {
+
+      resolvedCategoryId = fallbackCategory.id;
+    }
+
+    // Validate required fields for publish flow.
+    if (!isDraft) {
+      if (!title || !description || !price || !resolvedCategoryId) {
         return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
       }
     }
@@ -268,6 +286,10 @@ export async function POST(request: Request) {
       }
     }
 
+    if (!resolvedCategoryId) {
+      return NextResponse.json({ error: "Missing category" }, { status: 400 });
+    }
+
     // Create product with images
     const product = await prisma.product.create({
       data: {
@@ -282,7 +304,7 @@ export async function POST(request: Request) {
         brandId: brandId || null,
         model: model || null,
         userId: user.id,
-        categoryId,
+        categoryId: resolvedCategoryId,
         // Golf club specific fields
         flex: flex || null,
         loft: loft || null,

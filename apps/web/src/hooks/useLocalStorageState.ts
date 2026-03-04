@@ -97,6 +97,15 @@ export function useLocalStorageState<T>(
     [key, debounceMs]
   );
 
+  useEffect(() => {
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+        debounceTimer.current = null;
+      }
+    };
+  }, []);
+
   // Wrapper that updates both React state and localStorage
   const setPersistedState = useCallback(
     (valueOrUpdater: T | ((prev: T) => T)) => {
@@ -113,6 +122,11 @@ export function useLocalStorageState<T>(
   );
 
   const clear = useCallback(() => {
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+      debounceTimer.current = null;
+    }
+
     if (typeof window !== "undefined") {
       localStorage.removeItem(key);
     }

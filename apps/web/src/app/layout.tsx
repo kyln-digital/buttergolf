@@ -107,8 +107,8 @@ export default function RootLayout({
           </CartProvider>
         </NextTamaguiProvider>
         <Analytics />
-        {/* Tidio chat - only visible on home and help centre (FAQs) */}
-        <ConditionalLayout includeRoutes={["/", "/help-centre", "/help-centre/*"]}>
+        {/* Tidio chat - only visible on help centre */}
+        <ConditionalLayout includeRoutes={["/help-centre", "/help-centre/*"]}>
           <Script
             src="//code.tidio.co/ba25ralqm9iybtdmfwzusfi6xuyd2qag.js"
             strategy="afterInteractive"
