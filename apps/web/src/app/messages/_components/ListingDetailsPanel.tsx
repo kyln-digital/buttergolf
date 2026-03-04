@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Column, Row, Text, Image, Badge } from "@buttergolf/ui";
 import { Package, ExternalLink } from "@tamagui/lucide-icons";
@@ -28,7 +28,6 @@ export function ListingDetailsPanel({
   otherUserName,
 }: Readonly<ListingDetailsPanelProps>) {
   const router = useRouter();
-  const [position, setPosition] = useState(0);
 
   const formattedPrice = useMemo(() => `£${productPrice.toFixed(2)}`, [productPrice]);
 
@@ -42,11 +41,6 @@ export function ListingDetailsPanel({
           onClose();
         }
       }}
-      snapPoints={[80, 60]}
-      snapPointsMode="percent"
-      position={position}
-      onPositionChange={setPosition}
-      dismissOnSnapToBottom
       zIndex={1050}
       animation="medium"
     >
@@ -57,26 +51,28 @@ export function ListingDetailsPanel({
         backgroundColor="$overlayDark50"
       />
 
-      <Sheet.Handle />
-
       <Sheet.Frame
         backgroundColor="$surface"
-        borderTopLeftRadius="$xl"
-        borderTopRightRadius="$xl"
-        paddingBottom="$xl"
+        borderTopLeftRadius="$lg"
+        borderBottomLeftRadius="$lg"
+        borderTopRightRadius={0}
+        borderBottomRightRadius={0}
         elevation={10}
-        style={{ boxShadow: "0 -8px 32px rgba(0,0,0,0.18)" }}
+        animation="medium"
+        enterStyle={{ x: 420 }}
+        exitStyle={{ x: 420 }}
+        style={{
+          position: "fixed",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: "min(420px, 100vw)",
+          boxShadow: "-14px 0 42px rgba(0,0,0,0.18)",
+          borderLeft: "1px solid rgba(0, 0, 0, 0.08)",
+        }}
       >
         <Sheet.ScrollView>
-          <Column
-            padding="$lg"
-            gap="$lg"
-            width="100%"
-            maxWidth={560}
-            alignSelf="center"
-            $gtMd={{ width: "70%", maxWidth: "70%" }}
-            $gtLg={{ width: "60%", maxWidth: "60%" }}
-          >
+          <Column padding="$lg" gap="$lg" width="100%" minHeight="100%" paddingBottom="$xl">
             <Row alignItems="center" justifyContent="space-between">
               <Text size="$6" weight="bold" color="$text">
                 Listing Details
