@@ -16,13 +16,16 @@ export interface Conversation {
   otherUserId: string;
   otherUserName: string;
   otherUserImage: string | null;
+  otherUserAverageRating: number | null;
+  otherUserRatingCount: number;
   lastMessagePreview: string | null;
+  lastMessageType: string | null;
   lastMessageAt: string;
   unreadCount: number;
   userRole: "buyer" | "seller";
   orderId: string | null;
-  activeOfferStatus: string | null;
-  activeOfferAmount: number | null;
+  latestOfferStatus: string | null;
+  latestOfferAmount: number | null;
 }
 
 interface MessagesLayoutProps {

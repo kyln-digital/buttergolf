@@ -2,9 +2,19 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { KeyboardAvoidingView, Platform } from "react-native";
-import { Column, Row, Text, Image, ChatMessageList, ChatInput } from "@buttergolf/ui";
+import {
+  Column,
+  Row,
+  Text,
+  Image,
+  ChatMessageList,
+  ChatInput,
+  Button,
+  Popover,
+} from "@buttergolf/ui";
 import type { ChatMessage } from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Star } from "@tamagui/lucide-icons";
 
 const MESSAGE_LIMITS = {
   MAX_LENGTH: 2000,
@@ -34,10 +44,16 @@ interface MessageThreadScreenProps {
   otherUserName: string;
   /** Other user's image URL */
   otherUserImage: string | null;
+  /** Other user's average rating */
+  otherUserAverageRating?: number | null;
+  /** Other user's rating count */
+  otherUserRatingCount?: number;
   /** Product title */
   productTitle?: string;
   /** Product image URL (shown in header) */
   productImage?: string | null;
+  /** Product title press handler */
+  onProductPress?: () => void;
   /** Pre-loaded messages (skips loading state) */
   initialMessages?: ChatMessage[];
   /** Callback to fetch messages for this conversation.
@@ -159,8 +175,11 @@ export function MessageThreadScreen({
   currentUserId,
   otherUserName,
   otherUserImage,
+  otherUserAverageRating,
+  otherUserRatingCount = 0,
   productTitle = "Order",
   productImage,
+  onProductPress,
   initialMessages,
   onFetchMessages,
   onSendMessage,
@@ -199,6 +218,7 @@ export function MessageThreadScreen({
 
   // Tracks whether Realtime is currently connected (diagnostics only)
   const realtimeConnectedRef = useRef(false);
+  const isWeb = Platform.OS === "web";
 
   const isOverLimit = newMessage.length > MESSAGE_LIMITS.MAX_LENGTH;
 
@@ -614,53 +634,166 @@ export function MessageThreadScreen({
           borderBottomColor="$border"
           backgroundColor="$surface"
         >
-          {/* User avatar with product thumbnail overlay */}
-          <Column width={44} height={44} position="relative">
-            {otherUserImage ? (
-              <Image
-                source={{ uri: otherUserImage }}
-                width={44}
-                height={44}
-                borderRadius={22}
-                alt={otherUserName}
-              />
-            ) : (
-              <Column
-                width={44}
-                height={44}
-                borderRadius={22}
-                backgroundColor="$backgroundHover"
-                alignItems="center"
-                justifyContent="center"
+          {isWeb ? (
+            <Popover placement="bottom" offset={10}>
+              <Popover.Trigger asChild>
+                <Button
+                  chromeless
+                  padding={0}
+                  minHeight={0}
+                  height="auto"
+                  alignItems="center"
+                  justifyContent="center"
+                  cursor="pointer"
+                  aria-label={`View ${otherUserName} profile details`}
+                >
+                  <Column width={44} height={44} position="relative">
+                    {otherUserImage ? (
+                      <Image
+                        source={{ uri: otherUserImage }}
+                        width={44}
+                        height={44}
+                        borderRadius={22}
+                        alt={otherUserName}
+                      />
+                    ) : (
+                      <Column
+                        width={44}
+                        height={44}
+                        borderRadius={22}
+                        backgroundColor="$backgroundHover"
+                        alignItems="center"
+                        justifyContent="center"
+                      >
+                        <Text size="$6" fontWeight="700" color="$textSecondary">
+                          {otherUserName?.charAt(0)?.toUpperCase() || "?"}
+                        </Text>
+                      </Column>
+                    )}
+                    {productImage && (
+                      <Image
+                        source={{ uri: productImage }}
+                        width={22}
+                        height={22}
+                        borderRadius={4}
+                        alt={productTitle}
+                        position="absolute"
+                        bottom={-2}
+                        right={-4}
+                        borderWidth={2}
+                        borderColor="$surface"
+                      />
+                    )}
+                  </Column>
+                </Button>
+              </Popover.Trigger>
+
+              <Popover.Content
+                backgroundColor="$surface"
+                borderRadius="$lg"
+                padding="$4"
+                borderWidth={1}
+                borderColor="$border"
+                elevate
+                boxShadow="0px 12px 30px rgba(0, 0, 0, 0.16)"
               >
-                <Text size="$6" fontWeight="700" color="$textSecondary">
-                  {otherUserName?.charAt(0)?.toUpperCase() || "?"}
-                </Text>
-              </Column>
-            )}
-            {productImage && (
-              <Image
-                source={{ uri: productImage }}
-                width={22}
-                height={22}
-                borderRadius={4}
-                alt={productTitle}
-                position="absolute"
-                bottom={-2}
-                right={-4}
-                borderWidth={2}
-                borderColor="$surface"
-              />
-            )}
-          </Column>
+                <Popover.Arrow
+                  size="$2"
+                  offset={8}
+                  borderWidth={1}
+                  borderColor="$border"
+                  backgroundColor="$surface"
+                />
+
+                <Column gap="$2" width={240}>
+                  <Text size="$5" weight="semibold" color="$text" numberOfLines={1}>
+                    {otherUserName}
+                  </Text>
+                  <Row alignItems="center" gap="$xs">
+                    <Star size={14} color="$warning" />
+                    <Text size="$3" color="$text">
+                      {otherUserAverageRating && otherUserAverageRating > 0
+                        ? otherUserAverageRating.toFixed(1)
+                        : "New seller"}
+                    </Text>
+                    {otherUserRatingCount > 0 && (
+                      <Text size="$3" color="$textSecondary">
+                        ({otherUserRatingCount} ratings)
+                      </Text>
+                    )}
+                  </Row>
+                </Column>
+              </Popover.Content>
+            </Popover>
+          ) : (
+            <Column width={44} height={44} position="relative">
+              {otherUserImage ? (
+                <Image
+                  source={{ uri: otherUserImage }}
+                  width={44}
+                  height={44}
+                  borderRadius={22}
+                  alt={otherUserName}
+                />
+              ) : (
+                <Column
+                  width={44}
+                  height={44}
+                  borderRadius={22}
+                  backgroundColor="$backgroundHover"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <Text size="$6" fontWeight="700" color="$textSecondary">
+                    {otherUserName?.charAt(0)?.toUpperCase() || "?"}
+                  </Text>
+                </Column>
+              )}
+              {productImage && (
+                <Image
+                  source={{ uri: productImage }}
+                  width={22}
+                  height={22}
+                  borderRadius={4}
+                  alt={productTitle}
+                  position="absolute"
+                  bottom={-2}
+                  right={-4}
+                  borderWidth={2}
+                  borderColor="$surface"
+                />
+              )}
+            </Column>
+          )}
 
           <Column flex={1} gap={2}>
             <Text size="$5" fontWeight="600" numberOfLines={1}>
               {otherUserName}
             </Text>
-            <Text size="$3" color="$textSecondary" numberOfLines={1}>
-              {productTitle}
-            </Text>
+            {onProductPress ? (
+              <Button
+                chromeless
+                padding={0}
+                minHeight={0}
+                height="auto"
+                alignSelf="flex-start"
+                onPress={onProductPress}
+                cursor={isWeb ? "pointer" : undefined}
+              >
+                <Text
+                  size="$3"
+                  color="$textSecondary"
+                  numberOfLines={1}
+                  hoverStyle={isWeb ? { textDecorationLine: "underline" } : undefined}
+                >
+                  {productTitle}
+                </Text>
+              </Button>
+            ) : (
+              <Text size="$3" color="$textSecondary" numberOfLines={1}>
+                {productTitle}
+              </Text>
+            )}
           </Column>
         </Row>
 

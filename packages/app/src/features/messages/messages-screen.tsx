@@ -20,8 +20,8 @@ export interface Conversation {
   unreadCount: number;
   userRole: "buyer" | "seller";
   orderStatus?: string;
-  activeOfferStatus?: string;
-  activeOfferAmount?: number;
+  latestOfferStatus?: string;
+  latestOfferAmount?: number;
   productSold?: boolean;
 }
 
@@ -183,8 +183,8 @@ export function MessagesScreen({
         timestamp={formatTimestamp(item.lastMessageAt)}
         unreadCount={item.unreadCount}
         userRole={item.userRole}
-        activeOfferStatus={item.activeOfferStatus}
-        activeOfferAmount={item.activeOfferAmount}
+        latestOfferStatus={item.latestOfferStatus}
+        latestOfferAmount={item.latestOfferAmount}
         productSold={item.productSold}
         onPress={() => onConversationPress?.(item)}
       />

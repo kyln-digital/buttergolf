@@ -6,13 +6,17 @@ import { useMedia } from "tamagui";
 import type { ChatMessage } from "@buttergolf/ui";
 import { MessageThreadScreen } from "@buttergolf/app/src/features/messages/message-thread-screen";
 import { createSupabaseEventSource } from "@/lib/supabase-realtime";
+import { ListingDetailsPanel } from "../_components/ListingDetailsPanel";
 
 interface MessageThreadProps {
   conversationId: string;
   currentUserId: string;
   userRole: "buyer" | "seller";
+  productId: string;
   otherUserName: string;
   otherUserImage: string | null;
+  otherUserAverageRating: number | null;
+  otherUserRatingCount: number;
   productTitle: string;
   productImage: string | null;
   productPrice: number;
@@ -25,8 +29,11 @@ export function MessageThread({
   conversationId,
   currentUserId,
   userRole,
+  productId,
   otherUserName,
   otherUserImage,
+  otherUserAverageRating,
+  otherUserRatingCount,
   productTitle,
   productImage,
   productPrice,
@@ -42,6 +49,7 @@ export function MessageThread({
   void productPrice;
 
   const [hasActiveOffer, setHasActiveOffer] = useState(initialHasActiveOffer);
+  const [listingPanelOpen, setListingPanelOpen] = useState(false);
 
   const handleSendMessage = useCallback(
     async (_id: string, content: string) => {
@@ -158,8 +166,11 @@ export function MessageThread({
         userRole={userRole}
         otherUserName={otherUserName}
         otherUserImage={otherUserImage}
+        otherUserAverageRating={otherUserAverageRating}
+        otherUserRatingCount={otherUserRatingCount}
         productTitle={productTitle}
         productImage={productImage}
+        onProductPress={() => setListingPanelOpen(true)}
         initialMessages={initialMessages}
         onFetchMessages={handleFetchMessages}
         onSendMessage={handleSendMessage}
@@ -171,6 +182,17 @@ export function MessageThread({
         onCounterOffer={handleCounterOffer}
         onAcceptOffer={handleAcceptOffer}
         onRejectOffer={handleRejectOffer}
+      />
+
+      <ListingDetailsPanel
+        open={listingPanelOpen}
+        onClose={() => setListingPanelOpen(false)}
+        productId={productId}
+        productTitle={productTitle}
+        productImage={productImage}
+        productPrice={productPrice}
+        productSold={productSold}
+        otherUserName={otherUserName}
       />
     </div>
   );
