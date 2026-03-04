@@ -258,19 +258,18 @@ function ConversationRow({
         <Row alignItems="center" justifyContent="space-between" gap="$sm">
           <Button
             chromeless
-            size="$2"
-            paddingHorizontal="$xs"
-            paddingVertical={2}
-            borderRadius="$full"
-            borderWidth={1}
-            borderColor="$border"
-            backgroundColor="$surface"
+            size="$1"
+            padding={0}
+            minHeight={0}
+            height="auto"
             cursor="pointer"
             onPress={onListingPress}
-            hoverStyle={{ backgroundColor: "$backgroundHover", borderColor: "$borderHover" }}
-            pressStyle={{ backgroundColor: "$backgroundPress" }}
             aria-label={`View listing details for ${conversation.productTitle}`}
             maxWidth="75%"
+            alignItems="flex-start"
+            justifyContent="flex-start"
+            hoverStyle={{ opacity: 0.8 }}
+            pressStyle={{ opacity: 0.7 }}
           >
             <Text size="$2" color="$textSecondary" numberOfLines={1}>
               {conversation.productTitle}
