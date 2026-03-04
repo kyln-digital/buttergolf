@@ -16,6 +16,8 @@ export interface Conversation {
   otherUserId: string;
   otherUserName: string;
   otherUserImage: string | null;
+  otherUserAverageRating: number | null;
+  otherUserRatingCount: number;
   lastMessagePreview: string | null;
   lastMessageAt: string;
   unreadCount: number;

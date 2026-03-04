@@ -52,6 +52,8 @@ export default async function MessagesLayoutPage({ children }: { children: React
           lastName: true,
           email: true,
           imageUrl: true,
+          averageRating: true,
+          ratingCount: true,
         },
       },
       seller: {
@@ -61,6 +63,8 @@ export default async function MessagesLayoutPage({ children }: { children: React
           lastName: true,
           email: true,
           imageUrl: true,
+          averageRating: true,
+          ratingCount: true,
         },
       },
       messages: {
@@ -151,6 +155,8 @@ export default async function MessagesLayoutPage({ children }: { children: React
       otherUserId: otherUser.id,
       otherUserName,
       otherUserImage: otherUser.imageUrl,
+      otherUserAverageRating: otherUser.averageRating,
+      otherUserRatingCount: otherUser.ratingCount,
       lastMessagePreview,
       lastMessageAt: lastMessage?.createdAt?.toISOString() || conv.updatedAt.toISOString(),
       unreadCount: conv._count.messages,

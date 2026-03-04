@@ -50,6 +50,8 @@ export default async function MessageThreadPage({
           lastName: true,
           email: true,
           imageUrl: true,
+          averageRating: true,
+          ratingCount: true,
         },
       },
       buyer: {
@@ -59,6 +61,8 @@ export default async function MessageThreadPage({
           lastName: true,
           email: true,
           imageUrl: true,
+          averageRating: true,
+          ratingCount: true,
         },
       },
       messages: {
@@ -115,8 +119,11 @@ export default async function MessageThreadPage({
       conversationId={conversation.id}
       currentUserId={user.id}
       userRole={isBuyer ? "buyer" : "seller"}
+      productId={conversation.product.id}
       otherUserName={otherUserName}
       otherUserImage={otherUser.imageUrl}
+      otherUserAverageRating={otherUser.averageRating}
+      otherUserRatingCount={otherUser.ratingCount}
       productTitle={conversation.product.title}
       productImage={conversation.product.images[0]?.url || null}
       productPrice={conversation.product.price}

@@ -104,6 +104,8 @@ export async function GET(req: Request) {
             firstName: true,
             lastName: true,
             imageUrl: true,
+            averageRating: true,
+            ratingCount: true,
           },
         },
         seller: {
@@ -112,6 +114,8 @@ export async function GET(req: Request) {
             firstName: true,
             lastName: true,
             imageUrl: true,
+            averageRating: true,
+            ratingCount: true,
           },
         },
         // Latest message for the preview
@@ -210,6 +214,8 @@ export async function GET(req: Request) {
         otherUserId: otherUser.id,
         otherUserName: `${otherUser.firstName ?? ""} ${otherUser.lastName ?? ""}`.trim() || "User",
         otherUserImage: otherUser.imageUrl,
+        otherUserAverageRating: otherUser.averageRating,
+        otherUserRatingCount: otherUser.ratingCount,
         lastMessagePreview,
         lastMessageAt: lastMessage?.createdAt
           ? lastMessage.createdAt.toISOString()
