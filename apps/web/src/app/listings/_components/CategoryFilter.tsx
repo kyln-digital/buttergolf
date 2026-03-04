@@ -49,6 +49,7 @@ export function CategoryFilter({ selectedCategory, onChange }: Readonly<Category
           htmlFor="all"
           size="$3"
           cursor="pointer"
+          onPress={() => handleCategoryChange("all")}
           color={selectedCategory === null ? "$primary" : "$text"}
           fontWeight={selectedCategory === null ? "600" : "400"}
         >
@@ -64,6 +65,7 @@ export function CategoryFilter({ selectedCategory, onChange }: Readonly<Category
             htmlFor={category.slug}
             size="$3"
             cursor="pointer"
+            onPress={() => handleCategoryChange(category.slug)}
             color={selectedCategory === category.slug ? "$primary" : "$text"}
             fontWeight={selectedCategory === category.slug ? "600" : "400"}
           >
