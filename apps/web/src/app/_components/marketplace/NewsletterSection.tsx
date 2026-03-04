@@ -131,8 +131,8 @@ export function NewsletterSection() {
               disabled={status === "submitting" || status === "success" || status === "successTick"}
             >
               {status === "submitting" ? (
-                <Row alignItems="center" gap="$sm">
-                  <Spinner size="sm" color="$white" />
+                <Row alignItems="center" justifyContent="center" gap="$sm" width="100%">
+                  <Spinner size="sm" color="$white" alignSelf="center" />
                   <Text size="$5" color="$white" weight="bold">
                     Subscribing...
                   </Text>
