@@ -251,7 +251,7 @@ export function SellerHub() {
           borderWidth={1}
           borderColor="$border"
         >
-          <Package size={64} color="$slateSmoke" />
+          <Package size={64} color="$textSecondary" />
           <Heading level={2} textAlign="center">
             No listings yet
           </Heading>

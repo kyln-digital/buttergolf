@@ -364,8 +364,8 @@ export function AccountHubClient({
             width="100%"
           >
             <Row alignItems="center" gap="$2">
-              <LogOut size={20} color="$error" />
-              <Text color="$error" fontWeight="500">
+              <LogOut size={20} color="$textInverse" />
+              <Text color="$textInverse" fontWeight="500">
                 {isSigningOut ? "Signing out..." : "Sign Out"}
               </Text>
             </Row>
