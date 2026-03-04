@@ -32,7 +32,7 @@ const StyledTabTrigger = styled(Tabs.Tab, {
   unstyled: true,
   backgroundColor: "transparent",
   borderWidth: 0,
-  borderRadius: 0,
+  borderRadius: "$full",
   paddingHorizontal: "$md",
   paddingVertical: "$sm",
   cursor: "pointer",
