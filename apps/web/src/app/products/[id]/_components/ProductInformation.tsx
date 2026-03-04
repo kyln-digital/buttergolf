@@ -216,7 +216,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
         {/* Make an Offer Popover */}
         <Popover
           placement="bottom"
-          offset={8}
+          offset={14}
           onOpenChange={(open) => {
             if (!open) {
               setOfferAmount("");
@@ -253,7 +253,15 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
             borderWidth={1}
             borderColor="$border"
             elevate
+            boxShadow="0px 12px 30px rgba(0, 0, 0, 0.16)"
           >
+            <Popover.Arrow
+              size="$2"
+              offset={10}
+              borderWidth={1}
+              borderColor="$border"
+              backgroundColor="$surface"
+            />
             <Column gap="$3" width={280}>
               <Text size="$5" fontWeight="600" color="$text">
                 Make an offer
