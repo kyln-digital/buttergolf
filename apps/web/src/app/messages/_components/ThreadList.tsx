@@ -211,36 +211,26 @@ function ConversationRow({
         }
       />
 
-      <Column flex={1} gap={2} minWidth={0}>
+      <Column flex={1} gap="$xs" minWidth={0}>
         <Row alignItems="center" gap="$xs">
-          <SellerQuickProfilePopover
-            sellerName={conversation.otherUserName}
-            sellerImageUrl={conversation.otherUserImage}
-            averageRating={conversation.otherUserAverageRating}
-            ratingCount={conversation.otherUserRatingCount}
-            userRole={conversation.userRole}
-            trigger={
-              <Button
-                chromeless
-                padding={0}
-                minHeight={0}
-                height="auto"
-                cursor="pointer"
-                aria-label={`View ${conversation.otherUserName} profile details`}
-              >
-                <Text
-                  size="$5"
-                  weight={hasUnread ? "bold" : "medium"}
-                  color="$text"
-                  numberOfLines={1}
-                  hoverStyle={{ textDecorationLine: "underline" }}
-                >
-                  {conversation.otherUserName}
-                </Text>
-              </Button>
-            }
-          />
+          <Text
+            size="$5"
+            weight={hasUnread ? "bold" : "medium"}
+            color="$text"
+            numberOfLines={1}
+            flex={1}
+          >
+            {conversation.otherUserName}
+          </Text>
 
+          <Text size="$2" color="$textSecondary" flexShrink={0}>
+            {formatDistanceToNow(new Date(conversation.lastMessageAt), {
+              addSuffix: false,
+            })}
+          </Text>
+        </Row>
+
+        <Row alignItems="center" justifyContent="space-between" gap="$sm">
           <Button
             chromeless
             size="$2"
@@ -255,39 +245,22 @@ function ConversationRow({
             hoverStyle={{ backgroundColor: "$backgroundHover", borderColor: "$borderHover" }}
             pressStyle={{ backgroundColor: "$backgroundPress" }}
             aria-label={`View listing details for ${conversation.productTitle}`}
+            maxWidth="75%"
           >
             <Text size="$2" color="$textSecondary" numberOfLines={1}>
               {conversation.productTitle}
-              {conversation.productSold ? " · Sold" : ""}
             </Text>
           </Button>
 
-          <Text size="$2" color="$textSecondary" marginLeft="auto" flexShrink={0}>
-            {formatDistanceToNow(new Date(conversation.lastMessageAt), {
-              addSuffix: false,
-            })}
-          </Text>
+          {conversation.productSold && (
+            <Text size="$2" color="$warning" weight="semibold" flexShrink={0}>
+              Sold
+            </Text>
+          )}
         </Row>
 
-        {offerBadge && (
-          <Row alignItems="center" gap="$xs">
-            <Badge variant={offerBadge.variant} size="sm">
-              <Text
-                size="$2"
-                weight="semibold"
-                color={offerBadge.variant === "primary" ? "$textInverse" : "$text"}
-              >
-                {offerBadge.label}
-                {conversation.activeOfferAmount != null
-                  ? ` £${conversation.activeOfferAmount.toFixed(2)}`
-                  : ""}
-              </Text>
-            </Badge>
-          </Row>
-        )}
-
-        <Link href={`/messages/${conversation.id}`} style={{ textDecoration: "none" }}>
-          <Row justifyContent="space-between" alignItems="center" gap="$sm">
+        <Row justifyContent="space-between" alignItems="center" gap="$sm">
+          <Link href={`/messages/${conversation.id}`} style={{ textDecoration: "none", flex: 1 }}>
             <Text
               size="$4"
               color={hasUnread ? "$text" : "$textSecondary"}
@@ -297,6 +270,20 @@ function ConversationRow({
             >
               {conversation.lastMessagePreview || "No messages yet"}
             </Text>
+          </Link>
+
+          <Row alignItems="center" gap="$xs" flexShrink={0}>
+            {offerBadge && (
+              <Badge variant={offerBadge.variant} size="sm">
+                <Text
+                  size="$1"
+                  weight="semibold"
+                  color={offerBadge.variant === "primary" ? "$textInverse" : "$text"}
+                >
+                  {offerBadge.label}
+                </Text>
+              </Badge>
+            )}
 
             {hasUnread && (
               <View
@@ -314,41 +301,8 @@ function ConversationRow({
               </View>
             )}
           </Row>
-        </Link>
+        </Row>
       </Column>
-
-      <Button
-        chromeless
-        padding={0}
-        minHeight={0}
-        height="auto"
-        onPress={onListingPress}
-        cursor="pointer"
-        aria-label={`Open listing preview for ${conversation.productTitle}`}
-      >
-        {conversation.productImage ? (
-          <Image
-            source={{ uri: conversation.productImage }}
-            width={44}
-            height={44}
-            borderRadius="$md"
-            alt={conversation.productTitle}
-          />
-        ) : (
-          <View
-            width={44}
-            height={44}
-            borderRadius="$md"
-            alignItems="center"
-            justifyContent="center"
-            backgroundColor="$backgroundHover"
-          >
-            <Text size="$2" color="$textSecondary">
-              Item
-            </Text>
-          </View>
-        )}
-      </Button>
     </Row>
   );
 }
