@@ -70,6 +70,15 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("Newsletter signup error:", error);
+
+    const errorCode = (error as { code?: string } | null)?.code;
+    if (errorCode === "P2021") {
+      return NextResponse.json(
+        { error: "Newsletter signup is temporarily unavailable. Please try again shortly." },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
