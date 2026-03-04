@@ -445,8 +445,8 @@ export function SellFormClient() {
         throw new Error(errorData.error || "Failed to save draft");
       }
 
-      // Navigate to profile/listings page after saving draft
-      router.push("/profile");
+      // Navigate to seller listings page after saving draft
+      router.push("/seller/listings");
       // Note: Don't reset isSubmittingRef here - we're navigating away
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save draft");

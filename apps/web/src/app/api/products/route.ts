@@ -171,21 +171,34 @@ export async function POST(request: Request) {
       }
     }
 
-    // Validate required fields
-    if (!title || !description || !price || !categoryId) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    // Validate required fields — drafts need title + category (FK constraint)
+    if (isDraft) {
+      if (!title) {
+        return NextResponse.json({ error: "Title is required to save a draft" }, { status: 400 });
+      }
+      if (!categoryId) {
+        return NextResponse.json(
+          { error: "Please select a category before saving a draft" },
+          { status: 400 }
+        );
+      }
+    } else {
+      if (!title || !description || !price || !categoryId) {
+        return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      }
     }
 
-    const parsedPrice = Number(price);
+    const parsedPrice = Number(price) || 0;
     if (
-      Number.isNaN(parsedPrice) ||
-      parsedPrice < LISTING_PRICE_LIMITS.MIN ||
-      parsedPrice > LISTING_PRICE_LIMITS.MAX
+      !isDraft &&
+      (Number.isNaN(parsedPrice) ||
+        parsedPrice < LISTING_PRICE_LIMITS.MIN ||
+        parsedPrice > LISTING_PRICE_LIMITS.MAX)
     ) {
       return NextResponse.json({ error: getListingPriceBoundsMessage() }, { status: 400 });
     }
 
-    if (normalisedImages.length === 0) {
+    if (!isDraft && normalisedImages.length === 0) {
       return NextResponse.json({ error: "At least one image is required" }, { status: 400 });
     }
 
@@ -259,7 +272,7 @@ export async function POST(request: Request) {
     const product = await prisma.product.create({
       data: {
         title,
-        description,
+        description: description || "",
         price: parsedPrice,
         condition: mapSlidersToConditionEnum(
           gripCondition || 7,
