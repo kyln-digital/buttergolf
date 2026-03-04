@@ -75,7 +75,7 @@ export function HeroRedesign() {
           alt=""
           style={{
             position: "absolute",
-            left: "40%",
+            left: "10%",
             bottom: 0,
             width: "17%",
             zIndex: 1,
@@ -105,9 +105,9 @@ export function HeroRedesign() {
           alt=""
           style={{
             position: "absolute",
-            left: "88%",
+            right: "1.5%",
             bottom: 0,
-            width: "22%",
+            width: "17%",
             zIndex: 1,
             pointerEvents: "none",
             userSelect: "none",
