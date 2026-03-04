@@ -140,20 +140,22 @@ export function SellerQuickProfilePopover({
             </Column>
           </Row>
 
-          <Row alignItems="center" gap="$xs">
-            <Star size={14} color="$warning" />
-            <Text size="$3" weight="semibold" color="$text">
-              {formatRating(averageRating)}
-            </Text>
-            {safeRatingCount > 0 && (
-              <Text size="$3" color="$textSecondary">
-                ({safeRatingCount} ratings)
+          {userRole === "buyer" ? (
+            <Row alignItems="center" gap="$xs">
+              <Star size={14} color="$warning" />
+              <Text size="$3" weight="semibold" color="$text">
+                {formatRating(averageRating)}
               </Text>
-            )}
-          </Row>
+              {safeRatingCount > 0 && (
+                <Text size="$3" color="$textSecondary">
+                  ({safeRatingCount} ratings)
+                </Text>
+              )}
+            </Row>
+          ) : null}
 
           <Text size="$3" color="$textSecondary">
-            Quick seller card from your inbox. Open the listing from this thread for full product
+            Quick profile card from your inbox. Open the listing from this thread for full product
             and offer context.
           </Text>
 

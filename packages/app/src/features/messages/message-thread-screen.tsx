@@ -173,6 +173,7 @@ function toChatMessage(msg: {
 export function MessageThreadScreen({
   conversationId,
   currentUserId,
+  userRole = "buyer",
   otherUserName,
   otherUserImage,
   otherUserAverageRating,
@@ -709,19 +710,21 @@ export function MessageThreadScreen({
                   <Text size="$5" weight="semibold" color="$text" numberOfLines={1}>
                     {otherUserName}
                   </Text>
-                  <Row alignItems="center" gap="$xs">
-                    <Star size={14} color="$warning" />
-                    <Text size="$3" color="$text">
-                      {otherUserAverageRating && otherUserAverageRating > 0
-                        ? otherUserAverageRating.toFixed(1)
-                        : "New seller"}
-                    </Text>
-                    {otherUserRatingCount > 0 && (
-                      <Text size="$3" color="$textSecondary">
-                        ({otherUserRatingCount} ratings)
+                  {userRole === "buyer" ? (
+                    <Row alignItems="center" gap="$xs">
+                      <Star size={14} color="$warning" />
+                      <Text size="$3" color="$text">
+                        {otherUserAverageRating && otherUserAverageRating > 0
+                          ? otherUserAverageRating.toFixed(1)
+                          : "New seller"}
                       </Text>
-                    )}
-                  </Row>
+                      {otherUserRatingCount > 0 && (
+                        <Text size="$3" color="$textSecondary">
+                          ({otherUserRatingCount} ratings)
+                        </Text>
+                      )}
+                    </Row>
+                  ) : null}
                 </Column>
               </Popover.Content>
             </Popover>
@@ -773,7 +776,8 @@ export function MessageThreadScreen({
             {onProductPress ? (
               <Button
                 chromeless
-                padding={0}
+                paddingHorizontal="$sm"
+                paddingVertical={4}
                 minHeight={0}
                 height="auto"
                 alignSelf="flex-start"

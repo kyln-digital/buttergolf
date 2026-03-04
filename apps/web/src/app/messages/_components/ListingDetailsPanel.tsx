@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Column, Row, Text, Image, Badge, View } from "@buttergolf/ui";
 import { Package, ExternalLink } from "@tamagui/lucide-icons";
@@ -27,6 +27,8 @@ export function ListingDetailsPanel({
   otherUserName,
 }: Readonly<ListingDetailsPanelProps>) {
   const router = useRouter();
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const previouslyFocusedElementRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -40,6 +42,43 @@ export function ListingDetailsPanel({
       document.body.style.overflow = previousOverflow;
     };
   }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const activeElement = document.activeElement;
+    if (activeElement instanceof HTMLElement) {
+      previouslyFocusedElementRef.current = activeElement;
+    }
+
+    panelRef.current?.focus();
+
+    return () => {
+      previouslyFocusedElementRef.current?.focus();
+      previouslyFocusedElementRef.current = null;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [onClose, open]);
 
   const formattedPrice = useMemo(() => `£${productPrice.toFixed(2)}`, [productPrice]);
 
@@ -62,6 +101,11 @@ export function ListingDetailsPanel({
       />
 
       <View
+        ref={panelRef}
+        role="dialog"
+        aria-modal={true}
+        aria-labelledby="listing-details-panel-title"
+        tabIndex={-1}
         style={{
           position: "fixed",
           top: 0,
@@ -82,7 +126,7 @@ export function ListingDetailsPanel({
       >
         <Column padding="$lg" gap="$lg" minHeight="100%">
           <Row alignItems="center" justifyContent="space-between">
-            <Text size="$6" weight="bold" color="$text">
+            <Text id="listing-details-panel-title" size="$6" weight="bold" color="$text">
               Listing Details
             </Text>
             <Button chromeless size="$3" onPress={onClose}>

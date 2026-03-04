@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Column, Row, Text, Heading, Badge, ScrollView, View, Image, Button } from "@buttergolf/ui";
 import { MessageSquare } from "@tamagui/lucide-icons";
 import { formatDistanceToNow } from "date-fns";
@@ -61,6 +62,7 @@ function getConversationStatus(
 
 export function ThreadList({ conversations, activeConversationId, loading }: ThreadListProps) {
   const [selectedListing, setSelectedListing] = useState<Conversation | null>(null);
+  const router = useRouter();
 
   if (loading) {
     return <ThreadListSkeleton />;
@@ -136,6 +138,7 @@ export function ThreadList({ conversations, activeConversationId, loading }: Thr
                   hasUnread={hasUnread}
                   conversationStatus={conversationStatus}
                   onListingPress={() => setSelectedListing(conversation)}
+                  onOpenConversation={() => router.push(`/messages/${conversation.id}`)}
                 />
               );
             })}
@@ -163,6 +166,7 @@ interface ConversationRowProps {
   hasUnread: boolean;
   conversationStatus: { label: string; color: "$warning" | "$primary" | "$success" } | null;
   onListingPress: () => void;
+  onOpenConversation: () => void;
 }
 
 function ConversationRow({
@@ -171,6 +175,7 @@ function ConversationRow({
   hasUnread,
   conversationStatus,
   onListingPress,
+  onOpenConversation,
 }: Readonly<ConversationRowProps>) {
   return (
     <Row
@@ -188,6 +193,16 @@ function ConversationRow({
         backgroundColor: isActive ? "$primaryLight" : "$backgroundPress",
       }}
       animation="quick"
+      cursor="pointer"
+      onPress={onOpenConversation}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpenConversation();
+        }
+      }}
+      tabIndex={0}
+      aria-label={`Open conversation with ${conversation.otherUserName}`}
     >
       <SellerQuickProfilePopover
         sellerName={conversation.otherUserName}
@@ -205,6 +220,9 @@ function ConversationRow({
             justifyContent="center"
             cursor="pointer"
             aria-label={`View ${conversation.otherUserName} profile details`}
+            onPress={(event) => {
+              event.stopPropagation();
+            }}
           >
             {conversation.otherUserImage ? (
               <Image
@@ -259,11 +277,15 @@ function ConversationRow({
           <Button
             chromeless
             size="$1"
-            padding={0}
+            paddingHorizontal="$sm"
+            paddingVertical={2}
             minHeight={0}
             height="auto"
             cursor="pointer"
-            onPress={onListingPress}
+            onPress={(event) => {
+              event.stopPropagation();
+              onListingPress();
+            }}
             aria-label={`View listing details for ${conversation.productTitle}`}
             maxWidth="75%"
             alignItems="flex-start"
@@ -284,17 +306,15 @@ function ConversationRow({
         </Row>
 
         <Row justifyContent="space-between" alignItems="center" gap="$sm">
-          <Link href={`/messages/${conversation.id}`} style={{ textDecoration: "none", flex: 1 }}>
-            <Text
-              size="$4"
-              color={hasUnread ? "$text" : "$textSecondary"}
-              weight={hasUnread ? "semibold" : "normal"}
-              numberOfLines={1}
-              flex={1}
-            >
-              {conversation.lastMessagePreview || "No messages yet"}
-            </Text>
-          </Link>
+          <Text
+            size="$4"
+            color={hasUnread ? "$text" : "$textSecondary"}
+            weight={hasUnread ? "semibold" : "normal"}
+            numberOfLines={1}
+            flex={1}
+          >
+            {conversation.lastMessagePreview || "No messages yet"}
+          </Text>
 
           <Row alignItems="center" gap="$xs" flexShrink={0}>
             {hasUnread && (
