@@ -132,8 +132,8 @@ export function NewsletterSection() {
             >
               {status === "submitting" ? (
                 <Row alignItems="center" gap="$sm">
-                  <Spinner size="sm" color="$textInverse" />
-                  <Text size="$5" color="$textInverse" weight="bold">
+                  <Spinner size="sm" color="$white" />
+                  <Text size="$5" color="$white" weight="bold">
                     Subscribing...
                   </Text>
                 </Row>
@@ -146,11 +146,11 @@ export function NewsletterSection() {
                     width={status === "success" || status === "successTick" ? 18 : 0}
                     overflow="hidden"
                   >
-                    <Check size={18} color="$textInverse" />
+                    <Check size={18} color="$white" />
                   </View>
                   <Text
                     size="$5"
-                    color="$textInverse"
+                    color="$white"
                     weight="bold"
                     animation="quick"
                     opacity={status === "successTick" ? 0 : 1}

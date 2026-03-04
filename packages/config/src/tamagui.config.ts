@@ -595,7 +595,8 @@ const darkTheme = {
   textSecondary: brandColors.cloudMist,
   textTertiary: brandColors.slateSmoke,
   textMuted: brandColors.slateSmokeHover,
-  textInverse: brandColors.ironstone,
+  // Keep inverse text white so orange primary buttons remain white-text in all themes.
+  textInverse: brandColors.pureWhite,
 
   // Surface colors - override for dark mode
   // Elevation hierarchy: background (#323232) < surface (#545454) < card (#666666)
