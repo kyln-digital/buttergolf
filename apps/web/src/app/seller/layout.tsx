@@ -91,7 +91,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
       <Column fullWidth minHeight="60vh" alignItems="center" justifyContent="center" padding="$xl">
         <Card variant="elevated" padding="$xl" maxWidth={500}>
           <Column gap="$lg" alignItems="center">
-            <Heading level={2}>Start Selling on ButterGolf</Heading>
+            <Heading level={2}>Complete Seller Setup</Heading>
             <Text color="$textSecondary" textAlign="center">
               Complete your seller onboarding to access your dashboard and start listing golf
               equipment.
