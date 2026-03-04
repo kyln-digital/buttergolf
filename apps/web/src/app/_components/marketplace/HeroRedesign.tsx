@@ -146,7 +146,7 @@ export function HeroRedesign() {
 
           <Spacer size="$sm" />
 
-          <Text size="$5" color="$text" textAlign="center" fontWeight="500">
+          <Text size="$11" color="$text" textAlign="center" fontWeight="500">
             The Marketplace to Buy, Sell &amp; Upgrade
           </Text>
 
