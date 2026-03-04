@@ -11,7 +11,7 @@ import { imagePaths } from "@buttergolf/assets";
  * translucent Vanilla Cream wash and four decorative club-head images
  * positioned absolutely around the content.
  *
- * Matches Figma: jzwthPLmZqztiQNQs40klZ  node 10:5416
+ * Matches Figma: jzwthPLmZqztiQNQs40klZ  node 14:155
  */
 export function HeroRedesign() {
   const router = useRouter();
@@ -47,7 +47,7 @@ export function HeroRedesign() {
           style={{
             position: "absolute",
             inset: 0,
-            backgroundColor: "rgba(255, 250, 210, 0.6)",
+            backgroundColor: "rgba(255, 250, 210, 0.46)",
             zIndex: 0,
           }}
         />
@@ -59,9 +59,10 @@ export function HeroRedesign() {
           alt=""
           style={{
             position: "absolute",
-            left: "-2%",
-            top: "3%",
-            width: "29%",
+            left: "1.5%",
+            bottom: 0,
+            height: "100%",
+            width: "auto",
             zIndex: 1,
             pointerEvents: "none",
             userSelect: "none",
@@ -74,9 +75,9 @@ export function HeroRedesign() {
           alt=""
           style={{
             position: "absolute",
-            left: "37%",
-            top: "28%",
-            width: "24%",
+            left: "40%",
+            bottom: 0,
+            width: "17%",
             zIndex: 1,
             pointerEvents: "none",
             userSelect: "none",
@@ -89,9 +90,9 @@ export function HeroRedesign() {
           alt=""
           style={{
             position: "absolute",
-            left: "62%",
-            top: "27%",
-            width: "31%",
+            left: "70%",
+            bottom: 0,
+            width: "20%",
             zIndex: 1,
             pointerEvents: "none",
             userSelect: "none",
@@ -104,9 +105,9 @@ export function HeroRedesign() {
           alt=""
           style={{
             position: "absolute",
-            left: "77%",
-            top: "10%",
-            width: "30%",
+            left: "88%",
+            bottom: 0,
+            width: "22%",
             zIndex: 1,
             pointerEvents: "none",
             userSelect: "none",
@@ -119,44 +120,45 @@ export function HeroRedesign() {
           zIndex={2}
           alignItems="center"
           justifyContent="center"
-          paddingVertical="$2xl"
+          paddingVertical="$xl"
           paddingHorizontal="$lg"
-          minHeight={350}
-          $gtMd={{ minHeight: 420 }}
+          minHeight={300}
+          $gtMd={{ minHeight: 360 }}
         >
           <Text
             fontWeight="700"
-            color="$primary"
+            color="$text"
             textAlign="center"
-            style={{ fontSize: "clamp(36px, 5.5vw, 80px)" }}
-            lineHeight={1.1}
+            style={{ fontSize: "clamp(34px, 5vw, 74px)", lineHeight: "1.05em" }}
           >
-            {"Butter Up\nYour Game "}
+            Butter Up
+            <br />
+            Your Game
+          </Text>
+
+          <Spacer size="$sm" />
+
+          <Text size="$5" color="$text" textAlign="center" fontWeight="500">
+            The Marketplace to Buy, Sell &amp; Upgrade
           </Text>
 
           <Spacer size="$md" />
 
-          <Text size="$6" color="$text" textAlign="center">
-            The Marketplace to Buy, Sell &amp; Upgrade
-          </Text>
-
-          <Spacer size="$lg" />
-
           <Row gap="$md" justifyContent="center" flexWrap="wrap">
             <Button
               butterVariant="primary"
-              size="$5"
+              size="$4"
               borderRadius="$full"
-              paddingHorizontal="$6"
+              paddingHorizontal="$5"
               onPress={() => router.push("/sell")}
             >
               Sell now
             </Button>
             <Button
               butterVariant="secondary"
-              size="$5"
+              size="$4"
               borderRadius="$full"
-              paddingHorizontal="$6"
+              paddingHorizontal="$5"
               onPress={() => router.push("/listings")}
             >
               Shop now
