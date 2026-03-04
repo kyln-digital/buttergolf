@@ -15,6 +15,7 @@ interface ThreadListProps {
   conversations: Conversation[];
   activeConversationId: string | null;
   loading?: boolean;
+  onSelectConversation?: (id: string) => void;
 }
 
 function getInitials(name: string): string {
@@ -60,7 +61,12 @@ function getConversationStatus(
   return null;
 }
 
-export function ThreadList({ conversations, activeConversationId, loading }: ThreadListProps) {
+export function ThreadList({
+  conversations,
+  activeConversationId,
+  loading,
+  onSelectConversation,
+}: ThreadListProps) {
   const [selectedListing, setSelectedListing] = useState<Conversation | null>(null);
   const router = useRouter();
 
@@ -138,7 +144,10 @@ export function ThreadList({ conversations, activeConversationId, loading }: Thr
                   hasUnread={hasUnread}
                   conversationStatus={conversationStatus}
                   onListingPress={() => setSelectedListing(conversation)}
-                  onOpenConversation={() => router.push(`/messages/${conversation.id}`)}
+                  onOpenConversation={() => {
+                    onSelectConversation?.(conversation.id);
+                    router.push(`/messages/${conversation.id}`);
+                  }}
                 />
               );
             })}

@@ -43,6 +43,16 @@ export function MessagesLayout({
 
   const [conversations, setConversations] = useState(initialConversations);
 
+  // Optimistic active conversation ID — updated immediately on click,
+  // before the server-side navigation completes.
+  const urlConversationId = extractConversationId(pathname);
+  const [optimisticId, setOptimisticId] = useState<string | null>(urlConversationId);
+
+  // Sync optimistic state once the URL catches up (navigation finishes)
+  useEffect(() => {
+    setOptimisticId(urlConversationId);
+  }, [urlConversationId]);
+
   // Keep local conversations state in sync when the parent prop changes
   useEffect(() => {
     setConversations(initialConversations);
@@ -133,7 +143,8 @@ export function MessagesLayout({
       >
         <ThreadList
           conversations={conversations}
-          activeConversationId={extractConversationId(pathname)}
+          activeConversationId={optimisticId}
+          onSelectConversation={setOptimisticId}
         />
       </Column>
 
