@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type KeyboardEvent, type MouseEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Column, Row, Text, Heading, Badge, ScrollView, View, Image, Button } from "@buttergolf/ui";
@@ -31,8 +31,7 @@ function getInitials(name: string): string {
 function getConversationStatus(
   productSold: boolean,
   latestOfferStatus: string | null,
-  lastMessageType: string | null,
-  lastMessagePreview: string | null
+  lastMessageType: string | null
 ): { label: string; color: "$warning" | "$primary" | "$success" } | null {
   if (productSold) {
     return { label: "Sold", color: "$warning" };
@@ -51,11 +50,6 @@ function getConversationStatus(
       return { label: "Accepted", color: "$success" };
     default:
       break;
-  }
-
-  const preview = (lastMessagePreview || "").toLowerCase();
-  if (preview.includes("offer accepted")) {
-    return { label: "Accepted", color: "$success" };
   }
 
   return null;
@@ -132,8 +126,7 @@ export function ThreadList({
               const conversationStatus = getConversationStatus(
                 conversation.productSold,
                 conversation.latestOfferStatus,
-                conversation.lastMessageType,
-                conversation.lastMessagePreview
+                conversation.lastMessageType
               );
 
               return (
@@ -147,6 +140,10 @@ export function ThreadList({
                   onOpenConversation={() => {
                     onSelectConversation?.(conversation.id);
                     router.push(`/messages/${conversation.id}`);
+                  }}
+                  onOpenConversationInNewTab={() => {
+                    onSelectConversation?.(conversation.id);
+                    window.open(`/messages/${conversation.id}`, "_blank", "noopener,noreferrer");
                   }}
                 />
               );
@@ -176,6 +173,7 @@ interface ConversationRowProps {
   conversationStatus: { label: string; color: "$warning" | "$primary" | "$success" } | null;
   onListingPress: () => void;
   onOpenConversation: () => void;
+  onOpenConversationInNewTab: () => void;
 }
 
 function ConversationRow({
@@ -185,7 +183,21 @@ function ConversationRow({
   conversationStatus,
   onListingPress,
   onOpenConversation,
+  onOpenConversationInNewTab,
 }: Readonly<ConversationRowProps>) {
+  const handleOpen = (event: MouseEvent | KeyboardEvent) => {
+    const hasModifier =
+      "metaKey" in event && (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey);
+
+    if (hasModifier) {
+      event.preventDefault();
+      onOpenConversationInNewTab();
+      return;
+    }
+
+    onOpenConversation();
+  };
+
   return (
     <Row
       gap="$md"
@@ -203,14 +215,21 @@ function ConversationRow({
       }}
       animation="quick"
       cursor="pointer"
-      onPress={onOpenConversation}
+      onClick={handleOpen}
+      onAuxClick={(event) => {
+        if (event.button === 1) {
+          event.preventDefault();
+          onOpenConversationInNewTab();
+        }
+      }}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          onOpenConversation();
+          handleOpen(event);
         }
       }}
       tabIndex={0}
+      role="link"
       aria-label={`Open conversation with ${conversation.otherUserName}`}
     >
       <SellerQuickProfilePopover

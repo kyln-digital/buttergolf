@@ -1,6 +1,9 @@
 "use client";
 
+import type { ComponentProps } from "react";
 import { Column, Row, View } from "@buttergolf/ui";
+
+type ViewBorderRadius = ComponentProps<typeof View>["borderRadius"];
 
 function Pulse({
   width,
@@ -9,13 +12,13 @@ function Pulse({
 }: {
   width: number | `${number}%`;
   height: number;
-  borderRadius?: string;
+  borderRadius?: ViewBorderRadius;
 }) {
   return (
     <View
       width={width}
       height={height}
-      borderRadius={borderRadius as unknown as number}
+      borderRadius={borderRadius}
       backgroundColor="$border"
       opacity={0.6}
       animation="lazy"

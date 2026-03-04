@@ -321,6 +321,7 @@ function CheckoutForm({
   paymentIntentId,
   onSuccess,
   onError,
+  onCancel,
   onBack,
 }: CheckoutFormProps) {
   const stripe = useStripe();
@@ -425,10 +426,17 @@ function CheckoutForm({
   return (
     <form onSubmit={handleSubmit}>
       <Column gap="$lg" padding="$md">
-        {/* Back button */}
-        <Button chromeless size="$3" onPress={onBack} alignSelf="flex-start">
-          ← Back to shipping
-        </Button>
+        {/* Navigation actions */}
+        <Row gap="$sm" alignSelf="flex-start">
+          <Button chromeless size="$3" onPress={onBack}>
+            ← Back to shipping
+          </Button>
+          {onCancel ? (
+            <Button chromeless size="$3" onPress={onCancel}>
+              Cancel
+            </Button>
+          ) : null}
+        </Row>
 
         {/* Email - using LinkAuthenticationElement for Stripe Link support */}
         <Column gap="$xs">
