@@ -148,11 +148,13 @@ export function SellerOnboarding({ onComplete, onExit }: SellerOnboardingProps) 
 
   return (
     <Column gap="$lg" fullWidth>
-      <Column gap="$sm">
-        <Heading level={2}>Become a Seller</Heading>
-        <Text color="$textSecondary">
-          Complete the onboarding process to start selling golf equipment on ButterGolf. This should
-          only take a few minutes.
+      <Column gap="$sm" alignItems="center">
+        <Heading level={2} textAlign="center">
+          Start Selling on ButterGolf
+        </Heading>
+        <Text color="$textSecondary" textAlign="center">
+          You're just a few steps away from listing your golf equipment. This only takes a few
+          minutes.
         </Text>
       </Column>
 

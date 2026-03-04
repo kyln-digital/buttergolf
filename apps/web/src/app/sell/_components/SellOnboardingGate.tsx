@@ -313,10 +313,12 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
       <Column maxWidth={960} paddingHorizontal="$6" paddingVertical="$8" width="100%" gap="$lg">
         {/* Header */}
         <Column gap="$xl" alignItems="center">
-          <Heading level={2}>Complete quick setup to start selling</Heading>
+          <Heading level={2} textAlign="center">
+            Almost there! Let's get you set up
+          </Heading>
           <Text color="$textSecondary" textAlign="center" size="$5">
-            Before listing your first item, we need a few details for secure payments. This only
-            takes 2-3 minutes.
+            We just need a few details for secure payments. This only takes 2-3 minutes, then you're
+            ready to list!
           </Text>
         </Column>
 

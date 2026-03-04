@@ -253,16 +253,17 @@ export function SellerHub() {
         >
           <Package size={64} color="$textSecondary" />
           <Heading level={2} textAlign="center">
-            No listings yet
+            Ready to list your first item?
           </Heading>
           <Text size="$5" align="center" color="$textSecondary">
-            Start selling your golf equipment today! Create your first listing in under 60 seconds.
+            Listing your golf equipment is quick and easy — it takes under 60 seconds to get
+            started.
           </Text>
           <Link href="/sell" style={{ textDecoration: "none" }}>
             <Button butterVariant="primary" size="$5">
               <Row gap="$sm" alignItems="center">
                 <Plus size={20} />
-                <Text color="$textInverse">Create First Listing</Text>
+                <Text color="$textInverse">Create Your First Listing</Text>
               </Row>
             </Button>
           </Link>
