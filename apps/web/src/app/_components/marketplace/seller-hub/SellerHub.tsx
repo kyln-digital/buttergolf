@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Column, Row, Heading, Text, Button, Card, Spinner, Theme } from "@buttergolf/ui";
 import { useTheme } from "tamagui";
 import { Plus, Package, Eye, Heart, Tag } from "@tamagui/lucide-icons";
@@ -59,14 +59,16 @@ const EMPTY_SELLER_HUB_RESPONSE: SellerHubResponse = {
 export function SellerHub() {
   const { isSignedIn, isLoaded } = useUser();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const theme = useTheme();
 
   const [data, setData] = useState<SellerHubResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Filters
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "sold">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "sold" | "draft">("all");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "price-asc" | "price-desc" | "views">(
     "newest"
   );
@@ -81,6 +83,27 @@ export function SellerHub() {
       router.push("/sign-in?redirect=/");
     }
   }, [isLoaded, isSignedIn, router]);
+
+  // Show clear confirmation when returning from successful listing publish.
+  useEffect(() => {
+    if (searchParams.get("listed") !== "1") {
+      return;
+    }
+
+    const listingTitle = searchParams.get("title");
+    setSuccessMessage(
+      listingTitle
+        ? `Your listing \"${listingTitle}\" is now live and visible in Shop All.`
+        : "Your listing is now live and visible in Shop All."
+    );
+    setStatusFilter("active");
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete("listed");
+    nextParams.delete("title");
+    const nextQuery = nextParams.toString();
+    router.replace(nextQuery ? `/seller/listings?${nextQuery}` : "/seller/listings");
+  }, [searchParams, router]);
 
   // Fetch listings
   const fetchListings = async (page = 1) => {
@@ -299,6 +322,26 @@ export function SellerHub() {
           </Link>
         </Row>
 
+        {successMessage && (
+          <Card variant="filled" padding="$md" backgroundColor="$successLight" borderRadius="$md">
+            <Row alignItems="center" justifyContent="space-between" gap="$md" flexWrap="wrap">
+              <Text color="$success" weight="semibold">
+                {successMessage}
+              </Text>
+              <Row gap="$sm" alignItems="center">
+                <Link href="/listings" style={{ textDecoration: "none" }}>
+                  <Button butterVariant="secondary" size="$3">
+                    View Shop All
+                  </Button>
+                </Link>
+                <Button size="$3" chromeless onPress={() => setSuccessMessage(null)}>
+                  Dismiss
+                </Button>
+              </Row>
+            </Row>
+          </Card>
+        )}
+
         {/* Stats Dashboard */}
         {data?.stats && (
           <Row gap="$md" flexWrap="wrap">
@@ -371,7 +414,7 @@ export function SellerHub() {
             <Row gap="$sm" alignItems="center" flexWrap="wrap">
               <Text weight="medium">Status:</Text>
               <Row gap="$xs">
-                {(["all", "active", "sold"] as const).map((status) => (
+                {(["all", "active", "sold", "draft"] as const).map((status) => (
                   <Theme key={status} name={statusFilter === status ? "active" : null}>
                     <Button
                       size="$3"

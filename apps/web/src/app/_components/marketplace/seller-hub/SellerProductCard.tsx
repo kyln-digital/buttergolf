@@ -26,6 +26,7 @@ export interface SellerProduct {
   categoryName: string;
   imageUrl: string;
   isSold: boolean;
+  isDraft: boolean;
   views: number;
   favourites: number;
   createdAt: string;
@@ -97,7 +98,12 @@ export function SellerProductCard({
   };
 
   return (
-    <Card variant="elevated" padding="$0" overflow="hidden" opacity={product.isSold ? 0.7 : 1}>
+    <Card
+      variant="elevated"
+      padding="$0"
+      overflow="hidden"
+      opacity={product.isSold ? 0.7 : product.isDraft ? 0.85 : 1}
+    >
       <Column gap="$0">
         {/* Image with status overlay */}
         <div style={{ position: "relative", width: "100%", aspectRatio: "1" }}>
@@ -138,6 +144,19 @@ export function SellerProductCard({
             >
               <Badge variant="error" size="md">
                 SOLD
+              </Badge>
+            </div>
+          )}
+          {product.isDraft && !product.isSold && (
+            <div
+              style={{
+                position: "absolute",
+                top: 12,
+                right: 52,
+              }}
+            >
+              <Badge variant="info" size="md">
+                DRAFT
               </Badge>
             </div>
           )}
@@ -223,8 +242,8 @@ export function SellerProductCard({
 
           {/* Actions */}
           <Row gap="$sm" marginTop="$sm" flexWrap="wrap">
-            {/* Boost Button - Only show for active listings */}
-            {!product.isSold && (
+            {/* Boost Button - Only show for active (non-draft) listings */}
+            {!product.isSold && !product.isDraft && (
               <Button
                 butterVariant="secondary"
                 size="$4"
@@ -240,29 +259,47 @@ export function SellerProductCard({
                 </Row>
               </Button>
             )}
-            <Button
-              butterVariant="secondary"
-              size="$4"
-              flex={1}
-              onPress={() => onEdit(product)}
-              disabled={isDeleting || isUpdating}
-            >
-              <Row gap="$xs" alignItems="center">
-                <Edit3 size={14} color="$text" />
-                <Text color="$text" weight="semibold">
-                  Edit
-                </Text>
-              </Row>
-            </Button>
-            <Button
-              butterVariant={product.isSold ? "secondary" : "primary"}
-              size="$4"
-              flex={1}
-              onPress={handleMarkSold}
-              disabled={isDeleting || isUpdating}
-            >
-              {isUpdating ? "..." : product.isSold ? "Relist" : "Mark Sold"}
-            </Button>
+            {product.isDraft ? (
+              <Link
+                href={`/sell?draftId=${product.id}`}
+                style={{ flex: 1, textDecoration: "none" }}
+              >
+                <Button butterVariant="primary" size="$4" width="100%" disabled={isDeleting}>
+                  <Row gap="$xs" alignItems="center">
+                    <Edit3 size={14} color="$textInverse" />
+                    <Text color="$textInverse" weight="semibold">
+                      Continue Editing
+                    </Text>
+                  </Row>
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Button
+                  butterVariant="secondary"
+                  size="$4"
+                  flex={1}
+                  onPress={() => onEdit(product)}
+                  disabled={isDeleting || isUpdating}
+                >
+                  <Row gap="$xs" alignItems="center">
+                    <Edit3 size={14} color="$text" />
+                    <Text color="$text" weight="semibold">
+                      Edit
+                    </Text>
+                  </Row>
+                </Button>
+                <Button
+                  butterVariant={product.isSold ? "secondary" : "primary"}
+                  size="$4"
+                  flex={1}
+                  onPress={handleMarkSold}
+                  disabled={isDeleting || isUpdating}
+                >
+                  {isUpdating ? "..." : product.isSold ? "Relist" : "Mark Sold"}
+                </Button>
+              </>
+            )}
           </Row>
         </Column>
       </Column>

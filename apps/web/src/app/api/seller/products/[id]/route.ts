@@ -59,6 +59,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       "model",
       "categoryId",
       "isSold",
+      "isDraft",
+      "flex",
+      "loft",
+      "woodsSubcategory",
+      "headCoverIncluded",
+      "gripCondition",
+      "headCondition",
+      "shaftCondition",
     ];
 
     const updateData: Record<string, unknown> = {};

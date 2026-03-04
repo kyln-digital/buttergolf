@@ -9,7 +9,11 @@ import { SellFormClient } from "./_components/SellFormClient";
  * Seller payout setup (phone + Stripe onboarding) is handled separately
  * in Account Settings. Funds are held until seller completes payout setup.
  */
-export default async function SellPage() {
+interface SellPageProps {
+  searchParams: Promise<{ draftId?: string }>;
+}
+
+export default async function SellPage({ searchParams }: SellPageProps) {
   // Check authentication
   const { userId: clerkId } = await auth();
 
@@ -17,6 +21,8 @@ export default async function SellPage() {
     redirect("/sign-in?redirect=/sell");
   }
 
+  const { draftId } = await searchParams;
+
   // Go straight to the sell form - no gates
-  return <SellFormClient />;
+  return <SellFormClient draftId={draftId} />;
 }
