@@ -33,6 +33,10 @@ export const imagePaths = {
     background: "/_assets/images/hero-background.avif",
     butterBackground: "/_assets/images/butter-background.webp",
     club: "/_assets/images/hero-club.svg",
+    clubBottomLeft: "/_assets/images/hero-club-bottom-left.png",
+    clubCenter: "/_assets/images/hero-club-center.png",
+    clubRightCenter: "/_assets/images/hero-club-right-center.png",
+    clubTopRight: "/_assets/images/hero-club-top-right.png",
   },
 } as const;
 

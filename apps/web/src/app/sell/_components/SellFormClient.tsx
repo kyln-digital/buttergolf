@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { LISTING_PRICE_LIMITS, getListingPriceBoundsMessage } from "@buttergolf/constants";
 import { useLocalStorageState } from "@/hooks/useLocalStorageState";
-import { useAutoSave, type AutoSaveStatus } from "@/hooks/useAutoSave";
+import { useAutoSave, type AutoSaveStatus, type AutoSaveResult } from "@/hooks/useAutoSave";
 import {
   Column,
   Row,
@@ -164,6 +164,25 @@ const EMPTY_FORM_DATA: FormData = {
   images: [],
 };
 
+function hasMeaningfulDraftContent(data: FormData): boolean {
+  return (
+    data.title.trim().length > 0 ||
+    data.description.trim().length > 0 ||
+    data.price.trim().length > 0 ||
+    data.brandId.trim().length > 0 ||
+    data.model.trim().length > 0 ||
+    data.categoryId.trim().length > 0 ||
+    data.flex.trim().length > 0 ||
+    data.loft.trim().length > 0 ||
+    data.woodsSubcategory.trim().length > 0 ||
+    data.headCoverIncluded ||
+    data.gripCondition !== 7 ||
+    data.headCondition !== 7 ||
+    data.shaftCondition !== 7 ||
+    data.images.length > 0
+  );
+}
+
 // Save status indicator
 const SaveStatusIndicator = ({ status }: { status: AutoSaveStatus }) => {
   if (status === "idle") return null;
@@ -209,57 +228,64 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
   const [recoveryDismissed, setRecoveryDismissed] = useState(false);
   // The draftId of the DB-saved draft (set after first autosave, or passed in as prop)
   const [savedDraftId, setSavedDraftId] = useState<string | null>(draftId ?? null);
+  // Stable requestId for first-create idempotency until we get a real draft ID.
+  const draftRequestIdRef = useRef<string>(uuidv4());
 
   // Show the recovery banner when localStorage has meaningful data and
   // we're NOT loading a specific draft from the DB
   const hasLocalDraft =
-    isHydrated &&
-    !draftId &&
-    !recoveryDismissed &&
-    (formData.title !== "" ||
-      formData.description !== "" ||
-      formData.images.length > 0 ||
-      formData.brandId !== "" ||
-      formData.categoryId !== "");
+    isHydrated && !draftId && !recoveryDismissed && hasMeaningfulDraftContent(formData);
 
   // --- DB autosave via useAutoSave ---
-  const handleAutoSave = useCallback(
-    async (data: FormData): Promise<boolean> => {
-      // Need at least a category to satisfy DB FK constraint
-      if (!data.categoryId) return false;
-      // Need a title too (API requires it for drafts)
-      if (!data.title) return false;
+  const persistDraft = useCallback(
+    async (data: FormData): Promise<AutoSaveResult> => {
+      if (!hasMeaningfulDraftContent(data)) {
+        return "skipped";
+      }
 
       const parsedPrice = Number.parseFloat(data.price);
+      const safePrice = Number.isFinite(parsedPrice) ? parsedPrice : 0;
 
       try {
         if (savedDraftId) {
+          const updatePayload: Record<string, unknown> = {
+            title: data.title,
+            description: data.description,
+            price: safePrice,
+            brandId: data.brandId || null,
+            model: data.model || null,
+            isDraft: true,
+            flex: data.flex || null,
+            loft: data.loft || null,
+            woodsSubcategory: data.woodsSubcategory || null,
+            headCoverIncluded: data.headCoverIncluded,
+            gripCondition: data.gripCondition,
+            headCondition: data.headCondition,
+            shaftCondition: data.shaftCondition,
+          };
+
+          if (data.categoryId.trim().length > 0) {
+            updatePayload.categoryId = data.categoryId;
+          }
+
           // Update existing draft
           const response = await fetch(`/api/seller/products/${savedDraftId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              title: data.title,
-              description: data.description,
-              price: data.price ? (Number.isNaN(parsedPrice) ? 0 : parsedPrice) : 0,
-              brandId: data.brandId || null,
-              model: data.model || null,
-              categoryId: data.categoryId,
-            }),
+            body: JSON.stringify(updatePayload),
           });
-          return response.ok;
+          return response.ok ? "saved" : "error";
         }
 
         // Create new draft
-        const reqId = uuidv4();
         const response = await fetch("/api/products", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             ...data,
-            price: data.price ? (Number.isNaN(parsedPrice) ? 0 : parsedPrice) : 0,
+            price: safePrice,
             brandName: undefined,
-            requestId: reqId,
+            requestId: draftRequestIdRef.current,
             isDraft: true,
           }),
         });
@@ -267,14 +293,19 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
         if (response.ok) {
           const product = await response.json();
           setSavedDraftId(product.id);
-          return true;
+          return "saved";
         }
-        return false;
+        return "error";
       } catch {
-        return false;
+        return "error";
       }
     },
     [savedDraftId]
+  );
+
+  const handleAutoSave = useCallback(
+    async (data: FormData): Promise<AutoSaveResult> => persistDraft(data),
+    [persistDraft]
   );
 
   const { status: autoSaveStatus } = useAutoSave<FormData>({
@@ -565,40 +596,17 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
     setLoading(true);
     setError(null);
 
-    const parsedPrice = Number.parseFloat(formData.price);
-    if (
-      formData.price &&
-      (Number.isNaN(parsedPrice) ||
-        parsedPrice < LISTING_PRICE_LIMITS.MIN ||
-        parsedPrice > LISTING_PRICE_LIMITS.MAX)
-    ) {
-      setError(getListingPriceBoundsMessage());
+    if (!hasMeaningfulDraftContent(formData)) {
+      setError("Add at least one detail before saving a draft.");
       setLoading(false);
       isSubmittingRef.current = false;
       return;
     }
 
     try {
-      const response = await fetch("/api/products", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...formData,
-          price: formData.price ? parsedPrice : 0,
-          // Don't send brandName (display only)
-          brandName: undefined,
-          // Request ID for server-side idempotency
-          requestId: requestIdRef.current,
-          // Mark as draft
-          isDraft: true,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to save draft");
+      const result = await persistDraft(formData);
+      if (result !== "saved") {
+        throw new Error("Failed to save draft");
       }
 
       // Navigate to seller listings page after saving draft
