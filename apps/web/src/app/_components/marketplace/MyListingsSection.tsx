@@ -63,7 +63,7 @@ export function MyListingsSection({ products }: MyListingsSectionProps) {
             {/* View My Listings Button */}
             <Row alignItems="center" justifyContent="center" width="100%" paddingTop="$sm">
               <Link href="/seller/listings" passHref style={{ textDecoration: "none" }}>
-                <Button butterVariant="primary" size="$5">
+                <Button butterVariant="primary" size="$5" width={320}>
                   View my listings
                 </Button>
               </Link>
