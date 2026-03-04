@@ -9,7 +9,7 @@ export default async function OrdersPage() {
   const { userId: clerkId } = await auth();
 
   if (!clerkId) {
-    redirect("/sign-in");
+    redirect("/sign-in?redirect_url=%2Forders");
   }
 
   // Get user from database
@@ -18,7 +18,7 @@ export default async function OrdersPage() {
   });
 
   if (!user) {
-    redirect("/sign-in");
+    redirect("/sign-in?redirect_url=%2Forders");
   }
 
   // Fetch user's orders
