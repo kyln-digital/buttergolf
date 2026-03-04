@@ -310,6 +310,8 @@ interface CheckoutFormProps {
   shippingOption: (typeof SHIPPING_OPTIONS)[number];
   paymentIntentId: string;
   onSuccess: (paymentIntentId: string) => void;
+  onError?: (error: string) => void;
+  onCancel?: () => void;
   onBack: () => void;
 }
 
@@ -318,6 +320,7 @@ function CheckoutForm({
   shippingOption,
   paymentIntentId,
   onSuccess,
+  onError,
   onBack,
 }: CheckoutFormProps) {
   const stripe = useStripe();
@@ -365,7 +368,9 @@ function CheckoutForm({
       // First, validate all elements
       const { error: submitError } = await elements.submit();
       if (submitError) {
-        setLocalError(submitError.message || "Please check your payment details");
+        const message = submitError.message || "Please check your payment details";
+        setLocalError(message);
+        onError?.(message);
         setIsProcessing(false);
         return;
       }
@@ -395,18 +400,24 @@ function CheckoutForm({
       });
 
       if (error) {
-        setLocalError(error.message || "Payment failed. Please try again.");
+        const message = error.message || "Payment failed. Please try again.";
+        setLocalError(message);
+        onError?.(message);
         setIsProcessing(false);
       } else if (paymentIntent?.status === "succeeded") {
         onSuccess(paymentIntent.id);
       } else if (paymentIntent?.status === "requires_action") {
         // 3DS or other action required - Stripe will handle via redirect
       } else {
-        setLocalError(`Unexpected payment status: ${paymentIntent?.status}`);
+        const message = `Unexpected payment status: ${paymentIntent?.status}`;
+        setLocalError(message);
+        onError?.(message);
         setIsProcessing(false);
       }
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : "An unexpected error occurred");
+      const message = err instanceof Error ? err.message : "An unexpected error occurred";
+      setLocalError(message);
+      onError?.(message);
       setIsProcessing(false);
     }
   };

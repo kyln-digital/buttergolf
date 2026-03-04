@@ -597,15 +597,11 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                       onPress={fetchTrackingEvents}
                       disabled={isLoadingTracking}
                       icon={
-                        <RefreshCw
-                          size={14}
-                          color="$primary"
-                          style={
-                            {
-                              animation: isLoadingTracking ? "spin 1s linear infinite" : "none",
-                            } as React.CSSProperties
-                          }
-                        />
+                        <span
+                          className={isLoadingTracking ? "inline-flex animate-spin" : "inline-flex"}
+                        >
+                          <RefreshCw size={14} color="$primary" />
+                        </span>
                       }
                     >
                       Refresh
