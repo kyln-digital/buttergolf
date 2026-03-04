@@ -24,8 +24,8 @@ export interface Conversation {
   unreadCount: number;
   userRole: "buyer" | "seller";
   orderId: string | null;
-  activeOfferStatus: string | null;
-  activeOfferAmount: number | null;
+  latestOfferStatus: string | null;
+  latestOfferAmount: number | null;
 }
 
 interface MessagesLayoutProps {

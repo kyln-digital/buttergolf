@@ -1587,9 +1587,9 @@ function MessagesScreenWrapper({
           userRole: conversation.userRole,
           productSold: conversation.productSold,
           hasActiveOffer:
-            !!conversation.activeOfferStatus &&
-            (conversation.activeOfferStatus === "PENDING" ||
-              conversation.activeOfferStatus === "COUNTERED"),
+            !!conversation.latestOfferStatus &&
+            (conversation.latestOfferStatus === "PENDING" ||
+              conversation.latestOfferStatus === "COUNTERED"),
         })
       }
       onBrowseListings={() => navigation.navigate("Home")}

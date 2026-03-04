@@ -169,7 +169,7 @@ export async function GET(req: Request) {
       const isBuyer = user.id === conv.buyerId;
       const otherUser = isBuyer ? conv.seller : conv.buyer;
       const lastMessage = conv.messages[0];
-      const activeOffer = conv.offers[0] ?? null;
+      const latestOffer = conv.offers[0] ?? null;
 
       // Derive last message preview text
       let lastMessagePreview: string | null = null;
@@ -199,9 +199,9 @@ export async function GET(req: Request) {
       }
 
       // Current negotiation amount (latest counter or original offer)
-      let activeOfferAmount: number | null = null;
-      if (activeOffer) {
-        activeOfferAmount = activeOffer.counterOffers[0]?.amount ?? activeOffer.amount;
+      let latestOfferAmount: number | null = null;
+      if (latestOffer) {
+        latestOfferAmount = latestOffer.counterOffers[0]?.amount ?? latestOffer.amount;
       }
 
       return {
@@ -224,8 +224,8 @@ export async function GET(req: Request) {
         unreadCount: conv._count.messages,
         userRole: isBuyer ? ("buyer" as const) : ("seller" as const),
         orderId: conv.orderId,
-        activeOfferStatus: activeOffer?.status ?? null,
-        activeOfferAmount,
+        latestOfferStatus: latestOffer?.status ?? null,
+        latestOfferAmount,
       };
     });
 

@@ -113,7 +113,7 @@ export default async function MessagesLayoutPage({ children }: { children: React
     const otherUserName =
       `${otherUser.firstName || ""} ${otherUser.lastName || ""}`.trim() || otherUser.email;
     const lastMessage = conv.messages[0];
-    const activeOffer = conv.offers[0] ?? null;
+    const latestOffer = conv.offers[0] ?? null;
 
     let lastMessagePreview: string | null = null;
     if (lastMessage) {
@@ -141,9 +141,9 @@ export default async function MessagesLayoutPage({ children }: { children: React
       }
     }
 
-    let activeOfferAmount: number | null = null;
-    if (activeOffer) {
-      activeOfferAmount = activeOffer.counterOffers[0]?.amount ?? activeOffer.amount;
+    let latestOfferAmount: number | null = null;
+    if (latestOffer) {
+      latestOfferAmount = latestOffer.counterOffers[0]?.amount ?? latestOffer.amount;
     }
 
     return {
@@ -164,8 +164,8 @@ export default async function MessagesLayoutPage({ children }: { children: React
       unreadCount: conv._count.messages,
       userRole: isBuyer ? ("buyer" as const) : ("seller" as const),
       orderId: conv.orderId,
-      activeOfferStatus: activeOffer?.status ?? null,
-      activeOfferAmount,
+      latestOfferStatus: latestOffer?.status ?? null,
+      latestOfferAmount,
     };
   });
 

@@ -28,7 +28,7 @@ function getInitials(name: string): string {
 
 function getConversationStatus(
   productSold: boolean,
-  activeOfferStatus: string | null,
+  latestOfferStatus: string | null,
   lastMessageType: string | null,
   lastMessagePreview: string | null
 ): { label: string; color: "$warning" | "$primary" | "$success" } | null {
@@ -40,7 +40,7 @@ function getConversationStatus(
     return { label: "Accepted", color: "$success" };
   }
 
-  switch (activeOfferStatus) {
+  switch (latestOfferStatus) {
     case "PENDING":
       return { label: "Offer", color: "$primary" };
     case "COUNTERED":
@@ -123,7 +123,7 @@ export function ThreadList({ conversations, activeConversationId, loading }: Thr
               const hasUnread = conversation.unreadCount > 0;
               const conversationStatus = getConversationStatus(
                 conversation.productSold,
-                conversation.activeOfferStatus,
+                conversation.latestOfferStatus,
                 conversation.lastMessageType,
                 conversation.lastMessagePreview
               );
