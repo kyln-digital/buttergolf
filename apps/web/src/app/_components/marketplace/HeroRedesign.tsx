@@ -77,7 +77,8 @@ export function HeroRedesign() {
             position: "absolute",
             left: "10%",
             bottom: 0,
-            width: "17%",
+            height: "65%",
+            width: "auto",
             zIndex: 1,
             pointerEvents: "none",
             userSelect: "none",
@@ -90,9 +91,10 @@ export function HeroRedesign() {
           alt=""
           style={{
             position: "absolute",
-            left: "70%",
+            left: "67%",
             bottom: 0,
-            width: "20%",
+            height: "65%",
+            width: "auto",
             zIndex: 1,
             pointerEvents: "none",
             userSelect: "none",
@@ -107,7 +109,8 @@ export function HeroRedesign() {
             position: "absolute",
             right: "1.5%",
             bottom: 0,
-            width: "17%",
+            height: "90%",
+            width: "auto",
             zIndex: 1,
             pointerEvents: "none",
             userSelect: "none",
@@ -126,10 +129,15 @@ export function HeroRedesign() {
           $gtMd={{ minHeight: 360 }}
         >
           <Text
-            fontWeight="700"
             color="$text"
             textAlign="center"
-            style={{ fontSize: "clamp(34px, 5vw, 74px)", lineHeight: "1.05em" }}
+            style={{
+              fontFamily: "var(--font-urbanist)",
+              fontSize: "5rem",
+              fontStyle: "normal",
+              fontWeight: 700,
+              lineHeight: "5rem",
+            }}
           >
             Butter Up
             <br />
