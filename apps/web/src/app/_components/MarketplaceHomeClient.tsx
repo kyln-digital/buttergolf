@@ -4,6 +4,7 @@ import { Column } from "@buttergolf/ui";
 import { HeroStatic } from "./marketplace/HeroStatic";
 import { CategoriesSection } from "./marketplace/CategoriesSection";
 import { RecentlyListedSectionClient } from "./marketplace/RecentlyListedSection";
+import { MyListingsSection } from "./marketplace/MyListingsSection";
 import { TrustSection } from "./marketplace/TrustSection";
 import { NewsletterSection } from "./marketplace/NewsletterSection";
 import { FooterSection } from "./marketplace/FooterSection";
@@ -12,9 +13,13 @@ import type { ProductCardData } from "@buttergolf/app";
 
 interface MarketplaceHomeClientProps {
   readonly products: ProductCardData[];
+  readonly myProducts: ProductCardData[] | null;
 }
 
-export default function MarketplaceHomeClient({ products }: Readonly<MarketplaceHomeClientProps>) {
+export default function MarketplaceHomeClient({
+  products,
+  myProducts,
+}: Readonly<MarketplaceHomeClientProps>) {
   return (
     <Column width="100%">
       {/* Hero - Immediate page load animation (no scroll trigger) */}
@@ -26,6 +31,13 @@ export default function MarketplaceHomeClient({ products }: Readonly<Marketplace
       <AnimatedView delay={0}>
         <CategoriesSection />
       </AnimatedView>
+
+      {/* My Listings - only shown to signed-in users */}
+      {myProducts !== null && (
+        <AnimatedView delay={0}>
+          <MyListingsSection products={myProducts} />
+        </AnimatedView>
+      )}
 
       {/* Below the fold sections - simple fade in (delays removed) */}
       <AnimatedView delay={0}>

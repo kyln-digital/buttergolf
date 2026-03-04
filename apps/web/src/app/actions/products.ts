@@ -97,3 +97,93 @@ export async function getRecentProducts(limit: number = 12): Promise<ProductCard
     return [];
   }
 }
+
+export async function getMyProducts(
+  clerkId: string,
+  limit: number = 12
+): Promise<ProductCardData[]> {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+      select: { id: true },
+    });
+
+    if (!user) return [];
+
+    const products = await prisma.product.findMany({
+      take: limit,
+      where: {
+        userId: user.id,
+        isSold: false,
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        images: {
+          orderBy: { sortOrder: "asc" },
+          take: 1,
+        },
+        category: {
+          select: { id: true, name: true, slug: true },
+        },
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            averageRating: true,
+            ratingCount: true,
+          },
+        },
+        promotions: {
+          where: {
+            status: "ACTIVE",
+            expiresAt: { gt: new Date() },
+          },
+          take: 1,
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    return products
+      .filter((product) => product.user)
+      .map((product) => {
+        let imageUrl =
+          product.images[0]?.url ||
+          "https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=400";
+
+        if (imageUrl.startsWith("/")) {
+          const baseUrl =
+            process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL
+              ? `https://${process.env.VERCEL_URL}`
+              : "http://localhost:3000";
+          imageUrl = `${baseUrl}${imageUrl}`;
+        }
+
+        return {
+          id: product.id,
+          title: product.title,
+          price: product.price,
+          condition: product.condition,
+          imageUrl,
+          category: product.category.name,
+          seller: {
+            id: product.user.id,
+            firstName: product.user.firstName,
+            lastName: product.user.lastName,
+            averageRating: product.user.averageRating,
+            ratingCount: product.user.ratingCount,
+          },
+          activePromotion: product.promotions[0]
+            ? {
+                type: product.promotions[0].type,
+                expiresAt: product.promotions[0].expiresAt,
+              }
+            : null,
+        };
+      });
+  } catch (error) {
+    console.error("Failed to fetch my products:", error);
+    return [];
+  }
+}
