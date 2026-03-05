@@ -25,8 +25,6 @@ interface ListingsClientProps {
   initialCategory?: string | null;
 }
 
-const STORAGE_KEY = "buttergolf-listings-filters";
-
 function areStringArraysEqual(a: readonly string[], b: readonly string[]) {
   if (a === b) return true;
   if (a.length !== b.length) return false;
@@ -58,43 +56,13 @@ export function ListingsClient({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Parse initial filters from URL
+  // Parse initial filters from URL params only (URL is the single source of truth).
+  // This keeps client state in sync with what the server rendered, so `initialTotal`
+  // (and therefore `totalPages`) is always correct on first paint.
   const getInitialFilters = (): FilterState => {
-    // If we have an initialCategory from the route (e.g., /category/woods), use it
-    // This takes precedence over localStorage and URL params for category
-    const categoryFromRoute = initialCategory;
-
-    // Try to load from localStorage first
-    if (globalThis.window !== undefined) {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          // Merge URL params (they take precedence), but route category wins for category
-          return {
-            category: categoryFromRoute || searchParams.get("category") || parsed.category || null,
-            conditions: searchParams.getAll("condition") || parsed.conditions || [],
-            minPrice:
-              Number.parseFloat(searchParams.get("minPrice") || "") ||
-              parsed.minPrice ||
-              initialFilters.priceRange.min,
-            maxPrice:
-              Number.parseFloat(searchParams.get("maxPrice") || "") ||
-              parsed.maxPrice ||
-              initialFilters.priceRange.max,
-            brands: searchParams.getAll("brand") || parsed.brands || [],
-            showFavouritesOnly:
-              searchParams.get("favourites") === "true" || parsed.showFavouritesOnly || false,
-          };
-        } catch {
-          // Fall through to URL parsing
-        }
-      }
-    }
-
-    // Parse from URL (route category takes precedence)
+    // Route-level category (e.g. /category/woods) takes precedence over query params
     return {
-      category: categoryFromRoute || searchParams.get("category") || null,
+      category: initialCategory || searchParams.get("category") || null,
       conditions: searchParams.getAll("condition") || [],
       minPrice:
         Number.parseFloat(searchParams.get("minPrice") || "") || initialFilters.priceRange.min,
@@ -126,13 +94,6 @@ export function ListingsClient({
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
-  // Save filters to localStorage
-  useEffect(() => {
-    if (globalThis.window !== undefined) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
-    }
-  }, [filters]);
 
   // Build URL from filters - uses clean category URLs for SEO
   const buildURL = useCallback(
@@ -290,9 +251,6 @@ export function ListingsClient({
       showFavouritesOnly: false,
     };
     setFilters(defaultFilters);
-    if (globalThis.window !== undefined) {
-      localStorage.removeItem(STORAGE_KEY);
-    }
   };
 
   // Handle page change - uses pagination mode (no skeleton flash, no scroll)

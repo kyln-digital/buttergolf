@@ -95,7 +95,17 @@ async function getCategoryListings(
       break;
   }
 
-  // Fetch products and aggregations
+  // Fetch products and aggregations.
+  // Build scoped where clauses for filter sidebar aggregations:
+  // - whereForBrands: all current filters minus brandId, so the brand list shows every brand
+  //   available in the current category/condition/price context (not just the selected brand).
+  // - whereForPrice: all current filters minus price, so the slider shows the full price range
+  //   available for the current category/condition/brand context.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { brandId: _brandId, ...whereForBrands } = where;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { price: _price, ...whereForPrice } = where;
+
   const [products, total, availableBrands, priceAgg] = await Promise.all([
     prisma.product.findMany({
       where,
@@ -136,20 +146,14 @@ async function getCategoryListings(
     prisma.brand.findMany({
       where: {
         products: {
-          some: {
-            isSold: false,
-            category: { slug: categorySlug },
-          },
+          some: whereForBrands,
         },
       },
       select: { id: true, name: true, slug: true },
       orderBy: { sortOrder: "asc" },
     }),
     prisma.product.aggregate({
-      where: {
-        isSold: false,
-        category: { slug: categorySlug },
-      },
+      where: whereForPrice,
       _min: { price: true },
       _max: { price: true },
     }),

@@ -180,19 +180,28 @@ export async function GET(request: NextRequest) {
       return 0;
     });
 
-    // Get filter options (available brands and price range)
+    // Get filter options scoped to the current context.
+    // - `availableBrands`: respect all active filters EXCEPT the brand filter itself so the user
+    //   can switch between brands without the list collapsing to only their current selection.
+    // - `priceAgg`: respect all active filters EXCEPT the price filter so the slider always shows
+    //   the full price range available within the current context (category, condition, brand, etc.).
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { brandId: _brandId, ...whereForBrands } = where;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { price: _price, ...whereForPrice } = where;
+
     const [availableBrands, priceAgg] = await Promise.all([
       prisma.brand.findMany({
         where: {
           products: {
-            some: { isSold: false },
+            some: whereForBrands,
           },
         },
         select: { name: true },
         orderBy: { name: "asc" },
       }),
       prisma.product.aggregate({
-        where: { isSold: false },
+        where: whereForPrice,
         _min: { price: true },
         _max: { price: true },
       }),
