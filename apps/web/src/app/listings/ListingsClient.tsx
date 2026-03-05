@@ -251,13 +251,18 @@ export function ListingsClient({
     prevFiltersRef.current = filters;
     prevSortRef.current = sort;
 
+    // Reset pagination state immediately so UI/URL never stays on a stale page.
+    if (page !== 1) {
+      setPage(1);
+    }
+
     // Debounce the fetch to avoid excessive requests
     const timeoutId = setTimeout(() => {
       fetchProducts(1);
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [filters, sort, isMounted, fetchProducts]);
+  }, [filters, sort, isMounted, fetchProducts, page]);
 
   // Redirect to last valid page if current page exceeds total pages
   useEffect(() => {

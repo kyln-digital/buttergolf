@@ -15,6 +15,8 @@ export async function GET(request: NextRequest) {
     // Build where clause
     const where: Prisma.ProductWhereInput = {
       isSold: false,
+      // Keep count/query/render parity by excluding orphaned seller relations at query time.
+      user: { is: {} },
     };
 
     // Favourites filter (requires authentication)
@@ -197,25 +199,23 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Map to ProductCardData format (using sorted products with promotion boost)
-    const productCards: ProductCardData[] = sortedProducts
-      .filter((product) => product.user) // Filter out products without users
-      .map((product) => ({
-        id: product.id,
-        title: product.title,
-        price: product.price,
-        condition: product.condition,
-        imageUrl: product.images[0]?.url || "/placeholder-product.jpg",
-        category: product.category.name,
-        seller: {
-          id: product.user.id,
-          firstName: product.user.firstName,
-          lastName: product.user.lastName,
-          averageRating: product.user.averageRating,
-          ratingCount: product.user.ratingCount,
-        },
-        // Include promotion info for UI badge/styling
-        isPromoted: product.promotions && product.promotions.length > 0,
-      }));
+    const productCards: ProductCardData[] = sortedProducts.map((product) => ({
+      id: product.id,
+      title: product.title,
+      price: product.price,
+      condition: product.condition,
+      imageUrl: product.images[0]?.url || "/placeholder-product.jpg",
+      category: product.category.name,
+      seller: {
+        id: product.user.id,
+        firstName: product.user.firstName,
+        lastName: product.user.lastName,
+        averageRating: product.user.averageRating,
+        ratingCount: product.user.ratingCount,
+      },
+      // Include promotion info for UI badge/styling
+      isPromoted: product.promotions && product.promotions.length > 0,
+    }));
 
     return NextResponse.json({
       products: productCards,
