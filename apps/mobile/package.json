@@ -65,7 +65,7 @@
     "babel-plugin-module-resolver": "^5.0.0",
     "eslint": "catalog:",
     "eslint-config-expo": "catalog:",
-    "react-native-svg-transformer": "^1.5.2",
+    "react-native-svg-transformer": "^1.5.3",
     "typescript": "catalog:"
   },
   "expo": {
