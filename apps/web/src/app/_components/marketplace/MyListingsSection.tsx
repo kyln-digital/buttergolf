@@ -62,7 +62,7 @@ export function MyListingsSection({ products }: MyListingsSectionProps) {
 
             {/* View My Listings Button */}
             <Row alignItems="center" justifyContent="center" width="100%" paddingTop="$sm">
-              <Link href="/seller/listings" passHref style={{ textDecoration: "none" }}>
+              <Link href="/seller/listings" style={{ textDecoration: "none" }}>
                 <Button butterVariant="primary" size="$5" width={320}>
                   View my listings
                 </Button>
@@ -75,7 +75,7 @@ export function MyListingsSection({ products }: MyListingsSectionProps) {
             <Text size="$6" color="$textSecondary" textAlign="center">
               You have no listings yet.
             </Text>
-            <Link href="/sell" passHref style={{ textDecoration: "none" }}>
+            <Link href="/sell" style={{ textDecoration: "none" }}>
               <Button butterVariant="primary" size="$5">
                 Sell now
               </Button>

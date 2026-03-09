@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Column, Row, Text, Button, Spacer } from "@buttergolf/ui";
+import { Column, Row, Text, Heading, Button, Spacer } from "@buttergolf/ui";
 import { imagePaths } from "@buttergolf/assets";
 
 /**
@@ -57,6 +57,8 @@ export function HeroRedesign() {
         <img
           src={imagePaths.hero.clubBottomLeft}
           alt=""
+          aria-hidden="true"
+          loading="lazy"
           style={{
             position: "absolute",
             left: "1.5%",
@@ -73,6 +75,8 @@ export function HeroRedesign() {
         <img
           src={imagePaths.hero.clubCenter}
           alt=""
+          aria-hidden="true"
+          loading="lazy"
           style={{
             position: "absolute",
             left: "10%",
@@ -89,6 +93,8 @@ export function HeroRedesign() {
         <img
           src={imagePaths.hero.clubRightCenter}
           alt=""
+          aria-hidden="true"
+          loading="lazy"
           style={{
             position: "absolute",
             left: "67%",
@@ -105,6 +111,8 @@ export function HeroRedesign() {
         <img
           src={imagePaths.hero.clubTopRight}
           alt=""
+          aria-hidden="true"
+          loading="lazy"
           style={{
             position: "absolute",
             right: "1.5%",
@@ -128,7 +136,8 @@ export function HeroRedesign() {
           minHeight={300}
           $gtMd={{ minHeight: 360 }}
         >
-          <Text
+          <Heading
+            level={1}
             color="$text"
             textAlign="center"
             style={{
@@ -142,7 +151,7 @@ export function HeroRedesign() {
             Butter Up
             <br />
             Your Game
-          </Text>
+          </Heading>
 
           <Spacer size="$sm" />
 

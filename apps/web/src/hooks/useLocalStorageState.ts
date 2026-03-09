@@ -18,10 +18,13 @@ export function useLocalStorageState<T>(
     debounceMs?: number;
     /** Max age in ms. Stored values older than this are discarded (default: Infinity) */
     maxAgeMs?: number;
+    /** Schema version. Bumping this discards any stored data written with an older version */
+    schemaVersion?: number;
   }
 ): [T, (value: T | ((prev: T) => T)) => void, { isHydrated: boolean; clear: () => void }] {
   const debounceMs = options?.debounceMs ?? 300;
   const maxAgeMs = options?.maxAgeMs ?? Number.POSITIVE_INFINITY;
+  const schemaVersion = options?.schemaVersion;
 
   const [isHydrated, setIsHydrated] = useState(false);
   const [state, setState] = useState<T>(defaultValue);
@@ -34,10 +37,12 @@ export function useLocalStorageState<T>(
     try {
       const raw = localStorage.getItem(key);
       if (raw) {
-        const envelope: { value: T; _updatedAt: number } = JSON.parse(raw);
+        const envelope: { value: T; _updatedAt: number; _version?: number } = JSON.parse(raw);
 
-        // Discard if too old
-        if (Date.now() - envelope._updatedAt > maxAgeMs) {
+        // Discard if schema version changed
+        if (schemaVersion !== undefined && envelope._version !== schemaVersion) {
+          localStorage.removeItem(key);
+        } else if (Date.now() - envelope._updatedAt > maxAgeMs) {
           localStorage.removeItem(key);
         } else {
           // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: hydrating from localStorage on mount
@@ -50,7 +55,7 @@ export function useLocalStorageState<T>(
     }
 
     setIsHydrated(true);
-  }, [key, maxAgeMs]);
+  }, [key, maxAgeMs, schemaVersion]);
 
   // Cross-tab sync
   useEffect(() => {
@@ -65,7 +70,10 @@ export function useLocalStorageState<T>(
       }
 
       try {
-        const envelope: { value: T; _updatedAt: number } = JSON.parse(e.newValue);
+        const envelope: { value: T; _updatedAt: number; _version?: number } = JSON.parse(
+          e.newValue
+        );
+        if (schemaVersion !== undefined && envelope._version !== schemaVersion) return;
         setState(envelope.value);
       } catch {
         // ignore
@@ -74,7 +82,7 @@ export function useLocalStorageState<T>(
 
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
-  }, [key, defaultValue]);
+  }, [key, defaultValue, schemaVersion]);
 
   // Debounced write to localStorage
   const writeToStorage = useCallback(
@@ -87,14 +95,14 @@ export function useLocalStorageState<T>(
 
       debounceTimer.current = setTimeout(() => {
         try {
-          const envelope = { value, _updatedAt: Date.now() };
+          const envelope = { value, _updatedAt: Date.now(), _version: schemaVersion };
           localStorage.setItem(key, JSON.stringify(envelope));
         } catch {
           // Storage full or blocked — silently degrade
         }
       }, debounceMs);
     },
-    [key, debounceMs]
+    [key, debounceMs, schemaVersion]
   );
 
   useEffect(() => {
