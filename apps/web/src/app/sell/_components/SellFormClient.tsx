@@ -1,6 +1,5 @@
 "use client";
 
-/* eslint-disable react/forbid-elements -- Complex form with inline-styled select/textarea elements */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
@@ -791,6 +790,7 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
                   {/* Category */}
                   <Column gap="$xs" width="100%">
                     <FormLabel required>Category</FormLabel>
+                    {/* eslint-disable-next-line react/forbid-elements -- TODO: replace with design-system Select */}
                     <select
                       value={formData.categoryId}
                       onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
@@ -1063,6 +1063,7 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
                   {/* Description */}
                   <Column gap="$xs" width="100%">
                     <FormLabel required>Describe your item</FormLabel>
+                    {/* eslint-disable-next-line react/forbid-elements -- TODO: replace with design-system TextArea */}
                     <textarea
                       value={formData.description}
                       onChange={(e) =>
@@ -1105,6 +1106,7 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
                   {shouldShowFlex() && (
                     <Column gap="$xs" width="100%">
                       <FormLabel>Shaft Flex</FormLabel>
+                      {/* eslint-disable-next-line react/forbid-elements -- TODO: replace with design-system Select */}
                       <select
                         value={formData.flex}
                         onChange={(e) => setFormData({ ...formData, flex: e.target.value })}
@@ -1146,6 +1148,7 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
                   {shouldShowLoft() && (
                     <Column gap="$xs" width="100%">
                       <FormLabel>Loft</FormLabel>
+                      {/* eslint-disable-next-line react/forbid-elements -- TODO: replace with design-system Select */}
                       <select
                         value={formData.loft}
                         onChange={(e) => setFormData({ ...formData, loft: e.target.value })}

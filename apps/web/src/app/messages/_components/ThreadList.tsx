@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, type KeyboardEvent, type MouseEvent } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Column, Row, Text, Heading, Badge, ScrollView, View, Image, Button } from "@buttergolf/ui";
 import { MessageSquare } from "@tamagui/lucide-icons";
 import { formatDistanceToNow } from "date-fns";
@@ -62,7 +61,6 @@ export function ThreadList({
   onSelectConversation,
 }: ThreadListProps) {
   const [selectedListing, setSelectedListing] = useState<Conversation | null>(null);
-  const router = useRouter();
 
   if (loading) {
     return <ThreadListSkeleton />;
@@ -137,14 +135,8 @@ export function ThreadList({
                   hasUnread={hasUnread}
                   conversationStatus={conversationStatus}
                   onListingPress={() => setSelectedListing(conversation)}
-                  onOpenConversation={() => {
-                    onSelectConversation?.(conversation.id);
-                    router.push(`/messages/${conversation.id}`);
-                  }}
-                  onOpenConversationInNewTab={() => {
-                    onSelectConversation?.(conversation.id);
-                    window.open(`/messages/${conversation.id}`, "_blank", "noopener,noreferrer");
-                  }}
+                  conversationHref={`/messages/${conversation.id}`}
+                  onSelect={() => onSelectConversation?.(conversation.id)}
                 />
               );
             })}
@@ -172,8 +164,8 @@ interface ConversationRowProps {
   hasUnread: boolean;
   conversationStatus: { label: string; color: "$warning" | "$primary" | "$success" } | null;
   onListingPress: () => void;
-  onOpenConversation: () => void;
-  onOpenConversationInNewTab: () => void;
+  conversationHref: string;
+  onSelect?: () => void;
 }
 
 function ConversationRow({
@@ -182,22 +174,9 @@ function ConversationRow({
   hasUnread,
   conversationStatus,
   onListingPress,
-  onOpenConversation,
-  onOpenConversationInNewTab,
+  conversationHref,
+  onSelect,
 }: Readonly<ConversationRowProps>) {
-  const handleOpen = (event: MouseEvent | KeyboardEvent) => {
-    const hasModifier =
-      "metaKey" in event && (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey);
-
-    if (hasModifier) {
-      event.preventDefault();
-      onOpenConversationInNewTab();
-      return;
-    }
-
-    onOpenConversation();
-  };
-
   return (
     <Row
       gap="$md"
@@ -214,24 +193,21 @@ function ConversationRow({
         backgroundColor: isActive ? "$primaryLight" : "$backgroundPress",
       }}
       animation="quick"
-      cursor="pointer"
-      onClick={handleOpen}
-      onAuxClick={(event) => {
-        if (event.button === 1) {
-          event.preventDefault();
-          onOpenConversationInNewTab();
-        }
-      }}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          handleOpen(event);
-        }
-      }}
-      tabIndex={0}
-      role="link"
-      aria-label={`Open conversation with ${conversation.otherUserName}`}
+      style={{ position: "relative" }}
     >
+      {/* Primary link covers the entire row for navigation */}
+      <Link
+        href={conversationHref}
+        onClick={() => onSelect?.()}
+        prefetch={false}
+        aria-label={`Open conversation with ${conversation.otherUserName}`}
+        style={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 0,
+        }}
+      />
+
       <SellerQuickProfilePopover
         sellerName={conversation.otherUserName}
         sellerImageUrl={conversation.otherUserImage}
@@ -248,6 +224,7 @@ function ConversationRow({
             justifyContent="center"
             cursor="pointer"
             aria-label={`View ${conversation.otherUserName} profile details`}
+            style={{ position: "relative", zIndex: 1 }}
             onPress={(event) => {
               event.stopPropagation();
             }}
@@ -310,6 +287,7 @@ function ConversationRow({
             minHeight={0}
             height="auto"
             cursor="pointer"
+            style={{ position: "relative", zIndex: 1 }}
             onPress={(event) => {
               event.stopPropagation();
               onListingPress();

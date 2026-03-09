@@ -130,7 +130,7 @@ export function SellerQuickProfilePopover({
               </Column>
             )}
 
-            <Column flex={1} gap={2}>
+            <Column flex={1} gap="$xs">
               <Text size="$5" weight="semibold" color="$text" numberOfLines={1}>
                 {sellerName}
               </Text>

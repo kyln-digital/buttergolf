@@ -1398,7 +1398,10 @@ function FavouritesScreenWrapper({
   }, [getToken, apiUrl]);
 
   // Refresh on every focus so profile favourites stays in sync with listing hearts.
-  // A short follow-up refresh accounts for deferred writes that complete just after navigation.
+  // A short follow-up refresh (700 ms) accounts for deferred writes (optimistic toggles
+  // that POST to the API) which may still be in-flight when the user navigates back.
+  // 700 ms was chosen empirically: long enough for a typical API round-trip on a
+  // moderate connection, short enough to feel responsive.
   useFocusEffect(
     useCallback(() => {
       setRefreshKey((prev) => prev + 1);

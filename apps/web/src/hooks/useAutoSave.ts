@@ -49,6 +49,15 @@ export function useAutoSave<T>({
     onSaveRef.current = onSave;
   }, [onSave]);
 
+  // Guard against setting state after unmount
+  const mountedRef = useRef(true);
+  useEffect(
+    () => () => {
+      mountedRef.current = false;
+    },
+    []
+  );
+
   const dataJson = JSON.stringify(data);
 
   const doSave = useCallback(async () => {
@@ -61,8 +70,16 @@ export function useAutoSave<T>({
     if (dataJson === lastSavedJson.current) return;
 
     setStatus("saving");
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     try {
-      const result = await onSaveRef.current(JSON.parse(dataJson) as T);
+      const result = await Promise.race([
+        onSaveRef.current(JSON.parse(dataJson) as T),
+        new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error("Save timeout")), 30_000);
+        }),
+      ]);
+
+      if (!mountedRef.current) return;
 
       if (result === true || result === "saved") {
         lastSavedJson.current = dataJson;
@@ -73,7 +90,9 @@ export function useAutoSave<T>({
         setStatus("error");
       }
     } catch {
-      setStatus("error");
+      if (mountedRef.current) setStatus("error");
+    } finally {
+      clearTimeout(timeoutId);
     }
   }, [dataJson]);
 
