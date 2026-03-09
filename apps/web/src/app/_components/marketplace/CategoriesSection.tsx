@@ -46,7 +46,7 @@ export function CategoriesSection() {
             color="$text"
             textAlign="center"
             width="100%"
-            maxWidth="17.625rem"
+            maxWidth={282}
             style={{
               fontFamily: "var(--font-urbanist)",
               fontStyle: "normal",

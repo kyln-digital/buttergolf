@@ -18,7 +18,7 @@ export default async function SellPage({ searchParams }: SellPageProps) {
   const { userId: clerkId } = await auth();
 
   if (!clerkId) {
-    redirect("/sign-in?redirect=/sell");
+    redirect("/sign-in?redirect_url=%2Fsell");
   }
 
   const { draftId } = await searchParams;

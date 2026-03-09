@@ -80,7 +80,7 @@ export function SellerHub() {
   // Redirect to sign-in if not authenticated
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
-      router.push("/sign-in?redirect=/");
+      router.push("/sign-in?redirect_url=%2Fseller%2Flistings");
     }
   }, [isLoaded, isSignedIn, router]);
 

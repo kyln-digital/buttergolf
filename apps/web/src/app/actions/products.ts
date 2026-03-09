@@ -59,9 +59,10 @@ export async function getRecentProducts(limit: number = 12): Promise<ProductCard
         // In production, all images should be stored in Vercel Blob with full HTTPS URLs
         if (imageUrl.startsWith("/")) {
           const baseUrl =
-            process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL
+            process.env.NEXT_PUBLIC_BASE_URL ||
+            (process.env.VERCEL_URL
               ? `https://${process.env.VERCEL_URL}`
-              : "http://localhost:3000";
+              : "http://localhost:3000");
 
           // Convert to absolute URL for local testing
           imageUrl = `${baseUrl}${imageUrl}`;
@@ -115,6 +116,7 @@ export async function getMyProducts(
       where: {
         userId: user.id,
         isSold: false,
+        isDraft: false,
       },
       orderBy: { createdAt: "desc" },
       include: {
@@ -154,9 +156,10 @@ export async function getMyProducts(
 
         if (imageUrl.startsWith("/")) {
           const baseUrl =
-            process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL
+            process.env.NEXT_PUBLIC_BASE_URL ||
+            (process.env.VERCEL_URL
               ? `https://${process.env.VERCEL_URL}`
-              : "http://localhost:3000";
+              : "http://localhost:3000");
           imageUrl = `${baseUrl}${imageUrl}`;
         }
 
