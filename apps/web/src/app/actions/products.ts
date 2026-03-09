@@ -2,6 +2,7 @@
 
 import { prisma } from "@buttergolf/db";
 import type { ProductCardData } from "@buttergolf/app";
+import { getBaseUrl } from "@/lib/base-url";
 
 export async function getRecentProducts(limit: number = 12): Promise<ProductCardData[]> {
   try {
@@ -9,6 +10,7 @@ export async function getRecentProducts(limit: number = 12): Promise<ProductCard
       take: limit,
       where: {
         isSold: false, // Only show available products
+        isDraft: false, // Exclude unpublished drafts
       },
       orderBy: { createdAt: "desc" },
       include: {
@@ -58,11 +60,7 @@ export async function getRecentProducts(limit: number = 12): Promise<ProductCard
         // If the image URL is a relative path (local asset), use it for web but provide fallback for mobile
         // In production, all images should be stored in Vercel Blob with full HTTPS URLs
         if (imageUrl.startsWith("/")) {
-          const baseUrl =
-            process.env.NEXT_PUBLIC_BASE_URL ||
-            (process.env.VERCEL_URL
-              ? `https://${process.env.VERCEL_URL}`
-              : "http://localhost:3000");
+          const baseUrl = getBaseUrl();
 
           // Convert to absolute URL for local testing
           imageUrl = `${baseUrl}${imageUrl}`;
@@ -155,11 +153,7 @@ export async function getMyProducts(
           "https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=400";
 
         if (imageUrl.startsWith("/")) {
-          const baseUrl =
-            process.env.NEXT_PUBLIC_BASE_URL ||
-            (process.env.VERCEL_URL
-              ? `https://${process.env.VERCEL_URL}`
-              : "http://localhost:3000");
+          const baseUrl = getBaseUrl();
           imageUrl = `${baseUrl}${imageUrl}`;
         }
 

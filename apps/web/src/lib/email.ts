@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { getBaseUrl } from "@/lib/base-url";
 
 /**
  * Email Service using Resend
@@ -28,10 +29,7 @@ function getResendClient(): Resend {
 // Use verified Resend domain for sending emails
 const FROM_EMAIL = "ButterGolf <notifications@notifications.buttergolf.com>";
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_APP_URL ||
-  process.env.APP_URL ||
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://buttergolf.co.uk");
+const BASE_URL = getBaseUrl();
 
 /**
  * Escape HTML special characters to prevent XSS in email templates.

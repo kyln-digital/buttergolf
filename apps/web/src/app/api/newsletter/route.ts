@@ -40,8 +40,9 @@ export async function POST(request: NextRequest) {
     }
 
     const normalisedEmail = email.trim().toLowerCase();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(normalisedEmail)) {
+    // Require at least 2-char TLD and disallow consecutive dots in domain
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(normalisedEmail) || normalisedEmail.includes("..")) {
       const response = NextResponse.json({ error: "Invalid email address" }, { status: 400 });
       Object.entries(headers).forEach(([key, value]) => response.headers.set(key, value));
       return response;
