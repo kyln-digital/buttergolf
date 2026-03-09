@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ProductCardData } from "@buttergolf/app";
 import { Button, Column, Row, Text, Heading } from "@buttergolf/ui";
@@ -62,11 +61,14 @@ export function MyListingsSection({ products }: MyListingsSectionProps) {
 
             {/* View My Listings Button */}
             <Row alignItems="center" justifyContent="center" width="100%" paddingTop="$sm">
-              <Link href="/seller/listings" style={{ textDecoration: "none" }}>
-                <Button butterVariant="primary" size="$5" width={320}>
-                  View my listings
-                </Button>
-              </Link>
+              <Button
+                butterVariant="primary"
+                size="$5"
+                width={320}
+                onPress={() => router.push("/seller/listings")}
+              >
+                View my listings
+              </Button>
             </Row>
           </>
         ) : (
@@ -75,11 +77,9 @@ export function MyListingsSection({ products }: MyListingsSectionProps) {
             <Text size="$6" color="$textSecondary" textAlign="center">
               You have no listings yet.
             </Text>
-            <Link href="/sell" style={{ textDecoration: "none" }}>
-              <Button butterVariant="primary" size="$5">
-                Sell now
-              </Button>
-            </Link>
+            <Button butterVariant="primary" size="$5" onPress={() => router.push("/sell")}>
+              Sell now
+            </Button>
           </Column>
         )}
       </Column>

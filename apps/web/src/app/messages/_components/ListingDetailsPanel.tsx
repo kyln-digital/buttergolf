@@ -53,7 +53,16 @@ export function ListingDetailsPanel({
       previouslyFocusedElementRef.current = activeElement;
     }
 
-    panelRef.current?.focus();
+    // Focus the first focusable child so the focus trap works immediately
+    // (focusing the container itself would let Shift+Tab escape the panel)
+    const firstFocusable = panelRef.current?.querySelector<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (firstFocusable) {
+      firstFocusable.focus();
+    } else {
+      panelRef.current?.focus();
+    }
 
     return () => {
       previouslyFocusedElementRef.current?.focus();
@@ -83,10 +92,16 @@ export function ListingDetailsPanel({
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
 
-        if (event.shiftKey && document.activeElement === first) {
+        const active = document.activeElement;
+        // Treat the panel container itself as being "before first",
+        // so Shift+Tab from container wraps to last element.
+        const atFirst = active === first || active === panelRef.current;
+        const atLast = active === last;
+
+        if (event.shiftKey && atFirst) {
           event.preventDefault();
           last.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
+        } else if (!event.shiftKey && atLast) {
           event.preventDefault();
           first.focus();
         }

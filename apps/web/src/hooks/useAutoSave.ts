@@ -70,12 +70,13 @@ export function useAutoSave<T>({
     if (dataJson === lastSavedJson.current) return;
 
     setStatus("saving");
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     try {
       const result = await Promise.race([
         onSaveRef.current(JSON.parse(dataJson) as T),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Save timeout")), 30_000)
-        ),
+        new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error("Save timeout")), 30_000);
+        }),
       ]);
 
       if (!mountedRef.current) return;
@@ -90,6 +91,8 @@ export function useAutoSave<T>({
       }
     } catch {
       if (mountedRef.current) setStatus("error");
+    } finally {
+      clearTimeout(timeoutId);
     }
   }, [dataJson]);
 

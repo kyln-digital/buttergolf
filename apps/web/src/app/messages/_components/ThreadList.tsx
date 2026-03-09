@@ -178,164 +178,169 @@ function ConversationRow({
   onSelect,
 }: Readonly<ConversationRowProps>) {
   return (
-    <Link
-      href={conversationHref}
-      onClick={() => onSelect?.()}
-      style={{ textDecoration: "none", display: "block" }}
-      prefetch={false}
-      aria-label={`Open conversation with ${conversation.otherUserName}`}
+    <Row
+      gap="$md"
+      paddingHorizontal="$lg"
+      paddingVertical="$md"
+      alignItems="center"
+      backgroundColor={isActive ? "$primaryLight" : "transparent"}
+      borderLeftWidth={isActive ? 3 : 0}
+      borderLeftColor={isActive ? "$primary" : "transparent"}
+      hoverStyle={{
+        backgroundColor: isActive ? "$primaryLight" : "$backgroundHover",
+      }}
+      pressStyle={{
+        backgroundColor: isActive ? "$primaryLight" : "$backgroundPress",
+      }}
+      animation="quick"
+      style={{ position: "relative" }}
     >
-      <Row
-        gap="$md"
-        paddingHorizontal="$lg"
-        paddingVertical="$md"
-        alignItems="center"
-        backgroundColor={isActive ? "$primaryLight" : "transparent"}
-        borderLeftWidth={isActive ? 3 : 0}
-        borderLeftColor={isActive ? "$primary" : "transparent"}
-        hoverStyle={{
-          backgroundColor: isActive ? "$primaryLight" : "$backgroundHover",
+      {/* Primary link covers the entire row for navigation */}
+      <Link
+        href={conversationHref}
+        onClick={() => onSelect?.()}
+        prefetch={false}
+        aria-label={`Open conversation with ${conversation.otherUserName}`}
+        style={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 0,
         }}
-        pressStyle={{
-          backgroundColor: isActive ? "$primaryLight" : "$backgroundPress",
-        }}
-        animation="quick"
-        cursor="pointer"
-      >
-        <SellerQuickProfilePopover
-          sellerName={conversation.otherUserName}
-          sellerImageUrl={conversation.otherUserImage}
-          averageRating={conversation.otherUserAverageRating}
-          ratingCount={conversation.otherUserRatingCount}
-          userRole={conversation.userRole}
-          trigger={
-            <Button
-              chromeless
-              padding={0}
-              minHeight={0}
-              height="auto"
-              alignItems="center"
-              justifyContent="center"
-              cursor="pointer"
-              aria-label={`View ${conversation.otherUserName} profile details`}
-              onPress={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-              }}
-            >
-              {conversation.otherUserImage ? (
-                <Image
-                  source={{ uri: conversation.otherUserImage }}
-                  width={48}
-                  height={48}
-                  borderRadius={24}
-                  alt={conversation.otherUserName}
-                />
-              ) : (
-                <View
-                  width={48}
-                  height={48}
-                  borderRadius={24}
-                  backgroundColor={isActive ? "$primary" : "$border"}
-                  alignItems="center"
-                  justifyContent="center"
+      />
+
+      <SellerQuickProfilePopover
+        sellerName={conversation.otherUserName}
+        sellerImageUrl={conversation.otherUserImage}
+        averageRating={conversation.otherUserAverageRating}
+        ratingCount={conversation.otherUserRatingCount}
+        userRole={conversation.userRole}
+        trigger={
+          <Button
+            chromeless
+            padding={0}
+            minHeight={0}
+            height="auto"
+            alignItems="center"
+            justifyContent="center"
+            cursor="pointer"
+            aria-label={`View ${conversation.otherUserName} profile details`}
+            style={{ position: "relative", zIndex: 1 }}
+            onPress={(event) => {
+              event.stopPropagation();
+            }}
+          >
+            {conversation.otherUserImage ? (
+              <Image
+                source={{ uri: conversation.otherUserImage }}
+                width={48}
+                height={48}
+                borderRadius={24}
+                alt={conversation.otherUserName}
+              />
+            ) : (
+              <View
+                width={48}
+                height={48}
+                borderRadius={24}
+                backgroundColor={isActive ? "$primary" : "$border"}
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Text
+                  size="$5"
+                  weight="semibold"
+                  color={isActive ? "$textInverse" : "$textSecondary"}
                 >
-                  <Text
-                    size="$5"
-                    weight="semibold"
-                    color={isActive ? "$textInverse" : "$textSecondary"}
-                  >
-                    {getInitials(conversation.otherUserName)}
-                  </Text>
-                </View>
-              )}
-            </Button>
-          }
-        />
+                  {getInitials(conversation.otherUserName)}
+                </Text>
+              </View>
+            )}
+          </Button>
+        }
+      />
 
-        <Column flex={1} gap="$xs" minWidth={0}>
-          <Row alignItems="center" gap="$xs">
-            <Text
-              size="$5"
-              weight={hasUnread ? "bold" : "medium"}
-              color="$text"
-              numberOfLines={1}
-              flex={1}
-            >
-              {conversation.otherUserName}
+      <Column flex={1} gap="$xs" minWidth={0}>
+        <Row alignItems="center" gap="$xs">
+          <Text
+            size="$5"
+            weight={hasUnread ? "bold" : "medium"}
+            color="$text"
+            numberOfLines={1}
+            flex={1}
+          >
+            {conversation.otherUserName}
+          </Text>
+
+          <Text size="$2" color="$textSecondary" flexShrink={0}>
+            {formatDistanceToNow(new Date(conversation.lastMessageAt), {
+              addSuffix: false,
+            })}
+          </Text>
+        </Row>
+
+        <Row alignItems="center" justifyContent="space-between" gap="$sm">
+          <Button
+            chromeless
+            size="$1"
+            paddingHorizontal="$sm"
+            paddingVertical={2}
+            minHeight={0}
+            height="auto"
+            cursor="pointer"
+            style={{ position: "relative", zIndex: 1 }}
+            onPress={(event) => {
+              event.stopPropagation();
+              onListingPress();
+            }}
+            aria-label={`View listing details for ${conversation.productTitle}`}
+            maxWidth="75%"
+            alignItems="flex-start"
+            justifyContent="flex-start"
+            hoverStyle={{ opacity: 0.8 }}
+            pressStyle={{ opacity: 0.7 }}
+          >
+            <Text size="$2" color="$textSecondary" numberOfLines={1}>
+              {conversation.productTitle}
             </Text>
+          </Button>
 
-            <Text size="$2" color="$textSecondary" flexShrink={0}>
-              {formatDistanceToNow(new Date(conversation.lastMessageAt), {
-                addSuffix: false,
-              })}
+          {conversationStatus && (
+            <Text size="$2" color={conversationStatus.color} weight="semibold" flexShrink={0}>
+              {conversationStatus.label}
             </Text>
-          </Row>
+          )}
+        </Row>
 
-          <Row alignItems="center" justifyContent="space-between" gap="$sm">
-            <Button
-              chromeless
-              size="$1"
-              paddingHorizontal="$sm"
-              paddingVertical={2}
-              minHeight={0}
-              height="auto"
-              cursor="pointer"
-              onPress={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                onListingPress();
-              }}
-              aria-label={`View listing details for ${conversation.productTitle}`}
-              maxWidth="75%"
-              alignItems="flex-start"
-              justifyContent="flex-start"
-              hoverStyle={{ opacity: 0.8 }}
-              pressStyle={{ opacity: 0.7 }}
-            >
-              <Text size="$2" color="$textSecondary" numberOfLines={1}>
-                {conversation.productTitle}
-              </Text>
-            </Button>
+        <Row justifyContent="space-between" alignItems="center" gap="$sm">
+          <Text
+            size="$4"
+            color={hasUnread ? "$text" : "$textSecondary"}
+            weight={hasUnread ? "semibold" : "normal"}
+            numberOfLines={1}
+            flex={1}
+          >
+            {conversation.lastMessagePreview || "No messages yet"}
+          </Text>
 
-            {conversationStatus && (
-              <Text size="$2" color={conversationStatus.color} weight="semibold" flexShrink={0}>
-                {conversationStatus.label}
-              </Text>
+          <Row alignItems="center" gap="$xs" flexShrink={0}>
+            {hasUnread && (
+              <View
+                backgroundColor="$primary"
+                borderRadius="$full"
+                minWidth={20}
+                height={20}
+                alignItems="center"
+                justifyContent="center"
+                paddingHorizontal="$xs"
+              >
+                <Text size="$1" color="$textInverse" weight="bold">
+                  {conversation.unreadCount > 9 ? "9+" : conversation.unreadCount}
+                </Text>
+              </View>
             )}
           </Row>
-
-          <Row justifyContent="space-between" alignItems="center" gap="$sm">
-            <Text
-              size="$4"
-              color={hasUnread ? "$text" : "$textSecondary"}
-              weight={hasUnread ? "semibold" : "normal"}
-              numberOfLines={1}
-              flex={1}
-            >
-              {conversation.lastMessagePreview || "No messages yet"}
-            </Text>
-
-            <Row alignItems="center" gap="$xs" flexShrink={0}>
-              {hasUnread && (
-                <View
-                  backgroundColor="$primary"
-                  borderRadius="$full"
-                  minWidth={20}
-                  height={20}
-                  alignItems="center"
-                  justifyContent="center"
-                  paddingHorizontal="$xs"
-                >
-                  <Text size="$1" color="$textInverse" weight="bold">
-                    {conversation.unreadCount > 9 ? "9+" : conversation.unreadCount}
-                  </Text>
-                </View>
-              )}
-            </Row>
-          </Row>
-        </Column>
-      </Row>
-    </Link>
+        </Row>
+      </Column>
+    </Row>
   );
 }
