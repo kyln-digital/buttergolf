@@ -119,7 +119,8 @@ export function ListingDetailsPanel({
 
   return (
     <>
-      <View
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events -- keyboard close handled via Escape listener above */}
+      <div
         style={{
           position: "fixed",
           top: 0,
@@ -131,8 +132,12 @@ export function ListingDetailsPanel({
           opacity: open ? 1 : 0,
           transition: "opacity 220ms ease",
           pointerEvents: open ? "auto" : "none",
+          cursor: "pointer",
         }}
-        onPress={onClose}
+        onClick={onClose}
+        role="button"
+        aria-label="Close panel"
+        tabIndex={-1}
       />
 
       <View

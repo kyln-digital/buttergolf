@@ -37,9 +37,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback(
     async (item: Omit<CartItem, "quantity">) => {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
       setItems((currentItems) => {
         const existingItem = currentItems.find((i) => i.productId === item.productId);
 

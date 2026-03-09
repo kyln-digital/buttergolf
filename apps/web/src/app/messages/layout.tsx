@@ -169,12 +169,15 @@ export default async function MessagesLayoutPage({ children }: { children: React
     };
   });
 
+  // TrustBar(40px) + ButterHeader(80px) + vertical padding(2×24px) = 168px
+  const HEADER_OFFSET_PX = 168;
+
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
-        height: "calc(100dvh - 168px)",
+        height: `calc(100dvh - ${HEADER_OFFSET_PX}px)`,
         maxWidth: 1200,
         margin: "0 auto",
         padding: "24px 16px",
