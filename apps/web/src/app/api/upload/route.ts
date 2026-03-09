@@ -8,7 +8,6 @@ import {
   UPLOAD_FAILED,
   UPLOAD_BACKGROUND_REMOVAL_FAILED,
   UPLOAD_CONVERSION_FAILED,
-  PRODUCT_IMAGE_ASPECT_RATIO,
 } from "@buttergolf/constants";
 
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ?? "")
@@ -186,14 +185,13 @@ export async function POST(request: Request): Promise<NextResponse> {
           flags: "layer_apply",
         },
         {
-          // Preserve the canonical product frame without additional tight cropping.
-          // This avoids a "zoomed/clipped" look after background removal.
-          // Anchor to original width so Cloudinary always materializes a 4:3 frame.
-          crop: "pad",
+          // Crop the composite (foreground + tiled background) back to the
+          // original cropped input dimensions. The image is already 4:3 from
+          // ImageCropModal, so we just need to trim to iw × ih.
+          crop: "crop",
           width: "iw",
-          aspect_ratio: `${PRODUCT_IMAGE_ASPECT_RATIO}`,
+          height: "ih",
           gravity: "center",
-          background: "rgb:FFFAD2",
         },
       ];
     }

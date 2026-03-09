@@ -88,7 +88,7 @@ export function TrustSection() {
                 <Text size="$7" weight="bold" color="$text">
                   {item.title}
                 </Text>
-                <Text size="$7" weight="medium" color="$text">
+                <Text size="$7" weight="bold" color="$text">
                   {item.subtitle}
                 </Text>
               </Column>

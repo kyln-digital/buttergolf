@@ -160,7 +160,7 @@ export function FooterSection() {
         <Row justifyContent="space-between" alignItems="center" flexWrap="wrap" gap="$md">
           {/* Copyright */}
           <Text color="$vanillaCream" size="$3" zIndex={1}>
-            © 2025 Butter Golf. All rights reserved.
+            © {new Date().getFullYear()} Butter Golf. All rights reserved.
           </Text>
 
           {/* TrustPilot Badge */}

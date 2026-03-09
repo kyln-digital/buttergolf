@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Column, Row, Heading, Text, Button, Card, Spinner, Theme } from "@buttergolf/ui";
 import { useTheme } from "tamagui";
 import { Plus, Package, Eye, Heart, Tag } from "@tamagui/lucide-icons";
@@ -59,14 +59,16 @@ const EMPTY_SELLER_HUB_RESPONSE: SellerHubResponse = {
 export function SellerHub() {
   const { isSignedIn, isLoaded } = useUser();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const theme = useTheme();
 
   const [data, setData] = useState<SellerHubResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Filters
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "sold">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "sold" | "draft">("all");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "price-asc" | "price-desc" | "views">(
     "newest"
   );
@@ -78,9 +80,30 @@ export function SellerHub() {
   // Redirect to sign-in if not authenticated
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
-      router.push("/sign-in?redirect=/");
+      router.push("/sign-in?redirect_url=%2Fseller%2Flistings");
     }
   }, [isLoaded, isSignedIn, router]);
+
+  // Show clear confirmation when returning from successful listing publish.
+  useEffect(() => {
+    if (searchParams.get("listed") !== "1") {
+      return;
+    }
+
+    const listingTitle = searchParams.get("title");
+    setSuccessMessage(
+      listingTitle
+        ? `Your listing \"${listingTitle}\" is now live and visible in Shop All.`
+        : "Your listing is now live and visible in Shop All."
+    );
+    setStatusFilter("active");
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete("listed");
+    nextParams.delete("title");
+    const nextQuery = nextParams.toString();
+    router.replace(nextQuery ? `/seller/listings?${nextQuery}` : "/seller/listings");
+  }, [searchParams, router]);
 
   // Fetch listings
   const fetchListings = async (page = 1) => {
@@ -251,18 +274,19 @@ export function SellerHub() {
           borderWidth={1}
           borderColor="$border"
         >
-          <Package size={64} color="$slateSmoke" />
+          <Package size={64} color="$textSecondary" />
           <Heading level={2} textAlign="center">
-            No listings yet
+            Ready to list your first item?
           </Heading>
           <Text size="$5" align="center" color="$textSecondary">
-            Start selling your golf equipment today! Create your first listing in under 60 seconds.
+            Listing your golf equipment is quick and easy — it takes under 60 seconds to get
+            started.
           </Text>
           <Link href="/sell" style={{ textDecoration: "none" }}>
             <Button butterVariant="primary" size="$5">
               <Row gap="$sm" alignItems="center">
                 <Plus size={20} />
-                <Text color="$textInverse">Create First Listing</Text>
+                <Text color="$textInverse">Create Your First Listing</Text>
               </Row>
             </Button>
           </Link>
@@ -297,6 +321,26 @@ export function SellerHub() {
             </Button>
           </Link>
         </Row>
+
+        {successMessage && (
+          <Card variant="filled" padding="$md" backgroundColor="$successLight" borderRadius="$md">
+            <Row alignItems="center" justifyContent="space-between" gap="$md" flexWrap="wrap">
+              <Text color="$success" weight="semibold">
+                {successMessage}
+              </Text>
+              <Row gap="$sm" alignItems="center">
+                <Link href="/listings" style={{ textDecoration: "none" }}>
+                  <Button butterVariant="secondary" size="$3">
+                    View Shop All
+                  </Button>
+                </Link>
+                <Button size="$3" chromeless onPress={() => setSuccessMessage(null)}>
+                  Dismiss
+                </Button>
+              </Row>
+            </Row>
+          </Card>
+        )}
 
         {/* Stats Dashboard */}
         {data?.stats && (
@@ -370,7 +414,7 @@ export function SellerHub() {
             <Row gap="$sm" alignItems="center" flexWrap="wrap">
               <Text weight="medium">Status:</Text>
               <Row gap="$xs">
-                {(["all", "active", "sold"] as const).map((status) => (
+                {(["all", "active", "sold", "draft"] as const).map((status) => (
                   <Theme key={status} name={statusFilter === status ? "active" : null}>
                     <Button
                       size="$3"

@@ -39,8 +39,11 @@ export async function GET(request: NextRequest) {
 
     if (status === "active") {
       where.isSold = false;
+      where.isDraft = false;
     } else if (status === "sold") {
       where.isSold = true;
+    } else if (status === "draft") {
+      where.isDraft = true;
     }
 
     // Build order by clause
@@ -145,6 +148,7 @@ export async function GET(request: NextRequest) {
         categoryName: product.category.name,
         imageUrl: product.images[0]?.url || "/placeholder-product.jpg",
         isSold: product.isSold,
+        isDraft: product.isDraft,
         views: product.views,
         favourites: product.favourites.length,
         createdAt: product.createdAt,

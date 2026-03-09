@@ -104,6 +104,8 @@ export async function GET(req: Request) {
             firstName: true,
             lastName: true,
             imageUrl: true,
+            averageRating: true,
+            ratingCount: true,
           },
         },
         seller: {
@@ -112,6 +114,8 @@ export async function GET(req: Request) {
             firstName: true,
             lastName: true,
             imageUrl: true,
+            averageRating: true,
+            ratingCount: true,
           },
         },
         // Latest message for the preview
@@ -125,9 +129,9 @@ export async function GET(req: Request) {
           orderBy: { createdAt: "desc" },
           take: 1,
         },
-        // Latest active offer (PENDING or COUNTERED)
+        // Latest inbox-visible offer status (including accepted)
         offers: {
-          where: { status: { in: ["PENDING", "COUNTERED"] } },
+          where: { status: { in: ["PENDING", "COUNTERED", "ACCEPTED"] } },
           select: {
             id: true,
             amount: true,
@@ -165,7 +169,7 @@ export async function GET(req: Request) {
       const isBuyer = user.id === conv.buyerId;
       const otherUser = isBuyer ? conv.seller : conv.buyer;
       const lastMessage = conv.messages[0];
-      const activeOffer = conv.offers[0] ?? null;
+      const latestOffer = conv.offers[0] ?? null;
 
       // Derive last message preview text
       let lastMessagePreview: string | null = null;
@@ -195,9 +199,9 @@ export async function GET(req: Request) {
       }
 
       // Current negotiation amount (latest counter or original offer)
-      let activeOfferAmount: number | null = null;
-      if (activeOffer) {
-        activeOfferAmount = activeOffer.counterOffers[0]?.amount ?? activeOffer.amount;
+      let latestOfferAmount: number | null = null;
+      if (latestOffer) {
+        latestOfferAmount = latestOffer.counterOffers[0]?.amount ?? latestOffer.amount;
       }
 
       return {
@@ -210,15 +214,18 @@ export async function GET(req: Request) {
         otherUserId: otherUser.id,
         otherUserName: `${otherUser.firstName ?? ""} ${otherUser.lastName ?? ""}`.trim() || "User",
         otherUserImage: otherUser.imageUrl,
+        otherUserAverageRating: otherUser.averageRating,
+        otherUserRatingCount: otherUser.ratingCount,
         lastMessagePreview,
+        lastMessageType: lastMessage?.type ?? null,
         lastMessageAt: lastMessage?.createdAt
           ? lastMessage.createdAt.toISOString()
           : conv.updatedAt.toISOString(),
         unreadCount: conv._count.messages,
         userRole: isBuyer ? ("buyer" as const) : ("seller" as const),
         orderId: conv.orderId,
-        activeOfferStatus: activeOffer?.status ?? null,
-        activeOfferAmount,
+        latestOfferStatus: latestOffer?.status ?? null,
+        latestOfferAmount,
       };
     });
 

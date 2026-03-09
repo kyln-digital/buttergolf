@@ -6,10 +6,12 @@ import { OrderDetail } from "./OrderDetail";
 export const dynamic = "force-dynamic";
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const redirectUrl = `/sign-in?redirect_url=${encodeURIComponent(`/orders/${id}`)}`;
   const { userId: clerkId } = await auth();
 
   if (!clerkId) {
-    redirect("/sign-in");
+    redirect(redirectUrl);
   }
 
   // Get user from database
@@ -18,10 +20,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   });
 
   if (!user) {
-    redirect("/sign-in");
+    redirect(redirectUrl);
   }
-
-  const { id } = await params;
 
   // Fetch order
   const order = await prisma.order.findUnique({

@@ -1,14 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import { Button, Column, Input, Row, Text } from "@buttergolf/ui";
+import { useEffect, useRef, useState } from "react";
+import { Check } from "@tamagui/lucide-icons";
+import { Button, Column, Input, Row, Spinner, Text, View } from "@buttergolf/ui";
 
-type SubscribeStatus = "idle" | "submitting" | "success" | "error";
+type SubscribeStatus = "idle" | "submitting" | "successTick" | "success" | "error";
 
 export function NewsletterSection() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<SubscribeStatus>("idle");
   const [message, setMessage] = useState("");
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) {
+        clearTimeout(successTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleSubscribe = async () => {
     const normalisedEmail = email.trim().toLowerCase();
@@ -42,8 +52,12 @@ export function NewsletterSection() {
       }
 
       setEmail("");
-      setStatus("success");
+      setStatus("successTick");
       setMessage("You have successfully been subscribed.");
+
+      successTimerRef.current = setTimeout(() => {
+        setStatus("success");
+      }, 550);
     } catch (error) {
       setStatus("error");
       setMessage(
@@ -71,78 +85,96 @@ export function NewsletterSection() {
           </Text>
         </Column>
 
-        {status === "success" ? (
-          <Column
+        <>
+          <Row
+            gap="$md"
             maxWidth={500}
             width="100%"
             alignItems="center"
-            gap="$sm"
-            backgroundColor="$success"
-            borderRadius="$lg"
-            padding="$lg"
+            $sm={{ flexDirection: "column" }}
+            $md={{ flexDirection: "row" }}
           >
-            <Text size="$6" weight="semibold" color="$textInverse" textAlign="center">
-              Subscribed
-            </Text>
-            <Text size="$5" color="$textInverse" textAlign="center">
+            <Input
+              flex={1}
+              size="lg"
+              placeholder="you@example.com"
+              borderRadius="$full"
+              paddingHorizontal="$4"
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                if (status === "error" || status === "success" || status === "successTick") {
+                  setStatus("idle");
+                  setMessage("");
+                }
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && status !== "submitting") {
+                  event.preventDefault();
+                  void handleSubscribe();
+                }
+              }}
+              disabled={status === "submitting" || status === "success" || status === "successTick"}
+            />
+            <Button
+              butterVariant="primary"
+              size="$4.5"
+              animation="medium"
+              flexShrink={0}
+              paddingHorizontal={status === "successTick" ? "$3" : "$6"}
+              minWidth={status === "successTick" ? 56 : 170}
+              $sm={{ width: "100%" }}
+              $md={{ width: "auto" }}
+              onPress={() => {
+                void handleSubscribe();
+              }}
+              disabled={status === "submitting" || status === "success" || status === "successTick"}
+            >
+              {status === "submitting" ? (
+                <Row alignItems="center" justifyContent="center" gap="$sm" width="100%">
+                  <Spinner size="sm" color="$white" alignSelf="center" />
+                  <Text size="$5" color="$white" weight="bold">
+                    Subscribing...
+                  </Text>
+                </Row>
+              ) : (
+                <Row alignItems="center" justifyContent="center" gap="$sm">
+                  <View
+                    animation="bouncy"
+                    opacity={status === "success" || status === "successTick" ? 1 : 0}
+                    scale={status === "success" || status === "successTick" ? 1 : 0.5}
+                    width={status === "success" || status === "successTick" ? 18 : 0}
+                    overflow="hidden"
+                  >
+                    <Check size={18} color="$white" />
+                  </View>
+                  <Text
+                    size="$5"
+                    color="$white"
+                    weight="bold"
+                    animation="quick"
+                    opacity={status === "successTick" ? 0 : 1}
+                    x={status === "successTick" ? 8 : 0}
+                  >
+                    {status === "success" ? "Subscribed" : "Subscribe"}
+                  </Text>
+                </Row>
+              )}
+            </Button>
+          </Row>
+
+          {status === "success" && message ? (
+            <Text size="$4" color="$textSecondary" textAlign="center" maxWidth={500} width="100%">
               {message}
             </Text>
-          </Column>
-        ) : (
-          <>
-            <Row
-              gap="$md"
-              maxWidth={500}
-              width="100%"
-              alignItems="center"
-              $sm={{ flexDirection: "column" }}
-              $md={{ flexDirection: "row" }}
-            >
-              <Input
-                flex={1}
-                size="lg"
-                placeholder="you@example.com"
-                borderRadius="$full"
-                paddingHorizontal="$4"
-                value={email}
-                onChange={(event) => {
-                  setEmail(event.target.value);
-                  if (status === "error") {
-                    setStatus("idle");
-                    setMessage("");
-                  }
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && status !== "submitting") {
-                    event.preventDefault();
-                    void handleSubscribe();
-                  }
-                }}
-                disabled={status === "submitting"}
-              />
-              <Button
-                butterVariant="primary"
-                size="$5"
-                flexShrink={0}
-                paddingHorizontal="$6"
-                $sm={{ width: "100%" }}
-                $md={{ width: "auto" }}
-                onPress={() => {
-                  void handleSubscribe();
-                }}
-                disabled={status === "submitting"}
-              >
-                {status === "submitting" ? "Subscribing..." : "Subscribe"}
-              </Button>
-            </Row>
+          ) : null}
 
-            {status === "error" && message ? (
-              <Text size="$4" color="$error" textAlign="center" maxWidth={500} width="100%">
-                {message}
-              </Text>
-            ) : null}
-          </>
-        )}
+          {status === "error" && message ? (
+            <Text size="$4" color="$error" textAlign="center" maxWidth={500} width="100%">
+              {message}
+            </Text>
+          ) : null}
+        </>
       </Column>
     </Column>
   );

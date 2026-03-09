@@ -46,9 +46,9 @@ export function SortDropdown({
         paddingHorizontal="$3"
         borderRadius={10}
         borderWidth={1}
-        borderColor="$border"
+        borderColor="$fieldBorder"
         backgroundColor="$surface"
-        hoverStyle={{ borderColor: "$borderHover" }}
+        hoverStyle={{ borderColor: "$fieldBorderHover" }}
         focusStyle={{ borderColor: "$primary", outlineWidth: 0 }}
         iconAfter={ChevronDown}
       >

@@ -1,10 +1,11 @@
 "use client";
 
-/* eslint-disable react/forbid-elements -- Complex form with inline-styled select/textarea elements */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { LISTING_PRICE_LIMITS, getListingPriceBoundsMessage } from "@buttergolf/constants";
+import { useLocalStorageState } from "@/hooks/useLocalStorageState";
+import { useAutoSave, type AutoSaveStatus, type AutoSaveResult } from "@/hooks/useAutoSave";
 import {
   Column,
   Row,
@@ -142,7 +143,70 @@ const HelperText = ({ children }: { children: React.ReactNode }) => (
   </Text>
 );
 
-export function SellFormClient() {
+const SELL_DRAFT_STORAGE_KEY = "buttergolf-sell-draft-v1";
+
+const EMPTY_FORM_DATA: FormData = {
+  title: "",
+  description: "",
+  price: "",
+  brandId: "",
+  brandName: "",
+  model: "",
+  categoryId: "",
+  flex: "",
+  loft: "",
+  woodsSubcategory: "",
+  headCoverIncluded: false,
+  gripCondition: 7,
+  headCondition: 7,
+  shaftCondition: 7,
+  images: [],
+};
+
+function hasMeaningfulDraftContent(data: FormData): boolean {
+  return (
+    data.title.trim().length > 0 ||
+    data.description.trim().length > 0 ||
+    data.price.trim().length > 0 ||
+    data.brandId.trim().length > 0 ||
+    data.model.trim().length > 0 ||
+    data.categoryId.trim().length > 0 ||
+    data.flex.trim().length > 0 ||
+    data.loft.trim().length > 0 ||
+    data.woodsSubcategory.trim().length > 0 ||
+    data.headCoverIncluded ||
+    data.gripCondition !== 7 ||
+    data.headCondition !== 7 ||
+    data.shaftCondition !== 7 ||
+    data.images.length > 0
+  );
+}
+
+// Save status indicator
+const SaveStatusIndicator = ({ status }: { status: AutoSaveStatus }) => {
+  if (status === "idle") return null;
+
+  const label =
+    status === "saving"
+      ? "Saving draft…"
+      : status === "saved"
+        ? "Draft saved"
+        : "Failed to save draft";
+  const colour = status === "error" ? "$error" : "$textSecondary";
+
+  return (
+    <Text size="$2" color={colour}>
+      {label}
+    </Text>
+  );
+};
+
+interface SellFormClientProps {
+  /** If provided, loads an existing draft from the database instead of starting fresh */
+  draftId?: string;
+}
+
+export function SellFormClient({ draftId }: SellFormClientProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -154,23 +218,141 @@ export function SellFormClient() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [userAddedText, setUserAddedText] = useState<string>(""); // Track any manual additions
   const [isEditingTitle, setIsEditingTitle] = useState(false); // Track if user is manually editing
-  const [formData, setFormData] = useState<FormData>({
-    title: "",
-    description: "",
-    price: "",
-    brandId: "",
-    brandName: "",
-    model: "",
-    categoryId: "",
-    flex: "",
-    loft: "",
-    woodsSubcategory: "",
-    headCoverIncluded: false,
-    gripCondition: 7,
-    headCondition: 7,
-    shaftCondition: 7,
-    images: [],
+  // When the user fully replaces the auto-generated title, stop overwriting it
+  const titleManuallyOverriddenRef = useRef(false);
+
+  // --- Persisted form state (localStorage) ---
+  const [formData, setFormData, { isHydrated, clear: clearLocalDraft }] =
+    useLocalStorageState<FormData>(SELL_DRAFT_STORAGE_KEY, EMPTY_FORM_DATA, { debounceMs: 1000 });
+
+  // Track whether the user has dismissed the recovery prompt
+  const [recoveryDismissed, setRecoveryDismissed] = useState(false);
+  // The draftId of the DB-saved draft (set after first autosave, or passed in as prop)
+  const [savedDraftId, setSavedDraftId] = useState<string | null>(draftId ?? null);
+  // Stable requestId for first-create idempotency until we get a real draft ID.
+  const draftRequestIdRef = useRef<string>(uuidv4());
+
+  // Show the recovery banner when localStorage has meaningful data and
+  // we're NOT loading a specific draft from the DB
+  const hasLocalDraft =
+    isHydrated && !draftId && !recoveryDismissed && hasMeaningfulDraftContent(formData);
+
+  // --- DB autosave via useAutoSave ---
+  const persistDraft = useCallback(
+    async (data: FormData): Promise<AutoSaveResult> => {
+      if (!hasMeaningfulDraftContent(data)) {
+        return "skipped";
+      }
+
+      const parsedPrice = Number.parseFloat(data.price);
+      const safePrice = Number.isFinite(parsedPrice) ? parsedPrice : 0;
+
+      try {
+        if (savedDraftId) {
+          const updatePayload: Record<string, unknown> = {
+            title: data.title,
+            description: data.description,
+            price: safePrice,
+            brandId: data.brandId || null,
+            model: data.model || null,
+            isDraft: true,
+            flex: data.flex || null,
+            loft: data.loft || null,
+            woodsSubcategory: data.woodsSubcategory || null,
+            headCoverIncluded: data.headCoverIncluded,
+            gripCondition: data.gripCondition,
+            headCondition: data.headCondition,
+            shaftCondition: data.shaftCondition,
+          };
+
+          if (data.categoryId.trim().length > 0) {
+            updatePayload.categoryId = data.categoryId;
+          }
+
+          // Update existing draft
+          const response = await fetch(`/api/seller/products/${savedDraftId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatePayload),
+          });
+          return response.ok ? "saved" : "error";
+        }
+
+        // Create new draft
+        const response = await fetch("/api/products", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...data,
+            price: safePrice,
+            brandName: undefined,
+            requestId: draftRequestIdRef.current,
+            isDraft: true,
+          }),
+        });
+
+        if (response.ok) {
+          const product = await response.json();
+          setSavedDraftId(product.id);
+          return "saved";
+        }
+        return "error";
+      } catch {
+        return "error";
+      }
+    },
+    [savedDraftId]
+  );
+
+  const handleAutoSave = useCallback(
+    async (data: FormData): Promise<AutoSaveResult> => persistDraft(data),
+    [persistDraft]
+  );
+
+  const { status: autoSaveStatus } = useAutoSave<FormData>({
+    data: formData,
+    onSave: handleAutoSave,
+    debounceMs: 10_000,
+    enabled: isHydrated && !loading,
   });
+
+  // --- Load draft from DB when draftId prop is provided ---
+  useEffect(() => {
+    if (!draftId) return;
+
+    const loadDraft = async () => {
+      try {
+        const response = await fetch(`/api/products/${draftId}`);
+        if (!response.ok) return;
+
+        const product = await response.json();
+
+        const loaded: FormData = {
+          title: product.title || "",
+          description: product.description || "",
+          price: product.price ? String(product.price) : "",
+          brandId: product.brandId || "",
+          brandName: product.brand?.name || "",
+          model: product.model || "",
+          categoryId: product.categoryId || "",
+          flex: product.flex || "",
+          loft: product.loft || "",
+          woodsSubcategory: product.woodsSubcategory || "",
+          headCoverIncluded: product.headCoverIncluded || false,
+          gripCondition: product.gripCondition ?? 7,
+          headCondition: product.headCondition ?? 7,
+          shaftCondition: product.shaftCondition ?? 7,
+          images: product.images?.map((img: { url: string }) => img.url) || [],
+        };
+
+        setFormData(loaded);
+      } catch {
+        // If load fails, start with whatever localStorage has
+      }
+    };
+
+    void loadDraft();
+  }, [draftId, setFormData]);
 
   // Helper function to singularize category names
   const singularize = (word: string): string => {
@@ -230,6 +412,9 @@ export function SellFormClient() {
 
   // Auto-generate title when relevant fields change
   useEffect(() => {
+    // Respect the user's manual title override
+    if (titleManuallyOverriddenRef.current) return;
+
     const autoGeneratedTitle = generateTitle();
 
     // Always update with auto-generated title + any user additions
@@ -248,6 +433,7 @@ export function SellFormClient() {
     categories,
     generateTitle,
     formData.title,
+    setFormData,
   ]);
 
   // Load categories on mount
@@ -386,7 +572,12 @@ export function SellFormClient() {
       }
 
       const product = await response.json();
-      router.push(`/products/${product.id}`);
+      clearLocalDraft();
+      const successParams = new URLSearchParams({
+        listed: "1",
+        title: product.title || formData.title,
+      });
+      router.push(`/seller/listings?${successParams.toString()}`);
       // Note: Don't reset isSubmittingRef here - we're navigating away
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create listing");
@@ -409,44 +600,22 @@ export function SellFormClient() {
     setLoading(true);
     setError(null);
 
-    const parsedPrice = Number.parseFloat(formData.price);
-    if (
-      formData.price &&
-      (Number.isNaN(parsedPrice) ||
-        parsedPrice < LISTING_PRICE_LIMITS.MIN ||
-        parsedPrice > LISTING_PRICE_LIMITS.MAX)
-    ) {
-      setError(getListingPriceBoundsMessage());
+    if (!hasMeaningfulDraftContent(formData)) {
+      setError("Add at least one detail before saving a draft.");
       setLoading(false);
       isSubmittingRef.current = false;
       return;
     }
 
     try {
-      const response = await fetch("/api/products", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...formData,
-          price: formData.price ? parsedPrice : 0,
-          // Don't send brandName (display only)
-          brandName: undefined,
-          // Request ID for server-side idempotency
-          requestId: requestIdRef.current,
-          // Mark as draft
-          isDraft: true,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to save draft");
+      const result = await persistDraft(formData);
+      if (result !== "saved") {
+        throw new Error("Failed to save draft");
       }
 
-      // Navigate to profile/listings page after saving draft
-      router.push("/profile");
+      // Navigate to seller listings page after saving draft
+      clearLocalDraft();
+      router.push("/seller/listings");
       // Note: Don't reset isSubmittingRef here - we're navigating away
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save draft");
@@ -488,8 +657,46 @@ export function SellFormClient() {
         <Column gap="$xl" paddingVertical="$10" width="100%" alignItems="stretch">
           {/* Header */}
           <Column gap="$sm" alignItems="center">
-            <Heading level={2}>Sell an item</Heading>
+            <Row gap="$md" alignItems="center">
+              <Heading level={2}>Sell an item</Heading>
+              <SaveStatusIndicator status={autoSaveStatus} />
+            </Row>
           </Column>
+
+          {/* Draft recovery banner */}
+          {hasLocalDraft && (
+            <Card variant="outlined" padding="$md" backgroundColor="$primaryLight">
+              <Row gap="$md" alignItems="center" justifyContent="space-between" flexWrap="wrap">
+                <Text size="$5" color="$text">
+                  You have an unsaved draft. Would you like to continue where you left off?
+                </Text>
+                <Row gap="$sm">
+                  <Button
+                    size="$3"
+                    chromeless
+                    onPress={() => {
+                      clearLocalDraft();
+                      setFormData(EMPTY_FORM_DATA);
+                      setRecoveryDismissed(true);
+                    }}
+                  >
+                    <Text size="$4" color="$textSecondary">
+                      Discard
+                    </Text>
+                  </Button>
+                  <Button
+                    butterVariant="primary"
+                    size="$3"
+                    onPress={() => setRecoveryDismissed(true)}
+                  >
+                    <Text size="$4" color="$textInverse">
+                      Continue
+                    </Text>
+                  </Button>
+                </Row>
+              </Row>
+            </Card>
+          )}
 
           {/* Main Form Card */}
           <Card
@@ -545,8 +752,10 @@ export function SellFormClient() {
                             if (value.startsWith(autoGenerated)) {
                               const userText = value.substring(autoGenerated.length).trim();
                               setUserAddedText(userText);
+                              titleManuallyOverriddenRef.current = false;
                             } else {
-                              // If user changed the auto-generated part, store the whole thing
+                              // User completely replaced the auto-generated prefix
+                              titleManuallyOverriddenRef.current = true;
                               setFormData({ ...formData, title: value });
                             }
                           }}
@@ -588,6 +797,7 @@ export function SellFormClient() {
                   {/* Category */}
                   <Column gap="$xs" width="100%">
                     <FormLabel required>Category</FormLabel>
+                    {/* eslint-disable-next-line react/forbid-elements -- TODO: replace with design-system Select */}
                     <select
                       value={formData.categoryId}
                       onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
@@ -679,6 +889,7 @@ export function SellFormClient() {
                           // Reset manual editing when brand changes
                           setUserAddedText("");
                           setIsEditingTitle(false);
+                          titleManuallyOverriddenRef.current = false;
                         }}
                         fetchSuggestions={async (query) => {
                           const res = await fetch(`/api/brands?query=${encodeURIComponent(query)}`);
@@ -860,6 +1071,7 @@ export function SellFormClient() {
                   {/* Description */}
                   <Column gap="$xs" width="100%">
                     <FormLabel required>Describe your item</FormLabel>
+                    {/* eslint-disable-next-line react/forbid-elements -- TODO: replace with design-system TextArea */}
                     <textarea
                       value={formData.description}
                       onChange={(e) =>
@@ -902,6 +1114,7 @@ export function SellFormClient() {
                   {shouldShowFlex() && (
                     <Column gap="$xs" width="100%">
                       <FormLabel>Shaft Flex</FormLabel>
+                      {/* eslint-disable-next-line react/forbid-elements -- TODO: replace with design-system Select */}
                       <select
                         value={formData.flex}
                         onChange={(e) => setFormData({ ...formData, flex: e.target.value })}
@@ -943,6 +1156,7 @@ export function SellFormClient() {
                   {shouldShowLoft() && (
                     <Column gap="$xs" width="100%">
                       <FormLabel>Loft</FormLabel>
+                      {/* eslint-disable-next-line react/forbid-elements -- TODO: replace with design-system Select */}
                       <select
                         value={formData.loft}
                         onChange={(e) => setFormData({ ...formData, loft: e.target.value })}
@@ -1033,7 +1247,7 @@ export function SellFormClient() {
                     </Button>
                     {/* Use type="submit" for native form submission only - no onPress to prevent dual submission */}
                     <Button size="$5" disabled={loading} type="submit" flex={1}>
-                      {loading ? "Uploading..." : "Upload"}
+                      {loading ? "Publishing..." : "List item"}
                     </Button>
                   </Row>
                   <Text size="$2" color="$helperText" textAlign="center">

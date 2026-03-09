@@ -60,9 +60,40 @@ export function ListingsClient({
 
   // Parse initial filters from URL
   const getInitialFilters = (): FilterState => {
+    const priceMinBound = Math.floor(initialFilters.priceRange.min);
+    const priceMaxBound = Math.ceil(initialFilters.priceRange.max);
+
+    const parseNumericParam = (value: string | null): number | undefined => {
+      const parsed = Number.parseFloat(value ?? "");
+      return Number.isFinite(parsed) ? parsed : undefined;
+    };
+
+    const normalisePriceRange = (
+      rawMin: number | undefined,
+      rawMax: number | undefined
+    ): { minPrice: number; maxPrice: number } => {
+      const boundedMin = Math.max(
+        priceMinBound,
+        Math.min(Math.floor(rawMin ?? priceMinBound), priceMaxBound)
+      );
+      const boundedMax = Math.max(
+        priceMinBound,
+        Math.min(Math.ceil(rawMax ?? priceMaxBound), priceMaxBound)
+      );
+
+      return {
+        minPrice: Math.min(boundedMin, boundedMax),
+        maxPrice: Math.max(boundedMin, boundedMax),
+      };
+    };
+
     // If we have an initialCategory from the route (e.g., /category/woods), use it
     // This takes precedence over localStorage and URL params for category
     const categoryFromRoute = initialCategory;
+    const conditionsFromUrl = searchParams.getAll("condition");
+    const brandsFromUrl = searchParams.getAll("brand");
+    const minPriceFromUrl = parseNumericParam(searchParams.get("minPrice"));
+    const maxPriceFromUrl = parseNumericParam(searchParams.get("maxPrice"));
 
     // Try to load from localStorage first
     if (globalThis.window !== undefined) {
@@ -70,19 +101,34 @@ export function ListingsClient({
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
+          const storedConditions = Array.isArray(parsed.conditions)
+            ? parsed.conditions.filter(
+                (condition: unknown): condition is string => typeof condition === "string"
+              )
+            : [];
+          const storedBrands = Array.isArray(parsed.brands)
+            ? parsed.brands.filter((brand: unknown): brand is string => typeof brand === "string")
+            : [];
+          const storedMinPrice =
+            typeof parsed.minPrice === "number"
+              ? parsed.minPrice
+              : parseNumericParam(String(parsed.minPrice ?? ""));
+          const storedMaxPrice =
+            typeof parsed.maxPrice === "number"
+              ? parsed.maxPrice
+              : parseNumericParam(String(parsed.maxPrice ?? ""));
+          const { minPrice, maxPrice } = normalisePriceRange(
+            minPriceFromUrl ?? storedMinPrice,
+            maxPriceFromUrl ?? storedMaxPrice
+          );
+
           // Merge URL params (they take precedence), but route category wins for category
           return {
             category: categoryFromRoute || searchParams.get("category") || parsed.category || null,
-            conditions: searchParams.getAll("condition") || parsed.conditions || [],
-            minPrice:
-              Number.parseFloat(searchParams.get("minPrice") || "") ||
-              parsed.minPrice ||
-              initialFilters.priceRange.min,
-            maxPrice:
-              Number.parseFloat(searchParams.get("maxPrice") || "") ||
-              parsed.maxPrice ||
-              initialFilters.priceRange.max,
-            brands: searchParams.getAll("brand") || parsed.brands || [],
+            conditions: conditionsFromUrl.length > 0 ? conditionsFromUrl : storedConditions,
+            minPrice,
+            maxPrice,
+            brands: brandsFromUrl.length > 0 ? brandsFromUrl : storedBrands,
             showFavouritesOnly:
               searchParams.get("favourites") === "true" || parsed.showFavouritesOnly || false,
           };
@@ -93,14 +139,13 @@ export function ListingsClient({
     }
 
     // Parse from URL (route category takes precedence)
+    const { minPrice, maxPrice } = normalisePriceRange(minPriceFromUrl, maxPriceFromUrl);
     return {
       category: categoryFromRoute || searchParams.get("category") || null,
-      conditions: searchParams.getAll("condition") || [],
-      minPrice:
-        Number.parseFloat(searchParams.get("minPrice") || "") || initialFilters.priceRange.min,
-      maxPrice:
-        Number.parseFloat(searchParams.get("maxPrice") || "") || initialFilters.priceRange.max,
-      brands: searchParams.getAll("brand") || [],
+      conditions: conditionsFromUrl,
+      minPrice,
+      maxPrice,
+      brands: brandsFromUrl,
       showFavouritesOnly: searchParams.get("favourites") === "true" || false,
     };
   };

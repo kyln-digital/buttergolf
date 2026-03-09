@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { getBaseUrl } from "@/lib/base-url";
 
 /**
  * Email Service using Resend
@@ -28,7 +29,7 @@ function getResendClient(): Resend {
 // Use verified Resend domain for sending emails
 const FROM_EMAIL = "ButterGolf <notifications@notifications.buttergolf.com>";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://buttergolf.co.uk";
+const BASE_URL = getBaseUrl();
 
 /**
  * Escape HTML special characters to prevent XSS in email templates.
@@ -113,10 +114,10 @@ export async function sendOrderConfirmationEmail(params: {
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #323232; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: #F45314; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-            .header h1 { color: white; margin: 0; font-size: 24px; }
+            .header h1 { color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; margin: 0; font-size: 24px; }
             .content { background: #FFFAD2; padding: 30px; border-radius: 0 0 8px 8px; }
             .order-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
-            .button { display: inline-block; background: #F45314; color: white; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
+            .button { display: inline-block; background: #F45314; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
             .footer { text-align: center; padding: 20px; color: #545454; font-size: 14px; }
           </style>
         </head>
@@ -204,11 +205,11 @@ export async function sendNewSaleEmail(params: {
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #323232; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: #F45314; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-            .header h1 { color: white; margin: 0; font-size: 24px; }
+            .header h1 { color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; margin: 0; font-size: 24px; }
             .content { background: #FFFAD2; padding: 30px; border-radius: 0 0 8px 8px; }
             .order-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
-            .payout-box { background: #02aaa4; color: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
-            .button { display: inline-block; background: #F45314; color: white; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
+            .payout-box { background: #02aaa4; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
+            .button { display: inline-block; background: #F45314; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
             .footer { text-align: center; padding: 20px; color: #545454; font-size: 14px; }
           </style>
         </head>
@@ -300,10 +301,10 @@ export async function sendShippedEmail(params: {
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #323232; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: #F45314; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-            .header h1 { color: white; margin: 0; font-size: 24px; }
+            .header h1 { color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; margin: 0; font-size: 24px; }
             .content { background: #FFFAD2; padding: 30px; border-radius: 0 0 8px 8px; }
-            .tracking-box { background: #3c50e0; color: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
-            .button { display: inline-block; background: #F45314; color: white; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
+            .tracking-box { background: #3c50e0; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
+            .button { display: inline-block; background: #F45314; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
             .button-secondary { display: inline-block; background: white; color: #F45314; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; border: 2px solid #F45314; }
             .footer { text-align: center; padding: 20px; color: #545454; font-size: 14px; }
           </style>
@@ -386,10 +387,10 @@ export async function sendNewMessageEmail(params: {
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #323232; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: #F45314; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-            .header h1 { color: white; margin: 0; font-size: 20px; }
+            .header h1 { color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; margin: 0; font-size: 20px; }
             .content { background: #FFFAD2; padding: 30px; border-radius: 0 0 8px 8px; }
             .message-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #F45314; }
-            .button { display: inline-block; background: #F45314; color: white; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
+            .button { display: inline-block; background: #F45314; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
             .footer { text-align: center; padding: 20px; color: #545454; font-size: 14px; }
           </style>
         </head>
@@ -468,9 +469,9 @@ export async function sendDeliveredEmail(params: {
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #323232; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: #02aaa4; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-            .header h1 { color: white; margin: 0; font-size: 24px; }
+            .header h1 { color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; margin: 0; font-size: 24px; }
             .content { background: #FFFAD2; padding: 30px; border-radius: 0 0 8px 8px; }
-            .button { display: inline-block; background: #F45314; color: white; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
+            .button { display: inline-block; background: #F45314; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
             .footer { text-align: center; padding: 20px; color: #545454; font-size: 14px; }
           </style>
         </head>
@@ -552,10 +553,10 @@ export async function sendLabelGeneratedEmail(params: {
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #323232; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: #F45314; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-            .header h1 { color: white; margin: 0; font-size: 24px; }
+            .header h1 { color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; margin: 0; font-size: 24px; }
             .content { background: #FFFAD2; padding: 30px; border-radius: 0 0 8px 8px; }
             .info-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
-            .button { display: inline-block; background: #F45314; color: white; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
+            .button { display: inline-block; background: #F45314; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
             .footer { text-align: center; padding: 20px; color: #545454; font-size: 14px; }
           </style>
         </head>
@@ -644,11 +645,11 @@ export async function sendInTransitEmail(params: {
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #323232; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: #F45314; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-            .header h1 { color: white; margin: 0; font-size: 24px; }
+            .header h1 { color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; margin: 0; font-size: 24px; }
             .content { background: #FFFAD2; padding: 30px; border-radius: 0 0 8px 8px; }
-            .tracking-box { background: #3c50e0; color: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
+            .tracking-box { background: #3c50e0; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
             .location-box { background: white; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #F45314; }
-            .button { display: inline-block; background: #F45314; color: white; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
+            .button { display: inline-block; background: #F45314; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
             .footer { text-align: center; padding: 20px; color: #545454; font-size: 14px; }
           </style>
         </head>
@@ -748,10 +749,10 @@ export async function sendOutForDeliveryEmail(params: {
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #323232; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: #02aaa4; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-            .header h1 { color: white; margin: 0; font-size: 24px; }
+            .header h1 { color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; margin: 0; font-size: 24px; }
             .content { background: #FFFAD2; padding: 30px; border-radius: 0 0 8px 8px; }
-            .alert-box { background: #02aaa4; color: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
-            .button { display: inline-block; background: #F45314; color: white; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
+            .alert-box { background: #02aaa4; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
+            .button { display: inline-block; background: #F45314; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
             .footer { text-align: center; padding: 20px; color: #545454; font-size: 14px; }
             .checklist { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
           </style>
@@ -849,11 +850,11 @@ export async function sendAutoReleaseReminderEmail(params: {
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #323232; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: #F45314; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-            .header h1 { color: white; margin: 0; font-size: 24px; }
+            .header h1 { color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; margin: 0; font-size: 24px; }
             .content { background: #FFFAD2; padding: 30px; border-radius: 0 0 8px 8px; }
-            .alert-box { background: #F45314; color: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
+            .alert-box { background: #F45314; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
             .info-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
-            .button { display: inline-block; background: #F45314; color: white; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
+            .button { display: inline-block; background: #F45314; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
             .button-secondary { display: inline-block; background: white; color: #F45314; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; border: 2px solid #F45314; }
             .footer { text-align: center; padding: 20px; color: #545454; font-size: 14px; }
           </style>
@@ -946,11 +947,11 @@ export async function sendPaymentReleasedEmail(params: {
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #323232; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: #02aaa4; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-            .header h1 { color: white; margin: 0; font-size: 24px; }
+            .header h1 { color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; margin: 0; font-size: 24px; }
             .content { background: #FFFAD2; padding: 30px; border-radius: 0 0 8px 8px; }
-            .payout-box { background: #02aaa4; color: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
+            .payout-box { background: #02aaa4; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
             .info-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
-            .button { display: inline-block; background: #F45314; color: white; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
+            .button { display: inline-block; background: #F45314; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
             .footer { text-align: center; padding: 20px; color: #545454; font-size: 14px; }
           </style>
         </head>
@@ -1032,10 +1033,10 @@ export async function sendPaymentOnHoldEmail(params: {
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #323232; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: #3c50e0; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-            .header h1 { color: white; margin: 0; font-size: 24px; }
+            .header h1 { color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; margin: 0; font-size: 24px; }
             .content { background: #FFFAD2; padding: 30px; border-radius: 0 0 8px 8px; }
             .protection-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3c50e0; }
-            .button { display: inline-block; background: #F45314; color: white; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
+            .button { display: inline-block; background: #F45314; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
             .footer { text-align: center; padding: 20px; color: #545454; font-size: 14px; }
           </style>
         </head>
@@ -1121,12 +1122,12 @@ export async function sendNewOfferEmail(params: {
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #323232; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: #F45314; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-            .header h1 { color: white; margin: 0; font-size: 20px; }
+            .header h1 { color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; margin: 0; font-size: 20px; }
             .content { background: #FFFAD2; padding: 30px; border-radius: 0 0 8px 8px; }
             .offer-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #F45314; text-align: center; }
             .offer-amount { font-size: 28px; font-weight: 700; color: #F45314; }
             .listed-price { font-size: 14px; color: #545454; text-decoration: line-through; }
-            .button { display: inline-block; background: #F45314; color: white; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
+            .button { display: inline-block; background: #F45314; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
             .footer { text-align: center; padding: 20px; color: #545454; font-size: 14px; }
           </style>
         </head>
@@ -1200,11 +1201,11 @@ export async function sendCounterOfferEmail(params: {
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #323232; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: #F45314; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-            .header h1 { color: white; margin: 0; font-size: 20px; }
+            .header h1 { color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; margin: 0; font-size: 20px; }
             .content { background: #FFFAD2; padding: 30px; border-radius: 0 0 8px 8px; }
             .offer-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3E3B2C; text-align: center; }
             .offer-amount { font-size: 28px; font-weight: 700; color: #3E3B2C; }
-            .button { display: inline-block; background: #F45314; color: white; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
+            .button { display: inline-block; background: #F45314; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
             .footer { text-align: center; padding: 20px; color: #545454; font-size: 14px; }
           </style>
         </head>
@@ -1278,11 +1279,11 @@ export async function sendOfferAcceptedEmail(params: {
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #323232; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: #02aaa4; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-            .header h1 { color: white; margin: 0; font-size: 20px; }
+            .header h1 { color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; margin: 0; font-size: 20px; }
             .content { background: #FFFAD2; padding: 30px; border-radius: 0 0 8px 8px; }
             .offer-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #02aaa4; text-align: center; }
             .offer-amount { font-size: 28px; font-weight: 700; color: #02aaa4; }
-            .button { display: inline-block; background: #F45314; color: white; padding: 14px 32px; text-decoration: none; border-radius: 24px; font-weight: 600; font-size: 16px; }
+            .button { display: inline-block; background: #F45314; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 14px 32px; text-decoration: none; border-radius: 24px; font-weight: 600; font-size: 16px; }
             .footer { text-align: center; padding: 20px; color: #545454; font-size: 14px; }
           </style>
         </head>
@@ -1360,9 +1361,9 @@ export async function sendOfferRejectedEmail(params: {
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #323232; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: #3E3B2C; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-            .header h1 { color: white; margin: 0; font-size: 20px; }
+            .header h1 { color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; margin: 0; font-size: 20px; }
             .content { background: #FFFAD2; padding: 30px; border-radius: 0 0 8px 8px; }
-            .button { display: inline-block; background: #F45314; color: white; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
+            .button { display: inline-block; background: #F45314; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
             .footer { text-align: center; padding: 20px; color: #545454; font-size: 14px; }
           </style>
         </head>

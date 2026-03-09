@@ -1,14 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { useUser } from "@clerk/nextjs";
-import { Column, useMedia } from "@buttergolf/ui";
+import { Column } from "@buttergolf/ui";
 import { HeroStatic } from "./marketplace/HeroStatic";
-import { BuySellToggle } from "./marketplace/BuySellToggle";
 import { CategoriesSection } from "./marketplace/CategoriesSection";
-import { SellingPlaceholder } from "./marketplace/SellingPlaceholder";
-import { SellerHub } from "./marketplace/seller-hub/SellerHub";
 import { RecentlyListedSectionClient } from "./marketplace/RecentlyListedSection";
+import { MyListingsSection } from "./marketplace/MyListingsSection";
 import { TrustSection } from "./marketplace/TrustSection";
 import { NewsletterSection } from "./marketplace/NewsletterSection";
 import { FooterSection } from "./marketplace/FooterSection";
@@ -17,13 +13,13 @@ import type { ProductCardData } from "@buttergolf/app";
 
 interface MarketplaceHomeClientProps {
   readonly products: ProductCardData[];
+  readonly myProducts: ProductCardData[] | null;
 }
 
-export default function MarketplaceHomeClient({ products }: Readonly<MarketplaceHomeClientProps>) {
-  const [activeMode, setActiveMode] = useState<"buying" | "selling">("buying");
-  const { isSignedIn } = useUser();
-  const media = useMedia();
-
+export default function MarketplaceHomeClient({
+  products,
+  myProducts,
+}: Readonly<MarketplaceHomeClientProps>) {
   return (
     <Column width="100%">
       {/* Hero - Immediate page load animation (no scroll trigger) */}
@@ -31,34 +27,25 @@ export default function MarketplaceHomeClient({ products }: Readonly<Marketplace
         <HeroStatic />
       </AnimatedView>
 
-      {/* Buy/Sell Toggle - desktop only (mobile uses bottom nav for selling) */}
-      {media.gtSm && (
+      {/* Categories Section - Immediate page load animation (delay removed) */}
+      <AnimatedView delay={0}>
+        <CategoriesSection />
+      </AnimatedView>
+
+      {/* My Listings - only shown to signed-in users */}
+      {myProducts !== null && (
         <AnimatedView delay={0}>
-          <Column paddingTop="$6" paddingBottom="$4" backgroundColor="$background">
-            <BuySellToggle activeMode={activeMode} onModeChange={setActiveMode} />
-          </Column>
+          <MyListingsSection products={myProducts} />
         </AnimatedView>
       )}
 
-      {/* Conditionally render based on active mode */}
-      {activeMode === "buying" ? (
-        <>
-          {/* Categories Section - Immediate page load animation (delay removed) */}
-          <AnimatedView delay={0}>
-            <CategoriesSection />
-          </AnimatedView>
-
-          {/* Below the fold sections - simple fade in (delays removed) */}
-          <AnimatedView delay={0}>
-            <RecentlyListedSectionClient products={products} />
-          </AnimatedView>
-          <AnimatedView delay={0}>
-            <TrustSection />
-          </AnimatedView>
-        </>
-      ) : (
-        <AnimatedView delay={0}>{isSignedIn ? <SellerHub /> : <SellingPlaceholder />}</AnimatedView>
-      )}
+      {/* Below the fold sections - simple fade in (delays removed) */}
+      <AnimatedView delay={0}>
+        <RecentlyListedSectionClient products={products} />
+      </AnimatedView>
+      <AnimatedView delay={0}>
+        <TrustSection />
+      </AnimatedView>
 
       <AnimatedView delay={0}>
         <NewsletterSection />

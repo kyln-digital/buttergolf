@@ -61,7 +61,7 @@ export function RecentlyListedSectionClient({ products }: RecentlyListedSectionC
         {/* View All Button - Centered Below Carousel */}
         <Row alignItems="center" justifyContent="center" width="100%" paddingTop="$sm">
           <Link href="/listings" passHref style={{ textDecoration: "none" }}>
-            <Button butterVariant="primary" size="$5">
+            <Button butterVariant="primary" size="$5" width={320}>
               View all listings
             </Button>
           </Link>

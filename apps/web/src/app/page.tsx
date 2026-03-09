@@ -1,10 +1,13 @@
+import { auth } from "@clerk/nextjs/server";
 import MarketplaceHomeClient from "./_components/MarketplaceHomeClient";
-import { getRecentProducts } from "./actions/products";
+import { getRecentProducts, getMyProducts } from "./actions/products";
 
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  const products = await getRecentProducts(12);
+  const [products, { userId: clerkId }] = await Promise.all([getRecentProducts(12), auth()]);
 
-  return <MarketplaceHomeClient products={products} />;
+  const myProducts = clerkId ? await getMyProducts(clerkId, 12) : null;
+
+  return <MarketplaceHomeClient products={products} myProducts={myProducts} />;
 }

@@ -122,19 +122,19 @@ export function SellerOnboardingScreen({
         {/* Title */}
         <Text size="$9" fontWeight="700" color="$text" textAlign="center">
           {showContinue
-            ? "Complete Your Seller Setup"
+            ? "You're Almost There!"
             : showRestricted
               ? "Account Needs Attention"
-              : "Become a Seller"}
+              : "Start Selling on ButterGolf"}
         </Text>
 
         {/* Description */}
         <Text size="$5" color="$textSecondary" textAlign="center" maxWidth={320} lineHeight={22}>
           {showContinue
-            ? "You're almost there! Complete a few more steps to start selling your golf equipment on ButterGolf."
+            ? "Just a few more steps and you'll be ready to list your golf equipment on ButterGolf."
             : showRestricted
               ? "Your seller account needs additional information. Please complete the verification to continue selling."
-              : "Start selling your golf equipment to thousands of enthusiasts. Set up takes just a few minutes."}
+              : "Join thousands of golfers buying and selling equipment. Getting set up takes just a few minutes."}
         </Text>
 
         {/* Benefits list */}

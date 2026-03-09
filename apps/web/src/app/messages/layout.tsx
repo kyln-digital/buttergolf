@@ -52,6 +52,8 @@ export default async function MessagesLayoutPage({ children }: { children: React
           lastName: true,
           email: true,
           imageUrl: true,
+          averageRating: true,
+          ratingCount: true,
         },
       },
       seller: {
@@ -61,6 +63,8 @@ export default async function MessagesLayoutPage({ children }: { children: React
           lastName: true,
           email: true,
           imageUrl: true,
+          averageRating: true,
+          ratingCount: true,
         },
       },
       messages: {
@@ -74,7 +78,8 @@ export default async function MessagesLayoutPage({ children }: { children: React
         },
       },
       offers: {
-        where: { status: { in: ["PENDING", "COUNTERED"] } },
+        // Pull the latest offer status shown in inbox rows, including accepted offers.
+        where: { status: { in: ["PENDING", "COUNTERED", "ACCEPTED"] } },
         select: {
           id: true,
           amount: true,
@@ -108,7 +113,7 @@ export default async function MessagesLayoutPage({ children }: { children: React
     const otherUserName =
       `${otherUser.firstName || ""} ${otherUser.lastName || ""}`.trim() || otherUser.email;
     const lastMessage = conv.messages[0];
-    const activeOffer = conv.offers[0] ?? null;
+    const latestOffer = conv.offers[0] ?? null;
 
     let lastMessagePreview: string | null = null;
     if (lastMessage) {
@@ -136,9 +141,9 @@ export default async function MessagesLayoutPage({ children }: { children: React
       }
     }
 
-    let activeOfferAmount: number | null = null;
-    if (activeOffer) {
-      activeOfferAmount = activeOffer.counterOffers[0]?.amount ?? activeOffer.amount;
+    let latestOfferAmount: number | null = null;
+    if (latestOffer) {
+      latestOfferAmount = latestOffer.counterOffers[0]?.amount ?? latestOffer.amount;
     }
 
     return {
@@ -151,22 +156,28 @@ export default async function MessagesLayoutPage({ children }: { children: React
       otherUserId: otherUser.id,
       otherUserName,
       otherUserImage: otherUser.imageUrl,
+      otherUserAverageRating: otherUser.averageRating,
+      otherUserRatingCount: otherUser.ratingCount,
       lastMessagePreview,
+      lastMessageType: lastMessage?.type ?? null,
       lastMessageAt: lastMessage?.createdAt?.toISOString() || conv.updatedAt.toISOString(),
       unreadCount: conv._count.messages,
       userRole: isBuyer ? ("buyer" as const) : ("seller" as const),
       orderId: conv.orderId,
-      activeOfferStatus: activeOffer?.status ?? null,
-      activeOfferAmount,
+      latestOfferStatus: latestOffer?.status ?? null,
+      latestOfferAmount,
     };
   });
+
+  // TrustBar(40px) + ButterHeader(80px) + vertical padding(2×24px) = 168px
+  const HEADER_OFFSET_PX = 168;
 
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
-        height: "calc(100dvh - 168px)",
+        height: `calc(100dvh - ${HEADER_OFFSET_PX}px)`,
         maxWidth: 1200,
         margin: "0 auto",
         padding: "24px 16px",

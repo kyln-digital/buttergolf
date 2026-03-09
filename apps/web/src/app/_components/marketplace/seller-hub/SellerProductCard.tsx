@@ -26,6 +26,7 @@ export interface SellerProduct {
   categoryName: string;
   imageUrl: string;
   isSold: boolean;
+  isDraft: boolean;
   views: number;
   favourites: number;
   createdAt: string;
@@ -97,7 +98,12 @@ export function SellerProductCard({
   };
 
   return (
-    <Card variant="elevated" padding="$0" overflow="hidden" opacity={product.isSold ? 0.7 : 1}>
+    <Card
+      variant="elevated"
+      padding="$0"
+      overflow="hidden"
+      opacity={product.isSold ? 0.7 : product.isDraft ? 0.85 : 1}
+    >
       <Column gap="$0">
         {/* Image with status overlay */}
         <div style={{ position: "relative", width: "100%", aspectRatio: "1" }}>
@@ -108,16 +114,49 @@ export function SellerProductCard({
             style={{ objectFit: "cover" }}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
+          <Button
+            chromeless
+            size="$3"
+            position="absolute"
+            top={12}
+            right={12}
+            width={32}
+            height={32}
+            minWidth={32}
+            padding={0}
+            borderRadius="$full"
+            backgroundColor="$overlayDark50"
+            hoverStyle={{ backgroundColor: "$error" }}
+            pressStyle={{ backgroundColor: "$errorDark" }}
+            onPress={handleDelete}
+            disabled={isDeleting || isUpdating}
+            aria-label="Delete listing"
+          >
+            <Trash2 size={14} color="$textInverse" />
+          </Button>
           {product.isSold && (
             <div
               style={{
                 position: "absolute",
                 top: 12,
-                right: 12,
+                right: 52,
               }}
             >
               <Badge variant="error" size="md">
                 SOLD
+              </Badge>
+            </div>
+          )}
+          {product.isDraft && !product.isSold && (
+            <div
+              style={{
+                position: "absolute",
+                top: 12,
+                right: 52,
+              }}
+            >
+              <Badge variant="info" size="md">
+                DRAFT
               </Badge>
             </div>
           )}
@@ -126,7 +165,7 @@ export function SellerProductCard({
               style={{
                 position: "absolute",
                 top: 12,
-                right: 12,
+                right: 52,
               }}
             >
               <Badge variant="warning" size="md">
@@ -196,85 +235,71 @@ export function SellerProductCard({
             <Badge variant="neutral" size="sm">
               {product.categoryName}
             </Badge>
-            <Text size="$2" color="$textMuted">
+            <Text size="$2" color="$textSecondary">
               Listed {new Date(product.createdAt).toLocaleDateString()}
             </Text>
           </Row>
 
           {/* Actions */}
           <Row gap="$sm" marginTop="$sm" flexWrap="wrap">
-            {/* Boost Button - Only show for active listings */}
-            {!product.isSold && (
+            {/* Boost Button - Only show for active (non-draft) listings */}
+            {!product.isSold && !product.isDraft && (
               <Button
-                size="$3"
-                backgroundColor="$primaryLight"
-                color="$primary"
-                borderRadius="$full"
-                paddingHorizontal="$3"
-                paddingVertical="$2"
+                butterVariant="secondary"
+                size="$4"
+                flex={1}
                 onPress={() => setShowPromotionSheet(true)}
                 disabled={isDeleting || isUpdating}
               >
                 <Row gap="$xs" alignItems="center">
-                  <Zap size={14} color="$primary" />
-                  <Text color="$primary" weight="semibold">
+                  <Zap size={14} color="$text" />
+                  <Text color="$text" weight="semibold">
                     Boost
                   </Text>
                 </Row>
               </Button>
             )}
-            <Button
-              size="$3"
-              backgroundColor="transparent"
-              color="$primary"
-              borderWidth={2}
-              borderColor="$primary"
-              borderRadius="$full"
-              paddingHorizontal="$3"
-              paddingVertical="$2"
-              flex={1}
-              shadowColor="transparent"
-              shadowOffset={{ width: 0, height: 0 }}
-              shadowOpacity={0}
-              shadowRadius={0}
-              elevation={0}
-              style={{ boxShadow: "none" }}
-              onPress={() => onEdit(product)}
-              disabled={isDeleting || isUpdating}
-            >
-              <Row gap="$xs" alignItems="center">
-                <Edit3 size={14} color="$primary" />
-                <Text color="$primary" weight="semibold">
-                  Edit
-                </Text>
-              </Row>
-            </Button>
-            <Button
-              size="$3"
-              backgroundColor={product.isSold ? "$secondary" : "$primary"}
-              color="$textInverse"
-              borderRadius="$full"
-              paddingHorizontal="$3"
-              paddingVertical="$2"
-              flex={1}
-              onPress={handleMarkSold}
-              disabled={isDeleting || isUpdating}
-            >
-              {isUpdating ? "..." : product.isSold ? "Relist" : "Mark Sold"}
-            </Button>
-            <Button
-              size="$3"
-              backgroundColor="$error"
-              color="$textInverse"
-              borderRadius="$full"
-              paddingHorizontal="$3"
-              paddingVertical="$2"
-              onPress={handleDelete}
-              disabled={isDeleting || isUpdating}
-              aria-label="Delete listing"
-            >
-              <Trash2 size={14} color="white" />
-            </Button>
+            {product.isDraft ? (
+              <Link
+                href={`/sell?draftId=${product.id}`}
+                style={{ flex: 1, textDecoration: "none" }}
+              >
+                <Button butterVariant="primary" size="$4" width="100%" disabled={isDeleting}>
+                  <Row gap="$xs" alignItems="center">
+                    <Edit3 size={14} color="$textInverse" />
+                    <Text color="$textInverse" weight="semibold">
+                      Continue Editing
+                    </Text>
+                  </Row>
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Button
+                  butterVariant="secondary"
+                  size="$4"
+                  flex={1}
+                  onPress={() => onEdit(product)}
+                  disabled={isDeleting || isUpdating}
+                >
+                  <Row gap="$xs" alignItems="center">
+                    <Edit3 size={14} color="$text" />
+                    <Text color="$text" weight="semibold">
+                      Edit
+                    </Text>
+                  </Row>
+                </Button>
+                <Button
+                  butterVariant={product.isSold ? "secondary" : "primary"}
+                  size="$4"
+                  flex={1}
+                  onPress={handleMarkSold}
+                  disabled={isDeleting || isUpdating}
+                >
+                  {isUpdating ? "..." : product.isSold ? "Relist" : "Mark Sold"}
+                </Button>
+              </>
+            )}
           </Row>
         </Column>
       </Column>

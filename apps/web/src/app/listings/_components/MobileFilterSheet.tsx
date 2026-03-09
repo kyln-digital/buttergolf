@@ -53,14 +53,14 @@ export function MobileFilterSheet({
         borderTopLeftRadius="$2xl"
         borderTopRightRadius="$2xl"
       >
-        <Handle backgroundColor="$border" />
+        <Handle backgroundColor="$fieldBorder" />
 
         {/* Header */}
         <Column
           paddingHorizontal="$4"
           paddingVertical="$3"
           borderBottomWidth={1}
-          borderBottomColor="$border"
+          borderBottomColor="$fieldBorder"
         >
           <Row alignItems="center" justifyContent="space-between">
             <Text id={headingId} weight="bold" size="$6">
@@ -123,7 +123,7 @@ export function MobileFilterSheet({
           paddingHorizontal="$4"
           paddingVertical="$4"
           borderTopWidth={1}
-          borderTopColor="$border"
+          borderTopColor="$fieldBorder"
         >
           <Row gap="$md">
             <Button size="$4" flex={1} chromeless onPress={() => onOpenChange(false)}>

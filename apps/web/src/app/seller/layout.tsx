@@ -18,15 +18,16 @@ const STRIPE_EMBEDDED_ROUTES = [
 function SetupCallout() {
   return (
     <Card variant="outlined" padding="$md">
-      <Column gap="$sm">
-        <Heading level={4}>Complete Seller Setup</Heading>
-        <Text color="$textSecondary">
-          To use payments, payouts, tax documents, and account settings, complete Stripe seller
-          onboarding.
+      <Column gap="$sm" alignItems="center">
+        <Heading level={4} textAlign="center">
+          Start Selling on ButterGolf
+        </Heading>
+        <Text color="$textSecondary" textAlign="center">
+          Finish setting up your account to unlock payments, payouts, and more.
         </Text>
-        <Link href="/account" style={{ textDecoration: "none", width: "fit-content" }}>
+        <Link href="/account" style={{ textDecoration: "none" }}>
           <Button butterVariant="primary" size="$4">
-            Complete Seller Setup
+            Get Started
           </Button>
         </Link>
       </Column>
@@ -91,14 +92,15 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
       <Column fullWidth minHeight="60vh" alignItems="center" justifyContent="center" padding="$xl">
         <Card variant="elevated" padding="$xl" maxWidth={500}>
           <Column gap="$lg" alignItems="center">
-            <Heading level={2}>Start Selling on ButterGolf</Heading>
+            <Heading level={2} textAlign="center">
+              Start Selling on ButterGolf
+            </Heading>
             <Text color="$textSecondary" textAlign="center">
-              Complete your seller onboarding to access your dashboard and start listing golf
-              equipment.
+              Set up your seller account to access your dashboard and start listing golf equipment.
             </Text>
             <Link href="/account" style={{ textDecoration: "none" }}>
               <Button butterVariant="primary" size="$5">
-                Complete Seller Setup
+                Get Started
               </Button>
             </Link>
           </Column>

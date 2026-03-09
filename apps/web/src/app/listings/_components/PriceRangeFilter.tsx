@@ -1,7 +1,7 @@
 "use client";
 
 import { Column, Row, Text, Slider, Input } from "@buttergolf/ui";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface PriceRangeFilterProps {
   minPrice: number;
@@ -18,45 +18,69 @@ export function PriceRangeFilter({
   selectedMax,
   onChange,
 }: Readonly<PriceRangeFilterProps>) {
-  const [localMin, setLocalMin] = useState(selectedMin);
-  const [localMax, setLocalMax] = useState(selectedMax);
+  // Keep displayed and submitted values as whole numbers.
+  const normalisedMinPrice = Math.floor(minPrice);
+  const normalisedMaxPrice = Math.ceil(maxPrice);
+
+  const normaliseRange = useCallback(
+    (nextMinRaw: number, nextMaxRaw: number): [number, number] => {
+      const boundedMin = Math.max(
+        normalisedMinPrice,
+        Math.min(Math.round(nextMinRaw), normalisedMaxPrice)
+      );
+      const boundedMax = Math.max(
+        normalisedMinPrice,
+        Math.min(Math.round(nextMaxRaw), normalisedMaxPrice)
+      );
+
+      return [Math.min(boundedMin, boundedMax), Math.max(boundedMin, boundedMax)];
+    },
+    [normalisedMinPrice, normalisedMaxPrice]
+  );
+
+  const [initialMin, initialMax] = normaliseRange(selectedMin, selectedMax);
+  const [localMin, setLocalMin] = useState(initialMin);
+  const [localMax, setLocalMax] = useState(initialMax);
 
   // Sync with props when they change (e.g., filter reset)
   // This is a legitimate use of setState in effect - syncing local state with prop changes
   useEffect(() => {
+    const [nextMin, nextMax] = normaliseRange(selectedMin, selectedMax);
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLocalMin(selectedMin);
-
-    setLocalMax(selectedMax);
-  }, [selectedMin, selectedMax]);
+    setLocalMin(nextMin);
+    setLocalMax(nextMax);
+  }, [selectedMin, selectedMax, normaliseRange]);
 
   const handleSliderChange = (values: number[]) => {
-    setLocalMin(values[0]);
-    setLocalMax(values[1]);
-    onChange(values[0], values[1]);
+    const [nextMin, nextMax] = normaliseRange(values[0], values[1]);
+    setLocalMin(nextMin);
+    setLocalMax(nextMax);
+    onChange(nextMin, nextMax);
   };
 
   const handleMinInputChange = (value: string) => {
-    const num = Number.parseFloat(value) || minPrice;
-    setLocalMin(num);
-    if (num >= minPrice && num <= localMax) {
-      onChange(num, localMax);
-    }
+    const parsed = Number(value);
+    const inputMin = Number.isFinite(parsed) ? parsed : normalisedMinPrice;
+    const [nextMin, nextMax] = normaliseRange(inputMin, localMax);
+    setLocalMin(nextMin);
+    setLocalMax(nextMax);
+    onChange(nextMin, nextMax);
   };
 
   const handleMaxInputChange = (value: string) => {
-    const num = Number.parseFloat(value) || maxPrice;
-    setLocalMax(num);
-    if (num <= maxPrice && num >= localMin) {
-      onChange(localMin, num);
-    }
+    const parsed = Number(value);
+    const inputMax = Number.isFinite(parsed) ? parsed : normalisedMaxPrice;
+    const [nextMin, nextMax] = normaliseRange(localMin, inputMax);
+    setLocalMin(nextMin);
+    setLocalMax(nextMax);
+    onChange(nextMin, nextMax);
   };
 
   return (
     <Column gap="$md" width="100%">
       <Slider
-        min={minPrice}
-        max={maxPrice}
+        min={normalisedMinPrice}
+        max={normalisedMaxPrice}
         step={10}
         value={[localMin, localMax]}
         onValueChange={handleSliderChange}
@@ -76,6 +100,7 @@ export function PriceRangeFilter({
           <Input
             size="$3"
             type="number"
+            step={1}
             value={localMin.toString()}
             onChange={(e) => handleMinInputChange(e.target.value)}
             placeholder="Min"
@@ -92,6 +117,7 @@ export function PriceRangeFilter({
           <Input
             size="$3"
             type="number"
+            step={1}
             value={localMax.toString()}
             onChange={(e) => handleMaxInputChange(e.target.value)}
             placeholder="Max"
@@ -100,7 +126,7 @@ export function PriceRangeFilter({
         </Column>
       </Row>
       <Text size="$2" color="$textSecondary">
-        ${localMin.toFixed(2)} - ${localMax.toFixed(2)}
+        ${localMin.toLocaleString("en-GB")} - ${localMax.toLocaleString("en-GB")}
       </Text>
     </Column>
   );

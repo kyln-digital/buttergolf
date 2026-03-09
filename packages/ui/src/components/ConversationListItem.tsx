@@ -15,8 +15,8 @@
  *   lastMessage="Is this still available?"
  *   timestamp="2 min ago"
  *   unreadCount={3}
- *   activeOfferStatus="PENDING"
- *   activeOfferAmount={120}
+ *   latestOfferStatus="PENDING"
+ *   latestOfferAmount={120}
  *   onPress={() => router.push(`/messages/${id}`)}
  * />
  * ```
@@ -100,10 +100,10 @@ interface ConversationListItemProps {
   unreadCount?: number;
   /** User's role in this conversation */
   userRole?: "buyer" | "seller";
-  /** Active offer status */
-  activeOfferStatus?: string | null;
-  /** Active offer amount */
-  activeOfferAmount?: number | null;
+  /** Latest offer status for inbox row */
+  latestOfferStatus?: string | null;
+  /** Latest offer amount for inbox row */
+  latestOfferAmount?: number | null;
   /** Whether the product has been sold */
   productSold?: boolean;
   /** Press handler */
@@ -149,8 +149,8 @@ export function ConversationListItem({
   timestamp,
   unreadCount = 0,
   userRole,
-  activeOfferStatus,
-  activeOfferAmount,
+  latestOfferStatus,
+  latestOfferAmount,
   productSold,
   onPress,
 }: Readonly<ConversationListItemProps>) {
@@ -242,10 +242,10 @@ export function ConversationListItem({
             >
               {lastMessage || "No messages yet"}
             </Text>
-            {activeOfferStatus && (
-              <OfferStatusBadge status={activeOfferStatus} amount={activeOfferAmount} />
+            {latestOfferStatus && (
+              <OfferStatusBadge status={latestOfferStatus} amount={latestOfferAmount} />
             )}
-            {hasUnread && !activeOfferStatus && (
+            {hasUnread && !latestOfferStatus && (
               <UnreadDot>
                 <Text size="$1" color="$textInverse" weight="bold">
                   {unreadCount > 9 ? "9+" : unreadCount}

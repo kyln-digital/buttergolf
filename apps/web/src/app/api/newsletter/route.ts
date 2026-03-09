@@ -40,8 +40,9 @@ export async function POST(request: NextRequest) {
     }
 
     const normalisedEmail = email.trim().toLowerCase();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(normalisedEmail)) {
+    // Require at least 2-char TLD and disallow consecutive dots in domain
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(normalisedEmail) || normalisedEmail.includes("..")) {
       const response = NextResponse.json({ error: "Invalid email address" }, { status: 400 });
       Object.entries(headers).forEach(([key, value]) => response.headers.set(key, value));
       return response;
@@ -70,6 +71,15 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("Newsletter signup error:", error);
+
+    const errorCode = (error as { code?: string } | null)?.code;
+    if (errorCode === "P2021") {
+      return NextResponse.json(
+        { error: "Newsletter signup is temporarily unavailable. Please try again shortly." },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

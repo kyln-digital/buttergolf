@@ -4,6 +4,7 @@ import {
   DarkTheme,
   DefaultTheme,
   Theme as NavigationTheme,
+  useFocusEffect,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { brandColors, LISTING_PRICE_LIMITS } from "@buttergolf/constants";
@@ -1368,6 +1369,7 @@ function FavouritesScreenWrapper({
 
   // State for checkout sheet
   const [checkoutSheetOpen, setCheckoutSheetOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<{
     id: string;
     title: string;
@@ -1394,6 +1396,25 @@ function FavouritesScreenWrapper({
 
     return response.json();
   }, [getToken, apiUrl]);
+
+  // Refresh on every focus so profile favourites stays in sync with listing hearts.
+  // A short follow-up refresh (700 ms) accounts for deferred writes (optimistic toggles
+  // that POST to the API) which may still be in-flight when the user navigates back.
+  // 700 ms was chosen empirically: long enough for a typical API round-trip on a
+  // moderate connection, short enough to feel responsive.
+  useFocusEffect(
+    useCallback(() => {
+      setRefreshKey((prev) => prev + 1);
+
+      const delayedRefresh = setTimeout(() => {
+        setRefreshKey((prev) => prev + 1);
+      }, 700);
+
+      return () => {
+        clearTimeout(delayedRefresh);
+      };
+    }, [])
+  );
 
   const removeFavourite = useCallback(
     async (productId: string) => {
@@ -1480,6 +1501,7 @@ function FavouritesScreenWrapper({
       <FavouritesScreen
         isAuthenticated={isAuthenticated}
         onFetchFavourites={fetchFavourites}
+        refreshKey={refreshKey}
         onRemoveFavourite={removeFavourite}
         onBack={() => navigation.goBack()}
         onViewProduct={(id) => navigation.navigate("ProductDetail", { id })}
@@ -1568,9 +1590,9 @@ function MessagesScreenWrapper({
           userRole: conversation.userRole,
           productSold: conversation.productSold,
           hasActiveOffer:
-            !!conversation.activeOfferStatus &&
-            (conversation.activeOfferStatus === "PENDING" ||
-              conversation.activeOfferStatus === "COUNTERED"),
+            !!conversation.latestOfferStatus &&
+            (conversation.latestOfferStatus === "PENDING" ||
+              conversation.latestOfferStatus === "COUNTERED"),
         })
       }
       onBrowseListings={() => navigation.navigate("Home")}

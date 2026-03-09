@@ -131,6 +131,9 @@ export async function POST(request: Request) {
           .filter((url) => url.length > 0)
       : [];
 
+    const normalisedCategoryId =
+      typeof categoryId === "string" && categoryId.trim().length > 0 ? categoryId : null;
+
     // ============================================================
     // IDEMPOTENCY CHECK
     // Prevent duplicate product creation from double-submissions
@@ -171,21 +174,49 @@ export async function POST(request: Request) {
       }
     }
 
-    // Validate required fields
-    if (!title || !description || !price || !categoryId) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    let resolvedCategoryId = normalisedCategoryId;
+
+    // Drafts can be saved from any partial state. Because Product.categoryId is required
+    // in the schema, pick a stable fallback category when the user has not selected one yet.
+    if (isDraft && !resolvedCategoryId) {
+      const fallbackCategory =
+        (await prisma.category.findFirst({
+          where: { slug: "accessories" },
+          select: { id: true },
+        })) ??
+        (await prisma.category.findFirst({
+          orderBy: { createdAt: "asc" },
+          select: { id: true },
+        }));
+
+      if (!fallbackCategory) {
+        return NextResponse.json(
+          { error: "Unable to save draft: no categories are configured." },
+          { status: 500 }
+        );
+      }
+
+      resolvedCategoryId = fallbackCategory.id;
     }
 
-    const parsedPrice = Number(price);
+    // Validate required fields for publish flow.
+    if (!isDraft) {
+      if (!title || !description || !price || !resolvedCategoryId) {
+        return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      }
+    }
+
+    const parsedPrice = Math.max(0, Number(price) || 0);
     if (
-      Number.isNaN(parsedPrice) ||
-      parsedPrice < LISTING_PRICE_LIMITS.MIN ||
-      parsedPrice > LISTING_PRICE_LIMITS.MAX
+      !isDraft &&
+      (Number.isNaN(parsedPrice) ||
+        parsedPrice < LISTING_PRICE_LIMITS.MIN ||
+        parsedPrice > LISTING_PRICE_LIMITS.MAX)
     ) {
       return NextResponse.json({ error: getListingPriceBoundsMessage() }, { status: 400 });
     }
 
-    if (normalisedImages.length === 0) {
+    if (!isDraft && normalisedImages.length === 0) {
       return NextResponse.json({ error: "At least one image is required" }, { status: 400 });
     }
 
@@ -219,94 +250,102 @@ export async function POST(request: Request) {
       }
     }
 
-    // If model and brandId provided, create or update ClubModel record
-    if (model && brandId && clubKind) {
-      const existingModel = await prisma.clubModel.findUnique({
-        where: {
-          brandId_name_kind: {
-            brandId,
-            name: model,
-            kind: clubKind,
+    if (!resolvedCategoryId) {
+      return NextResponse.json({ error: "Missing category" }, { status: 400 });
+    }
+
+    // Wrap ClubModel upsert + Product creation in a transaction so a failure
+    // in one doesn't leave the other in an inconsistent state.
+    const product = await prisma.$transaction(async (tx) => {
+      // If model and brandId provided, create or update ClubModel record
+      if (model && brandId && clubKind) {
+        const existingModel = await tx.clubModel.findUnique({
+          where: {
+            brandId_name_kind: {
+              brandId,
+              name: model,
+              kind: clubKind,
+            },
+          },
+        });
+
+        if (existingModel) {
+          // Increment usage count
+          await tx.clubModel.update({
+            where: { id: existingModel.id },
+            data: {
+              usageCount: { increment: 1 },
+              // Auto-verify after 3+ uses (usageCount is pre-increment, so >= 2 means this is the 3rd use)
+              isVerified: existingModel.usageCount >= 2 ? true : existingModel.isVerified,
+            },
+          });
+        } else {
+          // Create new ClubModel
+          await tx.clubModel.create({
+            data: {
+              brandId,
+              name: model,
+              kind: clubKind,
+              usageCount: 1,
+              isVerified: false,
+            },
+          });
+        }
+      }
+
+      // Create product with images
+      return tx.product.create({
+        data: {
+          title,
+          description: description || "",
+          price: parsedPrice,
+          condition: mapSlidersToConditionEnum(
+            gripCondition || 7,
+            headCondition || 7,
+            shaftCondition || 7
+          ),
+          brandId: brandId || null,
+          model: model || null,
+          userId: user.id,
+          categoryId: resolvedCategoryId,
+          // Golf club specific fields
+          flex: flex || null,
+          loft: loft || null,
+          woodsSubcategory: woodsSubcategory || null,
+          headCoverIncluded: headCoverIncluded || false,
+          gripCondition: gripCondition || 7,
+          headCondition: headCondition || 7,
+          shaftCondition: shaftCondition || 7,
+          // Shipping dimensions
+          length: length ? Number(length) : null,
+          width: width ? Number(width) : null,
+          height: height ? Number(height) : null,
+          weight: weight ? Number(weight) : null,
+          // Idempotency key for duplicate prevention
+          requestId: requestId || null,
+          // Draft status
+          isDraft: isDraft || false,
+          images: {
+            create: normalisedImages.map((url: string, index: number) => ({
+              url,
+              sortOrder: index,
+            })),
+          },
+        },
+        include: {
+          images: true,
+          category: true,
+          brand: true,
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              imageUrl: true,
+            },
           },
         },
       });
-
-      if (existingModel) {
-        // Increment usage count
-        await prisma.clubModel.update({
-          where: { id: existingModel.id },
-          data: {
-            usageCount: { increment: 1 },
-            // Auto-verify after 3+ uses
-            isVerified: existingModel.usageCount >= 2 ? true : existingModel.isVerified,
-          },
-        });
-      } else {
-        // Create new ClubModel
-        await prisma.clubModel.create({
-          data: {
-            brandId,
-            name: model,
-            kind: clubKind,
-            usageCount: 1,
-            isVerified: false,
-          },
-        });
-      }
-    }
-
-    // Create product with images
-    const product = await prisma.product.create({
-      data: {
-        title,
-        description,
-        price: parsedPrice,
-        condition: mapSlidersToConditionEnum(
-          gripCondition || 7,
-          headCondition || 7,
-          shaftCondition || 7
-        ),
-        brandId: brandId || null,
-        model: model || null,
-        userId: user.id,
-        categoryId,
-        // Golf club specific fields
-        flex: flex || null,
-        loft: loft || null,
-        woodsSubcategory: woodsSubcategory || null,
-        headCoverIncluded: headCoverIncluded || false,
-        gripCondition: gripCondition || 7,
-        headCondition: headCondition || 7,
-        shaftCondition: shaftCondition || 7,
-        // Shipping dimensions
-        length: length ? Number(length) : null,
-        width: width ? Number(width) : null,
-        height: height ? Number(height) : null,
-        weight: weight ? Number(weight) : null,
-        // Idempotency key for duplicate prevention
-        requestId: requestId || null,
-        // Draft status
-        isDraft: isDraft || false,
-        images: {
-          create: normalisedImages.map((url: string, index: number) => ({
-            url,
-            sortOrder: index,
-          })),
-        },
-      },
-      include: {
-        images: true,
-        category: true,
-        brand: true,
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            imageUrl: true,
-          },
-        },
-      },
     });
 
     return NextResponse.json(product, { status: 201 });

@@ -215,7 +215,12 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
 
         {/* Make an Offer Popover */}
         <Popover
+          size="$5"
           placement="bottom"
+          allowFlip
+          stayInFrame
+          offset={14}
+          resize
           onOpenChange={(open) => {
             if (!open) {
               setOfferAmount("");
@@ -246,14 +251,30 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
           </Popover.Trigger>
 
           <Popover.Content
+            className="offer-popover-content"
             backgroundColor="$surface"
             borderRadius="$lg"
             padding="$4"
             borderWidth={1}
             borderColor="$border"
             elevate
+            boxShadow="0px 12px 30px rgba(0, 0, 0, 0.16)"
+            style={{
+              animationName: "offerPopoverEnter",
+              animationDuration: "420ms",
+              animationTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
+              animationFillMode: "both",
+              willChange: "opacity, transform",
+            }}
           >
-            <Column gap="$3" width={280}>
+            <Popover.Arrow
+              size="$2"
+              offset={10}
+              borderWidth={1}
+              borderColor="$border"
+              backgroundColor="$surface"
+            />
+            <Column gap="$3" width={280} animation="medium">
               <Text size="$5" fontWeight="600" color="$text">
                 Make an offer
               </Text>
@@ -296,11 +317,11 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
                 />
               </Row>
 
-              {offerError && (
+              {offerError ? (
                 <Text size="$2" color="$error">
                   {offerError}
                 </Text>
-              )}
+              ) : null}
 
               <Row gap="$2" justifyContent="flex-end">
                 <Popover.Close asChild>
