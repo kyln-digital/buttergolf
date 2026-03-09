@@ -39,6 +39,8 @@ async function getCategoryListings(
   const where: Prisma.ProductWhereInput = {
     isSold: false,
     category: { slug: categorySlug },
+    // Keep count/query/render parity by excluding orphaned seller relations at query time.
+    user: { is: {} },
   };
 
   // Condition filter
@@ -154,23 +156,21 @@ async function getCategoryListings(
   ]);
 
   // Map to ProductCardData format
-  const productCards: ProductCardData[] = products
-    .filter((product) => product.user)
-    .map((product) => ({
-      id: product.id,
-      title: product.title,
-      price: product.price,
-      condition: product.condition,
-      imageUrl: product.images[0]?.url || "/placeholder-product.jpg",
-      category: product.category.name,
-      seller: {
-        id: product.user.id,
-        firstName: product.user.firstName,
-        lastName: product.user.lastName,
-        averageRating: product.user.averageRating,
-        ratingCount: product.user.ratingCount,
-      },
-    }));
+  const productCards: ProductCardData[] = products.map((product) => ({
+    id: product.id,
+    title: product.title,
+    price: product.price,
+    condition: product.condition,
+    imageUrl: product.images[0]?.url || "/placeholder-product.jpg",
+    category: product.category.name,
+    seller: {
+      id: product.user.id,
+      firstName: product.user.firstName,
+      lastName: product.user.lastName,
+      averageRating: product.user.averageRating,
+      ratingCount: product.user.ratingCount,
+    },
+  }));
 
   return {
     category,

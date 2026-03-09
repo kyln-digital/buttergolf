@@ -25,7 +25,11 @@ async function getListings(searchParams: SearchParams) {
   const skip = (page - 1) * limit;
 
   // Build where clause
-  const where: Prisma.ProductWhereInput = { isSold: false };
+  const where: Prisma.ProductWhereInput = {
+    isSold: false,
+    // Keep count/query/render parity by excluding orphaned seller relations at query time.
+    user: { is: {} },
+  };
 
   if (searchParams.category) {
     where.category = { slug: searchParams.category };
@@ -137,23 +141,21 @@ async function getListings(searchParams: SearchParams) {
   ]);
 
   // Map to ProductCardData format
-  const productCards: ProductCardData[] = products
-    .filter((product) => product.user) // Filter out products without users
-    .map((product) => ({
-      id: product.id,
-      title: product.title,
-      price: product.price,
-      condition: product.condition,
-      imageUrl: product.images[0]?.url || "/placeholder-product.jpg",
-      category: product.category.name,
-      seller: {
-        id: product.user.id,
-        firstName: product.user.firstName,
-        lastName: product.user.lastName,
-        averageRating: product.user.averageRating,
-        ratingCount: product.user.ratingCount,
-      },
-    }));
+  const productCards: ProductCardData[] = products.map((product) => ({
+    id: product.id,
+    title: product.title,
+    price: product.price,
+    condition: product.condition,
+    imageUrl: product.images[0]?.url || "/placeholder-product.jpg",
+    category: product.category.name,
+    seller: {
+      id: product.user.id,
+      firstName: product.user.firstName,
+      lastName: product.user.lastName,
+      averageRating: product.user.averageRating,
+      ratingCount: product.user.ratingCount,
+    },
+  }));
 
   return {
     products: productCards,
