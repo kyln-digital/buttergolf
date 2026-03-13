@@ -10,31 +10,24 @@ interface AuthFormInputProps {
   value: string;
   onChangeText: (text: string) => void;
   placeholder: string;
-  secureTextEntry?: boolean;
+  /** Input type (web-first). Use "password" for secure fields, "email" for email fields. */
+  type?: "text" | "email" | "password" | "tel" | "number";
   error?: string | null;
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
-  keyboardType?: "default" | "email-address" | "numeric" | "decimal-pad" | "phone-pad";
+  /** Input mode hint for virtual keyboards (web-first, maps to keyboardType on native). */
+  inputMode?: "none" | "text" | "decimal" | "numeric" | "tel" | "search" | "email" | "url";
   editable?: boolean;
   multiline?: boolean;
   numberOfLines?: number;
-  textContentType?:
-    | "emailAddress"
-    | "password"
-    | "newPassword"
-    | "givenName"
-    | "familyName"
-    | "name"
-    | "username"
-    | "oneTimeCode"
-    | "none";
   autoComplete?:
     | "email"
-    | "password"
-    | "password-new"
+    | "current-password"
+    | "new-password"
     | "name"
-    | "name-given"
-    | "name-family"
+    | "given-name"
+    | "family-name"
     | "username"
+    | "one-time-code"
     | "off";
 }
 
@@ -47,20 +40,19 @@ export function AuthFormInput({
   value,
   onChangeText,
   placeholder,
-  secureTextEntry = false,
+  type = "text",
   error,
   autoCapitalize = "none",
-  keyboardType = "default",
+  inputMode,
   editable = true,
   multiline = false,
   numberOfLines,
-  textContentType,
   autoComplete,
 }: Readonly<AuthFormInputProps>) {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
-  const isPassword = secureTextEntry;
-  const shouldShowPassword = isPassword && isPasswordVisible;
+  const isPassword = type === "password";
+  const secureTextEntry = isPassword && !isPasswordVisible;
 
   return (
     <Column gap="$2">
@@ -72,18 +64,26 @@ export function AuthFormInput({
         <Input
           size="md"
           value={value}
-          onChangeText={onChangeText}
+          onChange={(e: any) => onChangeText(e.nativeEvent?.text ?? e.target?.value ?? "")}
           placeholder={placeholder}
-          placeholderTextColor="$textMuted"
-          secureTextEntry={isPassword && !shouldShowPassword}
+          placeholderTextColor="$slateSmoke"
+          secureTextEntry={secureTextEntry}
           autoCapitalize={autoCapitalize}
-          keyboardType={keyboardType}
-          readOnly={!editable}
+          inputMode={
+            inputMode ??
+            (type === "email"
+              ? "email"
+              : type === "tel"
+                ? "tel"
+                : type === "number"
+                  ? "numeric"
+                  : undefined)
+          }
+          disabled={!editable}
           multiline={multiline}
           numberOfLines={numberOfLines}
           error={!!error}
           paddingRight={isPassword ? "$10" : "$4"}
-          textContentType={textContentType}
           autoComplete={autoComplete}
         />
 
@@ -97,7 +97,7 @@ export function AuthFormInput({
               transform: [{ translateY: -12 }],
             }}
           >
-            {shouldShowPassword ? (
+            {isPasswordVisible ? (
               <Eye size={20} color="$textSecondary" />
             ) : (
               <EyeOff size={20} color="$textSecondary" />

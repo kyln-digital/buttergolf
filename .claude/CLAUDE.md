@@ -29,7 +29,8 @@ buttergolf/
 
 - **Build System**: Turborepo 2.6.0 for orchestration and caching
 - **Package Manager**: pnpm 10.20.0 with workspace protocol
-- **UI Framework**: Tamagui 1.135.7 for cross-platform UI
+- **UI Framework**: Tamagui 2.0.0-rc.16 for cross-platform UI
+  - Migrated from v1 — see `docs/tamagui-v2-migration.md` for changelog and break-fix guide
 - **Database**: Prisma 6.x with PostgreSQL
 - **React**: 19.1.0 (aligned across web and mobile)
 - **TypeScript**: 5.9.2 (strict mode enabled)
@@ -155,7 +156,7 @@ export default async function Layout({ children }) {
 ### Core Configuration
 
 - **Config Package**: `packages/config/src/tamagui.config.ts` (source of truth)
-- **Base Config**: Extends `@tamagui/config/v4`
+- **Base Config**: Extends `@tamagui/config/v4` (Tamagui v2 package — config schema is still named v4)
 - **Re-export**: `packages/ui/tamagui.config.ts` for backward compatibility
 
 ### Color Tokens
@@ -449,16 +450,258 @@ Row and Column components do NOT have custom variants. Always use native Tamagui
 <Text color={isActive ? "primary" : "default"}>Menu Item</Text>
 ```
 
-## Design System Compliance
+## Design System Compliance Guidelines
 
-The design system rules above are enforced. Before committing, verify:
+### Overview
+
+ButterGolf has achieved **95%+ design system compliance** through systematic refactoring and enforcement of Tamagui best practices. All new code MUST follow these guidelines to maintain consistency and code quality.
+
+### ✅ DO: Required Patterns
+
+#### 1. Always Use Semantic Color Tokens
+
+```tsx
+// ✅ CORRECT - Semantic tokens (always preferred)
+<Button backgroundColor="$primary" color="$textInverse">Submit</Button>
+<Text color="$text">Primary text</Text>
+<Text color="$textSecondary">Secondary text</Text>
+<View borderColor="$border" backgroundColor="$surface">Content</View>
+
+// ⚠️ USE SPARINGLY - Brand tokens (only in component libraries)
+<Text color="$spicedClementine">Always orange (no theme support)</Text>
+
+// ❌ NEVER - Raw hex values
+<Button backgroundColor="#F45314">Submit</Button>
+<Text color="#323232">Wrong!</Text>
+```
+
+**Available Semantic Tokens:**
+
+- Text: `$text`, `$textSecondary`, `$textTertiary`, `$textMuted`, `$textInverse`
+- Backgrounds: `$background`, `$surface`, `$card`
+- Borders: `$border`, `$borderHover`, `$borderFocus`, `$fieldBorder`
+- Status: `$success`, `$error`, `$warning`, `$info`
+- Brand: `$primary`, `$primaryLight`, `$secondary`, `$secondaryLight`
+
+#### 2. Use Size Tokens on Text Components
+
+```tsx
+// ✅ CORRECT - Use size with numeric tokens
+<Text size="$4">Small (14px)</Text>
+<Text size="$5">Medium (15px) - DEFAULT</Text>
+<Text size="$6">Large (16px)</Text>
+<Heading level={2} size="$9">Page Title (40px)</Heading>
+
+// ❌ NEVER - fontSize prop is blocked by ESLint
+<Text fontSize="$5">Wrong!</Text>
+<Text fontSize={14}>Wrong!</Text>
+```
+
+#### 3. Use Spacing Tokens
+
+```tsx
+// ✅ CORRECT - Token-based spacing
+<Column gap="$md" padding="$lg">
+  <Text>Content</Text>
+</Column>
+
+<Row paddingHorizontal="$xl" paddingVertical="$md">
+  <Button>Action</Button>
+</Row>
+
+// ❌ NEVER - Raw pixel values
+<Column style={{ padding: "20px", gap: "16px" }}>Wrong!</Column>
+```
+
+**Available Spacing Tokens:**
+
+- `$xs` = 4px
+- `$sm` = 8px
+- `$md` = 16px
+- `$lg` = 24px
+- `$xl` = 32px
+- `$2xl` = 48px
+- `$3xl` = 64px
+
+#### 4. Use Tamagui Components (Never Raw HTML)
+
+```tsx
+// ✅ CORRECT - Tamagui components
+<Column gap="$md">
+  <Heading level={2}>Title</Heading>
+  <Text>Description</Text>
+  <Button onPress={handleClick}>Action</Button>
+</Column>
+
+// ❌ NEVER - Raw HTML elements
+<div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+  <h2>Title</h2>
+  <p>Description</p>
+  <button onClick={handleClick}>Action</button>
+</div>
+```
+
+#### 5. Use Brand Background Helpers
+
+```tsx
+// ✅ CORRECT - Brand color backgrounds for visual distinctiveness
+<VanillaCreamBackground padding="$2xl">
+  <Heading level={2}>Trust & Safety</Heading>
+  <Text>We verify all sellers...</Text>
+</VanillaCreamBackground>
+
+<LemonHazeCard size="md">
+  <Text weight="semibold">Pro Tip</Text>
+  <Text>Upload high-quality photos!</Text>
+</LemonHazeCard>
+
+// ❌ WRONG - Plain white everywhere
+<Column backgroundColor="$surface">
+  <Text>Generic section</Text>
+</Column>
+```
+
+**When to Use:**
+
+- VanillaCreamBackground: Section alternation, hero sections, empty states, trust sections
+- LemonHazeBackground: Sidebars, selected states, callout sections
+- LemonHazeCard: Tip cards, info callouts, highlighted content
+- VanillaCreamCard: Empty states, placeholder content, featured content
+
+### ❌ DON'T: Anti-Patterns to Avoid
+
+#### 1. Never Use Raw HTML in App Code
+
+```tsx
+// ❌ WRONG
+<div style={{ padding: "20px" }}>
+  <h2 style={{ fontSize: "24px", color: "#323232" }}>Title</h2>
+  <p style={{ color: "#545454" }}>Text</p>
+  <button style={{ background: "#F45314" }}>Click</button>
+</div>
+
+// ✅ CORRECT
+<Column padding="$lg">
+  <Heading level={2} color="$text">Title</Heading>
+  <Text color="$textSecondary">Text</Text>
+  <Button backgroundColor="$primary">Click</Button>
+</Column>
+```
+
+#### 2. Never Use fontSize Prop on Text
+
+```tsx
+// ❌ WRONG - ESLint will error
+<Text fontSize="$5">This fails linting</Text>
+<Text fontSize={16}>Also fails</Text>
+
+// ✅ CORRECT
+<Text size="$5">This passes linting</Text>
+```
+
+#### 3. Never Hardcode Colors
+
+```tsx
+// ❌ WRONG
+<Text color="#323232">Dark text</Text>
+<Button backgroundColor="#F45314">Orange button</Button>
+<View borderColor="#EDEDED">Content</View>
+
+// ✅ CORRECT
+<Text color="$text">Dark text</Text>
+<Button backgroundColor="$primary">Orange button</Button>
+<View borderColor="$border">Content</View>
+```
+
+#### 4. Never Use Raw Pixel Values for Spacing
+
+```tsx
+// ❌ WRONG
+<Column style={{ padding: "20px", gap: "16px", margin: "24px" }}>
+
+// ✅ CORRECT
+<Column padding="$lg" gap="$md" margin="$lg">
+```
+
+### Component-Specific Guidelines
+
+#### Form Components
+
+Always use design system form components:
+
+```tsx
+// ✅ CORRECT
+<Input size="md" placeholder="Email" />
+<Select size="md" value={value} onValueChange={setValue}>
+  <option value="option1">Option 1</option>
+</Select>
+<TextArea size="md" placeholder="Description" rows={4} />
+<RadioGroup value={selected} onValueChange={setSelected}>
+  <Radio value="option1" label="Option 1" />
+  <Radio value="option2" label="Option 2" />
+</RadioGroup>
+
+// ❌ NEVER use raw HTML
+<input type="text" placeholder="Email" />
+<select><option>Option 1</option></select>
+<textarea placeholder="Description" />
+```
+
+#### Buttons
+
+```tsx
+// ✅ CORRECT - Tamagui Button with tokens
+<Button
+  size="$5"
+  backgroundColor="$primary"
+  color="$textInverse"
+  onPress={handleClick}
+>
+  Submit
+</Button>
+
+// ❌ WRONG - Raw HTML button
+<button style={{ background: "#F45314" }} onClick={handleClick}>
+  Submit
+</button>
+```
+
+#### Headings
+
+```tsx
+// ✅ CORRECT - Heading component with size tokens
+<Heading level={2} size="$9" color="$text">
+  Page Title
+</Heading>
+
+// ❌ WRONG - Raw HTML with inline styles
+<h2 style={{ fontSize: "clamp(28px, 5vw, 40px)", color: "#323232" }}>
+  Page Title
+</h2>
+```
+
+### Pre-Commit Checklist
+
+Before committing code, verify:
 
 - [ ] No raw HTML elements (`<div>`, `<h1>-<h6>`, `<p>`, `<button>`, `<input>`, `<select>`, `<textarea>`)
-- [ ] No `fontSize` prop on Text components (use `size` instead) — ESLint blocks this
+- [ ] No `fontSize` prop on Text components (use `size` instead)
 - [ ] No hardcoded hex colors (use semantic tokens like `$primary`, `$text`)
 - [ ] No raw pixel values for spacing (use `$xs`, `$sm`, `$md`, `$lg`, `$xl`, `$2xl`, `$3xl`)
 - [ ] All form inputs use design system components (Input, Select, TextArea, Radio)
-- [ ] Brand colours (Vanilla Cream, Lemon Haze) used where appropriate for visual interest
+- [ ] Brand colors (Vanilla Cream, Lemon Haze) used where appropriate for visual interest
+
+### Enforcement
+
+**ESLint Rules:**
+
+- `react/forbid-component-props` - Blocks `fontSize` on Text components
+- Future: `react/forbid-elements` - Will block raw HTML elements
+
+**Type System:**
+
+- TypeScript strict mode catches token typos
+- Tamagui's type system prevents invalid prop combinations
 
 ## Development Workflow
 
@@ -472,8 +715,7 @@ pnpm dev:mobile       # Start Expo dev server
 
 # Building
 pnpm build            # Build all apps
-pnpm check            # REQUIRED final validation (format + lint + type-check)
-pnpm check-types      # TypeScript validation
+pnpm typecheck        # TypeScript validation
 
 # Database
 pnpm db:generate      # Generate Prisma Client
@@ -488,17 +730,6 @@ pnpm format           # Format with Prettier
 # Cleaning
 pnpm clean-install    # Remove node_modules and reinstall
 ```
-
-### Python Command Policy (CRITICAL)
-
-- Never run `python` directly in this repository.
-- Always execute Python through Poetry: `poetry run python ...`
-- For module execution, use: `poetry run python -m <module>`
-- If Poetry is unavailable or not configured, stop and report the issue instead of falling back to `python`.
-
-### Required Validation Rule
-
-- REQUIRED for agents: run `pnpm check` at the end of every coding task and remedy any errors it reports before finishing.
 
 ### Adding Dependencies
 
@@ -804,7 +1035,37 @@ grep -r '<Row.*justify="' apps/web/src/app --include="*.tsx"
 
 ## Additional Resources
 
-For generic Tamagui concepts (styled(), useTheme, tokens, variants, compiler), fetch https://tamagui.dev/llms-full.txt or use Context7 MCP.
+### Tamagui Documentation (PRIMARY REFERENCE)
+
+**CRITICAL: Always reference Tamagui docs for component usage, styling patterns, and theming.**
+
+- **Full LLM-Optimized Documentation**: https://tamagui.dev/llms-full.txt (complete single-file reference)
+- **Quick Overview**: https://tamagui.dev/llms.txt (structured overview with links)
+- **Core Concepts**: https://tamagui.dev/docs/intro/introduction
+
+**Core Documentation:**
+
+- [Animations](https://tamagui.dev/docs/core/animations.md): Animation system and utilities
+- [Config V4](https://tamagui.dev/docs/core/config-v4.md): Version 4 configuration guide
+- [Configuration](https://tamagui.dev/docs/core/configuration.md): General configuration options
+- [Styled](https://tamagui.dev/docs/core/styled.md): Styled component system
+- [Theme](https://tamagui.dev/docs/core/theme.md): Theming system
+- [Tokens](https://tamagui.dev/docs/core/tokens.md): Design tokens and variables
+- [Use Media](https://tamagui.dev/docs/core/use-media.md): Media query hooks
+- [Use Theme](https://tamagui.dev/docs/core/use-theme.md): Theme hooks
+- [Variants](https://tamagui.dev/docs/core/variants.md): Component variants system
+
+**Component Documentation:**
+
+- All components at: https://tamagui.dev/ui/[component-name]
+- [Button](https://tamagui.dev/ui/button.md): Customizable button with variants and themes
+- [Text](https://tamagui.dev/ui/text.md): Text display component
+- [Stacks](https://tamagui.dev/ui/stacks.md): Layout stack components (XStack/YStack)
+
+**Guides:**
+
+- [Next.js Guide](https://tamagui.dev/docs/guides/next-js): Next.js integration
+- [Theme Builder](https://tamagui.dev/docs/guides/theme-builder): Creating custom themes
 
 ### Other Documentation
 

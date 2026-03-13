@@ -159,7 +159,9 @@ export function ListingStep({ formData, onUpdate, direction }: Readonly<ListingS
               <Input
                 flex={1}
                 value={formData.title}
-                onChangeText={(text) => onUpdate({ title: text })}
+                onChange={(e: any) =>
+                  onUpdate({ title: e.nativeEvent?.text ?? e.target?.value ?? "" })
+                }
                 onFocus={() => setTitleFocused(true)}
                 onBlur={() => setTitleFocused(false)}
                 placeholder="Enter a title for your listing"
@@ -265,12 +267,14 @@ export function ListingStep({ formData, onUpdate, direction }: Readonly<ListingS
               <Input
                 flex={1}
                 value={formData.price}
-                onChangeText={handlePriceChange}
+                onChange={(e: any) =>
+                  handlePriceChange(e.nativeEvent?.text ?? e.target?.value ?? "")
+                }
                 onFocus={() => setPriceFocused(true)}
                 onBlur={() => setPriceFocused(false)}
                 placeholder="0.00"
                 placeholderTextColor="$textSecondary"
-                keyboardType="decimal-pad"
+                inputMode="decimal"
                 borderWidth={0}
                 backgroundColor="transparent"
                 paddingHorizontal="$4"

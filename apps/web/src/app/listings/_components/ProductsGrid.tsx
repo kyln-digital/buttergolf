@@ -140,11 +140,11 @@ export function ProductsGrid({
         style={{ display: "grid" }}
         gridTemplateColumns="repeat(2, 1fr)"
         gap="$md"
-        $gtSm={{
+        $sm={{
           gridTemplateColumns: "repeat(3, 1fr)",
           gap: "$lg",
         }}
-        $gtMd={{
+        $md={{
           gridTemplateColumns: "repeat(4, 1fr)",
         }}
       >

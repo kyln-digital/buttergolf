@@ -159,7 +159,8 @@ export function ProductDetailScreen({
         {primaryImage && (
           <View position="relative">
             <Image
-              source={{ uri: primaryImage }}
+              src={primaryImage}
+              alt={product.title}
               width="100%"
               height={400}
               objectFit="cover"
@@ -417,7 +418,8 @@ export function ProductDetailScreen({
               <Row gap="$3" alignItems="center">
                 {product.user.imageUrl ? (
                   <Image
-                    source={{ uri: product.user.imageUrl }}
+                    src={product.user.imageUrl}
+                    alt={sellerName}
                     width={50}
                     height={50}
                     borderRadius={25}
@@ -458,7 +460,8 @@ export function ProductDetailScreen({
                 {product.images.slice(1).map((image, index) => (
                   <Image
                     key={`${image.url}-${index}`}
-                    source={{ uri: image.url }}
+                    src={image.url}
+                    alt={`Product image ${index + 2}`}
                     width={100}
                     height={100}
                     objectFit="cover"

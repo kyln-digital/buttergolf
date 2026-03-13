@@ -196,7 +196,7 @@ export function ResetPasswordScreen({
               value={code}
               onChangeText={handleCodeChange}
               placeholder="000000"
-              keyboardType="numeric"
+              inputMode="numeric"
               error={codeError}
               editable={!isSubmitting}
             />
@@ -208,9 +208,10 @@ export function ResetPasswordScreen({
                 value={newPassword}
                 onChangeText={handlePasswordChange}
                 placeholder="••••••••"
-                secureTextEntry
+                type="password"
                 error={passwordError}
                 editable={!isSubmitting}
+                autoComplete="new-password"
               />
 
               {/* Password Strength Indicator */}
@@ -258,9 +259,10 @@ export function ResetPasswordScreen({
               value={confirmPassword}
               onChangeText={handleConfirmPasswordChange}
               placeholder="••••••••"
-              secureTextEntry
+              type="password"
               error={confirmPasswordError}
               editable={!isSubmitting}
+              autoComplete="new-password"
             />
           </Column>
 
@@ -269,7 +271,6 @@ export function ResetPasswordScreen({
             butterVariant="primary"
             size="$5"
             borderRadius="$full"
-            fontWeight="600"
             onPress={handleSubmit}
             disabled={isSubmitting || !isLoaded || code.length !== 6}
             opacity={isSubmitting || code.length !== 6 ? 0.7 : 1}
@@ -281,15 +282,13 @@ export function ResetPasswordScreen({
           <TamaguiButton
             chromeless
             size="$4"
-            color="$primary"
-            fontWeight="600"
             onPress={onNavigateBack}
             disabled={isSubmitting}
             marginTop="$4"
             paddingVertical={0}
             paddingHorizontal="$2"
           >
-            Back
+            <TamaguiButton.Text color="$primary">Back</TamaguiButton.Text>
           </TamaguiButton>
         </Column>
       </ScrollView>

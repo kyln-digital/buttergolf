@@ -8,7 +8,7 @@
     "postbuild": "next-sitemap",
     "start": "next start",
     "lint": "eslint --fix",
-    "check-types": "tsc --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@buttergolf/app": "workspace:*",
@@ -27,6 +27,7 @@
     "@supabase/supabase-js": "^2.97.0",
     "@tamagui/card": "catalog:",
     "@tamagui/config": "catalog:",
+    "@tamagui/react-native-web-lite": "catalog:",
     "@tamagui/core": "catalog:",
     "@tamagui/lucide-icons": "catalog:",
     "@tamagui/polyfill-dev": "catalog:",

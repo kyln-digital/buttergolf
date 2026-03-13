@@ -97,7 +97,7 @@ export const Column = withReactChildren(_Column);
 export const Container = withReactChildren(_Container);
 export const Spacer = withReactChildren(_Spacer);
 
-export type RowProps = GetProps<typeof _Row>;
-export type ColumnProps = GetProps<typeof _Column>;
-export type ContainerProps = GetProps<typeof _Container>;
-export type SpacerProps = GetProps<typeof _Spacer>;
+export type RowProps = GetProps<typeof _Row> & { children?: ReactNode };
+export type ColumnProps = GetProps<typeof _Column> & { children?: ReactNode };
+export type ContainerProps = GetProps<typeof _Container> & { children?: ReactNode };
+export type SpacerProps = GetProps<typeof _Spacer> & { children?: ReactNode };

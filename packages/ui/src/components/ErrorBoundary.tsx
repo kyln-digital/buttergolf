@@ -143,7 +143,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 backgroundColor="transparent"
                 borderWidth={2}
                 borderColor="$border"
-                color="$text"
                 onPress={() => {
                   // Navigate to home or reload page
                   if (globalThis.window !== undefined) {
@@ -151,7 +150,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                   }
                 }}
               >
-                Go Home
+                <Button.Text color="$text">Go Home</Button.Text>
               </Button>
             </Row>
           </Column>

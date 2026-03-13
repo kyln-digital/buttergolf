@@ -340,7 +340,7 @@ export function Component() {
   const media = useMedia();
 
   return (
-    <View width="100%" padding={media.gtMd ? "$lg" : "$md"}>
+    <View width="100%" padding={media.md ? "$lg" : "$md"}>
       <Text>Responsive content</Text>
     </View>
   );

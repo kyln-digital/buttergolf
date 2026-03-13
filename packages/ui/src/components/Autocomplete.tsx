@@ -152,17 +152,11 @@ export function Autocomplete({
   };
 
   return (
-    <Column
-      ref={(el) => {
-        containerRef.current = el as unknown as HTMLDivElement;
-      }}
-      position="relative"
-      width="100%"
-    >
+    <Column ref={containerRef as any} position="relative" width="100%">
       <div onKeyDown={handleKeyDown}>
         <Input
           value={value}
-          onChangeText={handleInputChange}
+          onChange={(e: any) => handleInputChange(e.nativeEvent?.text ?? e.target?.value ?? "")}
           onFocus={handleFocus}
           placeholder={placeholder}
           autoComplete="off"

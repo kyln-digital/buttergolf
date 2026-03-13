@@ -64,6 +64,6 @@
     "test": "pnpm test",
     "lint": "pnpm lint",
     "format": "pnpm format",
-    "typecheck": "pnpm check-types"
+    "typecheck": "pnpm typecheck"
   }
 }

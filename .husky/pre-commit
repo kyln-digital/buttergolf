@@ -1,2 +1,2 @@
-export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
+export PATH="/home/runner/actions-runner/cached/externals/node24/lib/node_modules/corepack/shims:/usr/local/bin:/opt/homebrew/bin:$PATH"
 pnpm lint-staged

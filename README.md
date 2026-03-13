@@ -91,7 +91,7 @@ pnpm turbo build --filter=mobile
 pnpm lint
 
 # Type check all packages
-pnpm check-types
+pnpm typecheck
 ```
 
 ## Monorepo Setup Details

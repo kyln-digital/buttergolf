@@ -309,7 +309,7 @@ function CheckoutSuccessContent() {
             <Row gap="$md" alignItems="center">
               {order.productImage && (
                 <Image
-                  source={{ uri: order.productImage }}
+                  src={order.productImage}
                   width={80}
                   height={80}
                   borderRadius="$md"

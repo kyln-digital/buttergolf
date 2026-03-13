@@ -319,10 +319,9 @@ const SheetContents = memo(function SheetContents({
                 backgroundColor="transparent"
                 borderWidth={2}
                 borderColor="$border"
-                color="$text"
                 onPress={onClose}
               >
-                Cancel
+                <Button.Text color="$text">Cancel</Button.Text>
               </Button>
               <Button butterVariant="primary" flex={1} size="$4" onPress={handleRetry}>
                 Try Again
@@ -489,11 +488,10 @@ const SheetContents = memo(function SheetContents({
             backgroundColor="transparent"
             borderWidth={2}
             borderColor="$border"
-            color="$text"
             onPress={onClose}
             disabled={isProcessing}
           >
-            Cancel
+            <Button.Text color="$text">Cancel</Button.Text>
           </Button>
           <Button
             butterVariant="primary"

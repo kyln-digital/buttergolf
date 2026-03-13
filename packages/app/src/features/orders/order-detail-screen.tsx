@@ -562,7 +562,8 @@ export function OrderDetailScreen({
           <Row gap="$3" alignItems="flex-start">
             {productImage ? (
               <Image
-                source={{ uri: productImage }}
+                src={productImage}
+                alt={order.product.title || "Product image"}
                 width={90}
                 height={90}
                 borderRadius="$md"
@@ -949,7 +950,7 @@ export function OrderDetailScreen({
             <TextArea
               placeholder="Add a comment (optional)"
               value={ratingComment}
-              onChangeText={setRatingComment}
+              onChange={(e: any) => setRatingComment(e.nativeEvent?.text ?? e.target?.value ?? "")}
               minHeight={80}
               maxLength={500}
             />

@@ -212,7 +212,7 @@ function MyButton() {
       hoverStyle={{
         backgroundColor: "$primaryHover",
       }}
-      $gtMd={{
+      $md={{
         padding: "$lg",
       }}
     >
@@ -443,7 +443,7 @@ pnpm dev:mobile --clear
 If you get type errors about missing tokens:
 
 1. Restart TypeScript server in your IDE
-2. Run `pnpm check-types` to verify
+2. Run `pnpm typecheck` to verify
 3. Ensure config is properly exported
 
 ### Missing Tokens

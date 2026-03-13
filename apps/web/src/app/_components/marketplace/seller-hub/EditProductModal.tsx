@@ -239,7 +239,7 @@ export function EditProductModal({ product, onClose, onSave }: EditProductModalP
                 <Text weight="medium">Title *</Text>
                 <Input
                   value={formData.title}
-                  onChangeText={(value) => setFormData({ ...formData, title: value })}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="e.g., TaylorMade Stealth 2 Driver"
                   size="$4"
                   required
@@ -276,7 +276,7 @@ export function EditProductModal({ product, onClose, onSave }: EditProductModalP
                   <Text weight="medium">Price (£) *</Text>
                   <Input
                     value={formData.price}
-                    onChangeText={(value) => setFormData({ ...formData, price: value })}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                     placeholder="0.00"
                     size="$4"
                     inputMode="decimal"
@@ -372,7 +372,7 @@ export function EditProductModal({ product, onClose, onSave }: EditProductModalP
                 <Text weight="medium">Model</Text>
                 <Input
                   value={formData.model}
-                  onChangeText={(value) => setFormData({ ...formData, model: value })}
+                  onChange={(e) => setFormData({ ...formData, model: e.target.value })}
                   placeholder="e.g., Stealth 2, Apex 21"
                   size="$4"
                 />

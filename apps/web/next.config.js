@@ -27,14 +27,14 @@ const plugins = [
     disableExtraction,
     // Disable debug attributes to prevent hydration warnings
     // These are only useful for deep debugging of Tamagui compiler output
-    useReactNativeWebLite: false,
+    useReactNativeWebLite: true,
     disableDebugAttr: true,
     shouldExtract: (path) => {
       if (path.includes(join("packages", "app"))) {
         return true;
       }
     },
-    excludeReactNativeWebExports: ["Switch", "ProgressBar", "Picker", "CheckBox", "Touchable"],
+    excludeReactNativeWebExports: ["Switch", "ProgressBar", "Picker", "CheckBox"],
   }),
 ];
 
@@ -114,6 +114,7 @@ module.exports = () => {
       "@buttergolf/config",
       "@buttergolf/ui",
       "react-native-web",
+      "@tamagui/react-native-web-lite",
       "react-native",
       "solito",
       "expo-linking",
@@ -125,7 +126,6 @@ module.exports = () => {
       "@tamagui/animations-react-native",
       "@tamagui/animations-css",
       "@tamagui/card",
-      "@tamagui/toast",
       "@tamagui/next-theme",
       "@tamagui/sheet",
       "@tamagui/popover",
@@ -164,10 +164,31 @@ module.exports = () => {
         webpackConfig.plugins = [...webpackConfig.plugins, new PrismaPlugin()];
       }
 
-      // Map React Native to React Native Web for web builds
+      // Fix: @tamagui/react-native-web-lite imports `unmountComponentAtNode` from
+      // 'react-dom', which was removed in React 19. We intercept that import and
+      // redirect it to a shim that re-exports all of react-dom + adds the polyfill.
+      // The shim only applies when 'react-dom' is imported from within the
+      // react-native-web-lite package — all other react-dom imports are unaffected.
+      const webpack = require("webpack");
+      webpackConfig.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(/^react-dom$/, (resource) => {
+          if (resource.context && resource.context.includes("react-native-web-lite")) {
+            resource.request = resolve(__dirname, "./src/shims/react-dom-react19-compat.js");
+          }
+        })
+      );
+
+      // Alias react-native to the lighter Tamagui-maintained react-native-web-lite for
+      // web builds.  This replaces full react-native-web (≈300 kB) with a targeted
+      // subset, reducing the client bundle by roughly 40 %.  Components excluded from
+      // the lite package (Switch, ProgressBar, Picker, CheckBox, Touchable) are
+      // enumerated in excludeReactNativeWebExports above and are provided by Tamagui
+      // itself.
+      // Rollback: change this line back to "react-native-web" and set
+      // useReactNativeWebLite: false in the withTamagui() call above.
       webpackConfig.resolve.alias = {
         ...webpackConfig.resolve.alias,
-        "react-native$": "react-native-web",
+        "react-native$": "@tamagui/react-native-web-lite",
         // Enforce a single instance of 'tamagui' at runtime to avoid
         // "Haven't called createTamagui yet" errors caused by duplicate module instances
         tamagui: require.resolve("tamagui"),

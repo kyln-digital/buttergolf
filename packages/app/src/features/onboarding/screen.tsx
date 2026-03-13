@@ -174,12 +174,12 @@ export function OnboardingScreen({
         <View width={SCREEN_W * 0.5} height={Math.round(SCREEN_W * 0.5 * (79 / 209))}>
           {isDark ? (
             <Image
-              source={LogoCreamPng}
+              src={LogoCreamPng}
               width="100%"
               height="100%"
-              resizeMode="contain"
+              objectFit="contain"
               accessible={true}
-              accessibilityLabel="Butter Golf Logo"
+              aria-label="Butter Golf Logo"
             />
           ) : (
             <LogoOrangeSvg
@@ -234,12 +234,12 @@ export function OnboardingScreen({
               }}
             >
               <Image
-                source={item.source}
+                src={item.source}
                 width={CARD_WIDTH}
                 height={CARD_HEIGHT}
-                resizeMode="contain"
+                objectFit="contain"
                 accessible={true}
-                accessibilityLabel={item.label}
+                aria-label={item.label}
               />
             </View>
           ))}
@@ -271,12 +271,12 @@ export function OnboardingScreen({
               }}
             >
               <Image
-                source={item.source}
+                src={item.source}
                 width={CARD_WIDTH}
                 height={CARD_HEIGHT}
-                resizeMode="contain"
+                objectFit="contain"
                 accessible={true}
-                accessibilityLabel={item.label}
+                aria-label={item.label}
               />
             </View>
           ))}
@@ -311,17 +311,15 @@ export function OnboardingScreen({
             }}
             {...(isDark && {
               backgroundColor: "$vanillaCream",
-              color: "$primary",
             })}
           >
-            Create account
+            <Button.Text color={isDark ? "$primary" : "$white"}>Create account</Button.Text>
           </Button>
 
           {/* Secondary Button - Pill-shaped, theme-aware colors */}
           <Button
             size="$4"
             backgroundColor={isDark ? "transparent" : "$vanillaCream"}
-            color={isDark ? "$vanillaCream" : "$primary"}
             borderWidth={2}
             borderColor={isDark ? "$vanillaCream" : "$primary"}
             borderRadius="$full"
@@ -334,7 +332,9 @@ export function OnboardingScreen({
               backgroundColor: isDark ? "rgba(255, 250, 210, 0.1)" : "$vanillaCreamHover",
             }}
           >
-            I already have an account
+            <Button.Text color={isDark ? "$vanillaCream" : "$primary"}>
+              I already have an account
+            </Button.Text>
           </Button>
         </YStack>
 

@@ -16,7 +16,6 @@
 import "@tamagui/polyfill-dev";
 
 import { type ReactNode } from "react";
-import { StyleSheet } from "react-native";
 import { useServerInsertedHTML } from "next/navigation";
 import { NextThemeProvider, useRootTheme } from "@tamagui/next-theme";
 import { TamaguiProvider } from "tamagui";
@@ -40,7 +39,6 @@ function TamaguiProviderInner({ children }: { children: ReactNode }) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       config={config as any}
       defaultTheme={theme ?? "light"}
-      disableRootThemeClass // NextThemeProvider handles the class
     >
       {children}
     </TamaguiProvider>
@@ -48,10 +46,11 @@ function TamaguiProviderInner({ children }: { children: ReactNode }) {
 }
 
 export function NextTamaguiProvider({ children }: Readonly<{ children: ReactNode }>) {
-  // Inject styles for SSR (react-native-web components)
+  // Inject Tamagui CSS for SSR
+  // Note: StyleSheet.getSheet() from react-native-web is broken in
+  // @tamagui/react-native-web-lite 2.0.0-rc.16 (the `sheet` variable
+  // is never initialized). Tamagui v2 handles its own CSS via config.getCSS().
   useServerInsertedHTML(() => {
-    // @ts-expect-error - RN doesn't have this type but it exists at runtime
-    const rnwStyle = StyleSheet.getSheet();
     return (
       <>
         {/* Prevent theme flash on load by hiding until JS runs */}
@@ -60,7 +59,6 @@ export function NextTamaguiProvider({ children }: Readonly<{ children: ReactNode
             __html: `document.documentElement.classList.add('t_unmounted')`,
           }}
         />
-        <style dangerouslySetInnerHTML={{ __html: rnwStyle.textContent }} id={rnwStyle.id} />
         <style
           dangerouslySetInnerHTML={{
             __html: config.getCSS({

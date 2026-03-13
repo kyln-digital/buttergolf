@@ -53,7 +53,7 @@ export function ProductCardWithCart({ product }: Readonly<ProductCardWithCartPro
             }}
           >
             <Image
-              source={{ uri: product.imageUrl }}
+              src={product.imageUrl}
               width="100%"
               height="100%"
               objectFit="cover"

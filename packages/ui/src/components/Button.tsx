@@ -26,7 +26,7 @@
  */
 
 import type { ReactNode } from "react";
-import { Button as TamaguiButton, styled, GetProps, type ColorTokens } from "tamagui";
+import { Button as TamaguiButton, styled, GetProps, withStaticProperties, type ColorTokens } from "tamagui";
 import { Platform } from "react-native";
 
 /**
@@ -53,10 +53,8 @@ const ButtonBase = styled(TamaguiButton, {
   name: "Button",
 
   // Base styles for all buttons
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore — fontWeight inherits to button text via CSS; TS types for styled config don't include text props in v2 RC
-  // TODO: remove @ts-ignore once Tamagui v2 stable ships with corrected styled() text-prop types
-  fontWeight: "700",
+  // Note: In Tamagui v2, font-related props (fontFamily, fontWeight) are not valid on the Button
+  // frame (which extends Stack, not Text). To style button text, use <Button.Text> explicitly.
   cursor: "pointer",
   borderRadius: "$full",
 
@@ -144,7 +142,7 @@ const ButtonBase = styled(TamaguiButton, {
 export type ButtonProps = GetProps<typeof ButtonBase> & {
   /** Text colour for the button label. Forwarded to Tamagui's ButtonContext in v2. */
   color?: ColorTokens | string;
-  /** Font weight for the button label. Inherited by button text via CSS in v2. */
+  /** Font weight for the button label. */
   fontWeight?: string | number;
   /** Explicit children type — fixes Tamagui v2 type-inference that narrows children to token unions. */
   children?: ReactNode;
@@ -155,9 +153,17 @@ export type ButtonProps = GetProps<typeof ButtonBase> & {
  * skip the default primary variant so chromeless styling is not overridden.
  * Also skip the default for `unstyled` buttons so custom surface styles are respected.
  * Otherwise, default to `butterVariant="primary"` for backward compatibility.
+ *
+ * withStaticProperties re-attaches Button.Text/Icon sub-components per the v2 compound
+ * component pattern ("How to Build a Button" guide).
  */
-export const Button = ButtonBase.styleable<ButtonProps>((props, ref) => {
+const ButtonStyleable = ButtonBase.styleable<ButtonProps>((props, ref) => {
   const butterVariant =
     props.butterVariant ?? (props.chromeless || props.unstyled ? undefined : "primary");
   return <ButtonBase ref={ref} {...props} butterVariant={butterVariant} />;
+});
+
+export const Button = withStaticProperties(ButtonStyleable, {
+  Text: TamaguiButton.Text,
+  Icon: TamaguiButton.Icon,
 });

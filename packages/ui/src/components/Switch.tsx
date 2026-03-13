@@ -11,7 +11,7 @@ import { Switch as TamaguiSwitch, styled, GetProps, Label, XStack } from "tamagu
  * @example
  * // Basic switch
  * <Switch size="$4">
- *   <Switch.Thumb animation="bouncy" />
+ *   <Switch.Thumb transition="bouncy" />
  * </Switch>
  *
  * @example
@@ -98,13 +98,9 @@ export function SwitchWithLabel({
 }: SwitchWithLabelProps) {
   const switchId = id ?? `switch-${label.toLowerCase().replace(/\s+/g, "-")}`;
 
-  // styled() adds a Tamagui token index signature that blocks checked/onCheckedChange/children
-  // types. Cast locally to any so the JSX tree is unchecked; public Switch export stays typed.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const S = Switch as any;
   return (
     <XStack alignItems="center" gap="$3">
-      <S
+      <Switch
         id={switchId}
         size={size}
         checked={checked}
@@ -112,8 +108,8 @@ export function SwitchWithLabel({
         onCheckedChange={onCheckedChange}
         disabled={disabled}
       >
-        <S.Thumb animation="bouncy" />
-      </S>
+        <Switch.Thumb transition="bouncy" />
+      </Switch>
       <Label
         htmlFor={switchId}
         size={size}

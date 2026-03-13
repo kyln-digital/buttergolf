@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Column, Text, Button } from "@buttergolf/ui";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Column, Row, Text, Button } from "@buttergolf/ui";
 import { AnimatedLogo } from "../coming-soon/_components/AnimatedLogo";
+
+const DISMISSED_KEY = "mobile-interstitial-dismissed";
 
 const APP_STORE_URL = process.env.NEXT_PUBLIC_APP_STORE_URL ?? "";
 const PLAY_STORE_URL = process.env.NEXT_PUBLIC_PLAY_STORE_URL ?? "";
@@ -17,11 +19,6 @@ export function MobileInterstitial() {
       return;
     }
 
-    // Don't show if already dismissed this session
-    if (sessionStorage.getItem("dismissedMobileInterstitial")) {
-      return;
-    }
-
     const ua = navigator.userAgent || "";
     const isTouch = window.matchMedia("(pointer: coarse)").matches;
     const isSmallScreen = window.matchMedia("(max-width: 1024px)").matches;
@@ -31,16 +28,17 @@ export function MobileInterstitial() {
     // Don't show if running as installed PWA / native app WebView
     const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
 
+    // Don't show if user previously dismissed
+    const dismissed = localStorage.getItem(DISMISSED_KEY);
+    if (dismissed) {
+      const daysSinceDismiss = (Date.now() - parseInt(dismissed)) / (1000 * 60 * 60 * 24);
+      if (daysSinceDismiss < 7) return;
+    }
+
     if (isMobileDevice && !isStandalone) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsMobile(true);
     }
   }, []);
-
-  const handleDismiss = () => {
-    sessionStorage.setItem("dismissedMobileInterstitial", "1");
-    setIsMobile(false);
-  };
 
   // Focus trap: keep focus within the dialog
   useEffect(() => {
@@ -50,6 +48,11 @@ export function MobileInterstitial() {
     );
     if (focusable.length > 0) focusable[0].focus();
   }, [isMobile]);
+
+  const handleDismiss = useCallback(() => {
+    localStorage.setItem(DISMISSED_KEY, String(Date.now()));
+    setIsMobile(false);
+  }, []);
 
   if (!isMobile) return null;
 
@@ -90,7 +93,7 @@ export function MobileInterstitial() {
           color="$primaryLight"
           textAlign="center"
           marginBottom="$md"
-          letterSpacing={-0.5}
+          style={{ letterSpacing: "-0.02em", lineHeight: 1.1 }}
         >
           Best experienced on desktop
         </Text>
@@ -103,74 +106,99 @@ export function MobileInterstitial() {
           textAlign="center"
           marginBottom="$xl"
           maxWidth={360}
+          style={{ lineHeight: 1.5 }}
         >
           Visit buttergolf.com on a desktop browser, or download the app for the full experience.
         </Text>
 
         {/* CTA Buttons */}
         <Column alignItems="center" gap="$sm" width="100%" maxWidth={300}>
-          <Button
-            tag="a"
-            href={APP_STORE_URL || "#"}
-            target="_blank"
-            rel="noopener noreferrer"
-            size="$5"
-            backgroundColor="$primaryLight"
-            color="$secondary"
-            fontWeight="600"
-            borderRadius="$full"
-            width="100%"
-            textAlign="center"
-            hoverStyle={{ opacity: 0.9 }}
-            pressStyle={{ opacity: 0.8 }}
-            focusVisibleStyle={{
-              outlineWidth: 2,
-              outlineColor: "$primaryLight",
-              outlineStyle: "solid",
-              outlineOffset: 2,
-            }}
-          >
-            Download on the App Store
-          </Button>
-
-          <Button
-            tag="a"
-            href={PLAY_STORE_URL || "#"}
-            target="_blank"
-            rel="noopener noreferrer"
-            size="$5"
-            backgroundColor="transparent"
-            color="$primaryLight"
-            fontWeight="600"
-            borderRadius="$full"
-            borderWidth={1.5}
-            borderColor="$overlayLight30"
-            width="100%"
-            textAlign="center"
-            hoverStyle={{ borderColor: "$overlayLight60" }}
-            pressStyle={{ opacity: 0.8 }}
-            focusVisibleStyle={{
-              outlineWidth: 2,
-              outlineColor: "$primaryLight",
-              outlineStyle: "solid",
-              outlineOffset: 2,
-            }}
-          >
-            Get it on Google Play
-          </Button>
-
-          {/* Dismiss - Continue to website */}
-          <Button chromeless onPress={handleDismiss} marginTop="$md" width="100%">
-            <Text
-              color="$overlayLight60"
+          {APP_STORE_URL ? (
+            <Button
+              render="a"
+              href={APP_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               size="$5"
+              backgroundColor="$primaryLight"
+              color="$secondary"
+              fontWeight="600"
+              borderRadius="$full"
+              width="100%"
               textAlign="center"
-              textDecorationLine="underline"
+              hoverStyle={{ opacity: 0.9 }}
+              pressStyle={{ opacity: 0.8 }}
+              focusVisibleStyle={{
+                outlineWidth: 2,
+                outlineColor: "$primaryLight",
+                outlineStyle: "solid",
+                outlineOffset: 2,
+              }}
             >
-              Continue to website
-            </Text>
-          </Button>
+              Download on the App Store
+            </Button>
+          ) : null}
+
+          {PLAY_STORE_URL ? (
+            <Button
+              render="a"
+              href={PLAY_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              size="$5"
+              backgroundColor="transparent"
+              color="$primaryLight"
+              fontWeight="600"
+              borderRadius="$full"
+              borderWidth={1.5}
+              borderColor="$overlayLight30"
+              width="100%"
+              textAlign="center"
+              hoverStyle={{ borderColor: "$overlayLight60" }}
+              pressStyle={{ opacity: 0.8 }}
+              focusVisibleStyle={{
+                outlineWidth: 2,
+                outlineColor: "$primaryLight",
+                outlineStyle: "solid",
+                outlineOffset: 2,
+              }}
+            >
+              Get it on Google Play
+            </Button>
+          ) : null}
         </Column>
+
+        {/* Continue to mobile web — makes it dismissible */}
+        <Button
+          size="$4"
+          chromeless
+          color="$overlayLight60"
+          marginTop="$xl"
+          onPress={handleDismiss}
+          hoverStyle={{ color: "$primaryLight" }}
+          pressStyle={{ opacity: 0.8 }}
+          focusVisibleStyle={{
+            outlineWidth: 2,
+            outlineColor: "$primaryLight",
+            outlineStyle: "solid",
+            outlineOffset: 2,
+          }}
+        >
+          Continue to mobile web →
+        </Button>
+
+        {/* Desktop instruction */}
+        <Text
+          size="$2"
+          fontWeight="400"
+          color="$overlayLight40"
+          textAlign="center"
+          marginTop="$lg"
+          maxWidth={280}
+          style={{ lineHeight: 1.5 }}
+        >
+          Or open this page on your desktop browser for the full marketplace experience.
+        </Text>
       </Column>
     </div>
   );

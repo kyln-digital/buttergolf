@@ -225,7 +225,7 @@ export function OrderRating({ orderId, isDelivered, isBuyer, sellerName }: Order
             </Text>
             <TextArea
               value={comment}
-              onChangeText={setComment}
+              onChange={(e) => setComment(e.target.value)}
               placeholder="Share your experience with other buyers..."
               size="md"
               rows={4}

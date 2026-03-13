@@ -174,7 +174,7 @@ export function AccountHubClient({
             {/* Avatar */}
             <Avatar circular size="$10">
               {imageUrl ? (
-                <Avatar.Image accessibilityLabel={getDisplayName()} src={imageUrl} />
+                <Avatar.Image aria-label={getDisplayName()} src={imageUrl} />
               ) : (
                 <Avatar.Fallback
                   backgroundColor="$primary"

@@ -44,7 +44,7 @@ export function FilterSidebar({
       padding="$lg"
       gap="$lg"
       display="none"
-      $gtLg={{ display: "flex" }}
+      $lg={{ display: "flex" }}
     >
       <Text weight="bold" size="$6">
         Filters

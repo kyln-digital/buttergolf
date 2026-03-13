@@ -323,9 +323,9 @@ export function ListingsClient({
           maxWidth={1280}
           marginHorizontal="auto"
           paddingHorizontal="$md"
-          $gtSm={{ paddingHorizontal: "$lg" }}
-          $gtMd={{ paddingHorizontal: "$xl" }}
-          $gtLg={{ paddingHorizontal: "$2xl" }}
+          $sm={{ paddingHorizontal: "$lg" }}
+          $md={{ paddingHorizontal: "$xl" }}
+          $lg={{ paddingHorizontal: "$2xl" }}
           width="100%"
           gap="$lg"
         >
@@ -342,7 +342,7 @@ export function ListingsClient({
 
             <Row gap="$md" alignItems="center">
               {/* Mobile filter button */}
-              <Row display="flex" $gtLg={{ display: "none" }}>
+              <Row display="flex" $lg={{ display: "none" }}>
                 <Button size="$4" chromeless onPress={() => setMobileFilterOpen(true)}>
                   <Row gap="$sm" alignItems="center">
                     <Text>Filters</Text>

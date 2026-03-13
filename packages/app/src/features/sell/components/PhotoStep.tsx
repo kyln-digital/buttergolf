@@ -264,7 +264,7 @@ export function PhotoStep({
                 overflow="hidden"
                 position="relative"
               >
-                <Image source={{ uri: image.uri }} width="100%" height="100%" objectFit="cover" />
+                <Image src={image.uri} alt={`Photo ${index + 1}`} width="100%" height="100%" objectFit="cover" />
                 {/* Cover badge for first image */}
                 {index === 0 && (
                   <View

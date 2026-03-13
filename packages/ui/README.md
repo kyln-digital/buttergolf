@@ -374,8 +374,8 @@ import { Column } from "@buttergolf/ui";
 
 <Column
   width="100%"
-  $gtSm={{ width: "50%" }} // Greater than small breakpoint
-  $gtMd={{ width: "33%" }} // Greater than medium breakpoint
+  $sm={{ width: "50%" }} // Greater than small breakpoint
+  $md={{ width: "33%" }} // Greater than medium breakpoint
 >
   <Text>Responsive content</Text>
 </Column>;
@@ -383,16 +383,22 @@ import { Column } from "@buttergolf/ui";
 
 **Available breakpoints**:
 
-- `$xs`: Max width 660px
-- `$gtXs`: Min width 661px
-- `$sm`: Max width 860px
-- `$gtSm`: Min width 861px
-- `$md`: Max width 1020px
-- `$gtMd`: Min width 1021px
-- `$lg`: Max width 1280px
-- `$gtLg`: Min width 1281px
-- `$xl`: Max width 1420px
-- `$gtXl`: Min width 1421px
+- Min-width keys (bare names):
+  - `$2xs`: `min-width: 340px`
+  - `$xs`: `min-width: 460px`
+  - `$sm`: `min-width: 640px`
+  - `$md`: `min-width: 768px`
+  - `$lg`: `min-width: 1024px`
+  - `$xl`: `min-width: 1280px`
+  - `$2xl`: `min-width: 1536px`
+- Max-width keys (explicit `max` prefix):
+  - `$max2xs`: `max-width: 340px`
+  - `$maxXs`: `max-width: 460px`
+  - `$maxSm`: `max-width: 640px`
+  - `$maxMd`: `max-width: 768px`
+  - `$maxLg`: `max-width: 1024px`
+  - `$maxXl`: `max-width: 1280px`
+  - `$max2Xl`: `max-width: 1536px`
 
 ## 🎯 Best Practices
 

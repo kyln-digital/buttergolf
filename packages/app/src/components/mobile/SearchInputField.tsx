@@ -67,12 +67,11 @@ export function SearchInputField({
         flex={1}
         unstyled
         value={value}
-        onChangeText={onChangeText}
+        onChange={(e: any) => onChangeText(e.nativeEvent?.text ?? e.target?.value ?? "")}
         onFocus={handleFocus}
         onBlur={handleBlur}
         placeholder={placeholder}
         placeholderTextColor="$textSecondary"
-        size="$5"
         color="$text"
         borderWidth={0}
         backgroundColor="transparent"

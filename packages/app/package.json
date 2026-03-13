@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "lint": "eslint \"src/**/*.{ts,tsx}\" --fix",
-    "check-types": "tsc --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@buttergolf/config": "workspace:*",
@@ -19,7 +19,6 @@
     "@tamagui/next-theme": "catalog:",
     "@tamagui/polyfill-dev": "catalog:",
     "@tamagui/sheet": "catalog:",
-    "@tamagui/toast": "catalog:",
     "react": "catalog:",
     "react-native": "catalog:",
     "react-native-otp-entry": "^1.8.5",

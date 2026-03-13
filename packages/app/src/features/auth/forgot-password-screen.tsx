@@ -119,9 +119,10 @@ export function ForgotPasswordScreen({
               value={email}
               onChangeText={handleEmailChange}
               placeholder="your@email.com"
-              keyboardType="email-address"
+              type="email"
               error={emailError}
               editable={!isSubmitting}
+              autoComplete="email"
             />
 
             <Text size="$3" color="$textMuted">
@@ -134,7 +135,6 @@ export function ForgotPasswordScreen({
             butterVariant="primary"
             size="$5"
             borderRadius="$full"
-            fontWeight="600"
             onPress={handleSubmit}
             disabled={isSubmitting || !isLoaded}
             opacity={isSubmitting ? 0.7 : 1}
@@ -146,15 +146,13 @@ export function ForgotPasswordScreen({
           <TamaguiButton
             chromeless
             size="$4"
-            color="$primary"
-            fontWeight="600"
             onPress={onNavigateBack}
             disabled={isSubmitting}
             marginTop="$4"
             paddingVertical={0}
             paddingHorizontal="$2"
           >
-            Back to Sign In
+            <TamaguiButton.Text color="$primary">Back to Sign In</TamaguiButton.Text>
           </TamaguiButton>
         </Column>
       </ScrollView>

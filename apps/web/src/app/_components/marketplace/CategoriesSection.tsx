@@ -41,10 +41,10 @@ export function CategoriesSection() {
       <Column maxWidth={1200} marginHorizontal="auto" paddingHorizontal="$md" marginBottom="$2xl">
         {/* Headings */}
         <Column gap="$sm" alignItems="center">
-          <Heading level={2} size="$8" $gtMd={{ size: "$9" }} color="$text" textAlign="center">
+          <Heading level={2} size="$8" $lg={{ size: "$9" }} color="$text" textAlign="center">
             Shop by category
           </Heading>
-          <Text size="$5" $gtMd={{ size: "$6" }} color="$textSecondary" textAlign="center">
+          <Text size="$5" $lg={{ size: "$6" }} color="$textSecondary" textAlign="center">
             Find exactly what you need - faster.
           </Text>
         </Column>

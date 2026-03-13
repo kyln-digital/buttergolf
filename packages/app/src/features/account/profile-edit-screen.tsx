@@ -163,7 +163,7 @@ export function ProfileEditScreen({
           <View position="relative">
             <Avatar circular size="$14">
               {displayImageUri ? (
-                <Avatar.Image accessibilityLabel="Profile photo" src={displayImageUri} />
+                <Avatar.Image aria-label="Profile photo" src={displayImageUri} />
               ) : (
                 <Avatar.Fallback
                   backgroundColor="$primary"
@@ -215,7 +215,7 @@ export function ProfileEditScreen({
             <Input
               size="$5"
               value={firstName}
-              onChangeText={setFirstName}
+              onChange={(e: any) => setFirstName(e.nativeEvent?.text ?? e.target?.value ?? "")}
               placeholder="Enter your first name"
               autoCapitalize="words"
               autoCorrect={false}
@@ -229,7 +229,7 @@ export function ProfileEditScreen({
             <Input
               size="$5"
               value={lastName}
-              onChangeText={setLastName}
+              onChange={(e: any) => setLastName(e.nativeEvent?.text ?? e.target?.value ?? "")}
               placeholder="Enter your last name"
               autoCapitalize="words"
               autoCorrect={false}

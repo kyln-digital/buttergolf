@@ -54,7 +54,7 @@ export default function CartPage() {
             <Card key={item.productId} variant="outlined" padding="$md">
               <Row gap="$4" alignItems="center">
                 <Image
-                  source={{ uri: item.imageUrl }}
+                  src={item.imageUrl}
                   width={80}
                   height={80}
                   borderRadius="$md"

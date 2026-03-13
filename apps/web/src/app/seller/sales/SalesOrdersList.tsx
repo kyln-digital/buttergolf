@@ -347,8 +347,8 @@ function OrderCard({ order }: { order: Order }) {
             <>
               {needsAddressUpdate ? (
                 <Link href="/seller/settings" style={{ width: "100%" }}>
-                  <Button size="$4" backgroundColor="$warning" color="$textInverse" width="100%">
-                    <AlertCircle size={16} />
+                  <Button size="$4" backgroundColor="$warning" width="100%">
+                    <AlertCircle size={16} color="$textInverse" />
                     <Text color="$textInverse" marginLeft="$xs">
                       Update Address
                     </Text>
@@ -414,7 +414,7 @@ function OrderCard({ order }: { order: Order }) {
                 rel="noopener noreferrer"
                 style={{ width: "100%" }}
               >
-                <Button size="$4" backgroundColor="$success" color="$textInverse" width="100%">
+                <Button size="$4" backgroundColor="$success" width="100%">
                   <Download size={16} />
                   <Text color="$textInverse" marginLeft="$xs">
                     Download PDF Label
