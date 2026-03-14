@@ -103,6 +103,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     // than a direct Prisma data assignment.
     const MAX_IMAGE_IDS = 20; // safety cap
 
+    // Collect URLs for Cloudinary cleanup after the transaction succeeds.
+    // Cleanup must happen outside the transaction so images are only deleted
+    // once the DB commit is confirmed (avoids deleting images on rollback).
+    let urlsToCleanupAfterTx: string[] = [];
+
     const updatedProduct = await prisma.$transaction(async (tx) => {
       if (body.images || body.removedImageIds) {
         const existingImages = await tx.productImage.findMany({
@@ -119,11 +124,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
               .filter((id: unknown) => typeof id === "string" && existingIdSet.has(id as string))
           : [];
 
-        const urlsToCleanup: string[] = [];
-
         if (removedIds.length > 0) {
           const toDelete = existingImages.filter((img) => removedIds.includes(img.id));
-          urlsToCleanup.push(...toDelete.map((img) => img.url));
+          urlsToCleanupAfterTx = toDelete.map((img) => img.url);
           await tx.productImage.deleteMany({
             where: { id: { in: removedIds }, productId },
           });
@@ -151,14 +154,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
             }
           }
         }
-
-        // Best-effort Cloudinary cleanup after DB ops succeed (fire-and-forget)
-        for (const cdnUrl of urlsToCleanup) {
-          const publicId = extractPublicId(cdnUrl);
-          if (publicId) {
-            cloudinary.uploader.destroy(publicId).catch(() => {});
-          }
-        }
       }
 
       return tx.product.update({
@@ -171,6 +166,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         },
       });
     });
+
+    // Best-effort Cloudinary cleanup after the DB transaction succeeds (fire-and-forget).
+    // Done outside the transaction so images are only removed once the commit is confirmed.
+    for (const cdnUrl of urlsToCleanupAfterTx) {
+      const publicId = extractPublicId(cdnUrl);
+      if (publicId) {
+        cloudinary.uploader.destroy(publicId).catch(() => {});
+      }
+    }
 
     return NextResponse.json(updatedProduct);
   } catch (error) {

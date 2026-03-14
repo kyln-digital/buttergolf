@@ -6,7 +6,6 @@ import {
   ScrollView,
   Text,
   Button,
-  Button as TamaguiButton,
   Heading,
   Row,
   Spinner,
@@ -279,7 +278,7 @@ export function ResetPasswordScreen({
           </Button>
 
           {/* Back Button */}
-          <TamaguiButton
+          <Button
             chromeless
             size="$4"
             onPress={onNavigateBack}
@@ -288,8 +287,8 @@ export function ResetPasswordScreen({
             paddingVertical={0}
             paddingHorizontal="$2"
           >
-            <TamaguiButton.Text color="$primary">Back</TamaguiButton.Text>
-          </TamaguiButton>
+            <Button.Text color="$primary">Back</Button.Text>
+          </Button>
         </Column>
       </ScrollView>
     </Column>

@@ -6,7 +6,6 @@ import {
   Row,
   Text,
   Button,
-  Button as TamaguiButton,
   Heading,
   ScrollView,
   View,
@@ -116,7 +115,7 @@ export function HelpSupportScreen({
         borderBottomWidth={1}
         borderBottomColor="$border"
       >
-        <TamaguiButton
+        <Button
           chromeless
           circular
           size="$4"
@@ -140,7 +139,7 @@ export function HelpSupportScreen({
             CONTACT US
           </Text>
 
-          <TamaguiButton
+          <Button
             unstyled
             backgroundColor="$surface"
             borderRadius="$lg"
@@ -171,10 +170,10 @@ export function HelpSupportScreen({
               </Column>
               <ExternalLink size={18} color="$textMuted" />
             </Row>
-          </TamaguiButton>
+          </Button>
 
           {onOpenChat && (
-            <TamaguiButton
+            <Button
               unstyled
               backgroundColor="$surface"
               borderRadius="$lg"
@@ -205,7 +204,7 @@ export function HelpSupportScreen({
                 </Column>
                 <ExternalLink size={18} color="$textMuted" />
               </Row>
-            </TamaguiButton>
+            </Button>
           )}
         </Column>
 

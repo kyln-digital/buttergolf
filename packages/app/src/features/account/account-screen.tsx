@@ -7,7 +7,6 @@ import {
   ScrollView,
   Text,
   Button,
-  Button as TamaguiButton,
   Heading,
   ThemeSwitcher,
 } from "@buttergolf/ui";
@@ -128,7 +127,7 @@ export function AccountScreen({
         {/* Header with back button */}
         {onNavigateBack && (
           <Row alignItems="center" marginBottom="$4">
-            <TamaguiButton
+            <Button
               chromeless
               circular
               size="$4"
@@ -136,7 +135,7 @@ export function AccountScreen({
               aria-label="Go back"
             >
               <ArrowLeft size={24} color="$text" />
-            </TamaguiButton>
+            </Button>
             <Heading level={3} marginLeft="$2">
               Account
             </Heading>
@@ -144,7 +143,7 @@ export function AccountScreen({
         )}
 
         {/* Profile Header Card */}
-        <TamaguiButton
+        <Button
           unstyled
           backgroundColor="$surface"
           borderRadius="$lg"
@@ -188,7 +187,7 @@ export function AccountScreen({
             {/* Edit indicator */}
             {onEditProfile && <Edit3 size={20} color="$textMuted" />}
           </Row>
-        </TamaguiButton>
+        </Button>
 
         {/* Shopping Section */}
         <Column gap="$3" marginBottom="$6">

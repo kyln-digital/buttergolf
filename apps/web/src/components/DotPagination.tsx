@@ -44,6 +44,12 @@ export function DotPagination({
             role="button"
             tabIndex={0}
             onPress={() => !disabled && onPageChange(pg)}
+            onKeyDown={(e: React.KeyboardEvent) => {
+              if ((e.key === "Enter" || e.key === " ") && !disabled) {
+                e.preventDefault();
+                onPageChange(pg);
+              }
+            }}
             aria-label={`Go to page ${pg}`}
             aria-current={isActive ? "page" : undefined}
             width={isActive ? 48 : 10}

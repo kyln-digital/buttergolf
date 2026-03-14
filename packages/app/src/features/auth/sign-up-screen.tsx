@@ -2,7 +2,6 @@
 
 import React, { useState, useCallback } from "react";
 import { Column, Row, ScrollView, Text, Button, Heading, Spinner } from "@buttergolf/ui";
-import { Button as TamaguiButton } from "tamagui";
 import { ArrowLeft } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSignUp } from "@clerk/clerk-expo";
@@ -209,7 +208,7 @@ export function SignUpScreen({
           {/* Back Button and Header */}
           <Column gap="$3">
             {onNavigateBack && (
-              <TamaguiButton
+              <Button
                 chromeless
                 size="$4"
                 icon={<ArrowLeft size={20} color="$primary" />}
@@ -347,7 +346,7 @@ export function SignUpScreen({
               <Text size="$4" color="$textSecondary">
                 Already have an account?
               </Text>
-              <TamaguiButton
+              <Button
                 chromeless
                 size="$5"
                 onPress={onNavigateToSignIn}
@@ -355,8 +354,8 @@ export function SignUpScreen({
                 paddingVertical="$2"
                 paddingHorizontal="$3"
               >
-                <TamaguiButton.Text color="$primary">Sign In</TamaguiButton.Text>
-              </TamaguiButton>
+                <Button.Text color="$primary">Sign In</Button.Text>
+              </Button>
             </Row>
           </Column>
         </Column>

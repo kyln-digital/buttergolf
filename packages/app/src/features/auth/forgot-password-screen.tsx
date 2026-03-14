@@ -6,7 +6,6 @@ import {
   ScrollView,
   Text,
   Button,
-  Button as TamaguiButton,
   Heading,
   Spinner,
 } from "@buttergolf/ui";
@@ -143,7 +142,7 @@ export function ForgotPasswordScreen({
           </Button>
 
           {/* Back Button */}
-          <TamaguiButton
+          <Button
             chromeless
             size="$4"
             onPress={onNavigateBack}
@@ -152,8 +151,8 @@ export function ForgotPasswordScreen({
             paddingVertical={0}
             paddingHorizontal="$2"
           >
-            <TamaguiButton.Text color="$primary">Back to Sign In</TamaguiButton.Text>
-          </TamaguiButton>
+            <Button.Text color="$primary">Back to Sign In</Button.Text>
+          </Button>
         </Column>
       </ScrollView>
     </Column>

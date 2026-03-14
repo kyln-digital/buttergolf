@@ -60,7 +60,7 @@ export function ButterHeader() {
       active = false;
       clearInterval(interval);
     };
-  }, [pathname]);
+  }, []);
 
   // Determine active category from pathname
   const getActiveCategory = (): string => {

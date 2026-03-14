@@ -270,9 +270,9 @@ export function VerifyEmailScreen({
               {isResending ? (
                 <Spinner size="sm" color="$primary" />
               ) : resendCountdown > 0 ? (
-                <TamaguiButton.Text color="$textMuted">{`Resend in ${resendCountdown}s`}</TamaguiButton.Text>
+                <Button.Text color="$textMuted">{`Resend in ${resendCountdown}s`}</Button.Text>
               ) : (
-                <TamaguiButton.Text color="$primary">Resend Code</TamaguiButton.Text>
+                <Button.Text color="$primary">Resend Code</Button.Text>
               )}
             </Button>
 

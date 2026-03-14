@@ -6,7 +6,6 @@ import {
   Row,
   Text,
   Button,
-  Button as TamaguiButton,
   Heading,
   ScrollView,
 } from "@buttergolf/ui";
@@ -115,7 +114,7 @@ export function NotificationSettingsScreen({
         borderBottomWidth={1}
         borderBottomColor="$border"
       >
-        <TamaguiButton
+        <Button
           chromeless
           circular
           size="$4"
