@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { Column, Row, ScrollView, Text, Button, Heading, Spinner, useTheme } from "@buttergolf/ui";
+import { Button as TamaguiButton } from "tamagui";
 import { ArrowLeft, ShieldCheck, Smartphone, Mail } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSignIn } from "@clerk/clerk-expo";
@@ -55,7 +56,7 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
     async function detectAndPrepare() {
       try {
         const factors = currentSignIn.supportedSecondFactors;
-        console.info("[TwoFactor] Available factors:", factors);
+        console.log("[TwoFactor] Available factors:", factors);
 
         if (!factors || factors.length === 0) {
           setError("No two-factor authentication methods available.");
@@ -68,7 +69,7 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
         const phoneFactor = factors.find((f: { strategy: string }) => f.strategy === "phone_code");
 
         if (emailFactor) {
-          console.info("[TwoFactor] Using email_code strategy");
+          console.log("[TwoFactor] Using email_code strategy");
           setStrategy("email_code");
           // Extract email hint if available
           if ("safeIdentifier" in emailFactor) {
@@ -78,11 +79,11 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
           hasInitialized.current = true;
           setIsSendingCode(true);
           try {
-            console.info("[TwoFactor] Sending initial email code...");
+            console.log("[TwoFactor] Sending initial email code...");
             await currentSignIn.prepareSecondFactor({
               strategy: "email_code",
             });
-            console.info("[TwoFactor] Initial email code sent successfully");
+            console.log("[TwoFactor] Initial email code sent successfully");
             setCodeSent(true);
           } catch (sendErr) {
             console.error("[TwoFactor] Error sending initial email code:", sendErr);
@@ -92,12 +93,12 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
             setIsSendingCode(false);
           }
         } else if (totpFactor) {
-          console.info("[TwoFactor] Using totp strategy");
+          console.log("[TwoFactor] Using totp strategy");
           setStrategy("totp");
           hasInitialized.current = true;
           // TOTP doesn't need to send anything - user has authenticator app
         } else if (phoneFactor) {
-          console.info("[TwoFactor] Using phone_code strategy");
+          console.log("[TwoFactor] Using phone_code strategy");
           setStrategy("phone_code");
           hasInitialized.current = true;
           // Could implement phone code sending here
@@ -121,11 +122,11 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
     setError(null);
 
     try {
-      console.info("[TwoFactor] Sending email code...");
+      console.log("[TwoFactor] Sending email code...");
       await signIn.prepareSecondFactor({
         strategy: "email_code",
       });
-      console.info("[TwoFactor] Email code sent successfully");
+      console.log("[TwoFactor] Email code sent successfully");
       setCodeSent(true);
       // Clear any existing code
       otpRef.current?.clear();
@@ -166,19 +167,19 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
       setIsSubmitting(true);
 
       try {
-        console.info("[TwoFactor] Attempting verification with strategy:", strategy);
+        console.log("[TwoFactor] Attempting verification with strategy:", strategy);
         const result = await signIn.attemptSecondFactor({
           strategy: strategy,
           code: code,
         });
-        console.info("[TwoFactor] Status:", result.status);
+        console.log("[TwoFactor] Status:", result.status);
 
         if (result.status === "complete") {
-          console.info("[TwoFactor] Session created:", result.createdSessionId);
+          console.log("[TwoFactor] Session created:", result.createdSessionId);
           await setActive({ session: result.createdSessionId });
           onSuccess?.();
         } else {
-          console.warn("[TwoFactor] Unhandled status:", result.status);
+          console.log("[TwoFactor] Unhandled status:", result.status);
           setError("Verification incomplete. Please try again.");
         }
       } catch (err) {
@@ -225,11 +226,10 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
         <Column gap="$6" flex={1}>
           {/* Back Button */}
           {onNavigateBack && (
-            <Button
+            <TamaguiButton
               chromeless
               size="$4"
-              icon={<ArrowLeft size={20} />}
-              color="$primary"
+              icon={<ArrowLeft size={20} color="$primary" />}
               alignSelf="flex-start"
               onPress={onNavigateBack}
               paddingHorizontal={0}
@@ -342,7 +342,6 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
             butterVariant="primary"
             size="$5"
             borderRadius="$full"
-            fontWeight="600"
             onPress={() => {
               if (currentOtp.length === CODE_LENGTH) {
                 handleVerify(currentOtp);
@@ -363,16 +362,17 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
                 <Text size="$4" color="$textSecondary" textAlign="center">
                   {"Didn't receive the code?"}
                 </Text>
-                <Button
+                <TamaguiButton
                   chromeless
                   size="$4"
-                  color="$primary"
                   onPress={sendEmailCode}
                   disabled={isSendingCode}
                   opacity={isSendingCode ? 0.5 : 1}
                 >
-                  {isSendingCode ? "Sending..." : "Resend Code"}
-                </Button>
+                  <TamaguiButton.Text color="$primary">
+                    {isSendingCode ? "Sending..." : "Resend Code"}
+                  </TamaguiButton.Text>
+                </TamaguiButton>
               </>
             ) : (
               <>
@@ -380,7 +380,7 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
                   {"Can't access your authenticator?"}
                 </Text>
                 <Text size="$3" color="$textMuted" textAlign="center" paddingHorizontal="$4">
-                  {"Contact support if you've lost access to your two-factor authentication device"}
+                  Contact support if you've lost access to your two-factor authentication device
                 </Text>
               </>
             )}

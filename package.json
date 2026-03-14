@@ -9,8 +9,6 @@
     "dev:mobile": "turbo run dev --filter=mobile",
     "dev:mobile:ios": "pnpm --filter mobile run ios",
     "dev:mobile:android": "pnpm --filter mobile run android",
-    "build-ios": "pnpm --filter mobile run ios:local:build-and-submit:auto",
-    "ios:local:build-and-submit": "pnpm --filter mobile run ios:local:build-and-submit",
     "db:generate": "turbo run db:generate",
     "db:push": "turbo run db:push",
     "db:migrate:dev": "turbo run db:migrate:dev",
@@ -18,15 +16,11 @@
     "db:studio": "turbo run db:studio",
     "db:seed": "turbo run db:seed",
     "upload:images": "tsx scripts/upload-sample-images.ts",
-    "optimize:site-images": "tsx scripts/optimize-site-images.ts",
-    "optimize:site-images:dry-run": "tsx scripts/optimize-site-images.ts --dry-run",
     "reset-stripe": "tsx scripts/reset-stripe-onboarding.ts",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md}\"",
-"typecheck": "turbo run typecheck",
-    "check-types": "turbo run check-types",
-    "check": "pnpm format && pnpm lint && pnpm check-types",
+    "typecheck": "turbo run typecheck",
     "check-deps": "check-dependency-version-consistency .",
     "clean": "turbo run clean && rm -rf node_modules",
     "clean-install": "pnpm clean && pnpm install",
@@ -62,12 +56,12 @@
     "ignoredBuiltDependencies": [
       "@clerk/shared",
       "@parcel/watcher",
-      "@prisma/client",
       "bufferutil",
       "nodent-runtime",
       "utf-8-validate"
     ],
     "onlyBuiltDependencies": [
+      "@prisma/client",
       "@prisma/engines",
       "@sentry/cli",
       "browser-tabs-lock",
@@ -78,7 +72,7 @@
       "unrs-resolver"
     ]
   },
-  "packageManager": "pnpm@10.30.2",
+  "packageManager": "pnpm@10.28.0",
   "engines": {
     "node": ">=18"
   },

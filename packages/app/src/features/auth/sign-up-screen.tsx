@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { Column, Row, ScrollView, Text, Button, Heading, Spinner } from "@buttergolf/ui";
+import { Button as TamaguiButton } from "tamagui";
 import { ArrowLeft } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSignUp } from "@clerk/clerk-expo";
@@ -175,7 +176,7 @@ export function SignUpScreen({
       case "fair":
         return "$warning";
       case "good":
-        return "$secondary";
+        return "$info";
       case "strong":
         return "$success";
     }
@@ -208,11 +209,10 @@ export function SignUpScreen({
           {/* Back Button and Header */}
           <Column gap="$3">
             {onNavigateBack && (
-              <Button
+              <TamaguiButton
                 chromeless
                 size="$4"
-                icon={<ArrowLeft size={20} />}
-                color="$primary"
+                icon={<ArrowLeft size={20} color="$primary" />}
                 alignSelf="flex-start"
                 onPress={onNavigateBack}
                 paddingHorizontal={0}
@@ -242,8 +242,7 @@ export function SignUpScreen({
               autoCapitalize="words"
               error={fieldErrors.firstName}
               editable={!isSubmitting}
-              textContentType="givenName"
-              autoComplete="name-given"
+              autoComplete="given-name"
             />
 
             <AuthFormInput
@@ -254,8 +253,7 @@ export function SignUpScreen({
               autoCapitalize="words"
               error={fieldErrors.lastName}
               editable={!isSubmitting}
-              textContentType="familyName"
-              autoComplete="name-family"
+              autoComplete="family-name"
             />
 
             <AuthFormInput
@@ -263,10 +261,9 @@ export function SignUpScreen({
               value={formData.email}
               onChangeText={handleEmailChange}
               placeholder="your@email.com"
-              keyboardType="email-address"
+              type="email"
               error={fieldErrors.email}
               editable={!isSubmitting}
-              textContentType="emailAddress"
               autoComplete="email"
             />
 
@@ -276,11 +273,10 @@ export function SignUpScreen({
                 value={formData.password}
                 onChangeText={handlePasswordChange}
                 placeholder="••••••••"
-                secureTextEntry
+                type="password"
                 error={fieldErrors.password}
                 editable={!isSubmitting}
-                textContentType="newPassword"
-                autoComplete="password-new"
+                autoComplete="new-password"
               />
 
               {/* Password Strength Indicator */}
@@ -327,11 +323,10 @@ export function SignUpScreen({
               value={formData.confirmPassword}
               onChangeText={handleConfirmPasswordChange}
               placeholder="••••••••"
-              secureTextEntry
+              type="password"
               error={fieldErrors.confirmPassword}
               editable={!isSubmitting}
-              textContentType="newPassword"
-              autoComplete="password-new"
+              autoComplete="new-password"
             />
           </Column>
 
@@ -341,7 +336,6 @@ export function SignUpScreen({
               butterVariant="primary"
               size="$5"
               borderRadius="$full"
-              fontWeight="600"
               onPress={handleSubmit}
               disabled={isSubmitting || !isLoaded}
               opacity={isSubmitting ? 0.7 : 1}
@@ -353,18 +347,16 @@ export function SignUpScreen({
               <Text size="$4" color="$textSecondary">
                 Already have an account?
               </Text>
-              <Button
+              <TamaguiButton
                 chromeless
                 size="$5"
-                color="$primary"
-                fontWeight="600"
                 onPress={onNavigateToSignIn}
                 disabled={isSubmitting}
                 paddingVertical="$2"
                 paddingHorizontal="$3"
               >
-                Sign In
-              </Button>
+                <TamaguiButton.Text color="$primary">Sign In</TamaguiButton.Text>
+              </TamaguiButton>
             </Row>
           </Column>
         </Column>

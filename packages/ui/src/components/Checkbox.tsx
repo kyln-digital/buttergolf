@@ -16,7 +16,6 @@ const CheckboxBox = styled(YStack, {
   alignItems: "center",
   justifyContent: "center",
   cursor: "pointer",
-  transition: "fast",
 
   hoverStyle: {
     borderColor: "$fieldBorderHover",

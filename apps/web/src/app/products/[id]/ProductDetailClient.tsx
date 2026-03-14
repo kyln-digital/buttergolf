@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
 import { Column, Row, Container, Text, Button, Card, Image } from "@buttergolf/ui";
-import { PRODUCT_IMAGE_ASPECT_RATIO } from "@buttergolf/constants";
 import { ProductInformation } from "./_components/ProductInformation";
 import { BuyNowSheet } from "./_components/BuyNowSheet";
 
@@ -77,34 +76,26 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
 
   const handleSubmitOffer = async (offerAmount: number) => {
     try {
-      // Create or get conversation for this product
-      const convResponse = await fetch("/api/conversations", {
+      const response = await fetch("/api/offers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId: product.id }),
+        body: JSON.stringify({
+          productId: product.id,
+          amount: offerAmount,
+        }),
       });
 
-      if (!convResponse.ok) {
-        const error = await convResponse.json();
-        throw new Error(error.error || "Failed to start conversation");
-      }
-
-      const { conversationId } = await convResponse.json();
-
-      // Submit the offer through the conversation
-      const offerResponse = await fetch(`/api/conversations/${conversationId}/offer`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: offerAmount }),
-      });
-
-      if (!offerResponse.ok) {
-        const error = await offerResponse.json();
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("Offer submission failed:", response.status, error);
         throw new Error(error.error || "Failed to submit offer");
       }
 
-      // Redirect to conversation
-      router.push(`/messages/${conversationId}`);
+      const result = await response.json();
+      console.log("Offer submitted successfully:", result);
+
+      // Redirect to offer detail page
+      router.push(`/offers/${result.id}`);
     } catch (error) {
       console.error("Error submitting offer:", error);
       throw error;
@@ -162,7 +153,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
           <Row
             gap="$xl"
             flexDirection="column"
-            $gtMd={{ flexDirection: "row", alignItems: "flex-start" }}
+            $md={{ flexDirection: "row", alignItems: "flex-start" }}
             alignItems="stretch"
             width="100%"
           >
@@ -172,13 +163,49 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
               flex={1}
               minWidth={0}
               width="100%"
-              $gtMd={{
+              $md={{
                 width: "auto",
                 maxWidth: "calc(100% - 420px - 32px)",
               }}
             >
-              {/* Gallery: Main Image + Thumbnails */}
-              <Column gap="$sm">
+              {/* Gallery Row: Thumbnails + Main Image */}
+              <Row gap="$sm" alignItems="flex-start">
+                {/* Thumbnail Gallery - Left Side */}
+                {product.images.length > 1 && (
+                  <Column gap="$sm" flexShrink={0}>
+                    {product.images.map((img, index) => (
+                      <Card
+                        key={img.id}
+                        variant="outlined"
+                        padding="$0"
+                        cursor="pointer"
+                        onPress={() => setSelectedImageIndex(index)}
+                        borderColor={index === selectedImageIndex ? "$primary" : "$border"}
+                        borderWidth={index === selectedImageIndex ? 3 : 1}
+                        backgroundColor="$surface"
+                        hoverStyle={{
+                          borderColor: "$primary",
+                          transform: "scale(1.05)",
+                        }}
+                        transition="quick"
+                        width={64}
+                        height={64}
+                        overflow="hidden"
+                        borderRadius="$lg"
+                        position="relative"
+                      >
+                        <Image
+                          src={img.url}
+                          width="100%"
+                          height="100%"
+                          objectFit="cover"
+                          alt={`${product.title} - Image ${index + 1}`}
+                        />
+                      </Card>
+                    ))}
+                  </Column>
+                )}
+
                 {/* Main Image */}
                 <Card
                   variant="outlined"
@@ -189,15 +216,15 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   cursor="pointer"
                   onPress={() => setLightboxOpen(true)}
                   position="relative"
-                  width="100%"
-                  aspectRatio={PRODUCT_IMAGE_ASPECT_RATIO}
+                  flex={1}
+                  height={600}
+                  $md={{ height: 650 }}
                 >
                   <Image
-                    source={{ uri: selectedImage.url }}
+                    src={selectedImage.url}
                     width="100%"
                     height="100%"
                     objectFit="contain"
-                    backgroundColor="$surface"
                     alt={product.title}
                   />
 
@@ -219,44 +246,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                     </Row>
                   )}
                 </Card>
-
-                {/* Thumbnail Gallery - Horizontal strip below main image */}
-                {product.images.length > 1 && (
-                  <Row gap="$sm" flexWrap="wrap" $gtMd={{ flexWrap: "nowrap", overflowX: "auto" }}>
-                    {product.images.map((img, index) => (
-                      <Card
-                        key={img.id}
-                        variant="outlined"
-                        padding="$0"
-                        cursor="pointer"
-                        onPress={() => setSelectedImageIndex(index)}
-                        borderColor={index === selectedImageIndex ? "$primary" : "$border"}
-                        borderWidth={index === selectedImageIndex ? 3 : 1}
-                        backgroundColor="$surface"
-                        hoverStyle={{
-                          borderColor: "$primary",
-                          transform: "scale(1.05)",
-                        }}
-                        transition="quick"
-                        width={56}
-                        height={56}
-                        $gtSm={{ width: 64, height: 64 }}
-                        overflow="hidden"
-                        borderRadius="$lg"
-                        position="relative"
-                      >
-                        <Image
-                          source={{ uri: img.url }}
-                          width="100%"
-                          height="100%"
-                          objectFit="cover"
-                          alt={`${product.title} - Image ${index + 1}`}
-                        />
-                      </Card>
-                    ))}
-                  </Row>
-                )}
-              </Column>
+              </Row>
             </Column>
 
             {/* Right Column - Product Information */}

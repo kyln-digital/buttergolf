@@ -7,10 +7,8 @@
  * Variants (via butterVariant prop):
  * - primary: Spiced Clementine (#F45314) - Main CTA, vibrant orange
  * - secondary: Light grey (#EDEDED) - Secondary actions, "Shop now", "Cancel"
- * - icon: Neutral flat icon button - no shadow, grey border, orange on hover/active
  *
- * Both primary and secondary variants share the same pill shape and drop shadow.
- * The icon variant is shadow-free and intended for circular icon-only buttons.
+ * Both variants share the same pill shape and drop shadow for visual consistency.
  *
  * Note: Uses `butterVariant` prop instead of `variant` to avoid conflicts
  * with Tamagui's built-in Button variants.
@@ -19,14 +17,10 @@
  * ```tsx
  * <Button butterVariant="primary">Sell now</Button>
  * <Button butterVariant="secondary">Shop now</Button>
- * <Button butterVariant="icon" circular width={44} height={44} padding={0}>
- *   <Heart size={22} />
- * </Button>
  * ```
  */
 
-import type { ReactNode } from "react";
-import { Button as TamaguiButton, styled, GetProps, withStaticProperties, type ColorTokens } from "tamagui";
+import { Button as TamaguiButton, styled, GetProps, withStaticProperties } from "tamagui";
 import { Platform } from "react-native";
 
 /**
@@ -87,46 +81,21 @@ const ButtonBase = styled(TamaguiButton, {
 
       secondary: {
         // Light grey background - secondary actions, "Shop now", "Cancel"
-        backgroundColor: "$controlSecondaryBg",
+        backgroundColor: "$cloudMist",
         borderWidth: 1,
-        borderColor: "$controlSecondaryBg",
-        color: "$controlSecondaryText",
+        borderColor: "$border",
+        color: "$text", // Dark text on light grey for good contrast
         ...buttonShadow,
 
         hoverStyle: {
-          backgroundColor: "$controlSecondaryBgHover",
-          borderColor: "$controlSecondaryBgHover",
+          backgroundColor: "$cloudMistHover",
+          borderColor: "$borderHover",
         },
 
         pressStyle: {
-          backgroundColor: "$controlSecondaryBgPress",
-          borderColor: "$controlSecondaryBgPress",
+          backgroundColor: "$cloudMistPress",
+          borderColor: "$border",
           scale: 0.98,
-        },
-
-        focusStyle: {
-          borderColor: "$borderFocus",
-          outlineColor: "$borderFocus",
-          outlineWidth: 2,
-        },
-      },
-
-      icon: {
-        // Neutral flat icon button - no shadow, reveals brand colour on interaction
-        backgroundColor: "transparent",
-        borderWidth: 1.5,
-        borderColor: "$border",
-        color: "$textSecondary",
-        // No shadow - icon buttons are secondary controls, not elevated CTAs
-
-        hoverStyle: {
-          borderColor: "$primary",
-          backgroundColor: "$primaryLight",
-        },
-
-        pressStyle: {
-          scale: 0.95,
-          opacity: 0.85,
         },
 
         focusStyle: {
@@ -137,33 +106,19 @@ const ButtonBase = styled(TamaguiButton, {
       },
     },
   } as const,
-});
 
-export type ButtonProps = GetProps<typeof ButtonBase> & {
-  /** Text colour for the button label. Forwarded to Tamagui's ButtonContext in v2. */
-  color?: ColorTokens | string;
-  /** Font weight for the button label. */
-  fontWeight?: string | number;
-  /** Explicit children type — fixes Tamagui v2 type-inference that narrows children to token unions. */
-  children?: ReactNode;
-};
+  defaultVariants: {
+    butterVariant: "primary" as const,
+  },
+});
 
 /**
- * When `chromeless` is passed without an explicit `butterVariant`,
- * skip the default primary variant so chromeless styling is not overridden.
- * Also skip the default for `unstyled` buttons so custom surface styles are respected.
- * Otherwise, default to `butterVariant="primary"` for backward compatibility.
- *
- * withStaticProperties re-attaches Button.Text/Icon sub-components per the v2 compound
- * component pattern ("How to Build a Button" guide).
+ * Tamagui's `styled()` doesn't carry over sub-components from compound
+ * components like Button. The documented pattern (from the "How to Build
+ * a Button" guide) is to re-compose with `withStaticProperties`.
  */
-const ButtonStyleable = ButtonBase.styleable<ButtonProps>((props, ref) => {
-  const butterVariant =
-    props.butterVariant ?? (props.chromeless || props.unstyled ? undefined : "primary");
-  return <ButtonBase ref={ref} {...props} butterVariant={butterVariant} />;
-});
-
-export const Button = withStaticProperties(ButtonStyleable, {
+export const Button = withStaticProperties(ButtonBase, {
   Text: TamaguiButton.Text,
   Icon: TamaguiButton.Icon,
 });
+export type ButtonProps = GetProps<typeof ButtonBase>;

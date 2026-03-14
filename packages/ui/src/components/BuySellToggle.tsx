@@ -48,7 +48,8 @@ export interface BuySellToggleProps {
 }
 
 /**
- * Styled Tabs.Tab (trigger) with pill styling matching Button component
+ * Styled Tabs.Tab (trigger) with pill styling matching Button component.
+ * Uses Tamagui v2 activeStyle pseudo-prop for active state styling.
  */
 const StyledTab = styled(Tabs.Tab, {
   name: "BuySellTab",
@@ -60,25 +61,24 @@ const StyledTab = styled(Tabs.Tab, {
   // Disable Tamagui's default tab unstyled prop
   unstyled: true,
 
-  // Default inactive state mirrors secondary control surface tokens.
-  backgroundColor: "$controlSecondaryBg",
-  borderColor: "$controlSecondaryBg",
+  // Default inactive state - use $cloudMist for consistency with secondary buttons
+  backgroundColor: "$cloudMist",
+  borderColor: "$border",
 
   // Web shadows for inactive
   boxShadow: "0px 1px 3px 0px rgba(0, 0, 0, 0.15)",
 
+  // When inactive: gray hover shows slightly reduced opacity
   hoverStyle: {
     opacity: 0.9,
-    backgroundColor: "$controlSecondaryBgHover",
+    backgroundColor: "$cloudMistHover",
   },
 
   pressStyle: {
-    backgroundColor: "$controlSecondaryBgPress",
     scale: 0.98,
     opacity: 0.9,
   },
 
-  // Override Tamagui's built-in active/selected states
   focusStyle: {
     outlineWidth: 2,
     outlineColor: "$primary",
@@ -86,37 +86,12 @@ const StyledTab = styled(Tabs.Tab, {
   },
 
   variants: {
-    active: {
+    // Runtime active variant — will be replaced by activeStyle pseudo-prop in Tamagui v2
+    isActive: {
       true: {
-        // Spiced Clementine - matches primary button
         backgroundColor: "$primary",
         borderColor: "$primary",
         boxShadow: "0px 1px 5px 0px rgba(0, 0, 0, 0.25)",
-        hoverStyle: {
-          backgroundColor: "$primaryHover",
-          opacity: 1,
-        },
-        pressStyle: {
-          backgroundColor: "$primaryPress",
-          scale: 0.98,
-        },
-      },
-      false: {
-        // Light grey - matches secondary button
-        backgroundColor: "$controlSecondaryBg",
-        borderColor: "$controlSecondaryBg",
-        boxShadow: "0px 1px 3px 0px rgba(0, 0, 0, 0.15)",
-        hoverStyle: {
-          backgroundColor: "$controlSecondaryBgHover",
-          borderColor: "$controlSecondaryBgHover",
-          opacity: 0.95,
-        },
-        pressStyle: {
-          backgroundColor: "$controlSecondaryBgPress",
-          borderColor: "$controlSecondaryBgPress",
-          scale: 0.98,
-          opacity: 0.95,
-        },
       },
     },
     layout: {
@@ -173,19 +148,18 @@ export function BuySellToggle({
       orientation="horizontal"
       width="100%"
       flexDirection="column"
-      activationMode="manual"
     >
       <StyledTabsList layout={layout}>
         <StyledTab
           value="buying"
-          active={activeMode === "buying"}
           layout={layout}
+          isActive={activeMode === "buying"}
           aria-label="Switch to buying mode"
         >
           <SizableText
             size="$5"
             fontWeight={activeMode === "buying" ? "600" : "500"}
-            color={activeMode === "buying" ? "$white" : "$controlSecondaryText"}
+            color={activeMode === "buying" ? "$white" : "$text"}
           >
             Buying
           </SizableText>
@@ -193,14 +167,14 @@ export function BuySellToggle({
 
         <StyledTab
           value="selling"
-          active={activeMode === "selling"}
           layout={layout}
+          isActive={activeMode === "selling"}
           aria-label="Switch to selling mode"
         >
           <SizableText
             size="$5"
             fontWeight={activeMode === "selling" ? "600" : "500"}
-            color={activeMode === "selling" ? "$white" : "$controlSecondaryText"}
+            color={activeMode === "selling" ? "$white" : "$text"}
           >
             Selling
           </SizableText>

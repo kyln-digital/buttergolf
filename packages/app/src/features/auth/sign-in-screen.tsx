@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { Column, Row, ScrollView, Text, Button, Heading, Spinner, View } from "@buttergolf/ui";
+import { Column, Row, ScrollView, Text, Button, Heading, Spinner } from "@buttergolf/ui";
+import { Button as TamaguiButton, View } from "tamagui";
 import { ArrowLeft } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSignIn } from "@clerk/clerk-expo";
@@ -88,21 +89,21 @@ export function SignInScreen({
     setIsSubmitting(true);
 
     try {
-      console.info("[SignIn] Attempting sign-in for:", formData.email);
+      console.log("[SignIn] Attempting sign-in for:", formData.email);
       const signInAttempt = await signIn.create({
         identifier: formData.email,
         password: formData.password,
       });
-      console.info("[SignIn] Status:", signInAttempt.status);
+      console.log("[SignIn] Status:", signInAttempt.status);
 
       // Check status first - createdSessionId only exists when status is 'complete'
       if (signInAttempt.status === "complete") {
-        console.info("[SignIn] Session created:", signInAttempt.createdSessionId);
+        console.log("[SignIn] Session created:", signInAttempt.createdSessionId);
         await setActive({ session: signInAttempt.createdSessionId });
         onSuccess?.();
       } else if (signInAttempt.status === "needs_second_factor") {
         // 2FA is enabled - navigate to 2FA screen
-        console.info("[SignIn] 2FA detected, navigating to 2FA screen");
+        console.log("[SignIn] 2FA detected, navigating to 2FA screen");
         if (onNavigateToTwoFactor) {
           onNavigateToTwoFactor();
         } else {
@@ -116,7 +117,7 @@ export function SignInScreen({
       } else if (signInAttempt.status === "needs_new_password") {
         setError("You need to set a new password. Please use the forgot password flow.");
       } else {
-        console.warn("[SignIn] Unhandled status:", signInAttempt.status);
+        console.log("[SignIn] Unhandled status:", signInAttempt.status);
         setError(`Sign-in incomplete. Status: ${signInAttempt.status}`);
       }
     } catch (err) {
@@ -134,7 +135,7 @@ export function SignInScreen({
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, isLoaded, signIn, setActive, onSuccess, onNavigateToTwoFactor]);
+  }, [formData, isLoaded, signIn, setActive, onSuccess]);
 
   return (
     <Column flex={1} backgroundColor="$background">
@@ -149,11 +150,10 @@ export function SignInScreen({
         <Column gap="$6" flex={1}>
           {/* Back Button */}
           {onNavigateBack && (
-            <Button
+            <TamaguiButton
               chromeless
               size="$4"
-              icon={<ArrowLeft size={20} />}
-              color="$primary"
+              icon={<ArrowLeft size={20} color="$primary" />}
               alignSelf="flex-start"
               onPress={onNavigateBack}
               paddingHorizontal={0}
@@ -180,10 +180,9 @@ export function SignInScreen({
               value={formData.email}
               onChangeText={handleEmailChange}
               placeholder="your@email.com"
-              keyboardType="email-address"
+              type="email"
               error={fieldErrors.email}
               editable={!isSubmitting}
-              textContentType="emailAddress"
               autoComplete="email"
             />
 
@@ -192,27 +191,24 @@ export function SignInScreen({
               value={formData.password}
               onChangeText={handlePasswordChange}
               placeholder="••••••••"
-              secureTextEntry
+              type="password"
               error={fieldErrors.password}
               editable={!isSubmitting}
-              textContentType="password"
-              autoComplete="password"
+              autoComplete="current-password"
             />
 
             {/* Forgot Password Link */}
-            <Button
+            <TamaguiButton
               chromeless
               size="$4"
-              color="$primary"
-              fontWeight="600"
               onPress={onNavigateToForgotPassword}
               disabled={isSubmitting}
               alignSelf="flex-start"
               paddingVertical={0}
               paddingHorizontal="$2"
             >
-              Forgot password?
-            </Button>
+              <TamaguiButton.Text color="$primary">Forgot password?</TamaguiButton.Text>
+            </TamaguiButton>
           </Column>
 
           {/* Sign In Button */}
@@ -221,7 +217,6 @@ export function SignInScreen({
               butterVariant="primary"
               size="$5"
               borderRadius="$full"
-              fontWeight="600"
               onPress={handleSubmit}
               disabled={isSubmitting || !isLoaded}
               opacity={isSubmitting ? 0.7 : 1}
@@ -251,18 +246,16 @@ export function SignInScreen({
             <Text size="$4" color="$textSecondary">
               {"Don't have an account?"}
             </Text>
-            <Button
+            <TamaguiButton
               chromeless
               size="$5"
-              color="$primary"
-              fontWeight="600"
               onPress={onNavigateToSignUp}
               disabled={isSubmitting}
               paddingVertical="$2"
               paddingHorizontal="$3"
             >
-              Sign Up
-            </Button>
+              <TamaguiButton.Text color="$primary">Sign Up</TamaguiButton.Text>
+            </TamaguiButton>
           </Row>
         </Column>
       </ScrollView>

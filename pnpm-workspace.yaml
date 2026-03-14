@@ -16,28 +16,27 @@ catalog:
   "@stripe/react-stripe-js": 5.6.0
   "@stripe/stripe-js": 8.8.0
   "@stripe/stripe-react-native": 0.58.0
-  "@tamagui/animations-css": 2.0.0-rc.22
-  "@tamagui/animations-react-native": 2.0.0-rc.22
-  "@tamagui/babel-plugin": 2.0.0-rc.22
-  "@tamagui/card": 2.0.0-rc.22
-  "@tamagui/cli": 2.0.0-rc.22
-  "@tamagui/config": 2.0.0-rc.22
-  "@tamagui/core": 2.0.0-rc.22
-  "@tamagui/font-inter": 2.0.0-rc.22
-  "@tamagui/lucide-icons": 2.0.0-rc.22
-  "@tamagui/native": 2.0.0-rc.22
-  "@tamagui/next-plugin": 2.0.0-rc.22
-  "@tamagui/next-theme": 2.0.0-rc.22
-  "@tamagui/polyfill-dev": 2.0.0-rc.22
-  "@tamagui/popover": 2.0.0-rc.22
-  "@tamagui/portal": 2.0.0-rc.22
-  "@tamagui/react-native-web-lite": 2.0.0-rc.22
-  "@tamagui/sheet": 2.0.0-rc.22
-  "@tamagui/shorthands": 2.0.0-rc.22
-  "@tamagui/slider": 2.0.0-rc.22
-  "@tamagui/switch": 2.0.0-rc.22
-  "@tamagui/themes": 2.0.0-rc.22
-  "@tamagui/toast": 2.0.0-rc.22
+  "@tamagui/animations-css": 2.0.0-rc.16
+  "@tamagui/animations-react-native": 2.0.0-rc.16
+  "@tamagui/babel-plugin": 2.0.0-rc.16
+  "@tamagui/card": 2.0.0-rc.16
+  "@tamagui/cli": 2.0.0-rc.16
+  "@tamagui/react-native-web-lite": 2.0.0-rc.16
+  "@tamagui/config": 2.0.0-rc.16
+  "@tamagui/core": 2.0.0-rc.16
+  "@tamagui/font-inter": 2.0.0-rc.16
+  "@tamagui/lucide-icons": 2.0.0-rc.16
+  "@tamagui/native": 2.0.0-rc.16
+  "@tamagui/next-plugin": 2.0.0-rc.16
+  "@tamagui/next-theme": 2.0.0-rc.16
+  "@tamagui/polyfill-dev": 2.0.0-rc.16
+  "@tamagui/popover": 2.0.0-rc.16
+  "@tamagui/portal": 2.0.0-rc.16
+  "@tamagui/sheet": 2.0.0-rc.16
+  "@tamagui/shorthands": 2.0.0-rc.16
+  "@tamagui/slider": 2.0.0-rc.16
+  "@tamagui/switch": 2.0.0-rc.16
+  "@tamagui/themes": 2.0.0-rc.16
   "@types/canvas-confetti": 1.9.0
   "@types/node": 22.15.30
   "@types/react": 19.2.14
@@ -53,7 +52,7 @@ catalog:
   eslint: 9.28.0
   eslint-config-expo: 10.0.0
   eslint-config-next: 16.1.6
-  expo: 54.0.33
+  expo: 54.0.32
   expo-auth-session: 7.0.10
   expo-font: 14.0.11
   expo-linear-gradient: 14.1.5
@@ -65,6 +64,7 @@ catalog:
   expo-updates: 29.0.16
   expo-web-browser: 15.0.10
   framer-motion: 12.23.27
+  ioredis: 5.4.1
   jose: 6.1.3
   lucide-react: 0.562.0
   next: 16.1.6
@@ -87,10 +87,12 @@ catalog:
   react-native-webview: 13.15.0
   react-native-worklets: 0.5.1
   resend: 6.6.0
+  socket.io: 4.8.1
+  socket.io-client: 4.8.1
   solito: 5.0.0
   stripe: 19.3.1
   svix: 1.85.0
-  tamagui: 2.0.0-rc.22
+  tamagui: 2.0.0-rc.16
   tsx: 4.20.6
   typescript: 5.9.3
   uuid: 13.0.0

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Platform, Image as RNImage } from "react-native";
+import { Platform, Image as RNImage, Dimensions } from "react-native";
 import { Column, Row, Heading, Text, Button, View, Image, useMedia } from "@buttergolf/ui";
 import { images } from "@buttergolf/assets";
 import { useLink } from "solito/navigation";
@@ -136,8 +136,8 @@ function HeroHeading({
   const lines = getHeadingLines(heading);
   const media = useMedia();
 
-  // On mobile (below $gtSm breakpoint), skip animation and use responsive Tamagui Heading
-  const isMobile = !media.gtSm;
+  // On mobile (below $sm breakpoint), skip animation and use responsive Tamagui Heading
+  const isMobile = !media.sm;
 
   if (animationVariant === "fade-up" && !isMobile) {
     return <FadeUpText text={text} delay={animationDelay} style={headingStyle} />;
@@ -147,21 +147,18 @@ function HeroHeading({
   if (multiLine && lines.length > 1) {
     return (
       <Column>
-        {lines.map((line, index) => {
-          return (
-            <Heading
-              key={index}
-              level={1}
-              // eslint-disable-next-line react/forbid-component-props
-              fontSize={40}
-              color="$text"
-              fontWeight="700"
-              lineHeight={46}
-            >
-              {line}
-            </Heading>
-          );
-        })}
+        {lines.map((line, index) => (
+          <Heading
+            key={index}
+            level={1}
+            fontSize={40}
+            color="$text"
+            fontWeight="700"
+            lineHeight={46}
+          >
+            {line}
+          </Heading>
+        ))}
       </Column>
     );
   }
@@ -170,19 +167,15 @@ function HeroHeading({
   return (
     <Heading
       level={1}
-      $gtSm={{ textAlign: "left", fontSize: "$9", lineHeight: "$9" }}
+      size="$9"
+      lineHeight="$9"
       $md={{ fontSize: "$11", lineHeight: "$11" }}
       $lg={{ fontSize: "$14", lineHeight: "$14" }}
       color="$text"
       fontWeight="700"
       textAlign="center"
-      style={{
-        // Inline style overrides the level variant's fontSize on web for mobile sizes
-        fontSize: isMobile ? 32 : undefined,
-        lineHeight: isMobile ? 40 : undefined,
-        whiteSpace: "normal",
-        wordBreak: "keep-all",
-      }}
+      $sm={{ textAlign: "left", fontSize: "$9", lineHeight: "$9" }}
+      style={{ whiteSpace: "normal", wordBreak: "keep-all" }}
     >
       {text}
     </Heading>
@@ -199,8 +192,7 @@ export function Hero({
   subtitle,
   primaryCta,
   secondaryCta,
-
-  backgroundImage: _backgroundImage,
+  backgroundImage,
   heroImage,
   showHeroImage = true,
   minHeight = 500,
@@ -209,7 +201,6 @@ export function Hero({
   animationDelay = 0.8,
 }: Readonly<HeroProps>) {
   const heroImageSource = heroImage ? getImageSource(heroImage) : null;
-
   const HeroSvgComponent = heroImage ? getSvgComponent(heroImage) : null;
   const isWeb = Platform.OS === "web";
   const isMobile = !isWeb;
@@ -228,7 +219,7 @@ export function Hero({
         >
           {/* Background Image */}
           <Image
-            source={images.hero.butterBackground}
+            src={images.hero.butterBackground}
             position="absolute"
             top={0}
             left={0}
@@ -260,9 +251,7 @@ export function Hero({
                 alignItems="flex-end"
                 overflow="visible"
               >
-                {}
                 {HeroSvgComponent ? (
-                  // eslint-disable-next-line react-hooks/static-components
                   <HeroSvgComponent width="100%" height="95%" />
                 ) : heroImageSource ? (
                   <RNImage
@@ -286,28 +275,24 @@ export function Hero({
 
   // Web/Desktop layout
   return (
-    <Column
-      width="100%"
-      paddingHorizontal="$md"
-      paddingTop="$md"
-      backgroundColor="$background"
-      alignItems="center"
-    >
+    <Column width="100%" paddingHorizontal="$md" paddingTop="$md" backgroundColor="$background">
       <View
         width="100%"
-        $gtSm={{ height: 350, minHeight: minHeight }}
-        $gtMd={{ height: 400, width: "80%", minHeight: minHeight }}
+        height={320}
+        $sm={{ height: 350 }}
+        $md={{ height: 400 }}
+        minHeight={minHeight}
         maxHeight={maxHeight}
         borderRadius="$2xl"
         position="relative"
       >
-        {/* Background Container - uses inset positioning to fill auto-height parent on mobile */}
+        {/* Background Container - Clipped for rounded corners */}
         <View
           position="absolute"
           top={0}
           left={0}
-          right={0}
-          bottom={0}
+          width="100%"
+          height="100%"
           borderRadius="$2xl"
           overflow="hidden"
           zIndex={0}
@@ -330,30 +315,23 @@ export function Hero({
         </View>
 
         {/* Content Container - NOT clipped, allows image overflow */}
-        <Row width="100%" height="auto" $gtSm={{ height: "100%" }} position="relative" zIndex={1}>
+        <Row width="100%" height="100%" position="relative" zIndex={1}>
           {/* Left Side - Text Content */}
           <Column
             width="100%"
             justifyContent="center"
             alignItems="center"
-            paddingHorizontal="$6"
-            paddingVertical="$8"
-            $gtSm={{
+            paddingLeft="$6"
+            paddingRight="$6"
+            $sm={{
               width: "55%",
               paddingLeft: "$8",
               paddingRight: "$2",
-              paddingVertical: 0,
               alignItems: "flex-start",
-              height: "100%",
             }}
-            $gtMd={{ width: "60%", paddingLeft: "$12", paddingRight: "$4" }}
+            $md={{ width: "60%", paddingLeft: "$12", paddingRight: "$4" }}
           >
-            <Column
-              gap="$4"
-              $gtSm={{ gap: "$5", maxWidth: 700 }}
-              $gtMd={{ gap: "$6" }}
-              width="100%"
-            >
+            <Column gap="$4" $sm={{ gap: "$5", maxWidth: 700 }} $md={{ gap: "$6" }} width="100%">
               {/* Heading */}
               <HeroHeading
                 heading={heading}
@@ -365,7 +343,7 @@ export function Hero({
               {subtitle && (
                 <Text
                   size="$7"
-                  $gtSm={{ fontSize: "$8", textAlign: "left" }}
+                  $sm={{ fontSize: "$8", textAlign: "left" }}
                   $md={{ fontSize: "$9" }}
                   color="$textSecondary"
                   fontWeight="500"
@@ -407,15 +385,15 @@ function HeroCTAButtons({ primaryCta, secondaryCta }: HeroCTAButtonsProps) {
       flexWrap="wrap"
       marginTop="$4"
       justifyContent="center"
-      $gtSm={{ justifyContent: "flex-start" }}
+      $sm={{ justifyContent: "flex-start" }}
     >
       {primaryCta && (
         <Button
           butterVariant="primary"
           size="$5"
-          $gtSm={{ size: "$4" }}
+          $sm={{ size: "$4" }}
           onPress={primaryLink.onPress}
-          accessibilityRole="link"
+          role="link"
         >
           {primaryCta.label}
         </Button>
@@ -424,9 +402,9 @@ function HeroCTAButtons({ primaryCta, secondaryCta }: HeroCTAButtonsProps) {
         <Button
           butterVariant="secondary"
           size="$5"
-          $gtSm={{ size: "$4" }}
+          $sm={{ size: "$4" }}
           onPress={secondaryLink.onPress}
-          accessibilityRole="link"
+          role="link"
         >
           {secondaryCta.label}
         </Button>
@@ -451,8 +429,8 @@ function HeroImage({ source }: HeroImageProps) {
       alignItems="center"
       justifyContent="flex-end"
       paddingRight="$4"
-      $gtSm={{ display: "flex", width: "45%" }}
-      $gtMd={{ width: "40%", paddingRight: "$8" }}
+      $sm={{ display: "flex", width: "45%" }}
+      $md={{ width: "40%", paddingRight: "$8" }}
     >
       {isWeb ? (
         <img
@@ -469,7 +447,7 @@ function HeroImage({ source }: HeroImageProps) {
         />
       ) : (
         <Image
-          source={source as Parameters<typeof Image>[0]["source"]}
+          src={typeof source === "object" && "uri" in source ? source.uri : undefined}
           width="100%"
           height="100%"
           objectFit="contain"

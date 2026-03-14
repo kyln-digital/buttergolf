@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Row, Input } from "@buttergolf/ui";
 import { Search as SearchIcon } from "@tamagui/lucide-icons";
 
@@ -72,6 +72,7 @@ export function SearchInputField({
         onBlur={handleBlur}
         placeholder={placeholder}
         placeholderTextColor="$textSecondary"
+        size="$5"
         color="$text"
         borderWidth={0}
         backgroundColor="transparent"
