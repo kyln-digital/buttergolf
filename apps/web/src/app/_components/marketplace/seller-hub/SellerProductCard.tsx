@@ -7,6 +7,12 @@ import { Column, Row, Text, Button, Badge, Card } from "@buttergolf/ui";
 import { Eye, Heart, Tag, Edit3, Trash2, Zap } from "@tamagui/lucide-icons";
 import { PromotionPurchaseSheet } from "./PromotionPurchaseSheet";
 
+export interface SellerProductImage {
+  id: string;
+  url: string;
+  sortOrder: number;
+}
+
 export interface SellerProduct {
   id: string;
   title: string;
@@ -24,7 +30,7 @@ export interface SellerProduct {
   favourites: number;
   createdAt: string;
   updatedAt: string;
-  images: string[];
+  images: SellerProductImage[];
   offersCount: number;
   pendingOffersCount: number;
 }

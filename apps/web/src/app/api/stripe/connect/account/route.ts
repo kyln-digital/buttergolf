@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     // Create a user record with data from Clerk so onboarding is prefilled
     // Use upsert to handle race conditions where concurrent requests try to create the same user
     if (!user && userData.email) {
-      console.log(
+      console.info(
         `[Stripe Connect] User not found for clerkId ${userId}, upserting from Clerk data`
       );
       try {
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
           update: {}, // Don't update if user was created by another concurrent request
           select: userSelectFields,
         });
-        console.log(
+        console.info(
           `[Stripe Connect] Upserted user record ${user.id} for clerkId ${userId} with Clerk data`
         );
       } catch (upsertError) {
@@ -110,7 +110,7 @@ export async function POST(request: Request) {
     } else if ((!user.email || user.email === "") && userData.email) {
       // User exists but with empty data (created before we had Clerk data)
       // Update with Clerk data now that we have it
-      console.log(`[Stripe Connect] Updating user ${user.id} with Clerk data`);
+      console.info(`[Stripe Connect] Updating user ${user.id} with Clerk data`);
       user = await prisma.user.update({
         where: { id: user.id },
         data: {
@@ -129,14 +129,14 @@ export async function POST(request: Request) {
       try {
         // Verify the account exists in Stripe
         const existingAccount = await stripe.accounts.retrieve(stripeAccountId);
-        console.log(
+        console.info(
           `[Stripe Connect] Verified existing account ${stripeAccountId} for user ${user.id}`
         );
 
         // Check if account was deleted from Stripe
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((existingAccount as any).deleted) {
-          console.log(
+          console.info(
             `[Stripe Connect] Account ${stripeAccountId} was deleted in Stripe, clearing from database`
           );
           stripeAccountId = null;
@@ -152,7 +152,7 @@ export async function POST(request: Request) {
       } catch (error) {
         // Account doesn't exist in Stripe (404) or other error
         console.error(`[Stripe Connect] Error retrieving account ${stripeAccountId}:`, error);
-        console.log(
+        console.info(
           `[Stripe Connect] Clearing invalid stripeConnectId from database for user ${user.id}`
         );
         stripeAccountId = null;
@@ -199,7 +199,6 @@ export async function POST(request: Request) {
         business_type: "individual",
         // Pre-populate individual details from our database
         // Phone in E.164 format (+447XXXXXXXXX) is pre-filled if collected in our form
-        // This allows us to exclude individual.phone from the onboarding flow
         individual: {
           first_name: user.firstName || undefined,
           last_name: user.lastName || undefined,
@@ -227,7 +226,7 @@ export async function POST(request: Request) {
       });
 
       stripeAccountId = account.id;
-      console.log(`[Stripe Connect] Created new account ${stripeAccountId} for user ${user.id}`);
+      console.info(`[Stripe Connect] Created new account ${stripeAccountId} for user ${user.id}`);
 
       // Save to database IMMEDIATELY - so we can clean up even if onboarding is abandoned
       await prisma.user.update({
@@ -237,7 +236,7 @@ export async function POST(request: Request) {
           stripeAccountType: "fully_embedded",
         },
       });
-      console.log(`[Stripe Connect] Saved stripeConnectId to database for user ${user.id}`);
+      console.info(`[Stripe Connect] Saved stripeConnectId to database for user ${user.id}`);
     }
 
     // 5. Create AccountSession for embedded onboarding
@@ -333,7 +332,7 @@ export async function GET(request: Request) {
         user.stripeAccountStatus !== accountStatus;
 
       if (dbNeedsUpdate) {
-        console.log(
+        console.info(
           `[Stripe Connect] Syncing database for user ${user.id}: onboardingComplete=${onboardingComplete}, status=${accountStatus}`
         );
         await prisma.user.update({

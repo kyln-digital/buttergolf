@@ -1,8 +1,10 @@
 "use client";
 
+/* eslint-disable react/forbid-elements -- Complex form with inline-styled select/textarea elements */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
+import { LISTING_PRICE_LIMITS, getListingPriceBoundsMessage } from "@buttergolf/constants";
 import {
   Column,
   Row,
@@ -245,6 +247,7 @@ export function SellFormClient() {
     userAddedText,
     categories,
     generateTitle,
+    formData.title,
   ]);
 
   // Load categories on mount
@@ -317,7 +320,7 @@ export function SellFormClient() {
     // Synchronous guard to prevent duplicate submissions
     // (React state updates are async, so we need a ref for immediate check)
     if (isSubmittingRef.current) {
-      console.log("[SellForm] Duplicate submission blocked by ref guard");
+      console.info("[SellForm] Duplicate submission blocked by ref guard");
       return;
     }
     isSubmittingRef.current = true;
@@ -349,6 +352,18 @@ export function SellFormClient() {
       return;
     }
 
+    const parsedPrice = Number.parseFloat(formData.price);
+    if (
+      Number.isNaN(parsedPrice) ||
+      parsedPrice < LISTING_PRICE_LIMITS.MIN ||
+      parsedPrice > LISTING_PRICE_LIMITS.MAX
+    ) {
+      setError(getListingPriceBoundsMessage());
+      setLoading(false);
+      isSubmittingRef.current = false;
+      return;
+    }
+
     try {
       const response = await fetch("/api/products", {
         method: "POST",
@@ -357,7 +372,7 @@ export function SellFormClient() {
         },
         body: JSON.stringify({
           ...formData,
-          price: Number.parseFloat(formData.price),
+          price: parsedPrice,
           // Don't send brandName (display only)
           brandName: undefined,
           // Request ID for server-side idempotency
@@ -383,7 +398,7 @@ export function SellFormClient() {
   const handleSaveDraft = async () => {
     // Synchronous guard to prevent duplicate submissions
     if (isSubmittingRef.current) {
-      console.log("[SellForm] Duplicate draft save blocked by ref guard");
+      console.info("[SellForm] Duplicate draft save blocked by ref guard");
       return;
     }
     isSubmittingRef.current = true;
@@ -394,6 +409,19 @@ export function SellFormClient() {
     setLoading(true);
     setError(null);
 
+    const parsedPrice = Number.parseFloat(formData.price);
+    if (
+      formData.price &&
+      (Number.isNaN(parsedPrice) ||
+        parsedPrice < LISTING_PRICE_LIMITS.MIN ||
+        parsedPrice > LISTING_PRICE_LIMITS.MAX)
+    ) {
+      setError(getListingPriceBoundsMessage());
+      setLoading(false);
+      isSubmittingRef.current = false;
+      return;
+    }
+
     try {
       const response = await fetch("/api/products", {
         method: "POST",
@@ -402,7 +430,7 @@ export function SellFormClient() {
         },
         body: JSON.stringify({
           ...formData,
-          price: formData.price ? Number.parseFloat(formData.price) : 0,
+          price: formData.price ? parsedPrice : 0,
           // Don't send brandName (display only)
           brandName: undefined,
           // Request ID for server-side idempotency
@@ -431,6 +459,20 @@ export function SellFormClient() {
     setFormData((prev) => ({
       ...prev,
       images: [...prev.images, url],
+    }));
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleReorderImages = (reorderedUrls: string[]) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: reorderedUrls,
     }));
   };
 
@@ -474,6 +516,8 @@ export function SellFormClient() {
                     <Column flex={2} minWidth={300} width="100%">
                       <ImageUpload
                         onUploadComplete={handleImageUpload}
+                        onRemoveImage={handleRemoveImage}
+                        onReorderImages={handleReorderImages}
                         currentImages={formData.images}
                         maxImages={5}
                       />
@@ -952,9 +996,14 @@ export function SellFormClient() {
                         width="100%"
                         required
                         inputMode="decimal"
+                        min={LISTING_PRICE_LIMITS.MIN}
+                        max={LISTING_PRICE_LIMITS.MAX}
                       />
                     </Row>
-                    <HelperText>Enter your asking price in GBP</HelperText>
+                    <HelperText>
+                      Enter your asking price in GBP ({LISTING_PRICE_LIMITS.MIN} -{" "}
+                      {LISTING_PRICE_LIMITS.MAX})
+                    </HelperText>
                   </Column>
 
                   {/* Error Message */}

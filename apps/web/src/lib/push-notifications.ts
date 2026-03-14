@@ -27,7 +27,7 @@ export async function sendPushNotifications(
   data?: { orderId: string; [key: string]: unknown }
 ): Promise<void> {
   if (!pushTokens || pushTokens.length === 0) {
-    console.log("[Push] No push tokens to send to");
+    console.info("[Push] No push tokens to send to");
     return;
   }
 
@@ -40,7 +40,7 @@ export async function sendPushNotifications(
       data,
     };
 
-    console.log(`[Push] Sending notification to ${pushTokens.length} device(s)`);
+    console.info(`[Push] Sending notification to ${pushTokens.length} device(s)`);
 
     const response = await fetch("https://exp.host/--/api/v2/push/send", {
       method: "POST",
@@ -59,7 +59,7 @@ export async function sendPushNotifications(
     }
 
     const result = await response.json();
-    console.log("[Push] Notification sent successfully:", {
+    console.info("[Push] Notification sent successfully:", {
       id: result.id,
       receipts: result.data?.length || 0,
     });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, Prisma } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
+import { getOrCreateUser } from "@/lib/auth-helpers";
 
 /**
  * GET /api/seller/listings
@@ -21,14 +22,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get user from database
-    const user = await prisma.user.findUnique({
-      where: { clerkId },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
+    // Get or create user (webhook fallback) so first-time users don't hit an error
+    const user = await getOrCreateUser(clerkId);
 
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get("status") || "all";
@@ -77,7 +72,7 @@ export async function GET(request: NextRequest) {
         include: {
           images: {
             orderBy: { sortOrder: "asc" },
-            take: 1,
+            select: { id: true, url: true, sortOrder: true },
           },
           category: {
             select: {
@@ -154,7 +149,11 @@ export async function GET(request: NextRequest) {
         favourites: product.favourites.length,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
-        images: product.images.map((img) => img.url),
+        images: product.images.map((img) => ({
+          id: img.id,
+          url: img.url,
+          sortOrder: img.sortOrder,
+        })),
         offersCount: product.offers.length,
         pendingOffersCount: product.offers.filter((o) => o.status === "PENDING").length,
       })),

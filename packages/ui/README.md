@@ -127,35 +127,40 @@ $3xl; // 64px
 
 ### Button
 
-A versatile button component with multiple variants.
+A versatile button component with brand-consistent variants via `butterVariant`.
 
 ```tsx
 import { Button } from '@buttergolf/ui'
 
-// Sizes: sm, md, lg
-<Button size="md" tone="primary">
-  Click me
+// Primary CTA (Spiced Clementine with drop shadow)
+<Button butterVariant="primary" size="$5">
+  Sell now
 </Button>
 
-// Tones: primary, secondary, outline, ghost, success, error
-<Button tone="secondary">Secondary</Button>
-<Button tone="outline">Outline</Button>
+// Secondary action (light grey with drop shadow)
+<Button butterVariant="secondary" size="$4">
+  Shop now
+</Button>
 
-// States
-<Button disabled>Disabled</Button>
-<Button loading>Loading...</Button>
+// Icon button (neutral flat, orange on hover/active, no shadow)
+<Button butterVariant="icon" circular width={44} height={44} padding={0}>
+  <Heart size={22} />
+</Button>
+
+// Ghost / chromeless
+<Button chromeless size="$4">Cancel</Button>
 
 // Full width
-<Button fullWidth>Full Width Button</Button>
+<Button butterVariant="primary" size="$5" width="100%">Full Width</Button>
 ```
 
 **Props**:
 
-- `size`: `'sm' | 'md' | 'lg'` - Button size (default: 'md')
-- `tone`: `'primary' | 'secondary' | 'outline' | 'ghost' | 'success' | 'error'` - Button style (default: 'primary')
-- `fullWidth`: `boolean` - Make button full width
-- `loading`: `boolean` - Show loading state
-- `disabled`: `boolean` - Disable button
+- `butterVariant`: `'primary' | 'secondary' | 'icon'` - Button style (default: 'primary')
+- `size`: Numeric tokens `$1` – `$16` - Controls height and padding
+- `circular`: `boolean` - Makes button circular (useful with `icon` variant)
+- `chromeless`: Removes all visual styling for ghost buttons
+- All standard Tamagui Button props are supported
 
 ### Typography
 
@@ -420,8 +425,11 @@ import { Column } from "@buttergolf/ui";
 ✅ **Good**:
 
 ```tsx
-<Button size="lg" tone="primary">Submit</Button>
-<Text size="sm" color="$textMuted">Helper text</Text>
+<Button butterVariant="primary" size="$5">Submit</Button>
+<Button butterVariant="icon" circular width={44} height={44} padding={0}>
+  <Heart size={22} />
+</Button>
+<Text size="$4" color="$textMuted">Helper text</Text>
 ```
 
 ❌ **Avoid**:

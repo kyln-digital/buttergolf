@@ -33,7 +33,9 @@ function FadeUpTextWeb({ text, delay = 0, className, style, ariaLabel }: FadeUpT
 
     // If user prefers reduced motion or on mobile, show immediately without animation
     if (prefersReducedMotion || !isDesktop) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShouldAnimate(false);
+
       setIsVisible(true);
       return;
     }
@@ -91,8 +93,10 @@ export function FadeUpText(props: FadeUpTextProps) {
       | 900
       | "bold"
       | "normal";
+
     return (
       <TamaguiText
+        // eslint-disable-next-line react/forbid-component-props
         fontSize={(props.style?.fontSize as number) || 32}
         fontWeight={fontWeightValue}
         color="$text"

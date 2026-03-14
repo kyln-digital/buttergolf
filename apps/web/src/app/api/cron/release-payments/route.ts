@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  console.log("Starting auto-release payment cron job...");
+  console.info("Starting auto-release payment cron job...");
 
   try {
     // Find orders eligible for auto-release:
@@ -60,9 +60,11 @@ export async function GET(request: NextRequest) {
         seller: true,
         product: true,
       },
+      // stripeChargeId and stripePaymentId are scalar fields on Order,
+      // so they're included by default (no need to explicitly select them)
     });
 
-    console.log(`Found ${ordersToRelease.length} orders eligible for auto-release`);
+    console.info(`Found ${ordersToRelease.length} orders eligible for auto-release`);
 
     if (ordersToRelease.length === 0) {
       return NextResponse.json({
@@ -136,7 +138,7 @@ export async function GET(request: NextRequest) {
         // 3. Update with transfer details
         // If any step fails, the status remains HELD
 
-        console.log("Creating auto-release transfer:", {
+        console.info("Creating auto-release transfer:", {
           orderId: order.id,
           sellerId: order.sellerId,
           amount: transferAmountInPence,
@@ -156,7 +158,7 @@ export async function GET(request: NextRequest) {
 
         if (lockedOrder.count === 0) {
           // Another process already claimed this order or it's no longer eligible
-          console.log("Order already being processed or released:", order.id);
+          console.info("Order already being processed or released:", order.id);
           results.push({
             orderId: order.id,
             status: "failed",
@@ -166,20 +168,30 @@ export async function GET(request: NextRequest) {
         }
 
         // STEP 3: Create the Stripe transfer (order is now locked as RELEASED)
+        // Keep params deterministic so retries can safely use idempotency keys.
+        const chargeId = order.stripeChargeId;
+
         let transfer;
         try {
-          transfer = await stripe.transfers.create({
-            amount: transferAmountInPence,
-            currency: "gbp",
-            destination: order.seller.stripeConnectId,
-            transfer_group: order.id,
-            metadata: {
-              orderId: order.id,
-              productId: order.productId,
-              sellerId: order.sellerId,
-              reason: "auto_release_14_days",
+          transfer = await stripe.transfers.create(
+            {
+              amount: transferAmountInPence,
+              currency: "gbp",
+              destination: order.seller.stripeConnectId,
+              transfer_group: order.id,
+              ...(chargeId ? { source_transaction: chargeId } : {}),
+              metadata: {
+                orderId: order.id,
+                productId: order.productId,
+                sellerId: order.sellerId,
+                reason: "auto_release_14_days",
+              },
             },
-          });
+            {
+              // Prevent duplicate payouts if transfer succeeds but DB update fails.
+              idempotencyKey: `auto-release:${order.id}`,
+            }
+          );
         } catch (stripeError) {
           // Transfer failed - rollback status to HELD
           console.error("Stripe transfer failed, rolling back status:", {
@@ -210,7 +222,7 @@ export async function GET(request: NextRequest) {
           },
         });
 
-        console.log("Auto-release transfer successful:", {
+        console.info("Auto-release transfer successful:", {
           orderId: order.id,
           transferId: transfer.id,
         });
@@ -231,7 +243,7 @@ export async function GET(request: NextRequest) {
             payoutAmount: order.stripeSellerPayout || 0,
             releaseReason: "auto_released",
           });
-          console.log("Payment released email sent to seller:", order.seller.email);
+          console.info("Payment released email sent to seller:", order.seller.email);
         } catch (emailError) {
           console.error("Failed to send payment released email:", emailError);
           // Don't fail the release if email fails
@@ -263,7 +275,7 @@ export async function GET(request: NextRequest) {
     const successCount = results.filter((r) => r.status === "success").length;
     const failedCount = results.filter((r) => r.status === "failed").length;
 
-    console.log("Auto-release cron job completed:", {
+    console.info("Auto-release cron job completed:", {
       total: ordersToRelease.length,
       success: successCount,
       failed: failedCount,

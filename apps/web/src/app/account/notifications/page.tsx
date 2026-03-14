@@ -41,7 +41,7 @@ export default function NotificationsPage() {
       id: "messages",
       label: "Messages",
       description: "Get notified when you receive a new message from a buyer or seller",
-      icon: <MessageCircle size={22} color="$info" />,
+      icon: <MessageCircle size={22} color="$secondary" />,
       enabled: true,
     },
     {
@@ -91,7 +91,7 @@ export default function NotificationsPage() {
             ← Back to Account
           </Button>
           <Heading level={2}>Notifications</Heading>
-          <Text color="$textSecondary">Choose what notifications you'd like to receive</Text>
+          <Text color="$textSecondary">Choose what notifications you&apos;d like to receive</Text>
         </Column>
 
         {/* Email Notifications Section */}

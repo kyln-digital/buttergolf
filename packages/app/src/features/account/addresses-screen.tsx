@@ -1,8 +1,18 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Column, Row, Text, Button, Heading, Spinner, ScrollView, Input } from "@buttergolf/ui";
-import { Button as TamaguiButton, View, Switch } from "tamagui";
+import {
+  Column,
+  Row,
+  Text,
+  Button,
+  Heading,
+  Spinner,
+  ScrollView,
+  Input,
+  View,
+} from "@buttergolf/ui";
+import { Switch } from "tamagui";
 import { ArrowLeft, Plus, MapPin, Check, Trash2, Edit3 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Alert } from "react-native";
@@ -116,7 +126,7 @@ export function AddressesScreen({
             try {
               await onDeleteAddress(address.id);
               void fetchAddresses();
-            } catch (err) {
+            } catch {
               Alert.alert("Error", "Failed to delete address");
             }
           },
@@ -131,7 +141,7 @@ export function AddressesScreen({
       try {
         await onSetDefault(address.id);
         void fetchAddresses();
-      } catch (err) {
+      } catch {
         Alert.alert("Error", "Failed to set default address");
       }
     },
@@ -193,7 +203,7 @@ export function AddressesScreen({
           borderBottomWidth={1}
           borderBottomColor="$border"
         >
-          <TamaguiButton
+          <Button
             chromeless
             circular
             size="$4"
@@ -203,9 +213,9 @@ export function AddressesScreen({
           <Heading level={4} flex={1}>
             {viewMode === "add" ? "Add Address" : "Edit Address"}
           </Heading>
-          <TamaguiButton chromeless size="$4" onPress={handleSave} disabled={saving}>
+          <Button chromeless size="$4" onPress={handleSave} disabled={saving}>
             {saving ? <Spinner size="sm" color="$primary" /> : <Check size={24} color="$primary" />}
-          </TamaguiButton>
+          </Button>
         </Row>
 
         <ScrollView
@@ -428,7 +438,7 @@ export function AddressesScreen({
         borderBottomWidth={1}
         borderBottomColor="$border"
       >
-        <TamaguiButton
+        <Button
           chromeless
           circular
           size="$4"
@@ -438,7 +448,7 @@ export function AddressesScreen({
         <Heading level={4} flex={1}>
           Addresses
         </Heading>
-        <TamaguiButton
+        <Button
           chromeless
           circular
           size="$4"
@@ -508,14 +518,14 @@ export function AddressesScreen({
                   </Row>
 
                   <Row gap="$2">
-                    <TamaguiButton
+                    <Button
                       chromeless
                       size="$3"
                       onPress={() => handleEdit(address)}
                       icon={<Edit3 size={18} color="$text" />}
                     />
                     {!address.isDefault && (
-                      <TamaguiButton
+                      <Button
                         chromeless
                         size="$3"
                         onPress={() => handleDelete(address)}

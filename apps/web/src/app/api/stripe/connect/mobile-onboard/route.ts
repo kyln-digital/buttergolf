@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     // If user doesn't exist, the Clerk webhook hasn't fired yet
     // Create a minimal user record so they can proceed with onboarding
     if (!user) {
-      console.log(
+      console.info(
         `[Stripe Mobile Onboard] User not found for clerkId ${userId}, creating minimal record`
       );
       user = await prisma.user.create({
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
           lastName: "",
         },
       });
-      console.log(`[Stripe Mobile Onboard] Created user record ${user.id} for clerkId ${userId}`);
+      console.info(`[Stripe Mobile Onboard] Created user record ${user.id} for clerkId ${userId}`);
     }
 
     let stripeAccountId = user.stripeConnectId;
@@ -60,14 +60,14 @@ export async function POST(request: Request) {
     if (stripeAccountId) {
       try {
         const existingAccount = await stripe.accounts.retrieve(stripeAccountId);
-        console.log(
+        console.info(
           `[Stripe Mobile Onboard] Verified existing account ${stripeAccountId} for user ${user.id}`
         );
 
         // Check if account was deleted from Stripe
         // @ts-expect-error - Stripe API may return 'deleted: true' on deleted accounts, but this isn't in the TypeScript types
         if (existingAccount.deleted) {
-          console.log(
+          console.info(
             `[Stripe Mobile Onboard] Account ${stripeAccountId} was deleted, clearing from database`
           );
           stripeAccountId = null;
@@ -155,7 +155,7 @@ export async function POST(request: Request) {
       });
 
       stripeAccountId = account.id;
-      console.log(
+      console.info(
         `[Stripe Mobile Onboard] Created new account ${stripeAccountId} for user ${user.id}`
       );
 
@@ -177,10 +177,10 @@ export async function POST(request: Request) {
       refresh_url: `${baseUrl}/seller/onboarding/refresh`,
       return_url: `${baseUrl}/seller/onboarding/complete`,
       type: "account_onboarding",
-      collect: "eventually_due",
+      collect: "currently_due",
     });
 
-    console.log(
+    console.info(
       `[Stripe Mobile Onboard] Created account link for ${stripeAccountId}, expires: ${new Date(accountLink.expires_at * 1000).toISOString()}`
     );
 

@@ -45,9 +45,9 @@ export function PhotoStep({
       }
 
       try {
-        console.log("📤 PhotoStep: Uploading image...", { isFirstImage });
+        console.info("📤 PhotoStep: Uploading image...", { isFirstImage });
         const uploadedUrl = await onUploadImage(image, isFirstImage);
-        console.log("PhotoStep: Upload complete:", uploadedUrl);
+        console.info("PhotoStep: Upload complete:", uploadedUrl);
         return {
           ...image,
           uri: uploadedUrl,

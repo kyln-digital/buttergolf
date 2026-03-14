@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ComponentType, type ReactNode } from "react";
 import { Moon, Sun, Monitor } from "@tamagui/lucide-icons";
 import { XStack, SizableText, Button, styled, type GetProps } from "tamagui";
 import { useTheme, type ThemeMode } from "@buttergolf/app/src/hooks/useTheme";
@@ -99,9 +99,19 @@ export function ThemeSwitcher({
     return <ThemeToggleButton onPress={toggle} onThemeChange={onThemeChange} />;
   }
 
+  // styled(XStack) loses base prop types when variants are defined in this Tamagui version;
+  // cast locally to restore onPress, aria-*, children, fontWeight, etc.
+  const RowEl = Row as unknown as ComponentType<GetProps<typeof XStack>>;
+  const ToggleEl = ToggleButton as unknown as ComponentType<
+    GetProps<typeof XStack> & { active?: boolean; children?: ReactNode }
+  >;
+  const LabelText = Text as unknown as ComponentType<
+    GetProps<typeof SizableText> & { children?: ReactNode }
+  >;
+
   // Full mode: segmented control
   return (
-    <Row
+    <RowEl
       backgroundColor="$surface"
       borderRadius="$lg"
       borderWidth={1}
@@ -113,7 +123,7 @@ export function ThemeSwitcher({
       {THEME_OPTIONS.map(({ mode: optionMode, label, Icon }) => {
         const isActive = currentMode === optionMode;
         return (
-          <ToggleButton
+          <ToggleEl
             key={optionMode}
             active={isActive}
             onPress={() => handleModeChange(optionMode)}
@@ -123,18 +133,18 @@ export function ThemeSwitcher({
           >
             <Icon size={18} color={isActive ? "$textInverse" : "$text"} />
             {showLabels && (
-              <Text
+              <LabelText
                 size="$4"
                 color={isActive ? "$textInverse" : "$text"}
                 fontWeight={isActive ? "600" : "400"}
               >
                 {label}
-              </Text>
+              </LabelText>
             )}
-          </ToggleButton>
+          </ToggleEl>
         );
       })}
-    </Row>
+    </RowEl>
   );
 }
 
@@ -167,6 +177,7 @@ export function ThemeToggleButton({
   // server/client mismatch (Fixes BUTTERGOLF-1, BUTTERGOLF-4)
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- SSR hydration pattern: single mount-only state update
     setMounted(true);
   }, []);
 

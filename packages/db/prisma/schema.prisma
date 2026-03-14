@@ -41,6 +41,8 @@ model User {
   ratingsGiven               SellerRating[] @relation("RatingsGiven")
   ratingsReceived            SellerRating[] @relation("SellerRatings")
   promotions                 ProductPromotion[]
+  buyerConversations         Conversation[] @relation("BuyerConversations")
+  sellerConversations        Conversation[] @relation("SellerConversations")
 
   @@index([isDeleted])
   @@map("users")
@@ -119,12 +121,13 @@ model Product {
   gripCondition        Int?     @default(7)
   headCondition        Int?     @default(7)
   shaftCondition       Int?     @default(7)
-  favourites  Favourite[]
-  offers      Offer[]
-  orders      Order[]
-  images      ProductImage[]
-  promotions  ProductPromotion[]
-  brand       Brand?           @relation(fields: [brandId], references: [id])
+  favourites     Favourite[]
+  offers         Offer[]
+  orders         Order[]
+  images         ProductImage[]
+  promotions     ProductPromotion[]
+  conversations  Conversation[]
+  brand          Brand?           @relation(fields: [brandId], references: [id])
   category    Category         @relation(fields: [categoryId], references: [id])
   user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -238,7 +241,7 @@ model Order {
   seller               User           @relation("SellerOrders", fields: [sellerId], references: [id])
   toAddress            Address        @relation("ToAddress", fields: [toAddressId], references: [id])
   sellerRating         SellerRating?
-  messages             Message[]
+  conversation         Conversation?
 
   @@index([sellerId])
   @@index([buyerId])
@@ -251,19 +254,24 @@ model Order {
 }
 
 model Message {
-  id        String   @id @default(cuid())
-  orderId   String
-  senderId  String
-  content   String
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  id             String      @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String
+  type           MessageType @default(TEXT)
+  offerAmount    Float?      // Stores amount for OFFER/COUNTER_OFFER messages
+  offerId        String?     // Links to the Offer for offer-type messages
+  isRead         Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  offer          Offer?       @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
-  @@index([orderId])
+  @@index([conversationId])
   @@index([senderId])
   @@index([createdAt])
+  @@index([offerId])
   @@map("messages")
 }
 
@@ -287,24 +295,28 @@ model SellerRating {
 }
 
 model Offer {
-  id            String         @id @default(cuid())
-  amount        Float
-  status        OfferStatus    @default(PENDING)
-  message       String?
-  productId     String
-  buyerId       String
-  sellerId      String
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  expiresAt     DateTime?
-  counterOffers CounterOffer[]
-  buyer         User           @relation("BuyerOffers", fields: [buyerId], references: [id], onDelete: Cascade)
-  product       Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
-  seller        User           @relation("SellerOffers", fields: [sellerId], references: [id], onDelete: Cascade)
+  id             String         @id @default(cuid())
+  amount         Float
+  status         OfferStatus    @default(PENDING)
+  message        String?
+  productId      String
+  buyerId        String
+  sellerId       String
+  conversationId String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  expiresAt      DateTime?
+  counterOffers  CounterOffer[]
+  messages       Message[]
+  buyer          User           @relation("BuyerOffers", fields: [buyerId], references: [id], onDelete: Cascade)
+  conversation   Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  product        Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  seller         User           @relation("SellerOffers", fields: [sellerId], references: [id], onDelete: Cascade)
 
   @@index([productId])
   @@index([buyerId])
   @@index([sellerId])
+  @@index([conversationId])
   @@index([status])
   @@index([expiresAt])
   @@map("offers")
@@ -330,6 +342,18 @@ model Waitlist {
   createdAt DateTime @default(now())
 
   @@map("waitlist")
+}
+
+model NewsletterSubscriber {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  source       String   @default("homepage")
+  subscribedAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([subscribedAt])
+  @@map("newsletter_subscribers")
 }
 
 model ProductPromotion {
@@ -404,6 +428,40 @@ enum OfferStatus {
   REJECTED
   COUNTERED
   EXPIRED
+}
+
+enum MessageType {
+  TEXT
+  OFFER
+  COUNTER_OFFER
+  OFFER_ACCEPTED
+  OFFER_REJECTED
+  OFFER_EXPIRED
+  SYSTEM
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  productId String
+  buyerId   String
+  sellerId  String
+  orderId   String?  @unique // Linked once order is created
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyer    User     @relation("BuyerConversations", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller   User     @relation("SellerConversations", fields: [sellerId], references: [id], onDelete: Cascade)
+  order    Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  messages Message[]
+  offers   Offer[]
+
+  @@unique([productId, buyerId, sellerId])
+  @@index([productId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([orderId])
+  @@map("conversations")
 }
 
 enum PaymentHoldStatus {

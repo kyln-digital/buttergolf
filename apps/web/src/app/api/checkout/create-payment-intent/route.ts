@@ -25,14 +25,14 @@ type ShippingOptionId = keyof typeof SHIPPING_OPTIONS;
  * For EmbeddedCheckout, see create-checkout-session/route.ts
  */
 export async function POST(req: Request) {
-  console.log("[PaymentIntent API] POST request received");
+  console.info("[PaymentIntent API] POST request received");
 
   try {
     // Support both web cookies and mobile Bearer tokens
     const clerkUserId = await getUserIdFromRequest(req);
 
     if (!clerkUserId) {
-      console.log("[PaymentIntent API] ERROR: No clerkUserId - returning 401");
+      console.info("[PaymentIntent API] ERROR: No clerkUserId - returning 401");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -42,7 +42,12 @@ export async function POST(req: Request) {
       shippingOptionId: ShippingOptionId;
     };
 
-    console.log("[PaymentIntent API] productId:", productId, "shippingOptionId:", shippingOptionId);
+    console.info(
+      "[PaymentIntent API] productId:",
+      productId,
+      "shippingOptionId:",
+      shippingOptionId
+    );
 
     if (!productId) {
       return NextResponse.json({ error: "Product ID is required" }, { status: 400 });
@@ -102,7 +107,7 @@ export async function POST(req: Request) {
     const totalAmountInPence =
       productPriceInPence + shippingAmountInPence + pricing.buyerProtectionFeeInPence;
 
-    console.log("[PaymentIntent API] Amounts:", {
+    console.info("[PaymentIntent API] Amounts:", {
       productPriceInPence,
       shippingAmountInPence,
       buyerProtectionFeeInPence: pricing.buyerProtectionFeeInPence,
@@ -138,7 +143,7 @@ export async function POST(req: Request) {
       receipt_email: buyer.email,
     });
 
-    console.log("[PaymentIntent API] SUCCESS - PaymentIntent created:", paymentIntent.id);
+    console.info("[PaymentIntent API] SUCCESS - PaymentIntent created:", paymentIntent.id);
 
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,

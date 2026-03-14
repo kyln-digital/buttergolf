@@ -10,6 +10,7 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 
 interface StripeEmbeddedCheckoutProps {
   productId: string;
+  offerId?: string | null;
   onError?: (error: string) => void;
 }
 
@@ -18,7 +19,11 @@ interface StripeEmbeddedCheckoutProps {
  * Renders the full Stripe-hosted checkout experience embedded in our page
  * Handles address collection, shipping selection, and payment in one flow
  */
-export function StripeEmbeddedCheckout({ productId, onError }: StripeEmbeddedCheckoutProps) {
+export function StripeEmbeddedCheckout({
+  productId,
+  offerId,
+  onError,
+}: StripeEmbeddedCheckoutProps) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -28,7 +33,7 @@ export function StripeEmbeddedCheckout({ productId, onError }: StripeEmbeddedChe
       const response = await fetch("/api/checkout/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId }),
+        body: JSON.stringify({ productId, ...(offerId && { offerId }) }),
       });
 
       if (!response.ok) {
@@ -49,13 +54,13 @@ export function StripeEmbeddedCheckout({ productId, onError }: StripeEmbeddedChe
       setIsLoading(false);
       throw err;
     }
-  }, [productId, onError]);
+  }, [productId, offerId, onError]);
 
   // Handle checkout completion (redirect happens automatically)
   const handleComplete = useCallback(() => {
     // The return_url in the session handles the redirect
     // This callback fires when checkout completes successfully
-    console.log("Checkout completed");
+    console.info("Checkout completed");
   }, []);
 
   // Error state

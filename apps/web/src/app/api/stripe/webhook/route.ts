@@ -10,6 +10,7 @@ import {
   sendPaymentOnHoldEmail,
 } from "@/lib/email";
 import { generateShippingLabel } from "@/lib/shipengine";
+import { createOrderFromPaymentIntent } from "@/lib/create-order-from-payment-intent";
 
 // Disable body parsing for webhook
 export const runtime = "nodejs";
@@ -60,7 +61,7 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("Stripe webhook event received:", event.type);
+    console.info("Stripe webhook event received:", event.type);
 
     // Handle events with switch for cleaner organization
     switch (event.type) {
@@ -106,7 +107,7 @@ export async function POST(req: Request) {
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        console.info(`Unhandled event type: ${event.type}`);
     }
 
     return NextResponse.json({ received: true });
@@ -125,7 +126,7 @@ export async function POST(req: Request) {
  * Creates order, sends confirmation emails to buyer and seller
  */
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  console.log("Checkout session completed:", {
+  console.info("Checkout session completed:", {
     id: session.id,
     paymentIntentId: session.payment_intent,
     amountTotal: session.amount_total,
@@ -159,7 +160,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   });
 
   if (existingOrder) {
-    console.log("Order already exists for session:", session.id);
+    console.info("Order already exists for session:", session.id);
     return NextResponse.json({
       received: true,
       orderId: existingOrder.id,
@@ -340,7 +341,74 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     data: { isSold: true },
   });
 
-  console.log("Order created successfully:", order.id);
+  console.info("Order created successfully:", order.id);
+
+  // Link conversation to order if this was an offer-based purchase
+  const offerId = session.metadata?.offerId;
+  if (offerId) {
+    try {
+      const offer = await prisma.offer.findUnique({
+        where: { id: offerId },
+        select: { conversationId: true },
+      });
+
+      if (offer?.conversationId) {
+        await prisma.conversation.update({
+          where: { id: offer.conversationId },
+          data: { orderId: order.id },
+        });
+
+        // Create a system message in the conversation
+        await prisma.message.create({
+          data: {
+            content: "Order created — payment confirmed.",
+            senderId: buyerId,
+            conversationId: offer.conversationId,
+            type: "SYSTEM",
+          },
+        });
+
+        console.info("Linked conversation", offer.conversationId, "to order", order.id);
+      }
+    } catch (err) {
+      // Non-fatal: conversation linking failure shouldn't block order creation
+      console.error("Failed to link conversation to order:", err);
+    }
+  } else {
+    // No offer — check if a conversation exists for this buyer+seller+product
+    // and link it if so (covers direct purchase after messaging)
+    try {
+      const conversation = await prisma.conversation.findUnique({
+        where: {
+          productId_buyerId_sellerId: {
+            productId,
+            buyerId,
+            sellerId,
+          },
+        },
+      });
+
+      if (conversation) {
+        await prisma.conversation.update({
+          where: { id: conversation.id },
+          data: { orderId: order.id },
+        });
+
+        await prisma.message.create({
+          data: {
+            content: "Order created — payment confirmed.",
+            senderId: buyerId,
+            conversationId: conversation.id,
+            type: "SYSTEM",
+          },
+        });
+
+        console.info("Linked existing conversation", conversation.id, "to order", order.id);
+      }
+    } catch (err) {
+      console.error("Failed to link conversation to order:", err);
+    }
+  }
 
   // Send email to seller if they need to complete their address
   if (sellerNeedsAddress) {
@@ -373,7 +441,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           </div>
         `,
       });
-      console.log("Sent address required email to seller:", product.user.email);
+      console.info("Sent address required email to seller:", product.user.email);
     } catch (emailError) {
       console.error("Failed to send address required email:", emailError);
     }
@@ -382,13 +450,13 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // Attempt to generate shipping label automatically
   // (will fail gracefully if seller has no valid address)
   try {
-    console.log("Attempting to auto-generate shipping label for order:", order.id);
+    console.info("Attempting to auto-generate shipping label for order:", order.id);
 
     const labelResult = await generateShippingLabel({
       orderId: order.id,
     });
 
-    console.log("Shipping label generated successfully:", {
+    console.info("Shipping label generated successfully:", {
       orderId: order.id,
       trackingNumber: labelResult.trackingNumber,
       carrier: labelResult.carrier,
@@ -442,7 +510,7 @@ async function sendOrderEmails(
   const sellerName =
     `${product.user.firstName} ${product.user.lastName}`.trim() || product.user.email;
 
-  console.log("Sending order notification emails...", {
+  console.info("Sending order notification emails...", {
     orderId,
     buyerEmail: buyer.email,
     sellerEmail: product.user.email,
@@ -461,7 +529,7 @@ async function sendOrderEmails(
   });
 
   if (buyerEmailResult.success) {
-    console.log("Buyer confirmation email sent:", {
+    console.info("Buyer confirmation email sent:", {
       orderId,
       emailId: buyerEmailResult.id,
       recipient: buyer.email,
@@ -490,7 +558,7 @@ async function sendOrderEmails(
   });
 
   if (sellerEmailResult.success) {
-    console.log("Seller notification email sent:", {
+    console.info("Seller notification email sent:", {
       orderId,
       emailId: sellerEmailResult.id,
       recipient: product.user.email,
@@ -515,7 +583,7 @@ async function sendOrderEmails(
         productTitle: product.title,
         autoReleaseDate: autoReleaseAt,
       });
-      console.log("Payment on-hold email sent to buyer:", buyer.email);
+      console.info("Payment on-hold email sent to buyer:", buyer.email);
     } catch (holdEmailError) {
       // Log but don't fail - this is a secondary email
       console.error("Failed to send payment on-hold email:", holdEmailError);
@@ -530,7 +598,7 @@ async function sendOrderEmails(
 function handleCheckoutExpired(session: Stripe.Checkout.Session) {
   const { productId } = session.metadata || {};
 
-  console.log("⏰ Checkout session expired:", {
+  console.info("⏰ Checkout session expired:", {
     sessionId: session.id,
     productId: productId || "none",
   });
@@ -550,7 +618,7 @@ function handleCheckoutExpired(session: Stripe.Checkout.Session) {
 async function handlePromotionPayment(paymentIntent: Stripe.PaymentIntent) {
   const { productId, promotionType, durationMs } = paymentIntent.metadata;
 
-  console.log("Promotion payment succeeded:", {
+  console.info("Promotion payment succeeded:", {
     paymentIntentId: paymentIntent.id,
     productId,
     promotionType,
@@ -611,7 +679,7 @@ async function handlePromotionPayment(paymentIntent: Stripe.PaymentIntent) {
     },
   });
 
-  console.log("Promotion activated:", {
+  console.info("Promotion activated:", {
     promotionId: promotion.id,
     productId,
     type: promotionType,
@@ -629,7 +697,7 @@ async function handlePromotionPayment(paymentIntent: Stripe.PaymentIntent) {
  * Handle payment_intent.succeeded
  * This handles:
  * 1. Payments already processed by checkout.session.completed (idempotent)
- * 2. PaymentElement flow payments (BuyNowSheet) - creates order here
+ * 2. PaymentElement flow payments (BuyNowSheet) - creates order via shared utility
  * 3. Promotion purchases - activates the promotion
  */
 async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
@@ -647,16 +715,13 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   });
 
   if (existingOrder) {
-    console.log("Payment intent succeeded (already handled by checkout):", paymentIntent.id);
+    console.info("Payment intent succeeded (already handled by checkout):", paymentIntent.id);
     return;
   }
 
   // Check if this is from our PaymentElement flow
-  const { productId, sellerId, buyerId } = paymentIntent.metadata;
-
   if (source !== "payment_element") {
-    // Payment intent without matching order and not from PaymentElement - likely from legacy flow
-    console.log("Payment intent succeeded without checkout session (legacy):", {
+    console.info("Payment intent succeeded without checkout session (legacy):", {
       id: paymentIntent.id,
       amount: paymentIntent.amount / 100,
       currency: paymentIntent.currency,
@@ -665,231 +730,22 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     return;
   }
 
-  // This is from PaymentElement flow - create the order
-  console.log("Payment intent succeeded from PaymentElement flow:", {
+  // This is from PaymentElement flow - create the order using shared utility
+  console.info("Payment intent succeeded from PaymentElement flow:", {
     id: paymentIntent.id,
     amount: paymentIntent.amount / 100,
-    productId,
-    buyerId,
-    sellerId,
+    productId: paymentIntent.metadata.productId,
+    buyerId: paymentIntent.metadata.buyerId,
+    sellerId: paymentIntent.metadata.sellerId,
   });
 
-  if (!productId || !sellerId || !buyerId) {
-    console.error("Missing required metadata in payment intent:", paymentIntent.metadata);
-    return;
+  const order = await createOrderFromPaymentIntent(paymentIntent);
+
+  if (order) {
+    console.info("Order created successfully from webhook:", order.id);
+  } else {
+    console.error("Failed to create order from webhook for PaymentIntent:", paymentIntent.id);
   }
-
-  // Get product details
-  const product = await prisma.product.findUnique({
-    where: { id: productId },
-    include: {
-      user: {
-        include: {
-          addresses: {
-            where: { isDefault: true },
-            take: 1,
-          },
-        },
-      },
-      images: {
-        orderBy: { sortOrder: "asc" },
-        take: 1,
-      },
-    },
-  });
-
-  if (!product) {
-    console.error("Product not found:", productId);
-    return;
-  }
-
-  // Get buyer information
-  const buyer = await prisma.user.findUnique({
-    where: { id: buyerId },
-  });
-
-  if (!buyer) {
-    console.error("Buyer not found:", buyerId);
-    return;
-  }
-
-  // Get shipping details from the payment intent
-  const shippingDetails = paymentIntent.shipping;
-
-  if (!shippingDetails?.address) {
-    console.error("Missing shipping details in payment intent");
-    return;
-  }
-
-  // Create buyer's shipping address (To Address)
-  const toAddress = await prisma.address.create({
-    data: {
-      userId: buyerId,
-      name: shippingDetails.name || `${buyer.firstName} ${buyer.lastName}`.trim() || buyer.email,
-      street1: shippingDetails.address.line1 || "",
-      street2: shippingDetails.address.line2 || undefined,
-      city: shippingDetails.address.city || "",
-      state: shippingDetails.address.state || "",
-      zip: shippingDetails.address.postal_code || "",
-      country: shippingDetails.address.country || "GB",
-      phone: shippingDetails.phone || undefined,
-    },
-  });
-
-  // Get seller's default address (From Address)
-  let fromAddress = product.user.addresses[0];
-  let sellerNeedsAddress = false;
-
-  if (!fromAddress) {
-    console.error("Seller has no address:", { sellerId, productId });
-
-    fromAddress = await prisma.address.create({
-      data: {
-        userId: sellerId,
-        name: `${product.user.firstName} ${product.user.lastName}`.trim() || product.user.email,
-        street1: "Address pending",
-        city: "Pending",
-        state: "",
-        zip: "XX00 0XX",
-        country: "GB",
-        isDefault: true,
-      },
-    });
-
-    sellerNeedsAddress = true;
-  }
-
-  // Calculate amounts from payment intent metadata (Vinted-style pricing)
-  const amountTotal = paymentIntent.amount / 100;
-  const shippingAmountInPence = parseInt(paymentIntent.metadata.shippingAmountInPence || "0", 10);
-  const shippingCost = shippingAmountInPence / 100;
-
-  // Vinted-style pricing: extract buyer protection fee from metadata
-  const buyerProtectionFeeInPence = parseInt(
-    paymentIntent.metadata.buyerProtectionFeeInPence || "0",
-    10
-  );
-  const sellerPayoutInPence = parseInt(paymentIntent.metadata.sellerPayoutInPence || "0", 10);
-  const buyerProtectionFee = buyerProtectionFeeInPence / 100;
-  const sellerPayout = sellerPayoutInPence / 100;
-
-  // Get charge ID for later transfer
-  const stripeChargeId =
-    typeof paymentIntent.latest_charge === "string"
-      ? paymentIntent.latest_charge
-      : paymentIntent.latest_charge?.id || null;
-
-  // autoReleaseAt starts as null - will be set to 14 days after delivery
-  // when shipmentStatus changes to DELIVERED
-  const autoReleaseAt = null;
-
-  // Create the order with HELD status (escrow-style)
-  const order = await prisma.order.create({
-    data: {
-      stripePaymentId: paymentIntent.id,
-      stripeCheckoutId: null, // No checkout session for PaymentElement flow
-      stripeChargeId,
-      amountTotal,
-      shippingCost,
-      // Vinted-style: buyer protection fee as platform revenue
-      buyerProtectionFee,
-      stripePlatformFee: buyerProtectionFee, // For backwards compatibility
-      stripeSellerPayout: sellerPayout,
-      stripePayoutStatus: "pending",
-      // Payment hold (escrow) - seller paid after buyer confirms
-      paymentHoldStatus: "HELD",
-      paymentHeldAt: new Date(),
-      autoReleaseAt,
-      sellerId,
-      buyerId,
-      productId,
-      fromAddressId: fromAddress.id,
-      toAddressId: toAddress.id,
-      shipmentStatus: "PENDING",
-      status: "PAYMENT_CONFIRMED",
-    },
-  });
-
-  // Mark product as sold
-  await prisma.product.update({
-    where: { id: productId },
-    data: { isSold: true },
-  });
-
-  console.log("Order created successfully from PaymentElement flow:", order.id);
-
-  // Send email to seller if they need to complete their address
-  if (sellerNeedsAddress) {
-    try {
-      await sendEmail({
-        to: product.user.email,
-        subject: "Action Required: Complete Your Seller Profile",
-        html: `
-          <div style="font-family: 'Urbanist', Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #FFFFFF; border-radius: 8px; overflow: hidden;">
-            <div style="background-color: #F45314; padding: 24px; text-align: center;">
-              <h1 style="color: #FFFFFF; margin: 0; font-size: 24px;">Address Required</h1>
-            </div>
-            <div style="padding: 32px;">
-              <p style="color: #323232; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">
-                Hi ${product.user.firstName || "there"},
-              </p>
-              <p style="color: #323232; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">
-                Great news! Someone just purchased your item. However, we cannot generate a shipping label because your shipping address is not set up.
-              </p>
-              <p style="color: #323232; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
-                Please complete your Stripe Connect profile to add your address. This address will be used as the return address on all shipping labels.
-              </p>
-              <a href="${process.env.NEXT_PUBLIC_APP_URL}/sell" style="display: inline-block; background-color: #F45314; color: #FFFFFF; padding: 14px 28px; text-decoration: none; border-radius: 100px; font-weight: 600; font-size: 16px;">
-                Complete Your Profile
-              </a>
-              <p style="color: #545454; font-size: 14px; line-height: 1.6; margin-top: 24px;">
-                Order ID: <code style="background-color: #EDEDED; padding: 2px 6px; border-radius: 4px;">${order.id}</code>
-              </p>
-            </div>
-          </div>
-        `,
-      });
-      console.log("Sent address required email to seller:", product.user.email);
-    } catch (emailError) {
-      console.error("Failed to send address required email:", emailError);
-    }
-  }
-
-  // Attempt to generate shipping label automatically
-  try {
-    console.log("Attempting to auto-generate shipping label for order:", order.id);
-
-    const labelResult = await generateShippingLabel({
-      orderId: order.id,
-    });
-
-    console.log("Shipping label generated successfully:", {
-      orderId: order.id,
-      trackingNumber: labelResult.trackingNumber,
-      carrier: labelResult.carrier,
-    });
-  } catch (labelError) {
-    console.warn("Could not auto-generate shipping label:", {
-      orderId: order.id,
-      error: labelError instanceof Error ? labelError.message : "Unknown error",
-    });
-  }
-
-  // Send notification emails
-  await sendOrderEmails(
-    order.id,
-    amountTotal,
-    buyer,
-    product,
-    {
-      address: {
-        city: shippingDetails.address.city,
-        postal_code: shippingDetails.address.postal_code,
-      },
-    },
-    sellerPayout,
-    autoReleaseAt
-  );
 }
 
 /**
@@ -917,7 +773,7 @@ function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
  * Update order status and optionally restore product availability
  */
 async function handleRefund(charge: Stripe.Charge) {
-  console.log("💸 Charge refunded:", {
+  console.info("💸 Charge refunded:", {
     chargeId: charge.id,
     paymentIntentId: charge.payment_intent,
     amountRefunded: (charge.amount_refunded || 0) / 100,
@@ -952,7 +808,7 @@ async function handleRefund(charge: Stripe.Charge) {
     });
   } else {
     // Partial refund - log but don't change status (could add PARTIALLY_REFUNDED to enum later)
-    console.log("Partial refund processed for order:", order.id);
+    console.info("Partial refund processed for order:", order.id);
   }
 
   // If fully refunded, restore product availability
@@ -961,7 +817,7 @@ async function handleRefund(charge: Stripe.Charge) {
       where: { id: order.productId },
       data: { isSold: false },
     });
-    console.log("Product restored to available:", order.productId);
+    console.info("Product restored to available:", order.productId);
   }
 
   // TODO: Send refund confirmation email to buyer
@@ -992,7 +848,7 @@ function handleDisputeCreated(dispute: Stripe.Dispute) {
  * Track dispute resolution outcome
  */
 function handleDisputeClosed(dispute: Stripe.Dispute) {
-  console.log("Dispute closed:", {
+  console.info("Dispute closed:", {
     disputeId: dispute.id,
     chargeId: dispute.charge,
     status: dispute.status, // won, lost, warning_closed, etc.

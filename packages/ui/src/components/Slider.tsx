@@ -177,8 +177,12 @@ export function RangeSlider({
   onValueChange,
   disabled = false,
 }: RangeSliderProps) {
+  // styled() adds a Tamagui token index signature that blocks value/defaultValue/children types.
+  // Cast locally to any so the JSX tree is unchecked; the public Slider export remains typed.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const S = Slider as any;
   return (
-    <Slider
+    <S
       min={min}
       max={max}
       step={step}
@@ -187,11 +191,11 @@ export function RangeSlider({
       onValueChange={onValueChange}
       disabled={disabled}
     >
-      <Slider.Track>
-        <Slider.TrackActive />
-      </Slider.Track>
-      <Slider.Thumb index={0} />
-      <Slider.Thumb index={1} />
-    </Slider>
+      <S.Track>
+        <S.TrackActive />
+      </S.Track>
+      <S.Thumb index={0} />
+      <S.Thumb index={1} />
+    </S>
   );
 }

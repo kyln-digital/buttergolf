@@ -1,8 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
-import { Column, Row, Text, Button, Heading, ScrollView } from "@buttergolf/ui";
-import { Button as TamaguiButton, View, Accordion, Square, Paragraph } from "tamagui";
+import {
+  Column,
+  Row,
+  Text,
+  Button,
+  Heading,
+  ScrollView,
+  View,
+} from "@buttergolf/ui";
+import { Accordion, Square, Paragraph } from "tamagui";
 import {
   ArrowLeft,
   HelpCircle,
@@ -92,7 +100,7 @@ export function HelpSupportScreen({
     if (question.includes("track") || question.includes("order"))
       return <Package size={20} color="$primary" />;
     if (question.includes("payment")) return <CreditCard size={20} color="$warning" />;
-    if (question.includes("return")) return <RefreshCw size={20} color="$info" />;
+    if (question.includes("return")) return <RefreshCw size={20} color="$secondary" />;
     return <HelpCircle size={20} color="$textSecondary" />;
   };
 
@@ -107,7 +115,7 @@ export function HelpSupportScreen({
         borderBottomWidth={1}
         borderBottomColor="$border"
       >
-        <TamaguiButton
+        <Button
           chromeless
           circular
           size="$4"
@@ -131,7 +139,7 @@ export function HelpSupportScreen({
             CONTACT US
           </Text>
 
-          <TamaguiButton
+          <Button
             unstyled
             backgroundColor="$surface"
             borderRadius="$lg"
@@ -162,10 +170,10 @@ export function HelpSupportScreen({
               </Column>
               <ExternalLink size={18} color="$textMuted" />
             </Row>
-          </TamaguiButton>
+          </Button>
 
           {onOpenChat && (
-            <TamaguiButton
+            <Button
               unstyled
               backgroundColor="$surface"
               borderRadius="$lg"
@@ -180,11 +188,11 @@ export function HelpSupportScreen({
                   width={44}
                   height={44}
                   borderRadius="$full"
-                  backgroundColor="$infoLight"
+                  backgroundColor="$secondaryLight"
                   alignItems="center"
                   justifyContent="center"
                 >
-                  <MessageCircle size={22} color="$info" />
+                  <MessageCircle size={22} color="$secondary" />
                 </View>
                 <Column flex={1}>
                   <Text size="$4" fontWeight="500">
@@ -196,7 +204,7 @@ export function HelpSupportScreen({
                 </Column>
                 <ExternalLink size={18} color="$textMuted" />
               </Row>
-            </TamaguiButton>
+            </Button>
           )}
         </Column>
 

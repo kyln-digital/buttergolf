@@ -149,7 +149,7 @@ export function isValidUKPostcode(postcode: string): boolean {
  */
 export function isValidUKPhone(phone: string): boolean {
   if (!phone) return true; // Phone is optional
-  const cleaned = phone.replace(/[\s\-\(\)]/g, "");
+  const cleaned = phone.replace(/[\s\-()]/g, "");
   return UK_PHONE_REGEX.test(cleaned);
 }
 

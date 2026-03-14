@@ -81,6 +81,12 @@ export { Spinner } from "./components/Spinner";
 export type { SpinnerProps } from "./components/Spinner";
 
 // Navigation Components
+export { SegmentedTabs } from "./components/SegmentedTabs";
+export type {
+  SegmentedTabsProps,
+  SegmentedTabListProps,
+  SegmentedTabTriggerProps,
+} from "./components/SegmentedTabs";
 export { CategorySelector } from "./components/CategorySelector";
 export type { CategorySelectorProps_Type, Category } from "./components/CategorySelector";
 
@@ -121,6 +127,18 @@ export {
   AdaptContents,
 } from "./components/Popover";
 export type { PopoverProps, PopoverSheetProps } from "./components/Popover";
+
+// Chat Components
+export { ChatBubble } from "./components/ChatBubble";
+export type { ChatBubbleProps } from "./components/ChatBubble";
+export { ChatInput } from "./components/ChatInput";
+export type { ChatInputProps } from "./components/ChatInput";
+export { ChatMessageList } from "./components/ChatMessageList";
+export type { ChatMessageListProps, ChatMessage } from "./components/ChatMessageList";
+export { OfferCard } from "./components/OfferCard";
+export type { OfferCardProps } from "./components/OfferCard";
+export { ConversationListItem } from "./components/ConversationListItem";
+export type { ConversationListItemProps } from "./components/ConversationListItem";
 
 // Theme Components
 export { ThemeSwitcher, ThemeToggleButton } from "./components/ThemeSwitcher";

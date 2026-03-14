@@ -13,7 +13,6 @@ import {
   Card,
   Badge,
 } from "@buttergolf/ui";
-import { Button as TamaguiButton } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MessageCircle, ChevronRight, RefreshCw } from "@tamagui/lucide-icons";
 import { MobileBottomNav } from "../../components/mobile";
@@ -201,7 +200,7 @@ export function MessagesScreen({
             )}
           </Column>
           {!loading && (
-            <TamaguiButton
+            <Button
               chromeless
               circular
               size="$4"
@@ -215,7 +214,7 @@ export function MessagesScreen({
               ) : (
                 <RefreshCw size={20} color="$text" />
               )}
-            </TamaguiButton>
+            </Button>
           )}
         </Row>
       </Column>

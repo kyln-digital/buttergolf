@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Heart, Trash2, ArrowLeft } from "@tamagui/lucide-icons";
 import type { ProductCardData } from "../../types/product";
 import { MobileBottomNav } from "../../components/mobile";
+import { OfferSheet } from "../products/OfferSheet";
 
 interface FavouriteProduct extends ProductCardData {
   favouritedAt?: string;
@@ -30,7 +31,7 @@ interface FavouritesScreenProps {
   /** Navigate to checkout/buy */
   onBuyNow?: (productId: string) => void;
   /** Navigate to make offer */
-  onMakeOffer?: (productId: string) => void;
+  onMakeOffer?: (productId: string, price: number, offerAmount: number) => Promise<void>;
   /** Navigate to listings page */
   onBrowseListings?: () => void;
   /** Bottom nav handlers */
@@ -61,6 +62,7 @@ export function FavouritesScreen({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [offerProduct, setOfferProduct] = useState<{ id: string; price: number } | null>(null);
 
   // Fetch favourites on mount
   useEffect(() => {
@@ -281,7 +283,7 @@ export function FavouritesScreen({
                 product={product}
                 onView={() => onViewProduct?.(product.id)}
                 onBuyNow={() => onBuyNow?.(product.id)}
-                onMakeOffer={() => onMakeOffer?.(product.id)}
+                onMakeOffer={() => setOfferProduct({ id: product.id, price: product.price })}
                 onRemove={() => handleRemove(product.id)}
                 isRemoving={removingId === product.id}
               />
@@ -303,6 +305,21 @@ export function FavouritesScreen({
           onAccountPress={onAccountPress}
         />
       </Column>
+
+      {/* Offer Sheet */}
+      {offerProduct && (
+        <OfferSheet
+          open={!!offerProduct}
+          onOpenChange={(open) => {
+            if (!open) setOfferProduct(null);
+          }}
+          productPrice={offerProduct.price}
+          onSubmit={async (amount) => {
+            await onMakeOffer?.(offerProduct.id, offerProduct.price, amount);
+            setOfferProduct(null);
+          }}
+        />
+      )}
     </Column>
   );
 }

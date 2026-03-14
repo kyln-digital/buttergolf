@@ -42,7 +42,7 @@ const categoryToClubKind: Record<keyof ClubModelsData, ClubKind> = {
  * across all major brands and categories.
  */
 export async function seedClubModels(prisma: PrismaClient) {
-  console.log("Seeding club models...");
+  console.info("Seeding club models...");
 
   // Load fixture data
   const fixturesPath = join(__dirname, "../fixtures/clubModels.json");
@@ -60,7 +60,7 @@ export async function seedClubModels(prisma: PrismaClient) {
     const fixtures = fixtureData[category as keyof ClubModelsData];
     if (!fixtures) continue;
 
-    console.log(`\n  Processing ${category}...`);
+    console.info(`\n  Processing ${category}...`);
 
     for (const fixture of fixtures) {
       const brand = brandMap.get(fixture.brand);
@@ -73,7 +73,7 @@ export async function seedClubModels(prisma: PrismaClient) {
       for (const modelName of fixture.models) {
         try {
           // Calculate usage count based on popularity heuristics
-          const usageCount = calculateUsageCount(modelName, brand.name);
+          const usageCount = calculateUsageCount(modelName);
 
           await prisma.clubModel.upsert({
             where: {
@@ -105,7 +105,7 @@ export async function seedClubModels(prisma: PrismaClient) {
     }
   }
 
-  console.log(
+  console.info(
     `\nClub models seeding complete: ${totalCreated} created/updated, ${totalSkipped} skipped`
   );
 }
@@ -116,7 +116,7 @@ export async function seedClubModels(prisma: PrismaClient) {
  * Popular/current models get higher counts, older/discontinued models get lower counts.
  * This affects the order of suggestions in autocomplete dropdowns.
  */
-function calculateUsageCount(modelName: string, brandName: string): number {
+function calculateUsageCount(modelName: string): number {
   const name = modelName.toLowerCase();
 
   // Current generation models (high usage)

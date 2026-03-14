@@ -21,7 +21,7 @@ export default function SellerOnboardingCompletePage() {
     const params = searchParams.toString();
     const deepLink = `buttergolf://seller/onboarding/complete${params ? `?${params}` : ""}`;
 
-    console.log("[SellerOnboardingComplete] Redirecting to deep link:", deepLink);
+    console.info("[SellerOnboardingComplete] Redirecting to deep link:", deepLink);
 
     // Redirect to the mobile app
     window.location.href = deepLink;

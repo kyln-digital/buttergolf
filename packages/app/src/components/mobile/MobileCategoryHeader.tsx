@@ -19,6 +19,7 @@ export interface MobileCategoryHeaderProps {
  * Uses shared SearchInputField for consistent styling.
  */
 export function MobileCategoryHeader({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   categoryName,
   onBackPress,
   onFilterPress,

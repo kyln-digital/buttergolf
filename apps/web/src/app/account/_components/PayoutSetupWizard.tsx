@@ -65,18 +65,22 @@ export function PayoutSetupWizard({ initialStatus, onComplete, onExit }: PayoutS
   const [wizardStep, setWizardStep] = useState<WizardStep>(getCurrentStep);
 
   // Sync wizardStep when status changes (e.g., from server refresh)
+
   useEffect(() => {
     const newStep = getCurrentStep();
     if (newStep !== wizardStep) {
       setWizardStep(newStep);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status.hasAccount, status.onboardingComplete, status.accountStatus, status.phone]);
 
   // Auto-initialize Stripe onboarding when in stripe step
+
   useEffect(() => {
     if (wizardStep === "stripe" && !stripeConnectInstance && !loading) {
       initializeOnboarding();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wizardStep]);
 
   async function handlePhoneSubmit(phone: string) {
@@ -328,14 +332,15 @@ export function PayoutSetupWizard({ initialStatus, onComplete, onExit }: PayoutS
             onExit={handleOnboardingExit}
             onStepChange={handleStepChange}
             collectionOptions={{
-              fields: "eventually_due",
-              futureRequirements: "include",
+              // First-pass onboarding: collect currently due requirements only.
+              fields: "currently_due",
+              futureRequirements: "omit",
               requirements: {
+                // Keep seller type fixed and hide business profile fields for individual sellers.
                 exclude: [
                   "business_type",
                   "business_profile.url",
                   "business_profile.product_description",
-                  ...(status.phone ? ["individual.phone"] : []),
                 ],
               },
             }}

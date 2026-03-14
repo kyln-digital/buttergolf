@@ -48,7 +48,7 @@ export async function GET(request: Request) {
     // If user doesn't exist yet (webhook hasn't fired), create from Clerk data using upsert
     // upsert is atomic and prevents race conditions where multiple requests try to create the same user
     if (!user && userData.email) {
-      console.log(`[Seller Status] User not found, upserting from Clerk data: ${userId}`);
+      console.info(`[Seller Status] User not found, upserting from Clerk data: ${userId}`);
       try {
         user = await prisma.user.upsert({
           where: { clerkId: userId },
@@ -67,7 +67,7 @@ export async function GET(request: Request) {
             stripeAccountStatus: true,
           },
         });
-        console.log(`[Seller Status] Upserted user ${user.id} from Clerk data`);
+        console.info(`[Seller Status] Upserted user ${user.id} from Clerk data`);
       } catch (upsertError) {
         // Handle unique constraint violation (P2002) - another request may have created
         // the user with a different clerkId but same email
@@ -100,7 +100,7 @@ export async function GET(request: Request) {
       }
     } else if (user && (!user.email || user.email === "") && userData.email) {
       // User exists but with empty data, update with Clerk data
-      console.log(`[Seller Status] Updating user ${user.id} with Clerk data`);
+      console.info(`[Seller Status] Updating user ${user.id} with Clerk data`);
       await prisma.user.update({
         where: { id: user.id },
         data: {
@@ -161,7 +161,7 @@ export async function GET(request: Request) {
         user.stripeAccountStatus !== accountStatus;
 
       if (dbNeedsUpdate) {
-        console.log(
+        console.info(
           `[Seller Status] Syncing database for user ${user.id}: onboardingComplete=${onboardingComplete}, status=${accountStatus}`
         );
         await prisma.user.update({

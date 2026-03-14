@@ -78,6 +78,10 @@ module.exports = () => {
     // Prevent Next.js from bundling Prisma Client (breaks native binaries)
     // Essential for monorepo setups with custom Prisma output paths
     serverExternalPackages: ["@buttergolf/db", "@prisma/client"],
+    // Generate source maps for client bundles in production.
+    // Sentry uploads them for error symbolication, then deletes them
+    // so they're never served to browsers (see withSentryConfig below).
+    productionBrowserSourceMaps: true,
     // Security and caching headers
     headers: async () => [
       {
@@ -124,9 +128,11 @@ module.exports = () => {
       "@tamagui/card",
       "@tamagui/next-theme",
       "@tamagui/sheet",
+      "@tamagui/popover",
       "@tamagui/portal",
       "@tamagui/polyfill-dev",
       "@tamagui/form",
+      "react-native-safe-area-context",
     ],
     experimental: {
       scrollRestoration: true,
@@ -237,10 +243,14 @@ module.exports = withSentryConfig(module.exports, {
   // For all available options, see:
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-  // Disabled: Next.js does not emit client-side .map files in production by default,
-  // so widening the upload only produces "could not determine a source map reference"
-  // warnings for every chunk without suppressing any real errors.
-  widenClientFileUpload: false,
+  // Upload a wider set of client-side files so Sentry can symbolicate errors.
+  widenClientFileUpload: true,
+
+  // Generate source maps during build, upload to Sentry, then delete them
+  // so they're available for error debugging but never served to browsers.
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
 
   // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
   // This can increase your server load as well as your hosting bill.

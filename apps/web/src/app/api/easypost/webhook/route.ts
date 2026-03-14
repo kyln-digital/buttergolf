@@ -110,7 +110,7 @@ export async function POST(req: Request) {
 
     const payload: EasyPostWebhookPayload = JSON.parse(body);
 
-    console.log("EasyPost webhook event received:", {
+    console.info("EasyPost webhook event received:", {
       id: payload.id,
       description: payload.description,
       trackingCode: payload.result?.tracking_code,
@@ -189,7 +189,7 @@ export async function POST(req: Request) {
         data: updateData,
       });
 
-      console.log("Order updated:", {
+      console.info("Order updated:", {
         orderId: order.id,
         trackingCode,
         shipmentStatus,
@@ -210,7 +210,7 @@ export async function POST(req: Request) {
     // Handle shipment events if needed
     if (event === "shipment.created" || event === "shipment.updated") {
       // Currently not needed, but can be implemented for additional tracking
-      console.log("Shipment event received (not processed):", event);
+      console.info("Shipment event received (not processed):", event);
     }
 
     return NextResponse.json({ received: true });

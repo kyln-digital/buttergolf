@@ -41,7 +41,7 @@ export default clerkMiddleware(
     // DEBUG: Log incoming request headers for API routes to diagnose mobile auth
     if (req.url.includes("/api/")) {
       const authHeader = req.headers.get("Authorization");
-      console.log("[Proxy] API request headers:", {
+      console.info("[Proxy] API request headers:", {
         url: req.url,
         method: req.method,
         hasAuthHeader: !!authHeader,
@@ -56,7 +56,7 @@ export default clerkMiddleware(
     // Handle CORS preflight OPTIONS requests
     if (req.method === "OPTIONS") {
       const origin = req.headers.get("origin");
-      console.log("[Proxy] OPTIONS preflight request:", {
+      console.info("[Proxy] OPTIONS preflight request:", {
         origin,
         url: req.url,
         requestedHeaders: req.headers.get("Access-Control-Request-Headers"),

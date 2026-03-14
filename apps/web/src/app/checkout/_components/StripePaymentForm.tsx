@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
@@ -12,6 +12,8 @@ import {
 } from "@stripe/react-stripe-js";
 import { Column, Row, Text, Button, Spinner, Card, Heading } from "@buttergolf/ui";
 import { useTheme } from "tamagui";
+import { useAuth } from "@clerk/nextjs";
+import { useRouter, usePathname } from "next/navigation";
 import { calculateBuyerProtectionFee, formatPrice } from "@/lib/pricing";
 import { Info, Lock, ShieldCheck, Package } from "@tamagui/lucide-icons";
 
@@ -62,6 +64,9 @@ export function StripePaymentForm({
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
 
   const theme = useTheme();
+  const { isSignedIn } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const selectedShipping = SHIPPING_OPTIONS.find((o) => o.id === shippingOption)!;
   const buyerProtectionFee = calculateBuyerProtectionFee(productPrice);
@@ -69,6 +74,11 @@ export function StripePaymentForm({
 
   // Create payment intent when user confirms shipping
   const handleContinueToPayment = useCallback(async () => {
+    if (!isSignedIn) {
+      router.push(`/sign-in?redirect_url=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
     setIsCreatingIntent(true);
     try {
       const response = await fetch("/api/checkout/create-payment-intent", {
@@ -93,7 +103,7 @@ export function StripePaymentForm({
     } finally {
       setIsCreatingIntent(false);
     }
-  }, [productId, shippingOption, onError]);
+  }, [productId, shippingOption, onError, isSignedIn, router, pathname]);
 
   // Phase 1: Shipping Selection
   if (!clientSecret) {
@@ -191,11 +201,16 @@ export function StripePaymentForm({
         </Card>
 
         {/* Payment Hold Info Banner */}
-        <Card variant="outlined" padding="$sm" borderColor="$info" backgroundColor="$infoLight">
+        <Card
+          variant="outlined"
+          padding="$sm"
+          borderColor="$success"
+          backgroundColor="$successLight"
+        >
           <Row gap="$sm" alignItems="center">
-            <Lock size={16} color="$info" />
+            <Lock size={16} color="$success" />
             <Column gap="$xs" flex={1}>
-              <Text size="$3" color="$info" fontWeight="600">
+              <Text size="$3" color="$success" fontWeight="600">
                 Payment held securely
               </Text>
               <Text size="$2" color="$textSecondary">
@@ -295,8 +310,6 @@ interface CheckoutFormProps {
   shippingOption: (typeof SHIPPING_OPTIONS)[number];
   paymentIntentId: string;
   onSuccess: (paymentIntentId: string) => void;
-  onError: (error: string) => void;
-  onCancel?: () => void;
   onBack: () => void;
 }
 
@@ -305,15 +318,23 @@ function CheckoutForm({
   shippingOption,
   paymentIntentId,
   onSuccess,
-  onError,
-  onCancel,
   onBack,
 }: CheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
   const [email, setEmail] = useState("");
+  const [shippingAddress, setShippingAddress] = useState<{
+    line1?: string;
+    line2?: string | null;
+    city?: string;
+    state?: string;
+    postal_code?: string;
+    country?: string;
+  } | null>(null);
+  const [hasPhone, setHasPhone] = useState(false);
   const [isEmailComplete, setIsEmailComplete] = useState(false);
   const [isAddressComplete, setIsAddressComplete] = useState(false);
   const [isPaymentComplete, setIsPaymentComplete] = useState(false);
@@ -325,14 +346,16 @@ function CheckoutForm({
     elements &&
     isEmailComplete &&
     isAddressComplete &&
+    hasPhone &&
     isPaymentComplete &&
     !isProcessing;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLocalError(null);
 
     if (!stripe || !elements) {
-      onError("Payment system not ready. Please try again.");
+      setLocalError("Payment system not ready. Please try again.");
       return;
     }
 
@@ -342,7 +365,7 @@ function CheckoutForm({
       // First, validate all elements
       const { error: submitError } = await elements.submit();
       if (submitError) {
-        onError(submitError.message || "Please check your payment details");
+        setLocalError(submitError.message || "Please check your payment details");
         setIsProcessing(false);
         return;
       }
@@ -355,6 +378,16 @@ function CheckoutForm({
           payment_method_data: {
             billing_details: {
               email,
+              address: shippingAddress
+                ? {
+                    line1: shippingAddress.line1,
+                    line2: shippingAddress.line2 ?? undefined,
+                    city: shippingAddress.city,
+                    state: shippingAddress.state,
+                    postal_code: shippingAddress.postal_code,
+                    country: shippingAddress.country,
+                  }
+                : undefined,
             },
           },
         },
@@ -362,22 +395,18 @@ function CheckoutForm({
       });
 
       if (error) {
-        // Payment failed
-        onError(error.message || "Payment failed. Please try again.");
+        setLocalError(error.message || "Payment failed. Please try again.");
         setIsProcessing(false);
       } else if (paymentIntent?.status === "succeeded") {
-        // Payment succeeded without redirect
         onSuccess(paymentIntent.id);
       } else if (paymentIntent?.status === "requires_action") {
-        // 3DS or other action required - Stripe will handle this
-        // The user will be redirected back to return_url after completing action
+        // 3DS or other action required - Stripe will handle via redirect
       } else {
-        // Unexpected status
-        onError(`Unexpected payment status: ${paymentIntent?.status}`);
+        setLocalError(`Unexpected payment status: ${paymentIntent?.status}`);
         setIsProcessing(false);
       }
     } catch (err) {
-      onError(err instanceof Error ? err.message : "An unexpected error occurred");
+      setLocalError(err instanceof Error ? err.message : "An unexpected error occurred");
       setIsProcessing(false);
     }
   };
@@ -386,20 +415,12 @@ function CheckoutForm({
     <form onSubmit={handleSubmit}>
       <Column gap="$lg" padding="$md">
         {/* Back button */}
-        <Button chromeless onPress={onBack} alignSelf="flex-start" padding={0} marginBottom="$sm">
-          <Row gap="$xs" alignItems="center">
-            <Text color="$textSecondary">←</Text>
-            <Text color="$textSecondary" size="$4">
-              Back to shipping
-            </Text>
-          </Row>
+        <Button chromeless size="$3" onPress={onBack} alignSelf="flex-start">
+          ← Back to shipping
         </Button>
 
         {/* Email - using LinkAuthenticationElement for Stripe Link support */}
         <Column gap="$xs">
-          <Text fontWeight="500" color="$text">
-            Email
-          </Text>
           <LinkAuthenticationElement
             options={{
               defaultValues: { email: "" },
@@ -433,6 +454,10 @@ function CheckoutForm({
             }}
             onChange={(event) => {
               setIsAddressComplete(event.complete);
+              setHasPhone(!!event.value?.phone?.trim());
+              if (event.value?.address) {
+                setShippingAddress(event.value.address);
+              }
             }}
           />
         </Column>
@@ -497,6 +522,15 @@ function CheckoutForm({
             </Row>
           </Column>
         </Card>
+
+        {/* Inline error */}
+        {localError && (
+          <Card variant="outlined" padding="$sm" borderColor="$error" backgroundColor="$errorLight">
+            <Text size="$3" color="$error">
+              {localError}
+            </Text>
+          </Card>
+        )}
 
         {/* Submit Button */}
         <Button

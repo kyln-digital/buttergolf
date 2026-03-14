@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { Column, Row, Heading, Text, Button, Input, Card } from "@buttergolf/ui";
+import { Column, Row, Heading, Text, Button, Input, Card, SwitchWithLabel } from "@buttergolf/ui";
 import { Package } from "@tamagui/lucide-icons";
 
 interface Address {
@@ -392,29 +392,17 @@ export default function AddressesPage() {
 
                 {/* Default Address Checkbox */}
                 <Row gap="$sm" alignItems="center">
-                  <input
-                    type="checkbox"
+                  <SwitchWithLabel
+                    label="Set as default shipping address"
                     checked={formData.isDefault}
-                    onChange={(e) =>
+                    onCheckedChange={(checked) =>
                       setFormData({
                         ...formData,
-                        isDefault: e.target.checked,
+                        isDefault: Boolean(checked),
                       })
                     }
                     id="isDefault"
                   />
-                  <Text
-                    size="$3"
-                    color="$text"
-                    onPress={() =>
-                      setFormData({
-                        ...formData,
-                        isDefault: !formData.isDefault,
-                      })
-                    }
-                  >
-                    Set as default shipping address
-                  </Text>
                 </Row>
               </Column>
 

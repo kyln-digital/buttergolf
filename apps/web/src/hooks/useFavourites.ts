@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 
 /**
@@ -63,9 +63,12 @@ export function useFavourites() {
   /**
    * Check if a product is favourited
    */
-  const isFavourited = (productId: string): boolean => {
-    return favourites.has(productId);
-  };
+  const isFavourited = useCallback(
+    (productId: string): boolean => {
+      return favourites.has(productId);
+    },
+    [favourites]
+  );
 
   /**
    * Add a product to favourites (for optimistic updates from useFavouriteToggle)

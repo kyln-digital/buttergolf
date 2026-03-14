@@ -1,8 +1,16 @@
 "use client";
 
 import React from "react";
-import { Column, Row, ScrollView, Text, Button, Heading, ThemeSwitcher } from "@buttergolf/ui";
-import { Button as TamaguiButton, Avatar } from "tamagui";
+import {
+  Column,
+  Row,
+  ScrollView,
+  Text,
+  Button,
+  Heading,
+  ThemeSwitcher,
+} from "@buttergolf/ui";
+import { Avatar } from "tamagui";
 import {
   ArrowLeft,
   LogOut,
@@ -70,9 +78,11 @@ export function AccountScreen({
   user,
   isLoading = false,
   isSellerOnboarded = false,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   activeListingsCount,
   pendingPayoutsCount,
   pendingOrdersCount,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   unreadMessagesCount,
   onSignOut,
   onNavigateBack,
@@ -117,7 +127,7 @@ export function AccountScreen({
         {/* Header with back button */}
         {onNavigateBack && (
           <Row alignItems="center" marginBottom="$4">
-            <TamaguiButton
+            <Button
               chromeless
               circular
               size="$4"
@@ -125,7 +135,7 @@ export function AccountScreen({
               aria-label="Go back"
             >
               <ArrowLeft size={24} color="$text" />
-            </TamaguiButton>
+            </Button>
             <Heading level={3} marginLeft="$2">
               Account
             </Heading>
@@ -133,7 +143,7 @@ export function AccountScreen({
         )}
 
         {/* Profile Header Card */}
-        <TamaguiButton
+        <Button
           unstyled
           backgroundColor="$surface"
           borderRadius="$lg"
@@ -177,7 +187,7 @@ export function AccountScreen({
             {/* Edit indicator */}
             {onEditProfile && <Edit3 size={20} color="$textMuted" />}
           </Row>
-        </TamaguiButton>
+        </Button>
 
         {/* Shopping Section */}
         <Column gap="$3" marginBottom="$6">
@@ -244,7 +254,7 @@ export function AccountScreen({
           </Text>
 
           <AccountMenuItem
-            icon={<MapPin size={22} color="$info" />}
+            icon={<MapPin size={22} color="$secondary" />}
             label="Addresses"
             description="Manage shipping addresses"
             onPress={onViewAddresses}

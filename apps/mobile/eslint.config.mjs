@@ -1,4 +1,8 @@
-import { config as reactInternalConfig } from "@buttergolf/eslint-config/react-internal";
+import {
+  config as reactInternalConfig,
+  reactImportPatterns,
+  reactImportPaths,
+} from "@buttergolf/eslint-config/react-internal";
 
 const eslintConfig = [
   ...reactInternalConfig,
@@ -11,23 +15,14 @@ const eslintConfig = [
     },
   },
   {
-    // Expo-specific overrides
+    // Expo-specific overrides — merged with base + React restrictions
     rules: {
-      // Mobile-specific: Block web-only APIs and libraries
       "no-restricted-imports": [
         "error",
         {
+          patterns: reactImportPatterns,
           paths: [
-            {
-              name: "jsdom",
-              message:
-                "CRITICAL: jsdom contains SharedArrayBuffer which crashes React Native/Hermes.",
-            },
-            {
-              name: "happy-dom",
-              message:
-                "CRITICAL: happy-dom contains SharedArrayBuffer which crashes React Native/Hermes.",
-            },
+            ...reactImportPaths,
             {
               name: "expo-secure-store",
               message:

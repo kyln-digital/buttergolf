@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+/* eslint-disable react/forbid-elements -- WebView-only page rendered in RN WebView, no design system available */
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { loadConnectAndInitialize } from "@stripe/connect-js";
 import { ConnectAccountOnboarding, ConnectComponentsProvider } from "@stripe/react-connect-js";
@@ -41,7 +42,7 @@ function postMessageToRN(message: Record<string, unknown>) {
     window.ReactNativeWebView.postMessage(JSON.stringify(message));
   } else {
     // Dev fallback - log to console
-    console.log("[MobileOnboarding] postMessage:", message);
+    console.info("[MobileOnboarding] postMessage:", message);
   }
 }
 
@@ -55,6 +56,7 @@ export default function MobileOnboardingPage() {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasRedirectedRef = useRef(false);
 
   // Signal ready to React Native
   useEffect(() => {
@@ -138,10 +140,52 @@ export default function MobileOnboardingPage() {
     postMessageToRN({ type: "step_change", step: stepChange.step });
   }, []);
 
-  const handleExit = useCallback(() => {
-    // Onboarding exited - could be complete or cancelled
-    postMessageToRN({ type: "exit", success: true });
+  const returnToApp = useCallback((reason: "complete" | "exit") => {
+    if (hasRedirectedRef.current) return;
+    hasRedirectedRef.current = true;
+
+    const deepLink = `buttergolf://seller/onboarding/complete?reason=${reason}`;
+    postMessageToRN({ type: "exit", success: true, reason });
+    window.location.href = deepLink;
   }, []);
+
+  const handleExit = useCallback(() => {
+    // Embedded onboarding exited (close button / done)
+    returnToApp("exit");
+  }, [returnToApp]);
+
+  // Auto-return to app once Stripe marks details as submitted.
+  // This handles the "Account onboarded" state without requiring the user to manually close.
+  useEffect(() => {
+    if (!token || loading) return;
+
+    const baseUrl = apiUrl || "";
+    const interval = window.setInterval(async () => {
+      if (hasRedirectedRef.current) return;
+
+      try {
+        const response = await fetch(`${baseUrl}/api/stripe/connect/account`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (data?.onboardingComplete) {
+          returnToApp("complete");
+        }
+      } catch {
+        // Ignore polling failures; user can still exit manually.
+      }
+    }, 1500);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [token, loading, apiUrl, returnToApp]);
 
   // Loading state
   if (loading) {
@@ -205,11 +249,12 @@ export default function MobileOnboardingPage() {
           onExit={handleExit}
           onStepChange={handleStepChange}
           collectionOptions={{
-            fields: "eventually_due",
-            futureRequirements: "include",
-            // Exclude business profile fields (pre-filled at account creation)
-            // and business_type (set to 'individual' at account creation)
-            // This removes confusing "Business type" and "Professional details" sections
+            // First-pass onboarding: collect only currently due requirements.
+            // This reduces late surprises and keeps the initial flow shorter.
+            fields: "currently_due",
+            futureRequirements: "omit",
+            // Keep seller type fixed to individual for ButterGolf's current seller model.
+            // Hide business profile fields for individual sellers to avoid irrelevant UX.
             requirements: {
               exclude: [
                 "business_type",

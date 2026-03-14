@@ -60,9 +60,9 @@ export function HomeScreen({
       setLoading(true);
       onFetchProducts()
         .then((fetchedProducts) => {
-          console.log(`Fetched ${fetchedProducts.length} products`);
+          console.info(`Fetched ${fetchedProducts.length} products`);
           if (fetchedProducts.length > 0) {
-            console.log("First product image URL:", fetchedProducts[0]?.imageUrl);
+            console.info("First product image URL:", fetchedProducts[0]?.imageUrl);
           }
           setProducts(fetchedProducts);
         })
@@ -91,7 +91,7 @@ export function HomeScreen({
         >
           <MobileSearchBar
             placeholder="What are you looking for?"
-            onSearch={(query: string) => console.log("Search query:", query)}
+            onSearch={(query: string) => console.info("Search query:", query)}
           />
         </Column>
       </Column>

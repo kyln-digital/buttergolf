@@ -42,6 +42,9 @@ next-env.d.ts
 
 # generated files
 /src/tamagui.css
+/public/sitemap*.xml
+!/public/sitemap-0.xml
+/public/robots.txt
 
 # clerk configuration (can include secrets)
 /.clerk/

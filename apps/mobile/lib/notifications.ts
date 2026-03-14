@@ -1,5 +1,6 @@
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
+import { Platform } from "react-native";
 import { addBreadcrumb } from "./breadcrumbs";
 import { deferredFetch } from "./apiClient";
 import {
@@ -23,11 +24,13 @@ export async function registerForPushNotificationsAsync(
 ): Promise<string | null> {
   // Skip if no auth token (user not logged in)
   if (!token) {
-    console.log("[Notifications] Skipping push registration - no auth token");
+    console.info("[Notifications] Skipping push registration - no auth token");
     return null;
   }
 
   try {
+    const isIosSimulator = Platform.OS === "ios" && Constants.isDevice !== true;
+
     // Get the project ID from app.json
     const projectId = Constants.expoConfig?.extra?.eas?.projectId;
     if (!projectId) {
@@ -57,7 +60,20 @@ export async function registerForPushNotificationsAsync(
         { finalStatus },
         "warning"
       );
-      console.log("[Notifications] Permission not granted");
+      console.info("[Notifications] Permission not granted");
+      return null;
+    }
+
+    if (isIosSimulator) {
+      addBreadcrumb(
+        "turbomodule.notifications",
+        "Skipping Expo push token on iOS simulator",
+        {},
+        "warning"
+      );
+      console.info(
+        "[Notifications] Skipping Expo push token on iOS simulator. Use a physical iOS device to receive push tokens."
+      );
       return null;
     }
 
@@ -70,7 +86,7 @@ export async function registerForPushNotificationsAsync(
       tokenLength: pushToken.data?.length,
     });
 
-    console.log("[Notifications] Got push token:", {
+    console.info("[Notifications] Got push token:", {
       tokenLength: pushToken.data?.length,
       tokenPrefix: pushToken.data?.substring(0, 20),
     });
@@ -80,7 +96,7 @@ export async function registerForPushNotificationsAsync(
     const storedToken = await deferredSecureStoreGet("expo_push_token");
     if (storedToken === pushToken.data) {
       addBreadcrumb("turbomodule.notifications", "Push token unchanged");
-      console.log("[Notifications] Push token unchanged in local storage");
+      console.info("[Notifications] Push token unchanged in local storage");
       return pushToken.data;
     }
 
@@ -91,6 +107,23 @@ export async function registerForPushNotificationsAsync(
 
     return pushToken.data;
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const isExpectedIosEntitlementError =
+      Platform.OS === "ios" && errorMessage.includes("aps-environment");
+
+    if (isExpectedIosEntitlementError) {
+      addBreadcrumb(
+        "turbomodule.notifications",
+        "Expected iOS push entitlement limitation in development",
+        { error: errorMessage },
+        "warning"
+      );
+      console.info(
+        "[Notifications] Push token unavailable for this iOS development build (missing aps-environment entitlement). Use a physical device build with push entitlements enabled."
+      );
+      return null;
+    }
+
     addBreadcrumb(
       "turbomodule.notifications",
       "Registration failed",
@@ -130,7 +163,7 @@ export async function clearStoredPushToken(): Promise<void> {
     addBreadcrumb("turbomodule.securestore", "Clearing stored push token");
     await deferredSecureStoreDelete("expo_push_token");
     addBreadcrumb("turbomodule.securestore", "Push token cleared");
-    console.log("[Notifications] Cleared stored push token");
+    console.info("[Notifications] Cleared stored push token");
   } catch (error) {
     addBreadcrumb(
       "turbomodule.securestore",
@@ -154,7 +187,7 @@ export function setupNotificationHandlers(
   // Set notification handler (what happens when notification arrives while app is open)
   Notifications.setNotificationHandler({
     handleNotification: async (notification) => {
-      console.log("[Notifications] Notification received:", {
+      console.info("[Notifications] Notification received:", {
         title: notification.request.content.title,
       });
 
@@ -174,7 +207,7 @@ export function setupNotificationHandlers(
 
   // Handle user tapping on notification
   const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-    console.log("[Notifications] Notification tapped:", {
+    console.info("[Notifications] Notification tapped:", {
       data: response.notification.request.content.data,
     });
 
@@ -218,7 +251,7 @@ export async function registerPushTokenWithBackend(
     }
 
     addBreadcrumb("api", "Push token registered with backend");
-    console.log("[Notifications] Push token registered with backend");
+    console.info("[Notifications] Push token registered with backend");
     return true;
   } catch (error) {
     addBreadcrumb("api", "Failed to register push token", { error: String(error) }, "error");
@@ -254,7 +287,7 @@ export async function unregisterPushTokenFromBackend(
     }
 
     addBreadcrumb("api", "Push token unregistered from backend");
-    console.log("[Notifications] Push token unregistered from backend");
+    console.info("[Notifications] Push token unregistered from backend");
     return true;
   } catch (error) {
     addBreadcrumb("api", "Failed to unregister push token", { error: String(error) }, "error");

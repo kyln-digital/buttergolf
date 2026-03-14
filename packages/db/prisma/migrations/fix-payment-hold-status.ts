@@ -23,7 +23,7 @@ import { PrismaClient } from "../generated/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Starting data migration: Fix Payment Hold Status\n");
+  console.info("Starting data migration: Fix Payment Hold Status\n");
 
   // 1. Find all orders that have been paid out but show as HELD
   const paidOutButHeld = await prisma.order.findMany({
@@ -38,7 +38,7 @@ async function main() {
     },
   });
 
-  console.log(`Found ${paidOutButHeld.length} orders with completed payouts but HELD status`);
+  console.info(`Found ${paidOutButHeld.length} orders with completed payouts but HELD status`);
 
   if (paidOutButHeld.length > 0) {
     // Update them to RELEASED
@@ -53,12 +53,12 @@ async function main() {
       },
     });
 
-    console.log(`Updated ${updateResult.count} orders to RELEASED status`);
+    console.info(`Updated ${updateResult.count} orders to RELEASED status`);
 
     // Log the affected order IDs for audit trail
-    console.log("\nAffected Order IDs:");
+    console.info("\nAffected Order IDs:");
     paidOutButHeld.forEach((order) => {
-      console.log(`  - ${order.id} (created: ${order.createdAt.toISOString()})`);
+      console.info(`  - ${order.id} (created: ${order.createdAt.toISOString()})`);
     });
   }
 
@@ -82,13 +82,13 @@ async function main() {
   });
 
   if (oldPendingOrders.length > 0) {
-    console.log(`\n Found ${oldPendingOrders.length} old orders (>14 days) still in HELD status:`);
-    console.log("These may need manual review:\n");
+    console.info(`\n Found ${oldPendingOrders.length} old orders (>14 days) still in HELD status:`);
+    console.info("These may need manual review:\n");
     oldPendingOrders.forEach((order) => {
-      console.log(`  - ${order.id}`);
-      console.log(`    Created: ${order.createdAt.toISOString()}`);
-      console.log(`    Shipment: ${order.shipmentStatus}`);
-      console.log(`    Payout Status: ${order.stripePayoutStatus || "null"}\n`);
+      console.info(`  - ${order.id}`);
+      console.info(`    Created: ${order.createdAt.toISOString()}`);
+      console.info(`    Shipment: ${order.shipmentStatus}`);
+      console.info(`    Payout Status: ${order.stripePayoutStatus || "null"}\n`);
     });
   }
 
@@ -98,12 +98,12 @@ async function main() {
     _count: { id: true },
   });
 
-  console.log("\n=== Final Order Status Summary ===");
+  console.info("\n=== Final Order Status Summary ===");
   summary.forEach((row) => {
-    console.log(`${row.paymentHoldStatus}: ${row._count.id} orders`);
+    console.info(`${row.paymentHoldStatus}: ${row._count.id} orders`);
   });
 
-  console.log("\nData migration complete!");
+  console.info("\nData migration complete!");
 }
 
 main()

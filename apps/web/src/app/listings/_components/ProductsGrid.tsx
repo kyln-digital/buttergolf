@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Column, Row, View, Text } from "@buttergolf/ui";
-import { useTheme } from "tamagui";
+import { Column, View, Text } from "@buttergolf/ui";
 import { ProductCard } from "@/components/ProductCard";
+import { DotPagination } from "@/components/DotPagination";
 import type { ProductCardData } from "@buttergolf/app";
 import { useRouter } from "next/navigation";
 
@@ -27,76 +27,6 @@ function LoadingSkeleton() {
       overflow="hidden"
       transition="quick"
     />
-  );
-}
-
-/**
- * Dot-based pagination component
- * - Matches the ProductCarousel pagination dots styling
- * - Active dot is elongated pill (48px), inactive is circle (10px)
- * - Uses CSS transitions for smooth animations (same as carousel)
- */
-function DotPagination({
-  currentPage,
-  totalPages,
-  onPageChange,
-  disabled = false,
-}: Readonly<{
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-  disabled?: boolean;
-}>) {
-  // For many pages, show limited dots with the active one in context
-  const getVisiblePages = (): number[] => {
-    if (totalPages <= 7) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-
-    // Show: current-2, current-1, current, current+1, current+2
-    const pages: number[] = [];
-    const start = Math.max(1, currentPage - 2);
-    const end = Math.min(totalPages, currentPage + 2);
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-
-    return pages;
-  };
-
-  const visiblePages = getVisiblePages();
-  const theme = useTheme();
-  const primaryColor = theme.primary.val;
-
-  return (
-    <Row alignItems="center" justifyContent="center" gap="$sm" paddingVertical="$xl">
-      {visiblePages.map((page) => {
-        const isActive = page === currentPage;
-
-        return (
-          <button
-            key={page}
-            onClick={() => !disabled && onPageChange(page)}
-            disabled={disabled}
-            aria-label={`Go to page ${page}`}
-            aria-current={isActive ? "page" : undefined}
-            style={{
-              // Match ProductCarousel dot styling exactly
-              width: isActive ? "48px" : "10px",
-              height: "10px",
-              borderRadius: "5px",
-              border: "none",
-              backgroundColor: primaryColor,
-              opacity: isActive ? 1 : disabled ? 0.3 : 0.5,
-              cursor: disabled ? "wait" : "pointer",
-              transition: "all 0.3s ease",
-              padding: 0,
-            }}
-          />
-        );
-      })}
-    </Row>
   );
 }
 

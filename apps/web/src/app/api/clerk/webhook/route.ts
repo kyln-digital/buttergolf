@@ -101,7 +101,7 @@ export async function POST(req: Request) {
     } else if (eventType === "user.deleted") {
       // Soft delete: mark user as deleted and anonymize PII
       const clerkId: string = evt.data.id;
-      console.log(`[Clerk Webhook] Processing user.deleted for clerkId: ${clerkId}`);
+      console.info(`[Clerk Webhook] Processing user.deleted for clerkId: ${clerkId}`);
 
       // First, find the user to get their ID and Stripe account
       const user = await prisma.user.findUnique({
@@ -109,18 +109,18 @@ export async function POST(req: Request) {
         select: { id: true, stripeConnectId: true },
       });
 
-      console.log(`[Clerk Webhook] Found user:`, user);
+      console.info(`[Clerk Webhook] Found user:`, user);
 
       if (user) {
         // Delete all active product listings for this user
         const deletedProducts = await prisma.product.deleteMany({
           where: { userId: user.id },
         });
-        console.log(`[Clerk Webhook] Deleted ${deletedProducts.count} products`);
+        console.info(`[Clerk Webhook] Deleted ${deletedProducts.count} products`);
 
         // Delete Stripe Connect account if exists
         if (user.stripeConnectId) {
-          console.log(
+          console.info(
             `[Clerk Webhook] Attempting to delete Stripe account: ${user.stripeConnectId}`
           );
           try {
@@ -132,7 +132,7 @@ export async function POST(req: Request) {
             } else {
               await stripe.accounts.del(user.stripeConnectId);
             }
-            console.log(
+            console.info(
               `[Clerk Webhook] Successfully deleted Stripe Connect account ${user.stripeConnectId}`
             );
           } catch (stripeError) {
@@ -143,10 +143,10 @@ export async function POST(req: Request) {
             );
           }
         } else {
-          console.log(`[Clerk Webhook] No stripeConnectId found for user`);
+          console.info(`[Clerk Webhook] No stripeConnectId found for user`);
         }
       } else {
-        console.log(`[Clerk Webhook] User not found in database for clerkId: ${clerkId}`);
+        console.info(`[Clerk Webhook] User not found in database for clerkId: ${clerkId}`);
       }
 
       // Use updateMany to avoid errors if user doesn't exist in database

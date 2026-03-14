@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo } from "react";
 import {
   Dimensions,
   Animated,
@@ -96,7 +96,8 @@ export function OnboardingScreen({
   onSkip,
   onSignUp,
   onSignIn,
-  onAbout,
+
+  onAbout: _onAbout,
 }: Readonly<OnboardingScreenProps>) {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
@@ -113,8 +114,9 @@ export function OnboardingScreen({
 
   // Animation for two-row horizontal scroll
   // Top row scrolls left, bottom row scrolls right for staggered effect
-  const topRowX = useRef(new Animated.Value(0)).current;
-  const bottomRowX = useRef(new Animated.Value(0)).current;
+  // useMemo ensures a stable Animated.Value instance across renders (avoids ref-during-render lint warning)
+  const topRowX = useMemo(() => new Animated.Value(0), []);
+  const bottomRowX = useMemo(() => new Animated.Value(0), []);
 
   // Calculate total width of one set of images for each row
   const topRowWidth = topRowImages.length * (CARD_WIDTH + GAP);
@@ -191,9 +193,11 @@ export function OnboardingScreen({
 
         {/* Tagline */}
         <YStack gap={4} alignItems="center">
+          {/* eslint-disable-next-line react/forbid-component-props */}
           <Text fontSize={25} fontWeight="500" align="center" color={textColor} lineHeight={32}>
             The Marketplace to
           </Text>
+          {/* eslint-disable-next-line react/forbid-component-props */}
           <Text fontSize={25} fontWeight="500" align="center" color={textColor} lineHeight={32}>
             Buy, Sell & Upgrade
           </Text>

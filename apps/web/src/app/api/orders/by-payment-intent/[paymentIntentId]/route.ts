@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
+import { stripe } from "@/lib/stripe";
+import { createOrderFromPaymentIntent } from "@/lib/create-order-from-payment-intent";
 
 /**
  * GET /api/orders/by-payment-intent/[paymentIntentId]
@@ -8,6 +10,9 @@ import { getUserIdFromRequest } from "@/lib/auth";
  * Fetches order details by Stripe Payment Intent ID.
  * Used by the success page for PaymentElement flow.
  * Returns same format as by-session route for compatibility.
+ *
+ * If no order exists yet (webhook delayed/missed), this route will
+ * verify the PaymentIntent with Stripe and create the order as a fallback.
  */
 export async function GET(
   request: Request,
@@ -32,7 +37,7 @@ export async function GET(
     }
 
     // Find order by payment intent ID
-    const order = await prisma.order.findFirst({
+    let order = await prisma.order.findFirst({
       where: {
         stripePaymentId: paymentIntentId,
       },
@@ -52,7 +57,45 @@ export async function GET(
     });
 
     if (!order) {
-      // Order may still be processing via webhook
+      // Order not yet created - check if webhook was missed by verifying with Stripe
+      try {
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+        if (paymentIntent.status === "succeeded") {
+          // Payment succeeded but webhook was missed/delayed - create order as fallback
+          console.info(
+            "[by-payment-intent] Webhook missed, creating order from PaymentIntent:",
+            paymentIntentId
+          );
+          const createdOrder = await createOrderFromPaymentIntent(paymentIntent);
+
+          if (createdOrder) {
+            // Re-fetch with full includes for the response
+            order = await prisma.order.findFirst({
+              where: { stripePaymentId: paymentIntentId },
+              include: {
+                product: {
+                  include: {
+                    images: {
+                      orderBy: { sortOrder: "asc" },
+                      take: 1,
+                    },
+                    brand: true,
+                  },
+                },
+                seller: true,
+                toAddress: true,
+              },
+            });
+          }
+        }
+      } catch (stripeError) {
+        console.error("[by-payment-intent] Error checking PaymentIntent with Stripe:", stripeError);
+      }
+    }
+
+    if (!order) {
+      // Still no order - payment may genuinely still be processing
       return NextResponse.json({
         status: "processing",
         message: "Order is being processed",

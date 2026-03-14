@@ -145,7 +145,7 @@ export function Autocomplete({
   }, []);
 
   // Extract onFocus from inputProps to avoid type conflicts (we use our own handleFocus)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   const { onFocus: _onFocus, ...restInputProps } = inputProps as {
     onFocus?: unknown;
     [key: string]: unknown;

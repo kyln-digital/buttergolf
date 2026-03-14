@@ -55,7 +55,7 @@ export async function POST(req: Request) {
       case "account.application.authorized": {
         const data = event.data.object as { account?: string };
         if (data.account) {
-          console.log(`Account authorized: ${data.account}`);
+          console.info(`Account authorized: ${data.account}`);
           const account = await stripe.accounts.retrieve(data.account);
           await handleAccountUpdated(account);
         }
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
       case "account.application.deauthorized": {
         const data = event.data.object as { account?: string };
         if (data.account) {
-          console.log(`Account deauthorized: ${data.account}`);
+          console.info(`Account deauthorized: ${data.account}`);
 
           // Find user and clear their Connect account
           const user = await prisma.user.findUnique({
@@ -91,7 +91,7 @@ export async function POST(req: Request) {
       case "capability.updated": {
         // Handle capability status changes
         const capability = event.data.object as Stripe.Capability;
-        console.log(
+        console.info(
           `Capability ${capability.id} updated: ${capability.status} for account ${capability.account}`
         );
 
@@ -106,7 +106,7 @@ export async function POST(req: Request) {
       case "person.updated": {
         // Handle person verification status changes
         const person = event.data.object as Stripe.Person;
-        console.log(`Person ${person.id} updated for account ${person.account}`);
+        console.info(`Person ${person.id} updated for account ${person.account}`);
 
         // Refresh account status when person verification changes
         if (typeof person.account === "string") {
@@ -121,14 +121,14 @@ export async function POST(req: Request) {
       case "payout.failed": {
         // Log payout events for monitoring
         const payout = event.data.object as Stripe.Payout;
-        console.log(
+        console.info(
           `Payout ${payout.id} ${event.type.split(".")[1]}: ${payout.amount / 100} ${payout.currency.toUpperCase()}`
         );
         break;
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        console.info(`Unhandled event type: ${event.type}`);
     }
 
     return NextResponse.json({ received: true });
@@ -211,7 +211,7 @@ async function handleAccountUpdated(account: Stripe.Account) {
       },
     });
 
-    console.log(
+    console.info(
       `Updated user ${user.id} Connect status: ${status}, requirements: ${currentlyDue.length} (V2 API)`
     );
 
@@ -248,7 +248,7 @@ async function handleV1AccountUpdate(userId: string, account: Stripe.Account) {
     },
   });
 
-  console.log(`Updated user ${userId} Connect status: ${status} (V1 fallback)`);
+  console.info(`Updated user ${userId} Connect status: ${status} (V1 fallback)`);
 
   // Sync address from Stripe to database
   await syncAddressFromStripe(userId, account);
@@ -262,7 +262,7 @@ async function syncAddressFromStripe(userId: string, account: Stripe.Account) {
   try {
     // Check if account has individual address data
     if (!account.individual?.address) {
-      console.log(`No individual address found for Stripe account ${account.id}`);
+      console.info(`No individual address found for Stripe account ${account.id}`);
       return;
     }
 
@@ -295,7 +295,7 @@ async function syncAddressFromStripe(userId: string, account: Stripe.Account) {
           country: stripeAddress.country || "GB",
         },
       });
-      console.log(`Updated address for user ${userId} from Stripe Connect`);
+      console.info(`Updated address for user ${userId} from Stripe Connect`);
     } else {
       // Create new address from Stripe data
       const name =
@@ -315,7 +315,7 @@ async function syncAddressFromStripe(userId: string, account: Stripe.Account) {
           isDefault: true,
         },
       });
-      console.log(`Created address for user ${userId} from Stripe Connect`);
+      console.info(`Created address for user ${userId} from Stripe Connect`);
     }
   } catch (error) {
     console.error(`Error syncing address for user ${userId}:`, error);
@@ -366,11 +366,11 @@ async function processPendingTransfersForSeller(userId: string, stripeConnectId:
     });
 
     if (pendingOrders.length === 0) {
-      console.log(`No pending transfers for seller ${userId}`);
+      console.info(`No pending transfers for seller ${userId}`);
       return;
     }
 
-    console.log(
+    console.info(
       `Processing ${pendingOrders.length} pending transfer(s) for seller ${userId} (${stripeConnectId})`
     );
 
@@ -446,7 +446,7 @@ async function processPendingTransfersForSeller(userId: string, stripeConnectId:
           },
         });
 
-        console.log(
+        console.info(
           `Transfer ${transfer.id} created for order ${order.id}: £${transferAmountInPence / 100}`
         );
 

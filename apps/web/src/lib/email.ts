@@ -30,6 +30,19 @@ const FROM_EMAIL = "ButterGolf <notifications@notifications.buttergolf.com>";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://buttergolf.co.uk";
 
+/**
+ * Escape HTML special characters to prevent XSS in email templates.
+ * Applied to all user-generated strings before interpolation into HTML.
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 interface EmailResult {
   success: boolean;
   id?: string;
@@ -82,7 +95,10 @@ export async function sendOrderConfirmationEmail(params: {
   amountTotal: number;
   sellerName: string;
 }): Promise<EmailResult> {
-  const { buyerEmail, buyerName, orderId, productTitle, amountTotal, sellerName } = params;
+  const { buyerEmail, orderId, amountTotal } = params;
+  const buyerName = escapeHtml(params.buyerName);
+  const productTitle = escapeHtml(params.productTitle);
+  const sellerName = escapeHtml(params.sellerName);
 
   try {
     const { data, error } = await getResendClient().emails.send({
@@ -170,16 +186,10 @@ export async function sendNewSaleEmail(params: {
     zip: string;
   };
 }): Promise<EmailResult> {
-  const {
-    sellerEmail,
-    sellerName,
-    orderId,
-    productTitle,
-    buyerName,
-    amountTotal,
-    sellerPayout,
-    shippingAddress,
-  } = params;
+  const { sellerEmail, orderId, amountTotal, sellerPayout, shippingAddress } = params;
+  const sellerName = escapeHtml(params.sellerName);
+  const productTitle = escapeHtml(params.productTitle);
+  const buyerName = escapeHtml(params.buyerName);
 
   try {
     const { data, error } = await getResendClient().emails.send({
@@ -221,7 +231,7 @@ export async function sendNewSaleEmail(params: {
                 <p><strong>Order ID:</strong> ${orderId.slice(0, 8).toUpperCase()}</p>
                 <p><strong>Product:</strong> ${productTitle}</p>
                 <p><strong>Buyer:</strong> ${buyerName}</p>
-                <p><strong>Ship To:</strong> ${shippingAddress.city}, ${shippingAddress.zip}</p>
+                <p><strong>Ship To:</strong> ${escapeHtml(shippingAddress.city)}, ${escapeHtml(shippingAddress.zip)}</p>
                 <p><strong>Order Total:</strong> £${amountTotal.toFixed(2)}</p>
               </div>
               
@@ -271,16 +281,11 @@ export async function sendShippedEmail(params: {
   carrier: string;
   estimatedDelivery?: string;
 }): Promise<EmailResult> {
-  const {
-    buyerEmail,
-    buyerName,
-    orderId,
-    productTitle,
-    trackingCode,
-    trackingUrl,
-    carrier,
-    estimatedDelivery,
-  } = params;
+  const { buyerEmail, orderId, trackingUrl, estimatedDelivery } = params;
+  const buyerName = escapeHtml(params.buyerName);
+  const productTitle = escapeHtml(params.productTitle);
+  const trackingCode = escapeHtml(params.trackingCode);
+  const carrier = escapeHtml(params.carrier);
 
   try {
     const { data, error } = await getResendClient().emails.send({
@@ -362,8 +367,11 @@ export async function sendNewMessageEmail(params: {
   productTitle: string;
   messagePreview: string;
 }): Promise<EmailResult> {
-  const { recipientEmail, recipientName, senderName, orderId, productTitle, messagePreview } =
-    params;
+  const { recipientEmail, orderId } = params;
+  const recipientName = escapeHtml(params.recipientName);
+  const senderName = escapeHtml(params.senderName);
+  const productTitle = escapeHtml(params.productTitle);
+  const messagePreview = escapeHtml(params.messagePreview);
 
   try {
     const { data, error } = await getResendClient().emails.send({
@@ -435,11 +443,13 @@ export async function sendDeliveredEmail(params: {
   productTitle: string;
   isBuyer: boolean;
 }): Promise<EmailResult> {
-  const { email, name, orderId, productTitle, isBuyer } = params;
+  const { email, orderId, isBuyer } = params;
+  const name = escapeHtml(params.name);
+  const productTitle = escapeHtml(params.productTitle);
 
   const subject = isBuyer
-    ? `Your order has been delivered! ${productTitle}`
-    : `Your sale has been delivered! ${productTitle}`;
+    ? `Your order has been delivered! ${params.productTitle}`
+    : `Your sale has been delivered! ${params.productTitle}`;
 
   const message = isBuyer
     ? "Your package has been delivered! We hope you love your new golf gear."
@@ -524,7 +534,10 @@ export async function sendLabelGeneratedEmail(params: {
   estimatedDelivery?: string;
   carrier?: string | null;
 }): Promise<EmailResult> {
-  const { buyerEmail, buyerName, orderId, productTitle, estimatedDelivery, carrier } = params;
+  const { buyerEmail, orderId, estimatedDelivery } = params;
+  const buyerName = escapeHtml(params.buyerName);
+  const productTitle = escapeHtml(params.productTitle);
+  const carrier = params.carrier ? escapeHtml(params.carrier) : null;
 
   try {
     const { data, error } = await getResendClient().emails.send({
@@ -610,17 +623,13 @@ export async function sendInTransitEmail(params: {
   currentLocation?: string;
   estimatedDelivery?: string;
 }): Promise<EmailResult> {
-  const {
-    buyerEmail,
-    buyerName,
-    orderId,
-    productTitle,
-    trackingCode,
-    trackingUrl,
-    carrier,
-    currentLocation,
-    estimatedDelivery,
-  } = params;
+  const { buyerEmail, orderId, estimatedDelivery } = params;
+  const buyerName = escapeHtml(params.buyerName);
+  const productTitle = escapeHtml(params.productTitle);
+  const trackingCode = params.trackingCode ? escapeHtml(params.trackingCode) : null;
+  const trackingUrl = params.trackingUrl ? escapeHtml(params.trackingUrl) : null;
+  const carrier = params.carrier ? escapeHtml(params.carrier) : null;
+  const currentLocation = params.currentLocation ? escapeHtml(params.currentLocation) : undefined;
 
   try {
     const { data, error } = await getResendClient().emails.send({
@@ -720,7 +729,11 @@ export async function sendOutForDeliveryEmail(params: {
   trackingCode: string | null;
   trackingUrl: string | null;
 }): Promise<EmailResult> {
-  const { buyerEmail, buyerName, orderId, productTitle, trackingCode, trackingUrl } = params;
+  const { buyerEmail, orderId } = params;
+  const buyerName = escapeHtml(params.buyerName);
+  const productTitle = escapeHtml(params.productTitle);
+  const trackingCode = params.trackingCode ? escapeHtml(params.trackingCode) : null;
+  const trackingUrl = params.trackingUrl ? escapeHtml(params.trackingUrl) : null;
 
   try {
     const { data, error } = await getResendClient().emails.send({
@@ -819,15 +832,9 @@ export async function sendAutoReleaseReminderEmail(params: {
   autoReleaseDate: Date;
   sellerPayout: number;
 }): Promise<EmailResult> {
-  const {
-    buyerEmail,
-    buyerName,
-    orderId,
-    productTitle,
-    daysUntilRelease,
-    autoReleaseDate,
-    sellerPayout,
-  } = params;
+  const { buyerEmail, orderId, daysUntilRelease, autoReleaseDate, sellerPayout } = params;
+  const buyerName = escapeHtml(params.buyerName);
+  const productTitle = escapeHtml(params.productTitle);
 
   try {
     const { data, error } = await getResendClient().emails.send({
@@ -917,7 +924,9 @@ export async function sendPaymentReleasedEmail(params: {
   payoutAmount: number;
   releaseReason: "buyer_confirmed" | "auto_released";
 }): Promise<EmailResult> {
-  const { sellerEmail, sellerName, orderId, productTitle, payoutAmount, releaseReason } = params;
+  const { sellerEmail, orderId, payoutAmount, releaseReason } = params;
+  const sellerName = escapeHtml(params.sellerName);
+  const productTitle = escapeHtml(params.productTitle);
 
   const reasonText =
     releaseReason === "buyer_confirmed"
@@ -1006,7 +1015,9 @@ export async function sendPaymentOnHoldEmail(params: {
   productTitle: string;
   autoReleaseDate: Date;
 }): Promise<EmailResult> {
-  const { buyerEmail, buyerName, orderId, productTitle, autoReleaseDate } = params;
+  const { buyerEmail, orderId, autoReleaseDate } = params;
+  const buyerName = escapeHtml(params.buyerName);
+  const productTitle = escapeHtml(params.productTitle);
 
   try {
     const { data, error } = await getResendClient().emails.send({
@@ -1057,6 +1068,321 @@ export async function sendPaymentOnHoldEmail(params: {
             <div class="footer">
               <p>Questions? Reply to this email for help.</p>
               <p>The ButterGolf Team</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    if (error) {
+      console.error("Resend error:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, id: data?.id };
+  } catch (err) {
+    console.error("Email send error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Unknown error" };
+  }
+}
+
+// ============================================================================
+// Offer Notification Emails
+// ============================================================================
+
+/**
+ * Send new offer notification to seller
+ */
+export async function sendNewOfferEmail(params: {
+  sellerEmail: string;
+  sellerName: string;
+  buyerName: string;
+  offerAmount: number;
+  productTitle: string;
+  productPrice: number;
+  conversationId: string;
+}): Promise<EmailResult> {
+  const { sellerEmail, conversationId } = params;
+  const sellerName = escapeHtml(params.sellerName);
+  const buyerName = escapeHtml(params.buyerName);
+  const productTitle = escapeHtml(params.productTitle);
+
+  try {
+    const { data, error } = await getResendClient().emails.send({
+      from: FROM_EMAIL,
+      to: sellerEmail,
+      subject: `New offer on ${productTitle} — £${params.offerAmount.toFixed(2)}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #323232; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #F45314; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+            .header h1 { color: white; margin: 0; font-size: 20px; }
+            .content { background: #FFFAD2; padding: 30px; border-radius: 0 0 8px 8px; }
+            .offer-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #F45314; text-align: center; }
+            .offer-amount { font-size: 28px; font-weight: 700; color: #F45314; }
+            .listed-price { font-size: 14px; color: #545454; text-decoration: line-through; }
+            .button { display: inline-block; background: #F45314; color: white; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
+            .footer { text-align: center; padding: 20px; color: #545454; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>New Offer Received</h1>
+            </div>
+            <div class="content">
+              <p>Hi ${sellerName},</p>
+              <p><strong>${buyerName}</strong> made an offer on <strong>${productTitle}</strong>:</p>
+              
+              <div class="offer-box">
+                <p class="offer-amount">£${params.offerAmount.toFixed(2)}</p>
+                <p class="listed-price">Listed at £${params.productPrice.toFixed(2)}</p>
+              </div>
+              
+              <p>You can accept, decline, or counter this offer.</p>
+              
+              <p style="text-align: center; margin-top: 30px;">
+                <a href="${BASE_URL}/messages/${conversationId}" class="button">View Offer</a>
+              </p>
+            </div>
+            <div class="footer">
+              <p>Offers expire after 7 days.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    if (error) {
+      console.error("Resend error:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, id: data?.id };
+  } catch (err) {
+    console.error("Email send error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Unknown error" };
+  }
+}
+
+/**
+ * Send counter-offer notification to the other party
+ */
+export async function sendCounterOfferEmail(params: {
+  recipientEmail: string;
+  recipientName: string;
+  counterPartyName: string;
+  counterAmount: number;
+  productTitle: string;
+  conversationId: string;
+}): Promise<EmailResult> {
+  const { recipientEmail, conversationId } = params;
+  const recipientName = escapeHtml(params.recipientName);
+  const counterPartyName = escapeHtml(params.counterPartyName);
+  const productTitle = escapeHtml(params.productTitle);
+
+  try {
+    const { data, error } = await getResendClient().emails.send({
+      from: FROM_EMAIL,
+      to: recipientEmail,
+      subject: `Counter-offer on ${productTitle} — £${params.counterAmount.toFixed(2)}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #323232; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #F45314; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+            .header h1 { color: white; margin: 0; font-size: 20px; }
+            .content { background: #FFFAD2; padding: 30px; border-radius: 0 0 8px 8px; }
+            .offer-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3E3B2C; text-align: center; }
+            .offer-amount { font-size: 28px; font-weight: 700; color: #3E3B2C; }
+            .button { display: inline-block; background: #F45314; color: white; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
+            .footer { text-align: center; padding: 20px; color: #545454; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Counter-Offer</h1>
+            </div>
+            <div class="content">
+              <p>Hi ${recipientName},</p>
+              <p><strong>${counterPartyName}</strong> sent a counter-offer on <strong>${productTitle}</strong>:</p>
+              
+              <div class="offer-box">
+                <p class="offer-amount">£${params.counterAmount.toFixed(2)}</p>
+              </div>
+              
+              <p>You can accept, decline, or counter this offer.</p>
+              
+              <p style="text-align: center; margin-top: 30px;">
+                <a href="${BASE_URL}/messages/${conversationId}" class="button">View Counter-Offer</a>
+              </p>
+            </div>
+            <div class="footer">
+              <p>Continue the conversation on ButterGolf.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    if (error) {
+      console.error("Resend error:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, id: data?.id };
+  } catch (err) {
+    console.error("Email send error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Unknown error" };
+  }
+}
+
+/**
+ * Send offer accepted notification to buyer (with checkout link)
+ */
+export async function sendOfferAcceptedEmail(params: {
+  buyerEmail: string;
+  buyerName: string;
+  sellerName: string;
+  acceptedAmount: number;
+  productTitle: string;
+  conversationId: string;
+  offerId: string;
+}): Promise<EmailResult> {
+  const { buyerEmail, conversationId, offerId } = params;
+  const buyerName = escapeHtml(params.buyerName);
+  const sellerName = escapeHtml(params.sellerName);
+  const productTitle = escapeHtml(params.productTitle);
+
+  try {
+    const { data, error } = await getResendClient().emails.send({
+      from: FROM_EMAIL,
+      to: buyerEmail,
+      subject: `Your offer on ${productTitle} was accepted!`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #323232; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #02aaa4; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+            .header h1 { color: white; margin: 0; font-size: 20px; }
+            .content { background: #FFFAD2; padding: 30px; border-radius: 0 0 8px 8px; }
+            .offer-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #02aaa4; text-align: center; }
+            .offer-amount { font-size: 28px; font-weight: 700; color: #02aaa4; }
+            .button { display: inline-block; background: #F45314; color: white; padding: 14px 32px; text-decoration: none; border-radius: 24px; font-weight: 600; font-size: 16px; }
+            .footer { text-align: center; padding: 20px; color: #545454; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Offer Accepted!</h1>
+            </div>
+            <div class="content">
+              <p>Hi ${buyerName},</p>
+              <p>Great news! <strong>${sellerName}</strong> accepted your offer on <strong>${productTitle}</strong>.</p>
+              
+              <div class="offer-box">
+                <p class="offer-amount">£${params.acceptedAmount.toFixed(2)}</p>
+                <p style="margin: 8px 0 0; color: #545454;">Agreed price</p>
+              </div>
+              
+              <p>Complete your purchase to secure the item.</p>
+              
+              <p style="text-align: center; margin-top: 30px;">
+                <a href="${BASE_URL}/checkout?offerId=${offerId}" class="button">Complete Purchase</a>
+              </p>
+              
+              <p style="text-align: center; margin-top: 12px;">
+                <a href="${BASE_URL}/messages/${conversationId}" style="color: #545454;">Or view conversation</a>
+              </p>
+            </div>
+            <div class="footer">
+              <p>Complete your purchase soon — accepted offers don't last forever.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    if (error) {
+      console.error("Resend error:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, id: data?.id };
+  } catch (err) {
+    console.error("Email send error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Unknown error" };
+  }
+}
+
+/**
+ * Send offer rejected notification to buyer
+ */
+export async function sendOfferRejectedEmail(params: {
+  buyerEmail: string;
+  buyerName: string;
+  sellerName: string;
+  offerAmount: number;
+  productTitle: string;
+  conversationId: string;
+}): Promise<EmailResult> {
+  const { buyerEmail, conversationId } = params;
+  const buyerName = escapeHtml(params.buyerName);
+  const sellerName = escapeHtml(params.sellerName);
+  const productTitle = escapeHtml(params.productTitle);
+
+  try {
+    const { data, error } = await getResendClient().emails.send({
+      from: FROM_EMAIL,
+      to: buyerEmail,
+      subject: `Offer update on ${productTitle}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #323232; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #3E3B2C; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+            .header h1 { color: white; margin: 0; font-size: 20px; }
+            .content { background: #FFFAD2; padding: 30px; border-radius: 0 0 8px 8px; }
+            .button { display: inline-block; background: #F45314; color: white; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
+            .footer { text-align: center; padding: 20px; color: #545454; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Offer Declined</h1>
+            </div>
+            <div class="content">
+              <p>Hi ${buyerName},</p>
+              <p><strong>${sellerName}</strong> declined your offer of <strong>£${params.offerAmount.toFixed(2)}</strong> on <strong>${productTitle}</strong>.</p>
+              
+              <p>You can send a new offer or continue the conversation.</p>
+              
+              <p style="text-align: center; margin-top: 30px;">
+                <a href="${BASE_URL}/messages/${conversationId}" class="button">View Conversation</a>
+              </p>
+            </div>
+            <div class="footer">
+              <p>Keep browsing on ButterGolf for more finds.</p>
             </div>
           </div>
         </body>

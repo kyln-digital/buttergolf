@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { Column, Row, Text, Button, Heading, Spinner, Input } from "@buttergolf/ui";
-import { Button as TamaguiButton, Avatar, View } from "tamagui";
+import { Avatar, View } from "tamagui";
 import { ArrowLeft, Camera, Check } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Alert } from "react-native";
@@ -122,7 +122,7 @@ export function ProfileEditScreen({
         borderBottomWidth={1}
         borderBottomColor="$border"
       >
-        <TamaguiButton
+        <Button
           chromeless
           circular
           size="$4"
@@ -132,7 +132,7 @@ export function ProfileEditScreen({
         <Heading level={4} flex={1}>
           Edit Profile
         </Heading>
-        <TamaguiButton
+        <Button
           chromeless
           size="$4"
           onPress={handleSave}
@@ -144,7 +144,7 @@ export function ProfileEditScreen({
           ) : (
             <Check size={24} color={hasChanges ? "$primary" : "$textMuted"} />
           )}
-        </TamaguiButton>
+        </Button>
       </Row>
 
       <Column padding="$4" gap="$6">
@@ -168,7 +168,7 @@ export function ProfileEditScreen({
             </Avatar>
 
             {onPickImage && (
-              <TamaguiButton
+              <Button
                 circular
                 size="$4"
                 backgroundColor="$primary"
@@ -185,7 +185,7 @@ export function ProfileEditScreen({
                 ) : (
                   <Camera size={18} color="$white" />
                 )}
-              </TamaguiButton>
+              </Button>
             )}
           </View>
 

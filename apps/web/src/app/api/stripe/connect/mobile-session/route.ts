@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    console.log("[Mobile Session] Creating token for user:", {
+    console.info("[Mobile Session] Creating token for user:", {
       userId: userData.userId,
       firstName: userData.firstName,
       lastName: userData.lastName,
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
             lastName: userData.lastName || "",
           },
         });
-        console.log("[Mobile Session] Synced user to database:", userData.userId);
+        console.info("[Mobile Session] Synced user to database:", userData.userId);
       } catch (dbError) {
         // Handle unique constraint violation (P2002). This can happen in two scenarios:
         // 1. Race condition: another concurrent request created the user first (benign)

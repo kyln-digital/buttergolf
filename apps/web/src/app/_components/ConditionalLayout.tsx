@@ -7,6 +7,8 @@ interface ConditionalLayoutProps {
   children: ReactNode;
   /** Routes where children should be hidden */
   excludeRoutes?: string[];
+  /** When provided, children are only shown on these routes (allowlist) */
+  includeRoutes?: string[];
 }
 
 /**
@@ -14,28 +16,39 @@ interface ConditionalLayoutProps {
  * Use this to hide layout elements (header, footer, banners) on specific routes.
  *
  * @example
+ * // Hide on specific routes
  * <ConditionalLayout excludeRoutes={['/coming-soon']}>
  *   <Header />
+ * </ConditionalLayout>
+ *
+ * @example
+ * // Show only on specific routes
+ * <ConditionalLayout includeRoutes={['/', '/help-centre']}>
+ *   <ChatWidget />
  * </ConditionalLayout>
  */
 export function ConditionalLayout({
   children,
   excludeRoutes = [],
+  includeRoutes,
 }: Readonly<ConditionalLayoutProps>) {
   const pathname = usePathname();
 
-  // Check if current route matches any excluded route
-  // Supports exact matches and prefix matches (ending with *)
-  const shouldHide = excludeRoutes.some((route) => {
-    if (route.endsWith("*")) {
-      // Prefix match: '/admin/*' matches '/admin/users', '/admin/settings', etc.
-      return pathname?.startsWith(route.slice(0, -1));
-    }
-    // Exact match
-    return pathname === route;
-  });
+  const matchesRoute = (routes: string[]) =>
+    routes.some((route) => {
+      if (route.endsWith("*")) {
+        // Prefix match: '/admin/*' matches '/admin/users', '/admin/settings', etc.
+        return pathname?.startsWith(route.slice(0, -1));
+      }
+      // Exact match
+      return pathname === route;
+    });
 
-  if (shouldHide) return null;
+  // Allowlist: only render on specified routes
+  if (includeRoutes && !matchesRoute(includeRoutes)) return null;
+
+  // Denylist: hide on excluded routes
+  if (matchesRoute(excludeRoutes)) return null;
 
   return <>{children}</>;
 }

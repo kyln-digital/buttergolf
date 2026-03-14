@@ -1,8 +1,7 @@
 import { prisma } from "@buttergolf/db";
-import { PENDING_ADDRESS, SHIPENGINE_CARRIER_CODES } from "./constants";
+import { SHIPENGINE_CARRIER_CODES } from "./constants";
 import { buildTrackingUrl } from "./utils/format";
 import { sendLabelGeneratedEmail } from "./email";
-import { cacheGetOrSet } from "./redis";
 import {
   validateUKAddress,
   validateSellerCanShip,
@@ -65,7 +64,19 @@ export interface ShippingValidationError {
 }
 
 // Cache TTL for shipping rates (15 minutes)
-const SHIPPING_RATE_CACHE_TTL = 15 * 60;
+const SHIPPING_RATE_CACHE_TTL = 15 * 60 * 1000; // ms
+
+// In-memory shipping rate cache (replaces Redis)
+const rateCache = new Map<string, { data: unknown; expiry: number }>();
+
+async function cacheGetOrSet<T>(key: string, ttlMs: number, fn: () => Promise<T>): Promise<T> {
+  const now = Date.now();
+  const hit = rateCache.get(key);
+  if (hit && hit.expiry > now) return hit.data as T;
+  const data = await fn();
+  rateCache.set(key, { data, expiry: now + ttlMs });
+  return data;
+}
 
 interface ShipEngineRateResponse {
   rate_response: {
@@ -269,9 +280,7 @@ export async function calculateShippingRates(
       const cachedResult = await cacheGetOrSet<ShippingCalculationResult | null>(
         cacheKey,
         SHIPPING_RATE_CACHE_TTL,
-        async () => {
-          return await fetchShipEngineRates(fromAddress, toAddress, dimensions);
-        }
+        () => fetchShipEngineRates(fromAddress, toAddress, dimensions)
       );
 
       if (cachedResult && cachedResult.rates.length > 0) {
@@ -776,7 +785,7 @@ export async function generateShippingLabel(params: {
         estimatedDelivery: selectedRate.estimated_delivery_date,
         carrier: selectedRate.carrier_friendly_name,
       });
-      console.log("Sent label generated email to buyer");
+      console.info("Sent label generated email to buyer");
     }
   } catch (emailError) {
     // Don't fail label generation if email fails

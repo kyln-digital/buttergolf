@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { Column, Row, Button, Text, Heading, Spinner, View } from "@buttergolf/ui";
@@ -36,7 +37,7 @@ async function getCroppedImg(image: HTMLImageElement, crop: PixelCrop): Promise<
   const sourceHeight = crop.height * scaleY;
 
   // Debug logging to verify coordinate scaling
-  console.log("Image Crop Debug:", {
+  console.info("Image Crop Debug:", {
     natural: { width: image.naturalWidth, height: image.naturalHeight },
     displayed: { width: image.width, height: image.height },
     scale: { x: scaleX, y: scaleY },
@@ -50,7 +51,7 @@ async function getCroppedImg(image: HTMLImageElement, crop: PixelCrop): Promise<
   canvas.width = canvasWidth;
   canvas.height = canvasHeight;
 
-  console.log("📐 Canvas dimensions set to:", { canvasWidth, canvasHeight });
+  console.info("📐 Canvas dimensions set to:", { canvasWidth, canvasHeight });
 
   // Draw the cropped portion of the image onto the canvas
   ctx.drawImage(
@@ -73,7 +74,7 @@ async function getCroppedImg(image: HTMLImageElement, crop: PixelCrop): Promise<
           reject(new Error("Canvas is empty"));
           return;
         }
-        console.log("Cropped blob created:", {
+        console.info("Cropped blob created:", {
           size: blob.size,
           sizeKB: Math.round(blob.size / 1024),
           type: blob.type,
@@ -97,7 +98,15 @@ export function ImageCropModal({
   const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
   const [imageSrc, setImageSrc] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previouslyFocusedElementRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Calculate a centered 4:3 aspect ratio crop when the image loads
   const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -141,6 +150,106 @@ export function ImageCropModal({
     }
   }, [imageFile]);
 
+  useEffect(() => {
+    if (!open || !isMounted) {
+      return;
+    }
+
+    const originalOverflow = document.body.style.overflow;
+    const appRoot = document.getElementById("__next");
+    const hadInert = appRoot?.hasAttribute("inert") ?? false;
+    const originalAppPointerEvents = appRoot?.style.pointerEvents;
+
+    document.body.style.overflow = "hidden";
+    appRoot?.setAttribute("inert", "");
+    if (appRoot) {
+      appRoot.style.pointerEvents = "none";
+    }
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      if (appRoot && appRoot.isConnected) {
+        if (!hadInert) {
+          appRoot.removeAttribute("inert");
+        }
+        appRoot.style.pointerEvents = originalAppPointerEvents ?? "";
+      }
+    };
+  }, [open, isMounted]);
+
+  useEffect(() => {
+    if (!open || !isMounted) {
+      return;
+    }
+
+    previouslyFocusedElementRef.current = document.activeElement as HTMLElement | null;
+
+    const focusTimer = window.setTimeout(() => {
+      closeButtonRef.current?.focus();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(focusTimer);
+      previouslyFocusedElementRef.current?.focus();
+    };
+  }, [open, isMounted]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !isProcessing) {
+        onCancel();
+        return;
+      }
+
+      if (event.key !== "Tab") {
+        return;
+      }
+
+      const container = modalRef.current;
+      if (!container) {
+        return;
+      }
+
+      const focusableElements = Array.from(
+        container.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement as HTMLElement | null;
+
+      if (event.shiftKey) {
+        if (activeElement === firstElement || !container.contains(activeElement)) {
+          event.preventDefault();
+          lastElement.focus();
+        }
+        return;
+      }
+
+      if (activeElement === lastElement || !container.contains(activeElement)) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open, isProcessing, onCancel]);
+
   const handleApplyCrop = async () => {
     if (!completedCrop || !imgRef.current) {
       return;
@@ -158,10 +267,14 @@ export function ImageCropModal({
     }
   };
 
-  if (!open) return null;
+  if (!open || !isMounted) return null;
 
-  return (
+  const modalContent = (
     <div
+      ref={modalRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Image crop modal"
       style={{
         position: "fixed",
         top: 0,
@@ -172,7 +285,8 @@ export function ImageCropModal({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        zIndex: 1000,
+        // Must sit above Clerk modals (~99999) and navigation dropdowns
+        zIndex: 100000,
         padding: "16px",
       }}
       onClick={(e) => {
@@ -213,6 +327,7 @@ export function ImageCropModal({
             </Column>
             {/* Close button */}
             <Button
+              ref={closeButtonRef}
               size="$3"
               chromeless
               onPress={onCancel}
@@ -247,6 +362,7 @@ export function ImageCropModal({
                 maxHeight: "50vh",
               }}
             >
+              {/* eslint-disable-next-line @next/next/no-img-element -- img required for react-image-crop ref */}
               <img
                 ref={imgRef}
                 src={imageSrc}
@@ -310,4 +426,6 @@ export function ImageCropModal({
       </Column>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

@@ -38,7 +38,7 @@ export async function createShippingLabel(
   try {
     const client = getEasyPostClient();
 
-    console.log("Creating EasyPost shipment:", {
+    console.info("Creating EasyPost shipment:", {
       from: fromAddress,
       to: toAddress,
       parcel,
@@ -74,7 +74,7 @@ export async function createShippingLabel(
       },
     });
 
-    console.log("Shipment created:", shipment.id);
+    console.info("Shipment created:", shipment.id);
 
     // Buy the cheapest rate
     if (!shipment.rates || shipment.rates.length === 0) {
@@ -87,7 +87,7 @@ export async function createShippingLabel(
     );
     const cheapestRate = sortedRates[0];
 
-    console.log("Buying rate:", {
+    console.info("Buying rate:", {
       id: cheapestRate.id,
       carrier: cheapestRate.carrier,
       service: cheapestRate.service,
@@ -97,7 +97,7 @@ export async function createShippingLabel(
     // Purchase the label
     const purchasedShipment = await client.Shipment.buy(shipment.id, cheapestRate.id);
 
-    console.log("Label purchased:", {
+    console.info("Label purchased:", {
       id: purchasedShipment.id,
       labelUrl: purchasedShipment.postage_label?.label_url,
       trackingCode: purchasedShipment.tracking_code,

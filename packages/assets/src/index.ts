@@ -21,12 +21,12 @@ export const images = {
 // Copy these to apps/web/public/_assets/images/ or use static imports
 export const imagePaths = {
   clubs: {
-    club1: "/_assets/images/clubs-1.jpg",
+    club1: "/_assets/images/clubs-1.webp",
     club2: "/_assets/images/clubs-2.webp",
     club3: "/_assets/images/clubs-3.webp",
-    club4: "/_assets/images/clubs-4.jpg",
+    club4: "/_assets/images/clubs-4.webp",
     club5: "/_assets/images/clubs-5.webp",
-    club6: "/_assets/images/clubs-6.jpg",
+    club6: "/_assets/images/clubs-6.webp",
   },
   hero: {
     golfCourse: "/_assets/images/steven-shircliff-N21z4eG8aKg-unsplash.jpg",

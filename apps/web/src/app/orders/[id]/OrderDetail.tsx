@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { OrderMessages } from "./OrderMessages";
 import { OrderRating } from "./OrderRating";
 import { AnimationErrorBoundary } from "@/app/_components/ErrorBoundary";
 import { TrackingTimeline } from "@/components/TrackingTimeline";
@@ -17,8 +16,8 @@ import {
   Button,
   Separator,
   Container,
+  View,
 } from "@buttergolf/ui";
-import { View } from "tamagui";
 import { buildTrackingUrl } from "@/lib/utils/format";
 import {
   Package,
@@ -340,11 +339,14 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
       }
 
       setConfirmReceiptSuccess(true);
-      // Update local order state
+
+      const nextHoldStatus = (data.paymentHoldStatus || "RELEASED") as PaymentHoldStatus;
+
+      // Update local order state based on actual backend status.
       setOrder((prev) => ({
         ...prev,
-        paymentHoldStatus: "RELEASED" as const,
-        paymentReleasedAt: new Date(),
+        paymentHoldStatus: nextHoldStatus,
+        paymentReleasedAt: nextHoldStatus === "RELEASED" ? new Date() : prev.paymentReleasedAt,
         buyerConfirmedAt: new Date(),
       }));
     } catch (error) {
@@ -392,6 +394,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
   // Fetch tracking events on mount
   useEffect(() => {
     fetchTrackingEvents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order.id, order.trackingCode]);
 
   // Poll for updates when shipment is active (IN_TRANSIT or OUT_FOR_DELIVERY)
@@ -407,6 +410,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
     }, 15000);
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order.shipmentStatus, order.trackingCode, order.id]);
 
   return (
@@ -544,7 +548,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
 
             {/* Carrier/Tracking Info Box */}
             {order.carrier && (
-              <View backgroundColor="$infoLight" borderRadius="$md" padding="$md">
+              <View backgroundColor="$secondaryLight" borderRadius="$md" padding="$md">
                 <Column gap="$sm">
                   <Text fontWeight="600" size="$5">
                     {order.carrier} {order.service && `- ${order.service}`}
@@ -599,7 +603,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                           style={
                             {
                               animation: isLoadingTracking ? "spin 1s linear infinite" : "none",
-                            } as any
+                            } as React.CSSProperties
                           }
                         />
                       }
@@ -816,14 +820,14 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
             {order.userRole === "buyer" && order.paymentHoldStatus === "HELD" && (
               <Column gap="$md">
                 <View
-                  backgroundColor="$infoLight"
+                  backgroundColor="$secondaryLight"
                   borderRadius="$md"
                   padding="$md"
                   borderLeftWidth={4}
-                  borderLeftColor="$info"
+                  borderLeftColor="$secondary"
                 >
                   <Column gap="$sm">
-                    <Text fontWeight="600" color="$info">
+                    <Text fontWeight="600" color="$secondary">
                       Your payment is protected
                     </Text>
                     <Text size="$4" color="$textSecondary">
@@ -918,14 +922,14 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
             {order.userRole === "buyer" &&
               order.paymentHoldStatus === "PENDING_SELLER_ONBOARDING" && (
                 <View
-                  backgroundColor="$infoLight"
+                  backgroundColor="$secondaryLight"
                   borderRadius="$md"
                   padding="$md"
                   borderLeftWidth={4}
-                  borderLeftColor="$info"
+                  borderLeftColor="$secondary"
                 >
                   <Column gap="$sm">
-                    <Text fontWeight="600" color="$info">
+                    <Text fontWeight="600" color="$secondary">
                       Your payment is protected
                     </Text>
                     <Text size="$4" color="$textSecondary">
@@ -982,14 +986,14 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
 
                 {order.paymentHoldStatus === "PENDING_SELLER_ONBOARDING" && (
                   <View
-                    backgroundColor="$infoLight"
+                    backgroundColor="$secondaryLight"
                     borderRadius="$md"
                     padding="$md"
                     borderLeftWidth={4}
-                    borderLeftColor="$info"
+                    borderLeftColor="$secondary"
                   >
                     <Column gap="$sm">
-                      <Text fontWeight="600" color="$info">
+                      <Text fontWeight="600" color="$secondary">
                         Complete verification to receive payment
                       </Text>
                       <Text size="$4" color="$textSecondary">
@@ -1072,28 +1076,6 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
             isDelivered={order.shipmentStatus === "DELIVERED"}
             isBuyer={order.userRole === "buyer"}
             sellerName={`${order.seller.firstName || ""} ${order.seller.lastName || ""}`.trim()}
-          />
-        </AnimationErrorBoundary>
-
-        {/* Messages Section */}
-        <AnimationErrorBoundary
-          fallback={
-            <Card variant="outlined" padding="$lg">
-              <Text color="$error">Unable to load messages. Please refresh the page.</Text>
-            </Card>
-          }
-        >
-          <OrderMessages
-            orderId={order.id}
-            currentUserId={order.currentUserId}
-            otherUserName={
-              order.userRole === "buyer"
-                ? `${order.seller.firstName || ""} ${order.seller.lastName || ""}`.trim()
-                : `${order.buyer.firstName || ""} ${order.buyer.lastName || ""}`.trim()
-            }
-            otherUserImage={
-              order.userRole === "buyer" ? order.seller.imageUrl : order.buyer.imageUrl
-            }
           />
         </AnimationErrorBoundary>
       </Column>

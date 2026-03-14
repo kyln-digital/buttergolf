@@ -1,8 +1,17 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Column, Row, Text, Button, Heading, Spinner, Image, ScrollView } from "@buttergolf/ui";
-import { Button as TamaguiButton, View } from "tamagui";
+import {
+  Column,
+  Row,
+  Text,
+  Button,
+  Heading,
+  Spinner,
+  Image,
+  ScrollView,
+  View,
+} from "@buttergolf/ui";
 import { ArrowLeft, Package, Truck, CheckCircle, Clock, RefreshCw } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -75,7 +84,7 @@ export interface OrdersScreenProps {
 }
 
 type OrderStatusColorToken =
-  | "$info"
+  | "$secondary"
   | "$warning"
   | "$primary"
   | "$success"
@@ -89,7 +98,11 @@ function getStatusConfig(status: OrderStatus): {
 } {
   switch (status) {
     case "PAYMENT_CONFIRMED":
-      return { label: "Confirmed", color: "$info", icon: <Clock size={14} color="$info" /> };
+      return {
+        label: "Confirmed",
+        color: "$secondary",
+        icon: <Clock size={14} color="$secondary" />,
+      };
     case "LABEL_GENERATED":
       return {
         label: "Label Ready",
@@ -209,7 +222,7 @@ export function OrdersScreen({
         borderBottomWidth={1}
         borderBottomColor="$border"
       >
-        <TamaguiButton
+        <Button
           chromeless
           circular
           size="$4"
@@ -219,7 +232,7 @@ export function OrdersScreen({
         <Heading level={4} flex={1}>
           My Orders
         </Heading>
-        <TamaguiButton
+        <Button
           chromeless
           circular
           size="$4"
@@ -232,7 +245,7 @@ export function OrdersScreen({
       {/* Filter Tabs */}
       <Row padding="$3" gap="$2" borderBottomWidth={1} borderBottomColor="$border">
         {(["all", "active", "delivered"] as FilterTab[]).map((tab) => (
-          <TamaguiButton
+          <Button
             key={tab}
             size="$3"
             backgroundColor={activeTab === tab ? "$primary" : "$surface"}
@@ -250,7 +263,7 @@ export function OrdersScreen({
             >
               {tab}
             </Text>
-          </TamaguiButton>
+          </Button>
         ))}
       </Row>
 
@@ -296,7 +309,7 @@ export function OrdersScreen({
                 [otherUser.firstName, otherUser.lastName].filter(Boolean).join(" ") || "User";
 
               return (
-                <TamaguiButton
+                <Button
                   key={order.id}
                   unstyled
                   backgroundColor="$surface"
@@ -378,7 +391,7 @@ export function OrdersScreen({
                         )}
                     </Column>
                   </Row>
-                </TamaguiButton>
+                </Button>
               );
             })}
           </Column>

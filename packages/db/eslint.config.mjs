@@ -1,3 +1,8 @@
-import baseConfig from '@buttergolf/eslint-config/base'
+import { config as baseConfig } from "@buttergolf/eslint-config/base";
 
-export default [...baseConfig]
+export default [
+  ...baseConfig,
+  {
+    ignores: ["generated/**"],
+  },
+];

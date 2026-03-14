@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import { Row, Column, Text, Badge } from "@buttergolf/ui";
-import { Button } from "tamagui";
+import { Row, Column, Text, Badge, Button } from "@buttergolf/ui";
 import { ChevronRight } from "@tamagui/lucide-icons";
 
 export interface AccountMenuItemProps {

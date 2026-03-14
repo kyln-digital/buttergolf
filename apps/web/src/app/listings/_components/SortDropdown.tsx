@@ -4,25 +4,42 @@ import { Check, ChevronDown } from "@tamagui/lucide-icons";
 import { Select, Adapt, Sheet } from "tamagui";
 import { useMemo } from "react";
 
+export interface SortOption {
+  value: string;
+  label: string;
+}
+
 interface SortDropdownProps {
   value: string;
   onChange: (value: string) => void;
+  options?: SortOption[];
 }
 
-const SORT_OPTIONS = [
+const DEFAULT_SORT_OPTIONS: SortOption[] = [
   { value: "newest", label: "Newest First" },
   { value: "price-asc", label: "Price: Low to High" },
   { value: "price-desc", label: "Price: High to Low" },
   { value: "popular", label: "Most Popular" },
 ];
 
-export function SortDropdown({ value, onChange }: Readonly<SortDropdownProps>) {
+export function SortDropdown({
+  value,
+  onChange,
+  options = DEFAULT_SORT_OPTIONS,
+}: Readonly<SortDropdownProps>) {
   const selectedLabel = useMemo(() => {
-    return SORT_OPTIONS.find((opt) => opt.value === value)?.label || "Sort by";
-  }, [value]);
+    return options.find((opt) => opt.value === value)?.label || "Sort by";
+  }, [value, options]);
 
   return (
-    <Select value={value} onValueChange={onChange} disablePreventBodyScroll>
+    <Select
+      value={value}
+      onValueChange={(v: string) => {
+        const valid = options.find((opt) => opt.value === v);
+        onChange(valid ? v : (options[0]?.value ?? v));
+      }}
+      disablePreventBodyScroll
+    >
       <Select.Trigger
         minWidth={200}
         height={40}
@@ -61,7 +78,7 @@ export function SortDropdown({ value, onChange }: Readonly<SortDropdownProps>) {
       <Select.Content zIndex={200000}>
         <Select.Viewport minWidth={200}>
           <Select.Group>
-            {SORT_OPTIONS.map((option, index) => (
+            {options.map((option, index) => (
               <Select.Item
                 key={option.value}
                 index={index}

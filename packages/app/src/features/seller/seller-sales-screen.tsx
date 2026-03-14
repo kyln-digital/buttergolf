@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Column, Row, Text, Button, Heading, ScrollView, Spinner } from "@buttergolf/ui";
-import { Button as TamaguiButton, View } from "tamagui";
+import { Column, Row, Text, Button, Heading, ScrollView, Spinner, View } from "@buttergolf/ui";
 import {
   ArrowLeft,
   Package,
@@ -96,8 +95,8 @@ export interface SellerSalesScreenProps {
 
 type FilterTab = "all" | "pending" | "shipped" | "delivered";
 
-type SalesStatusColorToken = "$warning" | "$info" | "$success" | "$error";
-type SalesStatusBgToken = "$warningLight" | "$infoLight" | "$successLight" | "$errorLight";
+type SalesStatusColorToken = "$warning" | "$secondary" | "$success" | "$error";
+type SalesStatusBgToken = "$warningLight" | "$secondaryLight" | "$successLight" | "$errorLight";
 
 const statusConfig: Record<
   OrderStatus,
@@ -114,11 +113,16 @@ const statusConfig: Record<
     bgColor: "$warningLight",
     icon: <Clock size={16} />,
   },
-  SHIPPED: { label: "Shipped", color: "$info", bgColor: "$infoLight", icon: <Truck size={16} /> },
+  SHIPPED: {
+    label: "Shipped",
+    color: "$secondary",
+    bgColor: "$secondaryLight",
+    icon: <Truck size={16} />,
+  },
   IN_TRANSIT: {
     label: "In Transit",
-    color: "$info",
-    bgColor: "$infoLight",
+    color: "$secondary",
+    bgColor: "$secondaryLight",
     icon: <Truck size={16} />,
   },
   DELIVERED: {
@@ -277,7 +281,7 @@ export function SellerSalesScreen({
         borderBottomWidth={1}
         borderBottomColor="$border"
       >
-        <TamaguiButton
+        <Button
           chromeless
           circular
           size="$4"
@@ -298,7 +302,7 @@ export function SellerSalesScreen({
         }}
       >
         {filterTabs.map((tab) => (
-          <TamaguiButton
+          <Button
             key={tab.key}
             backgroundColor={activeFilter === tab.key ? "$primary" : "$surface"}
             borderRadius="$full"
@@ -334,7 +338,7 @@ export function SellerSalesScreen({
                 </View>
               )}
             </Row>
-          </TamaguiButton>
+          </Button>
         ))}
       </ScrollView>
 
@@ -381,7 +385,7 @@ export function SellerSalesScreen({
                   overflow="hidden"
                 >
                   {/* Order Header */}
-                  <TamaguiButton
+                  <Button
                     unstyled
                     padding="$4"
                     borderBottomWidth={1}
@@ -412,7 +416,7 @@ export function SellerSalesScreen({
                       </Column>
                       <ChevronRight size={20} color="$textMuted" />
                     </Row>
-                  </TamaguiButton>
+                  </Button>
 
                   {/* Order Items Preview */}
                   <Column padding="$4" gap="$3">
@@ -522,17 +526,14 @@ export function SellerSalesScreen({
                     borderTopColor="$border"
                     justifyContent="center"
                   >
-                    <TamaguiButton
-                      chromeless
-                      onPress={() => onMessageBuyer(order.buyer.id, order.id)}
-                    >
+                    <Button chromeless onPress={() => onMessageBuyer(order.buyer.id, order.id)}>
                       <Row alignItems="center" gap="$2">
                         <MessageCircle size={18} color="$primary" />
                         <Text size="$3" color="$primary">
                           Message Buyer
                         </Text>
                       </Row>
-                    </TamaguiButton>
+                    </Button>
                   </Row>
                 </Column>
               );
