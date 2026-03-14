@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { Column, Row, ScrollView, Text, Button, Heading, Spinner } from "@buttergolf/ui";
-import { View } from "tamagui";
+import { Button as TamaguiButton, View } from "tamagui";
 import { ArrowLeft } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSignIn } from "@clerk/clerk-expo";
@@ -150,7 +150,7 @@ export function SignInScreen({
         <Column gap="$6" flex={1}>
           {/* Back Button */}
           {onNavigateBack && (
-            <Button
+            <TamaguiButton
               chromeless
               size="$4"
               icon={<ArrowLeft size={20} color="$primary" />}
@@ -198,7 +198,7 @@ export function SignInScreen({
             />
 
             {/* Forgot Password Link */}
-            <Button
+            <TamaguiButton
               chromeless
               size="$4"
               onPress={onNavigateToForgotPassword}
@@ -207,8 +207,8 @@ export function SignInScreen({
               paddingVertical={0}
               paddingHorizontal="$2"
             >
-              <Button.Text color="$primary">Forgot password?</Button.Text>
-            </Button>
+              <TamaguiButton.Text color="$primary">Forgot password?</TamaguiButton.Text>
+            </TamaguiButton>
           </Column>
 
           {/* Sign In Button */}
@@ -246,7 +246,7 @@ export function SignInScreen({
             <Text size="$4" color="$textSecondary">
               {"Don't have an account?"}
             </Text>
-            <Button
+            <TamaguiButton
               chromeless
               size="$5"
               onPress={onNavigateToSignUp}
@@ -254,8 +254,8 @@ export function SignInScreen({
               paddingVertical="$2"
               paddingHorizontal="$3"
             >
-              <Button.Text color="$primary">Sign Up</Button.Text>
-            </Button>
+              <TamaguiButton.Text color="$primary">Sign Up</TamaguiButton.Text>
+            </TamaguiButton>
           </Row>
         </Column>
       </ScrollView>

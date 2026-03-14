@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { Column, Row, ScrollView, Text, Button, Heading, Spinner, useTheme } from "@buttergolf/ui";
+import { Button as TamaguiButton } from "tamagui";
 import { ArrowLeft, ShieldCheck, Smartphone, Mail } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSignIn } from "@clerk/clerk-expo";
@@ -225,7 +226,7 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
         <Column gap="$6" flex={1}>
           {/* Back Button */}
           {onNavigateBack && (
-            <Button
+            <TamaguiButton
               chromeless
               size="$4"
               icon={<ArrowLeft size={20} color="$primary" />}
@@ -361,17 +362,17 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
                 <Text size="$4" color="$textSecondary" textAlign="center">
                   {"Didn't receive the code?"}
                 </Text>
-                <Button
+                <TamaguiButton
                   chromeless
                   size="$4"
                   onPress={sendEmailCode}
                   disabled={isSendingCode}
                   opacity={isSendingCode ? 0.5 : 1}
                 >
-                  <Button.Text color="$primary">
+                  <TamaguiButton.Text color="$primary">
                     {isSendingCode ? "Sending..." : "Resend Code"}
-                  </Button.Text>
-                </Button>
+                  </TamaguiButton.Text>
+                </TamaguiButton>
               </>
             ) : (
               <>

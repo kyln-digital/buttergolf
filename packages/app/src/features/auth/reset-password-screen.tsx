@@ -1,15 +1,8 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import {
-  Column,
-  ScrollView,
-  Text,
-  Button,
-  Heading,
-  Row,
-  Spinner,
-} from "@buttergolf/ui";
+import { Column, ScrollView, Text, Button, Heading, Row, Spinner } from "@buttergolf/ui";
+import { Button as TamaguiButton } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSignIn } from "@clerk/clerk-expo";
 import { AuthFormInput, AuthErrorDisplay } from "./components";
@@ -109,7 +102,6 @@ export function ResetPasswordScreen({
 
     try {
       // Attempt password reset with code and new password
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await (signIn as any).resetPassword({
         code,
         password: newPassword,
@@ -144,7 +136,7 @@ export function ResetPasswordScreen({
       case "fair":
         return "$warning";
       case "good":
-        return "$secondary";
+        return "$info";
       case "strong":
         return "$success";
     }
@@ -278,7 +270,7 @@ export function ResetPasswordScreen({
           </Button>
 
           {/* Back Button */}
-          <Button
+          <TamaguiButton
             chromeless
             size="$4"
             onPress={onNavigateBack}
@@ -287,8 +279,8 @@ export function ResetPasswordScreen({
             paddingVertical={0}
             paddingHorizontal="$2"
           >
-            <Button.Text color="$primary">Back</Button.Text>
-          </Button>
+            <TamaguiButton.Text color="$primary">Back</TamaguiButton.Text>
+          </TamaguiButton>
         </Column>
       </ScrollView>
     </Column>

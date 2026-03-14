@@ -1,14 +1,8 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import {
-  Column,
-  ScrollView,
-  Text,
-  Button,
-  Heading,
-  Spinner,
-} from "@buttergolf/ui";
+import { Column, ScrollView, Text, Button, Heading, Spinner } from "@buttergolf/ui";
+import { Button as TamaguiButton } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSignIn } from "@clerk/clerk-expo";
 import { AuthFormInput, AuthErrorDisplay } from "./components";
@@ -125,7 +119,7 @@ export function ForgotPasswordScreen({
             />
 
             <Text size="$3" color="$textMuted">
-              {"We'll send a code to your email to reset your password"}
+              We'll send a code to your email to reset your password
             </Text>
           </Column>
 
@@ -142,7 +136,7 @@ export function ForgotPasswordScreen({
           </Button>
 
           {/* Back Button */}
-          <Button
+          <TamaguiButton
             chromeless
             size="$4"
             onPress={onNavigateBack}
@@ -151,8 +145,8 @@ export function ForgotPasswordScreen({
             paddingVertical={0}
             paddingHorizontal="$2"
           >
-            <Button.Text color="$primary">Back to Sign In</Button.Text>
-          </Button>
+            <TamaguiButton.Text color="$primary">Back to Sign In</TamaguiButton.Text>
+          </TamaguiButton>
         </Column>
       </ScrollView>
     </Column>

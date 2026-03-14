@@ -72,6 +72,7 @@ export function SearchInputField({
         onBlur={handleBlur}
         placeholder={placeholder}
         placeholderTextColor="$textSecondary"
+        size="$5"
         color="$text"
         borderWidth={0}
         backgroundColor="transparent"
