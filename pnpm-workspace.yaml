@@ -4,7 +4,7 @@ packages:
 
 catalog:
   "@clerk/clerk-expo": 2.19.26
-  "@clerk/nextjs": 6.38.1
+  "@clerk/nextjs": 6.39.2
   "@easypost/api": 8.2.0
   "@next/bundle-analyzer": 16.1.6
   "@prisma/client": 6.19.2
