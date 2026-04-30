@@ -3,7 +3,7 @@ packages:
   - packages/*
 
 catalog:
-  "@clerk/clerk-expo": 2.19.26
+  "@clerk/clerk-expo": 2.19.31
   "@clerk/nextjs": 6.38.1
   "@easypost/api": 8.2.0
   "@next/bundle-analyzer": 16.1.6
