@@ -63,7 +63,7 @@
   "devDependencies": {
     "@buttergolf/eslint-config": "workspace:*",
     "@next/bundle-analyzer": "catalog:",
-    "@prisma/nextjs-monorepo-workaround-plugin": "7.4.1",
+    "@prisma/nextjs-monorepo-workaround-plugin": "7.8.0",
     "@tailwindcss/postcss": "^4",
     "@tamagui/next-plugin": "catalog:",
     "@types/canvas-confetti": "catalog:",
