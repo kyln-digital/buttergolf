@@ -5,65 +5,65 @@ packages:
 catalog:
   "@clerk/clerk-expo": 2.19.26
   "@clerk/nextjs": 6.38.1
-  "@easypost/api": 8.2.0
+  "@easypost/api": 8.8.0
   "@next/bundle-analyzer": 16.1.6
   "@prisma/client": 6.19.2
-  "@react-navigation/native": 7.1.19
-  "@react-navigation/native-stack": 7.6.2
+  "@react-navigation/native": 7.2.2
+  "@react-navigation/native-stack": 7.14.12
   "@sentry/nextjs": 10.39.0
   "@stripe/connect-js": 3.3.34
   "@stripe/react-connect-js": 3.3.33
   "@stripe/react-stripe-js": 5.6.0
   "@stripe/stripe-js": 8.8.0
   "@stripe/stripe-react-native": 0.58.0
-  "@tamagui/animations-css": 1.144.3
-  "@tamagui/animations-react-native": 1.144.3
-  "@tamagui/babel-plugin": 1.144.3
-  "@tamagui/card": 1.144.3
-  "@tamagui/cli": 1.144.3
-  "@tamagui/config": 1.144.3
-  "@tamagui/core": 1.144.3
-  "@tamagui/font-inter": 1.144.3
-  "@tamagui/lucide-icons": 1.144.3
-  "@tamagui/next-plugin": 1.144.3
-  "@tamagui/next-theme": 1.144.3
-  "@tamagui/polyfill-dev": 1.144.3
-  "@tamagui/popover": 1.144.3
-  "@tamagui/portal": 1.144.3
-  "@tamagui/sheet": 1.144.3
-  "@tamagui/shorthands": 1.144.3
-  "@tamagui/slider": 1.144.3
-  "@tamagui/switch": 1.144.3
-  "@tamagui/themes": 1.144.3
-  "@tamagui/toast": 1.144.3
+  "@tamagui/animations-css": 1.144.4
+  "@tamagui/animations-react-native": 1.144.4
+  "@tamagui/babel-plugin": 1.144.4
+  "@tamagui/card": 1.144.4
+  "@tamagui/cli": 1.144.4
+  "@tamagui/config": 1.144.4
+  "@tamagui/core": 1.144.4
+  "@tamagui/font-inter": 1.144.4
+  "@tamagui/lucide-icons": 1.144.4
+  "@tamagui/next-plugin": 1.144.4
+  "@tamagui/next-theme": 1.144.4
+  "@tamagui/polyfill-dev": 1.144.4
+  "@tamagui/popover": 1.144.4
+  "@tamagui/portal": 1.144.4
+  "@tamagui/sheet": 1.144.4
+  "@tamagui/shorthands": 1.144.4
+  "@tamagui/slider": 1.144.4
+  "@tamagui/switch": 1.144.4
+  "@tamagui/themes": 1.144.4
+  "@tamagui/toast": 1.144.4
   "@types/canvas-confetti": 1.9.0
-  "@types/node": 22.15.30
+  "@types/node": 22.19.17
   "@types/react": 19.2.14
   "@types/react-dom": 19.2.3
-  "@vercel/analytics": 1.5.0
-  "@vercel/speed-insights": 1.3.0
+  "@vercel/analytics": 1.6.1
+  "@vercel/speed-insights": 1.3.1
   canvas-confetti: 1.9.4
-  cloudinary: 2.5.1
+  cloudinary: 2.10.0
   date-fns: 4.1.0
   embla-carousel: 8.6.0
   embla-carousel-autoplay: 8.6.0
   embla-carousel-react: 8.6.0
-  eslint: 9.28.0
+  eslint: 9.39.4
   eslint-config-expo: 10.0.0
   eslint-config-next: 16.1.6
-  expo: 54.0.33
-  expo-auth-session: 7.0.10
+  expo: 54.0.34
+  expo-auth-session: 7.0.11
   expo-font: 14.0.11
-  expo-image-picker: 17.0.10
-  expo-notifications: 0.32.16
+  expo-image-picker: 17.0.11
+  expo-notifications: 0.32.17
   expo-secure-store: 15.0.8
   expo-splash-screen: 31.0.13
   expo-status-bar: 3.0.9
-  expo-updates: 29.0.16
-  expo-web-browser: 15.0.10
-  framer-motion: 12.23.27
-  jose: 6.1.3
-  lucide-react: 0.562.0
+  expo-updates: 29.0.17
+  expo-web-browser: 15.0.11
+  framer-motion: 12.38.0
+  jose: 6.2.3
+  lucide-react: 0.577.0
   next: 16.1.6
   next-cloudinary: 6.17.5
   next-seo: 7.2.0
@@ -73,19 +73,19 @@ catalog:
   react: 19.2.4
   react-dom: 19.2.4
   react-image-crop: 11.0.10
-  react-native: 0.81.5
-  react-native-reanimated: 4.1.1
-  react-native-safe-area-context: 5.6.2
-  react-native-screens: 4.16.0
-  react-native-svg: 15.12.1
+  react-native: 0.85.2
+  react-native-reanimated: 4.3.0
+  react-native-safe-area-context: 5.7.0
+  react-native-screens: 4.24.0
+  react-native-svg: 15.15.4
   react-native-web: 0.21.2
-  react-native-webview: 13.15.0
-  react-native-worklets: 0.5.1
-  resend: 6.6.0
+  react-native-webview: 13.16.1
+  react-native-worklets: 0.8.1
+  resend: 6.12.2
   solito: 5.0.0
   stripe: 19.3.1
   svix: 1.85.0
-  tamagui: 1.144.3
-  tsx: 4.20.6
+  tamagui: 1.144.4
+  tsx: 4.21.0
   typescript: 5.9.3
-  uuid: 13.0.0
+  uuid: 13.0.1
