@@ -19,6 +19,10 @@ node_modules
 # Testing
 coverage
 test_info/
+scripts/k6/results/*
+!scripts/k6/results/.gitkeep
+scripts/k6/.env.local
+scripts/k6/.env.*.local
 
 # Turbo
 .turbo
