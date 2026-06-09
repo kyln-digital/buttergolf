@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@buttergolf/db";
 import ProductDetailClient, { type Product } from "./ProductDetailClient";
 import { PageHero } from "@/app/_components/marketplace/PageHero";
@@ -35,6 +36,20 @@ async function getProduct(id: string): Promise<Product | null> {
 
     if (!product) {
       return null;
+    }
+
+    // Drafts are only visible to their owner (linked from the seller hub);
+    // everyone else gets a 404.
+    if (product.isDraft) {
+      const { userId: clerkId } = await auth();
+      if (!clerkId) return null;
+      const owner = await prisma.user.findUnique({
+        where: { clerkId },
+        select: { id: true },
+      });
+      if (!owner || owner.id !== product.userId) {
+        return null;
+      }
     }
 
     // Increment view count (fire and forget)
@@ -81,6 +96,7 @@ async function getSimilarProducts(id: string): Promise<ProductCardData[]> {
       where: {
         id: { not: id },
         isSold: false,
+        isDraft: false,
         categoryId: product.categoryId,
         price: {
           gte: priceMin,

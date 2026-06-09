@@ -6,9 +6,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     // Next.js 16: params is now a Promise
     const { id } = await params;
 
-    const product = await prisma.product.findUnique({
+    // Public endpoint - unpublished drafts must not be retrievable by ID
+    const product = await prisma.product.findFirst({
       where: {
         id,
+        isDraft: false,
       },
       include: {
         images: {

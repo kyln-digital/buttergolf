@@ -96,13 +96,13 @@ export async function POST(req: Request) {
 
       case "charge.dispute.created": {
         const dispute = event.data.object as Stripe.Dispute;
-        handleDisputeCreated(dispute);
+        await handleDisputeCreated(dispute);
         break;
       }
 
       case "charge.dispute.closed": {
         const dispute = event.data.object as Stripe.Dispute;
-        handleDisputeClosed(dispute);
+        await handleDisputeClosed(dispute);
         break;
       }
 
@@ -806,18 +806,49 @@ async function handleRefund(charge: Stripe.Charge) {
       where: { id: order.id },
       data: { status: "REFUNDED" },
     });
+
+    // Take the order out of the escrow release path so neither confirm-receipt
+    // nor the auto-release cron can transfer funds to the seller after the
+    // buyer has been refunded. Only un-released holds can transition.
+    const holdUpdate = await prisma.order.updateMany({
+      where: {
+        id: order.id,
+        paymentHoldStatus: { in: ["HELD", "PENDING_SELLER_ONBOARDING", "DISPUTED"] },
+      },
+      data: { paymentHoldStatus: "REFUNDED" },
+    });
+
+    if (holdUpdate.count === 0 && order.stripeTransferId) {
+      // Refund landed after the seller was already paid out - the transfer
+      // must be reversed manually (or via stripe.transfers.createReversal).
+      console.error("REFUND AFTER PAYOUT - manual transfer reversal required:", {
+        orderId: order.id,
+        transferId: order.stripeTransferId,
+        chargeId: charge.id,
+      });
+    }
   } else {
     // Partial refund - log but don't change status (could add PARTIALLY_REFUNDED to enum later)
     console.info("Partial refund processed for order:", order.id);
   }
 
-  // If fully refunded, restore product availability
+  // If fully refunded, restore product availability - but only if the item
+  // never shipped. After dispatch the physical item is gone and must not
+  // become purchasable again.
   if (charge.refunded) {
-    await prisma.product.update({
-      where: { id: order.productId },
-      data: { isSold: false },
-    });
-    console.info("Product restored to available:", order.productId);
+    const relistableStatuses = ["PENDING", "CANCELLED", "RETURNED"];
+    if (relistableStatuses.includes(order.shipmentStatus)) {
+      await prisma.product.update({
+        where: { id: order.productId },
+        data: { isSold: false },
+      });
+      console.info("Product restored to available:", order.productId);
+    } else {
+      console.info("Product not relisted after refund (already shipped):", {
+        productId: order.productId,
+        shipmentStatus: order.shipmentStatus,
+      });
+    }
   }
 
   // TODO: Send refund confirmation email to buyer
@@ -825,10 +856,35 @@ async function handleRefund(charge: Stripe.Charge) {
 }
 
 /**
- * Handle charge.dispute.created
- * Alert on chargebacks - critical for marketplace operations
+ * Find the order an open dispute relates to, via its payment intent.
  */
-function handleDisputeCreated(dispute: Stripe.Dispute) {
+async function findOrderForDispute(dispute: Stripe.Dispute) {
+  const paymentIntentId =
+    typeof dispute.payment_intent === "string"
+      ? dispute.payment_intent
+      : dispute.payment_intent?.id;
+
+  if (!paymentIntentId) {
+    console.warn("No payment intent ID on dispute:", dispute.id);
+    return null;
+  }
+
+  const order = await prisma.order.findFirst({
+    where: { stripePaymentId: paymentIntentId },
+  });
+
+  if (!order) {
+    console.warn("Order not found for dispute:", { disputeId: dispute.id, paymentIntentId });
+  }
+  return order;
+}
+
+/**
+ * Handle charge.dispute.created
+ * Freeze the escrow so held funds are not released to the seller while the
+ * chargeback is being investigated.
+ */
+async function handleDisputeCreated(dispute: Stripe.Dispute) {
   console.error("DISPUTE CREATED:", {
     disputeId: dispute.id,
     chargeId: dispute.charge,
@@ -838,16 +894,37 @@ function handleDisputeCreated(dispute: Stripe.Dispute) {
     status: dispute.status,
   });
 
+  const order = await findOrderForDispute(dispute);
+  if (!order) return;
+
+  const holdUpdate = await prisma.order.updateMany({
+    where: {
+      id: order.id,
+      paymentHoldStatus: { in: ["HELD", "PENDING_SELLER_ONBOARDING"] },
+    },
+    data: { paymentHoldStatus: "DISPUTED" },
+  });
+
+  if (holdUpdate.count > 0) {
+    console.info("Escrow frozen for disputed order:", order.id);
+  } else if (order.stripeTransferId) {
+    console.error("DISPUTE AFTER PAYOUT - seller already paid, manual review required:", {
+      orderId: order.id,
+      transferId: order.stripeTransferId,
+      disputeId: dispute.id,
+    });
+  }
+
   // TODO: Notify platform admin
-  // TODO: Hold seller payout if not already done
   // TODO: Send dispute notification to seller
 }
 
 /**
  * Handle charge.dispute.closed
- * Track dispute resolution outcome
+ * Won: unfreeze the escrow so the normal release flow can resume.
+ * Lost: funds went back to the buyer via the chargeback - mark refunded.
  */
-function handleDisputeClosed(dispute: Stripe.Dispute) {
+async function handleDisputeClosed(dispute: Stripe.Dispute) {
   console.info("Dispute closed:", {
     disputeId: dispute.id,
     chargeId: dispute.charge,
@@ -855,7 +932,22 @@ function handleDisputeClosed(dispute: Stripe.Dispute) {
     amount: dispute.amount / 100,
   });
 
-  // TODO: If lost, update order status
-  // TODO: If won, release any held seller payouts
+  const order = await findOrderForDispute(dispute);
+  if (!order) return;
+
+  if (dispute.status === "won" || dispute.status === "warning_closed") {
+    await prisma.order.updateMany({
+      where: { id: order.id, paymentHoldStatus: "DISPUTED" },
+      data: { paymentHoldStatus: "HELD" },
+    });
+    console.info("Dispute won - escrow unfrozen for order:", order.id);
+  } else if (dispute.status === "lost") {
+    await prisma.order.updateMany({
+      where: { id: order.id, paymentHoldStatus: "DISPUTED" },
+      data: { paymentHoldStatus: "REFUNDED", status: "REFUNDED" },
+    });
+    console.info("Dispute lost - order marked refunded:", order.id);
+  }
+
   // TODO: Notify seller of outcome
 }

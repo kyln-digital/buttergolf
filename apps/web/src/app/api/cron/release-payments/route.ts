@@ -132,6 +132,39 @@ export async function GET(request: NextRequest) {
           continue;
         }
 
+        // Verify the charge is still intact - a refunded or disputed charge
+        // must never auto-release to the seller (the buyer already has, or may
+        // get, their money back). The refund/dispute webhooks normally take
+        // the order out of HELD, but this guards against missed events.
+        if (order.stripeChargeId) {
+          const charge = await stripe.charges.retrieve(order.stripeChargeId);
+
+          if (charge.refunded || (charge.amount_refunded || 0) > 0 || charge.disputed) {
+            console.error("Skipping auto-release - charge refunded or disputed:", {
+              orderId: order.id,
+              chargeId: order.stripeChargeId,
+              refunded: charge.refunded,
+              amountRefunded: charge.amount_refunded,
+              disputed: charge.disputed,
+            });
+
+            // Sync the hold status so the order stops matching this query
+            if (charge.refunded || charge.disputed) {
+              await prisma.order.updateMany({
+                where: { id: order.id, paymentHoldStatus: "HELD" },
+                data: { paymentHoldStatus: charge.refunded ? "REFUNDED" : "DISPUTED" },
+              });
+            }
+
+            results.push({
+              orderId: order.id,
+              status: "failed",
+              error: "Charge refunded or disputed - release blocked",
+            });
+            continue;
+          }
+        }
+
         // STEP 2: All preconditions verified - now use transaction to atomically:
         // 1. Claim the order (optimistic lock)
         // 2. Create the Stripe transfer

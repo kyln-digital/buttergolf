@@ -331,38 +331,20 @@ async function syncAddressFromStripe(userId: string, account: Stripe.Account) {
  */
 async function processPendingTransfersForSeller(userId: string, stripeConnectId: string) {
   try {
-    // Use transaction to prevent race conditions:
-    // Query + update atomically so concurrent webhook events don't double-process
-    const pendingOrders = await prisma.$transaction(async (tx) => {
-      // Find all orders pending seller onboarding for this seller
-      const orders = await tx.order.findMany({
-        where: {
-          sellerId: userId,
-          paymentHoldStatus: "PENDING_SELLER_ONBOARDING",
-        },
-        include: {
-          product: true,
-          seller: true,
-        },
-      });
-
-      // Mark them as being processed to prevent double-processing
-      // This happens atomically within the transaction
-      if (orders.length > 0) {
-        await tx.order.updateMany({
-          where: {
-            id: { in: orders.map((o) => o.id) },
-            paymentHoldStatus: "PENDING_SELLER_ONBOARDING", // Double-check status
-          },
-          data: {
-            // Use a temporary status to indicate processing
-            // We'll update to RELEASED after successful transfer
-            stripePayoutStatus: "processing",
-          },
-        });
-      }
-
-      return orders;
+    // Onboarding completion fires several Stripe events near-simultaneously
+    // (account.updated, capability.updated x2, person.updated), each of which
+    // reaches this function. The per-order atomic claim below (updateMany on
+    // paymentHoldStatus) is what prevents duplicate transfers - this initial
+    // query is just candidate selection.
+    const pendingOrders = await prisma.order.findMany({
+      where: {
+        sellerId: userId,
+        paymentHoldStatus: "PENDING_SELLER_ONBOARDING",
+      },
+      include: {
+        product: true,
+        seller: true,
+      },
     });
 
     if (pendingOrders.length === 0) {
@@ -420,26 +402,58 @@ async function processPendingTransfersForSeller(userId: string, stripeConnectId:
           continue;
         }
 
-        // Create transfer to seller's Stripe Connect account
-        const transfer = await stripe.transfers.create({
-          amount: transferAmountInPence,
-          currency: "gbp",
-          destination: stripeConnectId,
-          transfer_group: order.id,
-          source_transaction: chargeId, // Link to the original charge
-          metadata: {
-            orderId: order.id,
-            productId: order.productId,
-            sellerId: order.sellerId,
-            reason: "seller_completed_onboarding",
+        // Atomically claim the order before transferring. Concurrent webhook
+        // deliveries all reach this point; only the one that flips the status
+        // proceeds. Rolled back to PENDING_SELLER_ONBOARDING on failure.
+        const claimed = await prisma.order.updateMany({
+          where: {
+            id: order.id,
+            paymentHoldStatus: "PENDING_SELLER_ONBOARDING",
+            stripeTransferId: null,
           },
+          data: { paymentHoldStatus: "RELEASED", stripePayoutStatus: "processing" },
         });
 
-        // Update order status
+        if (claimed.count === 0) {
+          console.info(`Order ${order.id} already claimed by a concurrent event, skipping`);
+          continue;
+        }
+
+        // Create transfer to seller's Stripe Connect account
+        let transfer;
+        try {
+          transfer = await stripe.transfers.create(
+            {
+              amount: transferAmountInPence,
+              currency: "gbp",
+              destination: stripeConnectId,
+              transfer_group: order.id,
+              source_transaction: chargeId, // Link to the original charge
+              metadata: {
+                orderId: order.id,
+                productId: order.productId,
+                sellerId: order.sellerId,
+                reason: "seller_completed_onboarding",
+              },
+            },
+            {
+              // Prevent duplicate payouts on retries / concurrent deliveries
+              idempotencyKey: `onboarding-release:${order.id}`,
+            }
+          );
+        } catch (stripeError) {
+          // Release the claim so a later account event can retry the transfer
+          await prisma.order.update({
+            where: { id: order.id },
+            data: { paymentHoldStatus: "PENDING_SELLER_ONBOARDING", stripePayoutStatus: null },
+          });
+          throw stripeError;
+        }
+
+        // Update order with transfer details
         await prisma.order.update({
           where: { id: order.id },
           data: {
-            paymentHoldStatus: "RELEASED",
             paymentReleasedAt: new Date(),
             stripeTransferId: transfer.id,
             stripePayoutStatus: "completed",
@@ -452,14 +466,11 @@ async function processPendingTransfersForSeller(userId: string, stripeConnectId:
 
         // TODO: Send payment released email to seller
       } catch (transferError) {
+        // Stripe failures already rolled the claim back above. Anything that
+        // fails after a successful transfer (e.g. the final DB update) must
+        // NOT roll back the claim - the money has moved. Surface it loudly
+        // for reconciliation instead.
         console.error(`Failed to process transfer for order ${order.id}:`, transferError);
-        // Reset the order status so it can be retried
-        await prisma.order.update({
-          where: { id: order.id },
-          data: {
-            stripePayoutStatus: null,
-          },
-        });
         // Continue with other orders - don't let one failure stop the rest
       }
     }
