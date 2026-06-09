@@ -1,13 +1,17 @@
 import { SignJWT, jwtVerify, JWTPayload } from "jose";
 
-// Short-lived token secret - should be set in environment
-// Falls back to a hash of the Stripe secret key for development
-const MOBILE_SESSION_SECRET =
-  process.env.MOBILE_SESSION_SECRET ||
-  process.env.STRIPE_SECRET_KEY?.slice(0, 32) ||
-  "dev-secret-key-minimum-32-chars!";
-
-const secret = new TextEncoder().encode(MOBILE_SESSION_SECRET);
+// Short-lived token signing secret. This authenticates mobile users, so it
+// must never fall back to a guessable value — a forged token grants full
+// account impersonation across every Bearer-authenticated API route.
+function getSecret(): Uint8Array {
+  const value = process.env.MOBILE_SESSION_SECRET;
+  if (!value || value.length < 32) {
+    throw new Error(
+      "MOBILE_SESSION_SECRET must be set to a random string of at least 32 characters"
+    );
+  }
+  return new TextEncoder().encode(value);
+}
 
 /**
  * User data that can be embedded in the mobile session token
@@ -41,7 +45,7 @@ export async function createMobileSessionToken(
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("15m") // 15 minute expiry
-    .sign(secret);
+    .sign(getSecret());
 }
 
 /**
@@ -50,7 +54,7 @@ export async function createMobileSessionToken(
  */
 export async function verifyMobileSessionToken(token: string): Promise<{ userId: string } | null> {
   try {
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, getSecret());
     if (payload.type !== "mobile_onboarding_session" || !payload.sub) {
       return null;
     }
@@ -68,7 +72,7 @@ export async function getMobileSessionUserData(
   token: string
 ): Promise<MobileSessionUserData | null> {
   try {
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, getSecret());
     if (payload.type !== "mobile_onboarding_session" || !payload.sub) {
       return null;
     }

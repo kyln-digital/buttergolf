@@ -35,6 +35,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       where: {
         id: { not: id },
         isSold: false,
+        isDraft: false,
         categoryId: product.categoryId,
         price: {
           gte: priceMin,

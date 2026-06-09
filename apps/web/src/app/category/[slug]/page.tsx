@@ -38,6 +38,7 @@ async function getCategoryListings(
   // Build where clause - start with category filter
   const where: Prisma.ProductWhereInput = {
     isSold: false,
+    isDraft: false,
     category: { slug: categorySlug },
     // Keep count/query/render parity by excluding orphaned seller relations at query time.
     user: { is: {} },
@@ -138,6 +139,7 @@ async function getCategoryListings(
         products: {
           some: {
             isSold: false,
+            isDraft: false,
             category: { slug: categorySlug },
           },
         },
@@ -148,6 +150,7 @@ async function getCategoryListings(
     prisma.product.aggregate({
       where: {
         isSold: false,
+        isDraft: false,
         category: { slug: categorySlug },
       },
       _min: { price: true },

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
+import { getUserIdFromRequest } from "@/lib/auth";
 import { stripe } from "@/lib/stripe";
 
 /**
@@ -8,6 +9,22 @@ import { stripe } from "@/lib/stripe";
  */
 export async function GET(req: Request, { params }: { params: Promise<{ sessionId: string }> }) {
   try {
+    // The response includes the buyer's shipping address, so this must be
+    // restricted to the order's own buyer or seller — session IDs leak via
+    // URLs, browser history and analytics.
+    const clerkUserId = await getUserIdFromRequest(req);
+    if (!clerkUserId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const requester = await prisma.user.findUnique({
+      where: { clerkId: clerkUserId },
+      select: { id: true },
+    });
+    if (!requester) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
     const { sessionId } = await params;
 
     if (!sessionId) {
@@ -16,7 +33,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ sessionI
 
     // First, try to find order by checkout session ID
     const order = await prisma.order.findFirst({
-      where: { stripeCheckoutId: sessionId },
+      where: {
+        stripeCheckoutId: sessionId,
+        OR: [{ buyerId: requester.id }, { sellerId: requester.id }],
+      },
       include: {
         product: {
           include: {

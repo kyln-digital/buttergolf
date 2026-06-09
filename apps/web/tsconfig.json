@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": false,
@@ -23,26 +19,19 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@buttergolf/ui": [
-        "../../packages/ui/src"
-      ],
-      "@buttergolf/*": [
-        "../../packages/*/src"
-      ]
+      "@/*": ["./src/*"],
+      "@buttergolf/ui": ["../../packages/ui/src"],
+      "@buttergolf/*": ["../../packages/*/src"]
     }
   },
   "include": [
     "next-env.d.ts",
+    "../../packages/assets/types/svg.d.ts",
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }

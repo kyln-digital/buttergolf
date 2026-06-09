@@ -27,6 +27,7 @@ async function getListings(searchParams: SearchParams) {
   // Build where clause
   const where: Prisma.ProductWhereInput = {
     isSold: false,
+    isDraft: false,
     // Keep count/query/render parity by excluding orphaned seller relations at query time.
     user: { is: {} },
   };
@@ -127,6 +128,7 @@ async function getListings(searchParams: SearchParams) {
         products: {
           some: {
             isSold: false,
+            isDraft: false,
           },
         },
       },
@@ -134,7 +136,7 @@ async function getListings(searchParams: SearchParams) {
       orderBy: { sortOrder: "asc" },
     }),
     prisma.product.aggregate({
-      where: { isSold: false },
+      where: { isSold: false, isDraft: false },
       _min: { price: true },
       _max: { price: true },
     }),

@@ -4,18 +4,12 @@ import { NextResponse } from "next/server";
 // TODO: Remove this entire coming-soon block after launch - set NEXT_PUBLIC_COMING_SOON_ENABLED=false
 // and delete ADMIN_USER_IDS, isComingSoonAllowedRoute, and the coming-soon redirect logic below.
 
-// Admin user IDs - bypasses coming-soon redirect
-const ADMIN_USER_IDS = [
-  "user_37DMusbbHBI1lrqN3spqQGThcyu",
-  "user_37pn5LOWh6yBO0JdP61nc1dU1sV",
-  "user_37Dahks6xMgGLMf3NSBBDCbLy7A",
-  "user_37r3AM2mmrluT7tGdilrqzojvPj",
-  "user_37r3CuqmrYiCK8RrfKsp32jpTRD",
-  "user_37r3HD53QdkciIGzZ6JyEM6MLci",
-  "user_37r3JnUd2cuKXNimgzIp3LAJfnh",
-  "user_37r3MdfJ7DSPwUSNjxZhl2XRoD0",
-  "user_38ZEyOQHac106JmegFO17Jo8eDx",
-];
+// Admin user IDs that bypass the coming-soon redirect.
+// Comma-separated Clerk user IDs, e.g. ADMIN_USER_IDS="user_abc,user_def"
+const ADMIN_USER_IDS = (process.env.ADMIN_USER_IDS ?? "")
+  .split(",")
+  .map((id) => id.trim())
+  .filter(Boolean);
 
 // Define protected routes that require authentication
 // Note: /api/upload handles its own auth to support mobile Bearer tokens
