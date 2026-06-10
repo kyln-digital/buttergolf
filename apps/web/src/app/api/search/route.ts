@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
     const whereClause: Prisma.ProductWhereInput = {
       isSold: false,
       isDraft: false,
+      user: { is: { isDeleted: false } },
       OR: [
         { title: { contains: searchTerm, mode: "insensitive" } },
         { description: { contains: searchTerm, mode: "insensitive" } },

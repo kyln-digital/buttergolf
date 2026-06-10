@@ -116,3 +116,41 @@ export function rateLimitResponse(resetAt: Date): NextResponse {
     }
   );
 }
+
+/**
+ * Best-effort client IP from proxy headers (Vercel sets x-forwarded-for).
+ */
+export function getClientIp(request: Request): string {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  if (forwardedFor) {
+    const firstIp = forwardedFor.split(",")[0]?.trim();
+    if (firstIp) return firstIp;
+  }
+  const realIp = request.headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp;
+  return "unknown";
+}
+
+/**
+ * Convenience wrapper: rate-limit by client IP for a named bucket. Returns a
+ * 429 response when the limit is exceeded, otherwise null. Pass the returned
+ * `headers` onto your success response if you want to expose the limit.
+ */
+export async function enforceIpRateLimit(
+  request: Request,
+  bucket: string,
+  options: { maxRequests: number; windowMs: number }
+): Promise<NextResponse | null> {
+  const clientIp = getClientIp(request);
+  const { isLimited, resetAt, headers } = await checkRateLimit(clientIp, {
+    maxRequests: options.maxRequests,
+    windowMs: options.windowMs,
+    keyFn: (ip) => `${bucket}:${ip}`,
+  });
+  if (isLimited) {
+    const response = rateLimitResponse(resetAt);
+    Object.entries(headers).forEach(([key, value]) => response.headers.set(key, value));
+    return response;
+  }
+  return null;
+}

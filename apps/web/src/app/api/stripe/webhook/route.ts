@@ -11,6 +11,7 @@ import {
 } from "@/lib/email";
 import { generateShippingLabel } from "@/lib/shipengine";
 import { createOrderFromPaymentIntent } from "@/lib/create-order-from-payment-intent";
+import { PROMOTION_PRICES } from "@/lib/pricing";
 
 // Disable body parsing for webhook
 export const runtime = "nodejs";
@@ -168,6 +169,33 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     });
   }
 
+  // Double-sell guard: a checkout session stays payable for ~24h, so two buyers
+  // can complete payment for one item. If another payment already produced an
+  // order for this product, this buyer must be refunded rather than sold a
+  // second copy. Keying on a *different* payment intent keeps our own webhook
+  // retries (which haven't created the order yet) from self-refunding.
+  const conflictingOrder = await prisma.order.findFirst({
+    where: { productId, stripePaymentId: { not: paymentIntentId } },
+  });
+
+  if (conflictingOrder) {
+    console.error("Product already sold via another order - refunding duplicate purchase:", {
+      productId,
+      conflictingOrderId: conflictingOrder.id,
+      paymentIntentId,
+    });
+    try {
+      await stripe.refunds.create(
+        { payment_intent: paymentIntentId },
+        { idempotencyKey: `double-sell-refund:${paymentIntentId}` }
+      );
+    } catch (refundError) {
+      console.error("Failed to auto-refund duplicate purchase:", refundError);
+    }
+    // Ack so Stripe stops retrying - the refund is the resolution.
+    return NextResponse.json({ received: true, refunded: true, reason: "product_already_sold" });
+  }
+
   // Get product details
   const product = await prisma.product.findUnique({
     where: { id: productId },
@@ -309,36 +337,41 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // Note: paymentHoldStatus is explicitly set to HELD even though the schema has this as default.
   // This is intentional for code clarity - makes the escrow intent obvious without needing
   // to check the schema. The default serves as a safety net for any edge cases.
-  const order = await prisma.order.create({
-    data: {
-      stripePaymentId: paymentIntentId,
-      stripeCheckoutId: session.id,
-      stripeChargeId,
-      amountTotal,
-      shippingCost,
-      // Vinted-style: buyer protection fee as platform revenue
-      buyerProtectionFee,
-      stripePlatformFee: buyerProtectionFee, // For backwards compatibility
-      stripeSellerPayout: sellerPayout,
-      stripePayoutStatus: "pending",
-      // Payment hold (escrow) - explicitly set for clarity (schema default is also HELD)
-      paymentHoldStatus: "HELD",
-      paymentHeldAt: new Date(),
-      autoReleaseAt,
-      sellerId,
-      buyerId,
-      productId,
-      fromAddressId: fromAddress.id,
-      toAddressId: toAddress.id,
-      shipmentStatus: "PENDING",
-      status: "PAYMENT_CONFIRMED",
-    },
-  });
+  // Create the order and mark the product sold atomically so a crash between
+  // the two can't leave a paid-for product still on sale.
+  const order = await prisma.$transaction(async (tx) => {
+    const created = await tx.order.create({
+      data: {
+        stripePaymentId: paymentIntentId,
+        stripeCheckoutId: session.id,
+        stripeChargeId,
+        amountTotal,
+        shippingCost,
+        // Vinted-style: buyer protection fee as platform revenue
+        buyerProtectionFee,
+        stripePlatformFee: buyerProtectionFee, // For backwards compatibility
+        stripeSellerPayout: sellerPayout,
+        stripePayoutStatus: "pending",
+        // Payment hold (escrow) - explicitly set for clarity (schema default is also HELD)
+        paymentHoldStatus: "HELD",
+        paymentHeldAt: new Date(),
+        autoReleaseAt,
+        sellerId,
+        buyerId,
+        productId,
+        fromAddressId: fromAddress.id,
+        toAddressId: toAddress.id,
+        shipmentStatus: "PENDING",
+        status: "PAYMENT_CONFIRMED",
+      },
+    });
 
-  // Mark product as sold
-  await prisma.product.update({
-    where: { id: productId },
-    data: { isSold: true },
+    await tx.product.update({
+      where: { id: productId },
+      data: { isSold: true },
+    });
+
+    return created;
   });
 
   console.info("Order created successfully:", order.id);
@@ -629,6 +662,19 @@ async function handlePromotionPayment(paymentIntent: Stripe.PaymentIntent) {
     return;
   }
 
+  // Defence in depth: confirm the amount paid matches the catalogue price for
+  // this promotion type before activating.
+  const expectedPrice = PROMOTION_PRICES[promotionType as keyof typeof PROMOTION_PRICES];
+  if (expectedPrice === undefined || paymentIntent.amount !== expectedPrice) {
+    console.error("Promotion amount mismatch - not activating:", {
+      paymentIntentId: paymentIntent.id,
+      promotionType,
+      paidAmount: paymentIntent.amount,
+      expectedPrice,
+    });
+    return;
+  }
+
   // Find the pending promotion with retry logic
   // The webhook may fire before the POST handler creates the promotion record
   const maxAttempts = 5;
@@ -739,13 +785,28 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     sellerId: paymentIntent.metadata.sellerId,
   });
 
-  const order = await createOrderFromPaymentIntent(paymentIntent);
+  const result = await createOrderFromPaymentIntent(paymentIntent);
 
-  if (order) {
-    console.info("Order created successfully from webhook:", order.id);
-  } else {
-    console.error("Failed to create order from webhook for PaymentIntent:", paymentIntent.id);
+  if (result.status === "ok") {
+    console.info("Order created successfully from webhook:", result.order.id);
+    return;
   }
+
+  if (result.status === "refunded_duplicate") {
+    console.info("Duplicate purchase auto-refunded (product already sold):", paymentIntent.id);
+    return;
+  }
+
+  // status === "pending": the buyer has been charged but no order exists.
+  // Throw so the webhook responds non-2xx and Stripe retries delivery, rather
+  // than acking the event and silently losing the paid order.
+  console.error("Failed to create order from webhook for PaymentIntent:", {
+    paymentIntentId: paymentIntent.id,
+    reason: result.reason,
+  });
+  throw new Error(
+    `Order creation pending (${result.reason}) for PaymentIntent ${paymentIntent.id}`
+  );
 }
 
 /**

@@ -112,11 +112,14 @@ export async function POST(req: Request) {
       console.info(`[Clerk Webhook] Found user:`, user);
 
       if (user) {
-        // Delete all active product listings for this user
+        // Remove listings that have no orders. Products tied to orders cannot
+        // be hard-deleted (orders are financial records and the FK is Restrict),
+        // and deleting them here would throw and abort the whole deletion. Those
+        // are instead hidden from public views via the seller `isDeleted` filter.
         const deletedProducts = await prisma.product.deleteMany({
-          where: { userId: user.id },
+          where: { userId: user.id, orders: { none: {} } },
         });
-        console.info(`[Clerk Webhook] Deleted ${deletedProducts.count} products`);
+        console.info(`[Clerk Webhook] Deleted ${deletedProducts.count} order-less products`);
 
         // Delete Stripe Connect account if exists
         if (user.stripeConnectId) {

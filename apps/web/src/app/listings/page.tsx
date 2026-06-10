@@ -29,7 +29,7 @@ async function getListings(searchParams: SearchParams) {
     isSold: false,
     isDraft: false,
     // Keep count/query/render parity by excluding orphaned seller relations at query time.
-    user: { is: {} },
+    user: { is: { isDeleted: false } },
   };
 
   if (searchParams.category) {

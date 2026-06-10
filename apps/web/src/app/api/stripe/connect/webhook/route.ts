@@ -437,8 +437,10 @@ async function processPendingTransfersForSeller(userId: string, stripeConnectId:
               },
             },
             {
-              // Prevent duplicate payouts on retries / concurrent deliveries
-              idempotencyKey: `onboarding-release:${order.id}`,
+              // Single key per order across every release path (confirm-receipt,
+              // auto-release cron, this drain) so a double-release can never
+              // mint two transfers for the same order.
+              idempotencyKey: `release:${order.id}`,
             }
           );
         } catch (stripeError) {

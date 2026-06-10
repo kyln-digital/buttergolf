@@ -12,6 +12,7 @@ export async function getRecentProducts(limit: number = 12): Promise<ProductCard
       where: {
         isSold: false, // Only show available products
         isDraft: false, // Exclude unpublished drafts
+        user: { is: { isDeleted: false } }, // Hide products of deleted sellers
       },
       orderBy: { createdAt: "desc" },
       include: {

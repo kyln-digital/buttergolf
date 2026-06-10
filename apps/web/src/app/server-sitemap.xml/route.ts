@@ -15,6 +15,7 @@ export async function GET() {
       where: {
         isSold: false, // Only include available products
         isDraft: false,
+        user: { is: { isDeleted: false } },
       },
       select: {
         id: true,

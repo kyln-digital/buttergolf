@@ -1,6 +1,7 @@
 import { type UploadApiOptions } from "cloudinary";
 import { NextResponse } from "next/server";
 import { getUserIdFromRequest } from "@/lib/auth";
+import { checkRateLimit, rateLimitResponse } from "@/middleware/rate-limit";
 import { cloudinary } from "@/lib/cloudinary";
 import {
   logError,
@@ -84,6 +85,19 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
+    }
+
+    // Each upload bills Cloudinary (storage + background removal), so throttle
+    // per user to limit cost abuse.
+    const { isLimited, resetAt } = await checkRateLimit(userId, {
+      maxRequests: 60,
+      windowMs: 60_000,
+      keyFn: (id) => `upload:${id}`,
+    });
+    if (isLimited) {
+      const response = rateLimitResponse(resetAt);
+      Object.entries(corsHeaders).forEach(([key, value]) => response.headers.set(key, value));
+      return response;
     }
   } catch (authError) {
     // Authentication system failure (not just "unauthorized")

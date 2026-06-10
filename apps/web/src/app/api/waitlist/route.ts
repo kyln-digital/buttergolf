@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
+import { enforceIpRateLimit } from "@/middleware/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
+    // Unauthenticated public write - throttle to prevent spam/DB-fill abuse
+    const limited = await enforceIpRateLimit(request, "waitlist", {
+      maxRequests: 10,
+      windowMs: 60_000,
+    });
+    if (limited) return limited;
+
     const body = await request.json();
     const { email } = body;
 

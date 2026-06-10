@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       isSold: false,
       isDraft: false,
       // Keep count/query/render parity by excluding orphaned seller relations at query time.
-      user: { is: {} },
+      user: { is: { isDeleted: false } },
     };
 
     // Favourites filter (requires authentication)

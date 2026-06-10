@@ -29,12 +29,18 @@ async function getProduct(id: string): Promise<Product | null> {
             firstName: true,
             lastName: true,
             imageUrl: true,
+            isDeleted: true,
           },
         },
       },
     });
 
     if (!product) {
+      return null;
+    }
+
+    // Hide products belonging to deleted sellers
+    if (product.user?.isDeleted) {
       return null;
     }
 

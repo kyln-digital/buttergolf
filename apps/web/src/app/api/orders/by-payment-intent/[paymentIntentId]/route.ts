@@ -67,9 +67,16 @@ export async function GET(
             "[by-payment-intent] Webhook missed, creating order from PaymentIntent:",
             paymentIntentId
           );
-          const createdOrder = await createOrderFromPaymentIntent(paymentIntent);
+          const result = await createOrderFromPaymentIntent(paymentIntent);
 
-          if (createdOrder) {
+          if (result.status === "refunded_duplicate") {
+            return NextResponse.json({
+              status: "refunded",
+              message: "This item was already sold; your payment has been refunded.",
+            });
+          }
+
+          if (result.status === "ok") {
             // Re-fetch with full includes for the response
             order = await prisma.order.findFirst({
               where: { stripePaymentId: paymentIntentId },

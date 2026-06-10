@@ -30,40 +30,30 @@ const isComingSoonAllowedRoute = createRouteMatcher([
   "/mobile-onboarding(.*)", // Allow mobile Stripe onboarding (uses token-based auth, not cookies)
 ]);
 
+// Allowlist of browser origins permitted to make cross-origin API calls.
+// Native mobile requests carry no Origin header and are unaffected by CORS.
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ?? "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 export default clerkMiddleware(
   async (auth, req) => {
-    // DEBUG: Log incoming request headers for API routes to diagnose mobile auth
-    if (req.url.includes("/api/")) {
-      const authHeader = req.headers.get("Authorization");
-      console.info("[Proxy] API request headers:", {
-        url: req.url,
-        method: req.method,
-        hasAuthHeader: !!authHeader,
-        authHeaderPrefix: authHeader?.substring(0, 30),
-        authHeaderLength: authHeader?.length,
-        userAgent: req.headers.get("User-Agent")?.substring(0, 80),
-        origin: req.headers.get("Origin"),
-        host: req.headers.get("Host"),
-      });
-    }
-
     // Handle CORS preflight OPTIONS requests
     if (req.method === "OPTIONS") {
       const origin = req.headers.get("origin");
-      console.info("[Proxy] OPTIONS preflight request:", {
-        origin,
-        url: req.url,
-        requestedHeaders: req.headers.get("Access-Control-Request-Headers"),
-      });
-      return new NextResponse(null, {
-        status: 200,
-        headers: {
-          "Access-Control-Allow-Origin": origin || "*",
-          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-          "Access-Control-Max-Age": "86400",
-        },
-      });
+      const headers: Record<string, string> = {
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Max-Age": "86400",
+        Vary: "Origin",
+      };
+      // Only reflect the origin if it is explicitly allowlisted - never echo
+      // arbitrary origins or fall back to "*" for Authorization-bearing routes.
+      if (origin && ALLOWED_ORIGINS.includes(origin)) {
+        headers["Access-Control-Allow-Origin"] = origin;
+      }
+      return new NextResponse(null, { status: 200, headers });
     }
 
     // Coming soon mode - redirect all traffic to coming soon page (unless admin)
