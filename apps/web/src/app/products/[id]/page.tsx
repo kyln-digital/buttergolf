@@ -1,3 +1,5 @@
+import { cache } from "react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@buttergolf/db";
@@ -7,11 +9,15 @@ import { TrustSection } from "@/app/_components/marketplace/TrustSection";
 import { NewsletterSection } from "@/app/_components/marketplace/NewsletterSection";
 import { FooterSection } from "@/app/_components/marketplace/FooterSection";
 import { SimilarItemsSection } from "./_components/SimilarItemsSection";
+import { SeoJsonLd } from "@/components/seo/SeoJsonLd";
+import { getBaseUrl } from "@/lib/base-url";
 import type { ProductCardData } from "@buttergolf/app";
 
 export const dynamic = "force-dynamic";
 
-async function getProduct(id: string): Promise<Product | null> {
+// Cached per-request so generateMetadata and the page share one DB read
+// (and a single view increment).
+const getProduct = cache(async (id: string): Promise<Product | null> => {
   try {
     const product = await prisma.product.findUnique({
       where: { id },
@@ -76,6 +82,43 @@ async function getProduct(id: string): Promise<Product | null> {
     console.error("Error fetching product:", error);
     return null;
   }
+});
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const product = await getProduct(id);
+
+  if (!product) {
+    return { title: "Product not found | ButterGolf" };
+  }
+
+  const title = `${product.title} | ButterGolf`;
+  const description = (product.description || `Buy ${product.title} on ButterGolf.`).slice(0, 160);
+  const image = product.images?.[0]?.url;
+  const url = `${getBaseUrl()}/products/${product.id}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      url,
+      images: image ? [{ url: image }] : undefined,
+    },
+    twitter: {
+      card: image ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: image ? [image] : undefined,
+    },
+  };
 }
 
 async function getSimilarProducts(id: string): Promise<ProductCardData[]> {
@@ -175,8 +218,26 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   // Fetch similar products
   const similarProducts = await getSimilarProducts(id);
 
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.title,
+    description: product.description,
+    image: product.images?.map((img) => img.url) ?? [],
+    category: product.category?.name,
+    brand: product.brand ? { "@type": "Brand", name: product.brand } : undefined,
+    offers: {
+      "@type": "Offer",
+      price: product.price,
+      priceCurrency: "GBP",
+      availability: product.isSold ? "https://schema.org/SoldOut" : "https://schema.org/InStock",
+      url: `${getBaseUrl()}/products/${product.id}`,
+    },
+  };
+
   return (
     <>
+      <SeoJsonLd data={productJsonLd} />
       <PageHero />
       <ProductDetailClient product={product} />
       <SimilarItemsSection
