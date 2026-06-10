@@ -16,7 +16,13 @@ const prisma: PrismaClient = (() => {
     const prismaStub: any = new Proxy(
       {},
       {
-        get() {
+        get(_target, prop) {
+          // Don't throw on promise/inspection probes (await, console.log, etc.).
+          // Returning undefined for `then`/symbols keeps the error clear and
+          // makes it fire only on an actual model/method access.
+          if (prop === "then" || typeof prop === "symbol") {
+            return undefined;
+          }
           throw new Error(
             "Prisma Client is not available in React Native. Use server API routes instead."
           );
