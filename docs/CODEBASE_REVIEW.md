@@ -334,7 +334,14 @@ Fixes were applied across the codebase on this branch (see commit history). `pnp
 - **WEB-3** — counterparty email no longer returned from orders API/page.
 - **WEB-4** — root `error.tsx` + `not-found.tsx`.
 - **WEB-5** — pagination caps on orders queries.
-- **WEB-11 / WEB-13** — 8 dead components removed; orphaned-asset cleanup now logged.
+- **WEB-7** — shared listing query building blocks extracted to `lib/listings.ts`; `/listings`, `/category/[slug]`, and `/api/listings` now share one implementation.
+- **WEB-11 / WEB-13** — 8 dead components removed; orphaned-asset cleanup logged; `getSimilarProducts` no longer refetches the product; product-page DB errors surface the error boundary instead of a misleading 404.
+
+**Shared correctness & tooling**
+
+- **PAY-L1** — shipping options + buyer-protection fee formula centralised in `@buttergolf/constants/checkout`, consumed by both checkout APIs, the web PaymentElement form, and the mobile checkout sheet — displayed totals can no longer drift from charged totals.
+- **INF-5** — `@buttergolf/db` exports all enums as runtime values symmetrically and no longer re-exports `@buttergolf/constants`; RN Prisma stub no longer throws on `await`/inspection probes.
+- **Tests** — Vitest bootstrapped in `@buttergolf/constants` with coverage of the fee/shipping math; wired into a turbo `test` task and the CI workflow (first automated tests in the repo).
 
 **Mobile & shared**
 
@@ -353,6 +360,6 @@ These require a live database, a running app/device, or a coordinated maintenanc
 - **DB-7 (stringly-typed state → enums)** — requires data backfill of existing string values.
 - **PAY-3 (mobile PaymentSheet shipping collection)** — ships in the app binary and changes checkout UX; PAY-8 now makes the failure loud (Stripe retries) rather than silent in the meantime.
 - **PAY-6 (carrier-verified delivery gating for auto-release)** — a fraud/policy decision (how to treat seller-set DELIVERED).
-- **WEB-6/7/8/9/10 (server-component dashboard, shared `getListings`, ISR, design-token sweep, component splitting)** — refactors/perf on the highest-traffic pages that need the app running to verify; the report rated them Medium/Low.
+- **WEB-6/8/9/10 (server-component dashboard, ISR, design-token sweep, component splitting)** — refactors/perf on the highest-traffic pages that need the app running to verify visual/behaviour parity; rated Medium/Low. (WEB-7 dedupe is done.)
 - **CSP header** — a wrong policy breaks Stripe/Clerk/Cloudinary; needs iterative testing against the live app.
-- **Automated tests** — the most valuable follow-up; CI is now in place to run them once written.
+- **Broader test coverage** — the runner and CI are now in place; the payment-lifecycle and API-authz suites are the next additions (they need a test database/Stripe mock harness).
