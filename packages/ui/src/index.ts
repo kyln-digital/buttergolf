@@ -30,20 +30,6 @@ export type {
   ViewProps,
 } from "./components/Layout";
 
-// Brand Background Components
-export {
-  VanillaCreamBackground,
-  LemonHazeBackground,
-  LemonHazeCard,
-  VanillaCreamCard,
-} from "./components/BrandBackgrounds";
-export type {
-  VanillaCreamBackgroundProps,
-  LemonHazeBackgroundProps,
-  LemonHazeCardProps,
-  VanillaCreamCardProps,
-} from "./components/BrandBackgrounds";
-
 // Card Components
 export { Card, CardHeader, CardBody, CardFooter } from "./components/Card";
 export type { CardProps, CardHeaderProps, CardBodyProps, CardFooterProps } from "./components/Card";

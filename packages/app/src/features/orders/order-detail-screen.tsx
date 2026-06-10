@@ -28,6 +28,7 @@ import {
   Shield,
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { formatCurrency } from "../../utils/format-currency";
 import { Alert, Linking } from "react-native";
 
 type OrderStatus =
@@ -202,10 +203,6 @@ function formatDateTime(dateString: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
-}
-
-function formatCurrency(amount: number): string {
-  return `£${amount.toFixed(2)}`;
 }
 
 function formatDaysUntil(dateString: string): string {

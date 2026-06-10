@@ -16,6 +16,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Alert } from "react-native";
+import { formatCurrencyFromPence as formatCurrency } from "../../utils/format-currency";
 
 type OrderStatus =
   | "PENDING_SHIPPING"
@@ -241,9 +242,6 @@ export function SellerSalesScreen({
     },
     [onMarkShipped, fetchSales]
   );
-
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(amount / 100);
 
   // Loading state
   if (loading) {

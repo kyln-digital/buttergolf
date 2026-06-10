@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { Text, YStack, View, Image, Button, useTheme } from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { brandColors } from "@buttergolf/constants";
 
 // Logo variants for light/dark mode
 const LogoOrangeSvg =
@@ -104,12 +105,15 @@ export function OnboardingScreen({
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
-  // Get theme-aware text color for RNText
-  const textSecondaryColor = isDark ? "#FFFAD2" : (theme.textSecondary?.val ?? "#545454");
+  // Get theme-aware text color for RNText (RN Text needs a literal colour value)
+  const textSecondaryColor = isDark
+    ? brandColors.vanillaCream
+    : (theme.textSecondary?.val ?? brandColors.slateSmoke);
 
   // Theme-aware colors
   const backgroundColor = isDark ? "$primary" : "$vanillaCream";
-  const cardBackgroundColor = isDark ? "#D9450F" : "#FFFAD2"; // primaryHover for dark, vanillaCream for light
+  // Dark card uses a deeper orange (no exact brand token); light uses vanilla cream.
+  const cardBackgroundColor = isDark ? brandColors.spicedClementinePress : brandColors.vanillaCream;
   const textColor = isDark ? "$vanillaCream" : "$text";
 
   // Animation for two-row horizontal scroll
@@ -193,12 +197,10 @@ export function OnboardingScreen({
 
         {/* Tagline */}
         <YStack gap={4} alignItems="center">
-          {/* eslint-disable-next-line react/forbid-component-props */}
-          <Text fontSize={25} fontWeight="500" align="center" color={textColor} lineHeight={32}>
+          <Text size="$10" fontWeight="500" align="center" color={textColor} lineHeight={32}>
             The Marketplace to
           </Text>
-          {/* eslint-disable-next-line react/forbid-component-props */}
-          <Text fontSize={25} fontWeight="500" align="center" color={textColor} lineHeight={32}>
+          <Text size="$10" fontWeight="500" align="center" color={textColor} lineHeight={32}>
             Buy, Sell & Upgrade
           </Text>
         </YStack>

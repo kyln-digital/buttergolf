@@ -187,9 +187,9 @@ export function SellScreen({
           aria-label={currentStep === 1 ? "Close" : "Go back"}
         >
           {currentStep === 1 ? (
-            <X size={24} color="$pureWhite" />
+            <X size={24} color="$text" />
           ) : (
-            <ArrowLeft size={24} color="$pureWhite" />
+            <ArrowLeft size={24} color="$text" />
           )}
         </Button>
 

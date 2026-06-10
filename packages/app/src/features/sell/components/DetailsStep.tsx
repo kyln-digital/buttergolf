@@ -12,6 +12,7 @@ import {
   Spinner,
   Slider,
   Switch,
+  Button,
 } from "@buttergolf/ui";
 import {
   ChevronDown,
@@ -61,27 +62,41 @@ export function DetailsStep({
   const [models, setModels] = useState<Model[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  // Error state per picker fetch. Previously fetch failures were swallowed to
+  // an empty list, so offline users saw "no results" with no way to retry.
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch categories on mount
-  useEffect(() => {
-    if (onFetchCategories) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsLoading(true);
-      onFetchCategories()
-        .then(setCategories)
-        .catch(console.error)
-        .finally(() => setIsLoading(false));
-    }
+  const loadCategories = useCallback(() => {
+    if (!onFetchCategories) return;
+    setIsLoading(true);
+    setError(null);
+    onFetchCategories()
+      .then(setCategories)
+      .catch((err) => {
+        console.error("Failed to load categories:", err);
+        setError("Couldn't load categories. Check your connection and try again.");
+      })
+      .finally(() => setIsLoading(false));
   }, [onFetchCategories]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadCategories();
+  }, [loadCategories]);
 
   // Search brands when query changes
   useEffect(() => {
     if (activePicker === "brand" && searchQuery && onSearchBrands) {
       const timeoutId = setTimeout(() => {
         setIsLoading(true);
+        setError(null);
         onSearchBrands(searchQuery)
           .then(setBrands)
-          .catch(console.error)
+          .catch((err) => {
+            console.error("Failed to search brands:", err);
+            setError("Couldn't load brands. Check your connection and try again.");
+          })
           .finally(() => setIsLoading(false));
       }, 300);
       return () => clearTimeout(timeoutId);
@@ -93,14 +108,44 @@ export function DetailsStep({
     if (activePicker === "model" && formData.brandId && onSearchModels) {
       const timeoutId = setTimeout(() => {
         setIsLoading(true);
+        setError(null);
         onSearchModels(formData.brandId, searchQuery)
           .then(setModels)
-          .catch(console.error)
+          .catch((err) => {
+            console.error("Failed to search models:", err);
+            setError("Couldn't load models. Check your connection and try again.");
+          })
           .finally(() => setIsLoading(false));
       }, 300);
       return () => clearTimeout(timeoutId);
     }
   }, [activePicker, formData.brandId, searchQuery, onSearchModels]);
+
+  // Re-run the fetch for the currently open picker (used by the retry button).
+  const retryActivePicker = useCallback(() => {
+    setError(null);
+    if (activePicker === "category") {
+      loadCategories();
+    } else if (activePicker === "brand" && searchQuery && onSearchBrands) {
+      setIsLoading(true);
+      onSearchBrands(searchQuery)
+        .then(setBrands)
+        .catch((err) => {
+          console.error("Failed to search brands:", err);
+          setError("Couldn't load brands. Check your connection and try again.");
+        })
+        .finally(() => setIsLoading(false));
+    } else if (activePicker === "model" && formData.brandId && onSearchModels) {
+      setIsLoading(true);
+      onSearchModels(formData.brandId, searchQuery)
+        .then(setModels)
+        .catch((err) => {
+          console.error("Failed to search models:", err);
+          setError("Couldn't load models. Check your connection and try again.");
+        })
+        .finally(() => setIsLoading(false));
+    }
+  }, [activePicker, loadCategories, searchQuery, onSearchBrands, formData.brandId, onSearchModels]);
 
   // ============================================================================
   // Conditional field logic - based on category slug
@@ -133,6 +178,7 @@ export function DetailsStep({
   const openPicker = useCallback((picker: ActivePicker) => {
     Keyboard.dismiss();
     setSearchQuery("");
+    setError(null);
     setActivePicker(picker);
   }, []);
 
@@ -467,6 +513,18 @@ export function DetailsStep({
           </Column>
         )}
 
+        {/* Error State */}
+        {!isLoading && error && (
+          <Column padding="$6" alignItems="center" gap="$3">
+            <Text size="$4" color="$error" textAlign="center">
+              {error}
+            </Text>
+            <Button butterVariant="primary" size="$3" onPress={retryActivePicker}>
+              Try Again
+            </Button>
+          </Column>
+        )}
+
         {/* Items List */}
         <ScrollView flex={1} keyboardShouldPersistTaps="handled">
           <Column paddingHorizontal="$4" paddingVertical="$2" gap="$2">
@@ -509,7 +567,7 @@ export function DetailsStep({
               );
             })}
 
-            {!isLoading && items.length === 0 && (
+            {!isLoading && !error && items.length === 0 && (
               <Column padding="$6" alignItems="center" gap="$2">
                 <Text size="$5" fontWeight="500" color="$textSecondary">
                   {showSearch && searchQuery ? "No results found" : "Start typing to search"}
