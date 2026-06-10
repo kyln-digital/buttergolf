@@ -1,4 +1,4 @@
-import { CATEGORIES } from "@buttergolf/db";
+import { CATEGORIES } from "@buttergolf/constants";
 
 export interface MenuItem {
   title: string;

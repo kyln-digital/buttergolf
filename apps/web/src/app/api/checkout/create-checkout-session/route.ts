@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
+import { SHIPPING_OPTIONS } from "@buttergolf/constants";
 import { stripe } from "@/lib/stripe";
 import { calculatePricingBreakdownInPence } from "@/lib/pricing";
 import { getUserIdFromRequest } from "@/lib/auth";
@@ -195,69 +196,28 @@ export async function POST(req: Request) {
         allowed_countries: ["GB"],
       },
 
-      // Shipping options - flat rate for MVP, can integrate ShipEngine later
-      shipping_options: [
-        {
-          shipping_rate_data: {
-            type: "fixed_amount",
-            fixed_amount: {
-              amount: 499, // £4.99 standard shipping
-              currency: "gbp",
+      // Shipping options - flat rates from @buttergolf/constants (shared with
+      // PaymentElement flow and mobile display)
+      shipping_options: SHIPPING_OPTIONS.map((option) => ({
+        shipping_rate_data: {
+          type: "fixed_amount" as const,
+          fixed_amount: {
+            amount: option.priceInPence,
+            currency: "gbp",
+          },
+          display_name: option.name,
+          delivery_estimate: {
+            minimum: {
+              unit: "business_day" as const,
+              value: option.deliveryEstimate.minBusinessDays,
             },
-            display_name: "Royal Mail Tracked 48",
-            delivery_estimate: {
-              minimum: {
-                unit: "business_day",
-                value: 2,
-              },
-              maximum: {
-                unit: "business_day",
-                value: 4,
-              },
+            maximum: {
+              unit: "business_day" as const,
+              value: option.deliveryEstimate.maxBusinessDays,
             },
           },
         },
-        {
-          shipping_rate_data: {
-            type: "fixed_amount",
-            fixed_amount: {
-              amount: 699, // £6.99 express shipping
-              currency: "gbp",
-            },
-            display_name: "Royal Mail Tracked 24",
-            delivery_estimate: {
-              minimum: {
-                unit: "business_day",
-                value: 1,
-              },
-              maximum: {
-                unit: "business_day",
-                value: 2,
-              },
-            },
-          },
-        },
-        {
-          shipping_rate_data: {
-            type: "fixed_amount",
-            fixed_amount: {
-              amount: 899, // £8.99 next day
-              currency: "gbp",
-            },
-            display_name: "DPD Next Day",
-            delivery_estimate: {
-              minimum: {
-                unit: "business_day",
-                value: 1,
-              },
-              maximum: {
-                unit: "business_day",
-                value: 1,
-              },
-            },
-          },
-        },
-      ],
+      })),
 
       // Phone number collection for shipping
       phone_number_collection: {

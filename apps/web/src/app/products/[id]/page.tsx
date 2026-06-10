@@ -79,8 +79,10 @@ const getProduct = cache(async (id: string): Promise<Product | null> => {
       brand: product.brand?.name || null,
     } as Product;
   } catch (error) {
+    // Rethrow so transient DB failures render the error boundary (500) instead
+    // of a misleading 404; null is reserved for "genuinely not visible".
     console.error("Error fetching product:", error);
-    return null;
+    throw error;
   }
 });
 
@@ -121,32 +123,22 @@ export async function generateMetadata({
   };
 }
 
-async function getSimilarProducts(id: string): Promise<ProductCardData[]> {
+async function getSimilarProducts(
+  id: string,
+  categoryId: string,
+  price: number
+): Promise<ProductCardData[]> {
   try {
-    // Get the current product to find similar ones
-    const product = await prisma.product.findUnique({
-      where: { id },
-      select: {
-        categoryId: true,
-        price: true,
-        brand: true,
-      },
-    });
-
-    if (!product) {
-      return [];
-    }
-
     // Find similar products (same category, similar price range)
-    const priceMin = product.price * 0.7;
-    const priceMax = product.price * 1.3;
+    const priceMin = price * 0.7;
+    const priceMax = price * 1.3;
 
     const similarProducts = await prisma.product.findMany({
       where: {
         id: { not: id },
         isSold: false,
         isDraft: false,
-        categoryId: product.categoryId,
+        categoryId,
         price: {
           gte: priceMin,
           lte: priceMax,
@@ -216,7 +208,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   }
 
   // Fetch similar products
-  const similarProducts = await getSimilarProducts(id);
+  const similarProducts = await getSimilarProducts(id, product.category.id, product.price);
 
   const productJsonLd = {
     "@context": "https://schema.org",
