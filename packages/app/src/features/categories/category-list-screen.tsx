@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { Column, Row, ScrollView, Text, Spinner } from "@buttergolf/ui";
+import { Column, Row, ScrollView, Text, Spinner, Button } from "@buttergolf/ui";
 import { ProductCard } from "../../components/ProductCard";
 import type { ProductCardData } from "../../types/product";
 import { useLink } from "solito/navigation";
@@ -55,6 +55,7 @@ export function CategoryListScreen({
   const insets = useSafeAreaInsets();
   const [products, setProducts] = useState<ProductCardData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
@@ -64,20 +65,25 @@ export function CategoryListScreen({
     sortBy: "newest",
   });
 
-  useEffect(() => {
-    if (onFetchProducts) {
-      setLoading(true);
-      onFetchProducts(categorySlug)
-        .then((fetchedProducts) => {
-          console.info(`Fetched ${fetchedProducts.length} products for ${categorySlug}`);
-          setProducts(fetchedProducts);
-        })
-        .catch((error) => {
-          console.error("Failed to fetch products:", error);
-        })
-        .finally(() => setLoading(false));
-    }
+  const loadProducts = useCallback(() => {
+    if (!onFetchProducts) return;
+    setLoading(true);
+    setError(null);
+    onFetchProducts(categorySlug)
+      .then((fetchedProducts) => {
+        console.info(`Fetched ${fetchedProducts.length} products for ${categorySlug}`);
+        setProducts(fetchedProducts);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch products:", err);
+        setError("Couldn't load products. Check your connection and try again.");
+      })
+      .finally(() => setLoading(false));
   }, [categorySlug, onFetchProducts]);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   // Handle filter button press
   const handleFilterPress = useCallback(() => {
@@ -239,6 +245,15 @@ export function CategoryListScreen({
             <Text marginTop="$4" color="$textSecondary">
               Loading products...
             </Text>
+          </Column>
+        ) : error ? (
+          <Column padding="$8" alignItems="center" gap="$4">
+            <Text size="$6" color="$error" textAlign="center">
+              {error}
+            </Text>
+            <Button butterVariant="primary" size="$4" onPress={loadProducts}>
+              Try Again
+            </Button>
           </Column>
         ) : filteredProducts.length === 0 ? (
           <Column padding="$8" alignItems="center">

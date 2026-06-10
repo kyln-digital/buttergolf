@@ -8,11 +8,15 @@
  * - size="sm" | "md" | "lg" controls the spinner's WIDTH and HEIGHT
  * - Uses space tokens ($4, $5, $6) for geometric dimensions
  *
+ * Accepts BOTH the named variants (sm | md | lg) and the documented numeric
+ * size tokens ($3-$6) so it is consistent with Button. Existing named usages
+ * keep working.
+ *
  * @example
  * ```tsx
  * <Spinner size="md" />
  * <Spinner size="lg" color="$primary" />
- * <Spinner size="sm" color="$success" />
+ * <Spinner size="$5" color="$success" />
  * ```
  */
 
@@ -30,6 +34,7 @@ export const Spinner = styled(TamaguiSpinner, {
 
   variants: {
     size: {
+      // Named variants (legacy / documented in CLAUDE.md)
       sm: {
         width: "$4",
         height: "$4",
@@ -39,6 +44,23 @@ export const Spinner = styled(TamaguiSpinner, {
         height: "$5",
       },
       lg: {
+        width: "$6",
+        height: "$6",
+      },
+      // Numeric tokens for parity with Button (size="$4" etc.)
+      $3: {
+        width: "$3",
+        height: "$3",
+      },
+      $4: {
+        width: "$4",
+        height: "$4",
+      },
+      $5: {
+        width: "$5",
+        height: "$5",
+      },
+      $6: {
         width: "$6",
         height: "$6",
       },

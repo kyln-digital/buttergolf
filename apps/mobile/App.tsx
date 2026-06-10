@@ -5,7 +5,9 @@ import {
   DefaultTheme,
   Theme as NavigationTheme,
   useFocusEffect,
+  createNavigationContainerRef,
 } from "@react-navigation/native";
+import * as Notifications from "expo-notifications";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { brandColors, LISTING_PRICE_LIMITS } from "@buttergolf/constants";
 import {
@@ -82,15 +84,19 @@ import {
   deferredSecureStoreGet,
   deferredSecureStoreSet,
 } from "./lib/apiClient";
+import { useStripeOnboarding, useLabelActions, useCheckoutFlow } from "./lib/wrapperActions";
 import {
   registerForPushNotificationsAsync,
   registerPushTokenWithBackend,
   setupNotificationHandlers,
+  getStoredPushToken,
+  unregisterPushTokenFromBackend,
+  clearStoredPushToken,
 } from "./lib/notifications";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { PortalProvider } from "@tamagui/portal";
 import { Button, Text } from "@buttergolf/ui";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useFonts } from "expo-font";
 import * as ImagePicker from "expo-image-picker";
 import {
@@ -135,7 +141,29 @@ type RouteParams<T extends keyof RootStackParamList> = {
 
 const Stack = createNativeStackNavigator();
 
-// Solito linking configuration - connects Solito routes to React Navigation
+/**
+ * Base URL for the ButterGolf API, read once from the environment.
+ * Previously `process.env.EXPO_PUBLIC_API_URL` was read 20+ times across
+ * wrappers; centralising it removes that duplication. Falls back to an empty
+ * string so callers can guard on it the same way they did before.
+ */
+const API_URL = process.env.EXPO_PUBLIC_API_URL || "";
+
+/**
+ * Convert a shared route (from packages/app routes.ts) into a React Navigation
+ * path: strips the leading "/" and rewrites `[param]` placeholders to `:param`.
+ * Deriving paths from routes.ts keeps mobile deep-link paths in sync with the
+ * web routes so universal links like https://buttergolf.com/orders/123 resolve
+ * on mobile (MOB-6).
+ */
+function toNavPath(route: string): string {
+  return route.replace(/^\//, "").replace(/\[([^\]]+)\]/g, ":$1");
+}
+
+// Solito linking configuration - connects Solito routes to React Navigation.
+// Paths are derived from the shared routes.ts (single source of truth) wherever
+// a matching route exists. Account/seller sub-routes that have no shared route
+// definition are kept as explicit literals.
 const linking = {
   prefixes: ["buttergolf://", "https://buttergolf.com", "exp://"],
   config: {
@@ -145,56 +173,57 @@ const linking = {
         exact: true,
       },
       Rounds: {
-        path: routes.rounds.slice(1), // Remove leading '/' for React Navigation
+        path: toNavPath(routes.rounds),
         exact: true,
       },
       Products: {
-        path: "products", // 'products' for product listing (maps to Home)
+        path: toNavPath(routes.products), // 'products' for product listing (maps to Home)
       },
       ProductDetail: {
-        path: "products/:id", // 'products/:id' for dynamic routing
+        path: toNavPath(routes.productDetail), // 'products/:id'
       },
       Category: {
-        path: "category/:slug", // 'category/:slug' for category pages
+        path: toNavPath(routes.category), // 'category/:slug'
       },
       Favourites: {
-        path: routes.favourites.slice(1), // 'favourites'
+        path: toNavPath(routes.favourites), // 'favourites'
       },
       Messages: {
-        path: routes.messages.slice(1), // 'messages'
+        path: toNavPath(routes.messages), // 'messages'
       },
       MessageThread: {
-        path: "messages/:conversationId",
+        path: toNavPath(routes.messageThread), // 'messages/:conversationId'
       },
       Sell: {
-        path: routes.sell.slice(1), // 'sell'
+        path: toNavPath(routes.sell), // 'sell'
       },
       SignIn: {
-        path: routes.signIn.slice(1), // 'sign-in'
+        path: toNavPath(routes.signIn), // 'sign-in'
       },
       SignUp: {
-        path: routes.signUp.slice(1), // 'sign-up'
+        path: toNavPath(routes.signUp), // 'sign-up'
       },
       VerifyEmail: {
-        path: routes.verifyEmail.slice(1), // 'verify-email'
+        path: toNavPath(routes.verifyEmail), // 'verify-email'
       },
       ForgotPassword: {
-        path: routes.forgotPassword.slice(1), // 'forgot-password'
+        path: toNavPath(routes.forgotPassword), // 'forgot-password'
       },
       ResetPassword: {
-        path: routes.resetPassword.slice(1), // 'reset-password'
+        path: toNavPath(routes.resetPassword), // 'reset-password'
       },
       Account: {
-        path: routes.account.slice(1), // 'account'
+        path: toNavPath(routes.account), // 'account'
       },
       ProfileEdit: {
         path: "account/profile",
       },
       Orders: {
-        path: "account/orders",
+        path: toNavPath(routes.orders), // 'orders' — matches web /orders
       },
       OrderDetail: {
-        path: "account/orders/:orderId",
+        // 'orders/:id' — matches web /orders/[id] so universal links resolve.
+        path: toNavPath(routes.orderDetail),
       },
       Addresses: {
         path: "account/addresses",
@@ -218,6 +247,50 @@ const linking = {
   },
 };
 
+/**
+ * Navigation ref for the signed-in NavigationContainer. Lets non-component code
+ * (notification handlers) drive navigation when a push is tapped (MOB-5).
+ */
+const navigationRef = createNavigationContainerRef();
+
+/**
+ * Navigate to the relevant screen from a tapped notification's data payload.
+ * Backend notifications include `conversationId` (messages) and/or `orderId`
+ * (orders). Falls back to doing nothing if the navigator isn't ready or the
+ * payload has no recognised target.
+ */
+function navigateFromNotificationData(data: unknown): void {
+  if (!navigationRef.isReady() || !data || typeof data !== "object") return;
+
+  const payload = data as {
+    conversationId?: string;
+    orderId?: string;
+    userRole?: "buyer" | "seller";
+    otherUserName?: string;
+    productTitle?: string;
+  };
+
+  // The container ref is untyped here, so use a permissive navigate signature.
+  const navigate = navigationRef.navigate as (
+    screen: string,
+    params?: Record<string, unknown>
+  ) => void;
+
+  if (payload.conversationId) {
+    navigate("MessageThread", {
+      conversationId: payload.conversationId,
+      otherUserName: payload.otherUserName,
+      productTitle: payload.productTitle,
+      userRole: payload.userRole ?? "buyer",
+    });
+    return;
+  }
+
+  if (payload.orderId) {
+    navigate("OrderDetail", { orderId: payload.orderId });
+  }
+}
+
 function SignOutButton() {
   const { signOut } = useAuth();
   return (
@@ -229,46 +302,10 @@ function SignOutButton() {
 
 const _HeaderRightComponent = () => <SignOutButton />;
 
-// Function to fetch products from API
-async function fetchProducts(): Promise<ProductCardData[]> {
-  try {
-    // Get API URL from environment variable
-    // In production, this should be set to your deployed domain (e.g., "https://buttergolf.com")
-    // In development:
-    //   - iOS Simulator: use "http://localhost:3000"
-    //   - Android Emulator: use "http://10.0.2.2:3000"
-    //   - Physical Device: use "http://YOUR_COMPUTER_IP:3000"
-    const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-
-    if (!apiUrl) {
-      throw new Error(
-        "EXPO_PUBLIC_API_URL environment variable is not set. " +
-          "Please create apps/mobile/.env file with: EXPO_PUBLIC_API_URL=http://localhost:3000"
-      );
-    }
-
-    console.info("Fetching products from:", apiUrl);
-    const response = await fetch(`${apiUrl}/api/products/recent`, {
-      headers: {
-        Accept: "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("Failed to fetch products:", error);
-    return [];
-  }
-}
-
 // Function to fetch products by category
 async function fetchProductsByCategory(categorySlug: string): Promise<ProductCardData[]> {
   try {
-    const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+    const apiUrl = API_URL;
 
     if (!apiUrl) {
       throw new Error(
@@ -304,7 +341,7 @@ async function fetchProductsByCategory(categorySlug: string): Promise<ProductCar
 // Function to fetch a single product by ID
 async function fetchProduct(id: string): Promise<Product | null> {
   try {
-    const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+    const apiUrl = API_URL;
 
     if (!apiUrl) {
       throw new Error(
@@ -335,7 +372,7 @@ async function fetchProduct(id: string): Promise<Product | null> {
 // Function to fetch categories for sell flow
 async function fetchCategories(): Promise<Category[]> {
   try {
-    const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+    const apiUrl = API_URL;
     if (!apiUrl) return [];
 
     const response = await fetch(`${apiUrl}/api/categories`, {
@@ -353,7 +390,7 @@ async function fetchCategories(): Promise<Category[]> {
 // Function to search brands
 async function searchBrands(query: string): Promise<Brand[]> {
   try {
-    const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+    const apiUrl = API_URL;
     if (!apiUrl || !query) return [];
 
     const response = await fetch(`${apiUrl}/api/brands?query=${encodeURIComponent(query)}`, {
@@ -371,7 +408,7 @@ async function searchBrands(query: string): Promise<Brand[]> {
 // Function to search models for a brand
 async function searchModels(brandId: string, query: string): Promise<Model[]> {
   try {
-    const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+    const apiUrl = API_URL;
     if (!apiUrl || !brandId) return [];
 
     const params = new URLSearchParams({ brandId });
@@ -394,7 +431,7 @@ async function submitListingToApi(
   data: SellFormData,
   token: string | null
 ): Promise<{ id: string }> {
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+  const apiUrl = API_URL;
   if (!apiUrl) throw new Error("API URL not configured");
 
   const parsedPrice = Number.parseFloat(data.price);
@@ -543,7 +580,7 @@ async function uploadImageToCloudinary(
   isFirstImage: boolean,
   getToken: () => Promise<string | null>
 ): Promise<string> {
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+  const apiUrl = API_URL;
   if (!apiUrl) throw new Error("API URL not configured");
 
   // Get the auth token for the request
@@ -707,7 +744,7 @@ function SellScreenWrapper({ navigation }: { navigation: any }) {
 function AccountScreenWrapper({ navigation }: { navigation: any }) {
   const { user } = useUser();
   const { signOut, getToken } = useAuth();
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+  const apiUrl = API_URL;
 
   // Get seller status from context (already fetched at app level)
   const { status: sellerStatus, refresh: refreshSellerStatus } = useSellerStatusContext();
@@ -742,44 +779,29 @@ function AccountScreenWrapper({ navigation }: { navigation: any }) {
 
   // Memoize handler to prevent re-render issues during navigation
   const handleSignOut = useCallback(async () => {
+    // Deregister this device's push token BEFORE signing out, while we still
+    // have a valid Clerk auth token. Otherwise the next user on a shared device
+    // would keep receiving the previous user's order/message notifications.
+    try {
+      const pushToken = await getStoredPushToken();
+      if (pushToken && apiUrl) {
+        const authToken = await getToken();
+        if (authToken) {
+          await unregisterPushTokenFromBackend(pushToken, authToken, apiUrl);
+        }
+      }
+      await clearStoredPushToken();
+    } catch (err) {
+      // Never block sign-out on push cleanup failures.
+      console.error("[SignOut] Failed to deregister push token:", err);
+    }
+
     await signOut();
     // After signOut, Clerk will automatically switch to SignedOut state
-  }, [signOut]);
+  }, [signOut, getToken, apiUrl]);
 
-  const handleStartSellerOnboarding = useCallback(async () => {
-    if (!apiUrl) {
-      Alert.alert("Configuration Error", "API URL is not configured.");
-      return;
-    }
-
-    try {
-      const session = await deferredPost<{ token: string }>(
-        `${apiUrl}/api/stripe/connect/mobile-session`,
-        {},
-        { getToken }
-      );
-
-      if (!session?.token) {
-        throw new Error("Failed to create onboarding session");
-      }
-
-      const onboardingUrl = `${apiUrl}/mobile-onboarding?token=${encodeURIComponent(session.token)}&apiUrl=${encodeURIComponent(apiUrl)}`;
-      const WebBrowser = await import("expo-web-browser");
-      const result = await WebBrowser.openAuthSessionAsync(
-        onboardingUrl,
-        "buttergolf://seller/onboarding/complete"
-      );
-
-      if (result.type === "success") {
-        await refreshSellerStatus(true);
-      }
-    } catch (err) {
-      Alert.alert(
-        "Unable to start payout setup",
-        err instanceof Error ? err.message : "Please try again."
-      );
-    }
-  }, [apiUrl, getToken, refreshSellerStatus]);
+  // Shared Stripe Connect onboarding flow (also used by SellerDashboardScreenWrapper).
+  const handleStartSellerOnboarding = useStripeOnboarding(apiUrl, getToken, refreshSellerStatus);
 
   return (
     <AccountScreen
@@ -878,21 +900,17 @@ function ProfileEditScreenWrapper({ navigation }: { navigation: any }) {
 function OrdersScreenWrapper({ navigation }: { navigation: any }) {
   const { getToken } = useAuth();
   const { user } = useUser();
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+  const apiUrl = API_URL;
 
-  const fetchOrders = useCallback(
-    async (filter?: string) => {
-      const params = new URLSearchParams();
-      if (filter && filter !== "all") params.append("filter", filter);
-      params.append("limit", "50");
-
-      const data = await deferredGet<any>(`${apiUrl}/api/orders?${params.toString()}`, {
-        getToken,
-      });
-      return data;
-    },
-    [getToken, apiUrl]
-  );
+  // OrdersScreen filters by tab client-side and calls onFetchOrders() with no
+  // arguments, so the previous server-side `?filter=` query was dead code
+  // (MOB-8). Fetch a single page; the screen handles all/active/delivered tabs.
+  const fetchOrders = useCallback(async () => {
+    const data = await deferredGet<any>(`${apiUrl}/api/orders?limit=50`, {
+      getToken,
+    });
+    return data;
+  }, [getToken, apiUrl]);
 
   return (
     <OrdersScreen
@@ -911,7 +929,7 @@ function OrdersScreenWrapper({ navigation }: { navigation: any }) {
 function OrderDetailScreenWrapper({ navigation, orderId }: { navigation: any; orderId: string }) {
   const { getToken } = useAuth();
   const { user } = useUser();
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+  const apiUrl = API_URL;
 
   const fetchOrder = useCallback(
     async (id: string) => {
@@ -938,42 +956,8 @@ function OrderDetailScreenWrapper({ navigation, orderId }: { navigation: any; or
     [getToken, apiUrl]
   );
 
-  const generateLabel = useCallback(
-    async (id: string) => {
-      return deferredPost<{ labelUrl: string }>(
-        `${apiUrl}/api/orders/${id}/shipping-label`,
-        {},
-        { getToken }
-      );
-    },
-    [getToken, apiUrl]
-  );
-
-  const downloadLabel = useCallback(
-    async (id: string) => {
-      // Open label URL in browser
-      const order = await deferredGet<{ shippingLabel?: { labelUrl: string } }>(
-        `${apiUrl}/api/orders/${id}`,
-        { getToken }
-      );
-      if (order?.shippingLabel?.labelUrl) {
-        const { Linking } = await import("react-native");
-        void Linking.openURL(order.shippingLabel.labelUrl);
-      }
-    },
-    [getToken, apiUrl]
-  );
-
-  const markShipped = useCallback(
-    async (id: string, trackingNumber: string, carrier: string) => {
-      await deferredPost(
-        `${apiUrl}/api/orders/${id}/ship`,
-        { trackingNumber, carrier },
-        { getToken }
-      );
-    },
-    [getToken, apiUrl]
-  );
+  // Shared shipping-label actions (also used by SellerSalesScreenWrapper).
+  const { generateLabel, downloadLabel, markShipped } = useLabelActions(apiUrl, getToken);
 
   return (
     <OrderDetailScreen
@@ -1007,7 +991,7 @@ function OrderDetailScreenWrapper({ navigation, orderId }: { navigation: any; or
  */
 function AddressesScreenWrapper({ navigation }: { navigation: any }) {
   const { getToken } = useAuth();
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+  const apiUrl = API_URL;
 
   const fetchAddresses = useCallback(async () => {
     const data = await deferredGet<any[]>(`${apiUrl}/api/addresses`, { getToken });
@@ -1065,7 +1049,7 @@ function AddressesScreenWrapper({ navigation }: { navigation: any }) {
  */
 function NotificationSettingsScreenWrapper({ navigation }: { navigation: any }) {
   const { getToken } = useAuth();
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+  const apiUrl = API_URL;
 
   const handleUpdateSettings = useCallback(
     async (settings: any) => {
@@ -1096,7 +1080,7 @@ function HelpSupportScreenWrapper({ navigation }: { navigation: any }) {
  */
 function SellerDashboardScreenWrapper({ navigation }: { navigation: any }) {
   const { getToken } = useAuth();
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+  const apiUrl = API_URL;
   const { refresh: refreshSellerStatus } = useSellerStatusContext();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -1120,40 +1104,8 @@ function SellerDashboardScreenWrapper({ navigation }: { navigation: any }) {
     void fetchStats();
   }, [fetchStats]);
 
-  const handleOpenPayoutSetup = useCallback(async () => {
-    if (!apiUrl) {
-      Alert.alert("Configuration Error", "API URL is not configured.");
-      return;
-    }
-
-    try {
-      const session = await deferredPost<{ token: string }>(
-        `${apiUrl}/api/stripe/connect/mobile-session`,
-        {},
-        { getToken }
-      );
-
-      if (!session?.token) {
-        throw new Error("Failed to create onboarding session");
-      }
-
-      const onboardingUrl = `${apiUrl}/mobile-onboarding?token=${encodeURIComponent(session.token)}&apiUrl=${encodeURIComponent(apiUrl)}`;
-      const WebBrowser = await import("expo-web-browser");
-      const result = await WebBrowser.openAuthSessionAsync(
-        onboardingUrl,
-        "buttergolf://seller/onboarding/complete"
-      );
-
-      if (result.type === "success") {
-        await refreshSellerStatus(true);
-      }
-    } catch (err) {
-      Alert.alert(
-        "Unable to start payout setup",
-        err instanceof Error ? err.message : "Please try again."
-      );
-    }
-  }, [apiUrl, getToken, refreshSellerStatus]);
+  // Shared Stripe Connect onboarding flow (also used by AccountScreenWrapper).
+  const handleOpenPayoutSetup = useStripeOnboarding(apiUrl, getToken, refreshSellerStatus);
 
   return (
     <SellerDashboardScreen
@@ -1181,7 +1133,7 @@ function SellerDashboardScreenWrapper({ navigation }: { navigation: any }) {
  */
 function SellerSalesScreenWrapper({ navigation }: { navigation: any }) {
   const { getToken } = useAuth();
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+  const apiUrl = API_URL;
 
   const fetchSales = useCallback(
     async (filter?: string) => {
@@ -1192,41 +1144,8 @@ function SellerSalesScreenWrapper({ navigation }: { navigation: any }) {
     [getToken, apiUrl]
   );
 
-  const generateLabel = useCallback(
-    async (orderId: string) => {
-      return deferredPost<{ labelUrl: string }>(
-        `${apiUrl}/api/orders/${orderId}/shipping-label`,
-        {},
-        { getToken }
-      );
-    },
-    [getToken, apiUrl]
-  );
-
-  const downloadLabel = useCallback(
-    async (orderId: string) => {
-      const order = await deferredGet<{ shippingLabel?: { labelUrl: string } }>(
-        `${apiUrl}/api/orders/${orderId}`,
-        { getToken }
-      );
-      if (order?.shippingLabel?.labelUrl) {
-        const { Linking } = await import("react-native");
-        void Linking.openURL(order.shippingLabel.labelUrl);
-      }
-    },
-    [getToken, apiUrl]
-  );
-
-  const markShipped = useCallback(
-    async (orderId: string, trackingNumber: string, carrier: string) => {
-      await deferredPost(
-        `${apiUrl}/api/orders/${orderId}/ship`,
-        { trackingNumber, carrier },
-        { getToken }
-      );
-    },
-    [getToken, apiUrl]
-  );
+  // Shared shipping-label actions (also used by OrderDetailScreenWrapper).
+  const { generateLabel, downloadLabel, markShipped } = useLabelActions(apiUrl, getToken);
 
   return (
     <SellerSalesScreen
@@ -1251,7 +1170,7 @@ function SellerSalesScreenWrapper({ navigation }: { navigation: any }) {
  */
 function SellerListingsScreenWrapper({ navigation }: { navigation: any }) {
   const { getToken } = useAuth();
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+  const apiUrl = API_URL;
 
   const fetchListings = useCallback(
     async (filter?: string) => {
@@ -1307,7 +1226,7 @@ function CategoryListScreenWrapper({
   onLoginPress?: () => void;
 }) {
   const { getToken } = useAuth();
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+  const apiUrl = API_URL;
 
   // Create a deferred fetch function that handles auth via deferredFetch
   // This prevents TurboModule race conditions during navigation
@@ -1365,22 +1284,20 @@ function FavouritesScreenWrapper({
   onLoginPress?: () => void;
 }) {
   const { getToken } = useAuth();
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+  const apiUrl = API_URL;
 
-  // State for checkout sheet
-  const [checkoutSheetOpen, setCheckoutSheetOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [selectedProduct, setSelectedProduct] = useState<{
-    id: string;
-    title: string;
-    price: number;
-    sellerId: string;
-  } | null>(null);
 
-  // Memoize getToken callback for sheets
-  const getTokenCallback = useCallback(async () => {
-    return getToken();
-  }, [getToken]);
+  // Shared Buy-Now / Make-Offer / checkout flow (also used by ProductDetailScreenWrapper).
+  const {
+    checkoutSheetOpen,
+    setCheckoutSheetOpen,
+    selectedProduct,
+    getTokenCallback,
+    handleBuyNow,
+    handleMakeOffer,
+    handleCheckoutSuccess,
+  } = useCheckoutFlow(apiUrl, getToken, navigation, fetchProduct);
 
   // Memoize fetch functions to prevent re-render issues during navigation
   // Uses deferredFetch to prevent TurboModule race conditions
@@ -1423,79 +1340,6 @@ function FavouritesScreenWrapper({
     [getToken, apiUrl]
   );
 
-  // Handle Buy Now - fetch product and open checkout sheet
-  const handleBuyNow = useCallback((productId: string) => {
-    fetchProduct(productId)
-      .then((product) => {
-        if (product) {
-          setSelectedProduct({
-            id: product.id,
-            title: product.title,
-            price: product.price,
-            sellerId: product.user?.id || "",
-          });
-          setCheckoutSheetOpen(true);
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to fetch product for Buy Now:", error);
-        Alert.alert(
-          "Unable to load product",
-          "Something went wrong while loading this product. Please try again."
-        );
-      });
-  }, []);
-
-  // Handle Make Offer - create conversation, post offer, and navigate to message thread
-  const handleMakeOffer = useCallback(
-    async (productId: string, _price: number, offerAmount: number) => {
-      try {
-        const data = await deferredPost<{ conversationId: string }>(
-          `${apiUrl}/api/conversations`,
-          { productId },
-          { getToken }
-        );
-
-        // Submit the offer before navigating
-        await deferredPost(
-          `${apiUrl}/api/conversations/${data.conversationId}/offer`,
-          { amount: offerAmount },
-          { getToken }
-        );
-
-        navigation.navigate("MessageThread", {
-          conversationId: data.conversationId,
-          productTitle: "Product",
-          userRole: "buyer",
-        });
-      } catch (error) {
-        console.error("Failed to create conversation for Make Offer:", error);
-        Alert.alert("Unable to make offer", "Something went wrong. Please try again.");
-      }
-    },
-    [getToken, apiUrl, navigation]
-  );
-
-  // Handle checkout success
-  const handleCheckoutSuccess = useCallback(
-    (_: string) => {
-      setCheckoutSheetOpen(false);
-      setSelectedProduct(null);
-      Alert.alert(
-        "Payment Successful!",
-        "Your order has been placed. You can track it in your messages.",
-        [
-          {
-            text: "View Messages",
-            onPress: () => navigation.navigate("Messages"),
-          },
-          { text: "OK" },
-        ]
-      );
-    },
-    [navigation]
-  );
-
   return (
     <>
       <FavouritesScreen
@@ -1506,7 +1350,7 @@ function FavouritesScreenWrapper({
         onBack={() => navigation.goBack()}
         onViewProduct={(id) => navigation.navigate("ProductDetail", { id })}
         onBuyNow={handleBuyNow}
-        onMakeOffer={handleMakeOffer}
+        onMakeOffer={(productId, _price, offerAmount) => handleMakeOffer(productId, offerAmount)}
         onBrowseListings={() => navigation.navigate("Home")}
         onHomePress={() => navigation.navigate("Home")}
         onSellPress={() => navigation.navigate("Sell")}
@@ -1544,7 +1388,7 @@ function MessagesScreenWrapper({
 }) {
   const { getToken } = useAuth();
   const { user } = useUser();
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+  const apiUrl = API_URL;
 
   const fetchConversations = useCallback(
     async (page?: number) => {
@@ -1630,7 +1474,7 @@ function MessageThreadScreenWrapper({
 }) {
   const { getToken } = useAuth();
   const { user } = useUser();
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+  const apiUrl = API_URL;
 
   const fetchMessages = useCallback(
     async (id: string, cursor?: string) => {
@@ -1708,22 +1552,63 @@ function MessageThreadScreenWrapper({
     );
   }, [getToken, apiUrl, conversationId]);
 
-  // Pre-fetch auth token so the SSE factory can use it synchronously.
-  const [authToken, setAuthToken] = useState<string | null>(null);
-  useEffect(() => {
-    getToken().then((t) => setAuthToken(t));
-  }, [getToken]);
-
-  const createEventSource = useMemo(() => {
-    if (!authToken) return undefined;
-    return (url: string) => {
+  // SSE factory: resolve a FRESH Clerk token on every connection (including
+  // reconnects). Clerk JWTs expire after ~60s, so baking a single pre-fetched
+  // token into the factory meant every reconnect after the first minute sent an
+  // expired token and realtime messaging silently died (MOB-3).
+  //
+  // The shared screen calls this factory synchronously and expects an
+  // EventSourceLike back, so we return a lazy wrapper that fetches the token,
+  // then constructs the real RNEventSource and replays any registered
+  // listeners onto it. This mirrors the per-request token pattern in
+  // lib/apiClient.ts (deferredFetch).
+  const createEventSource = useCallback(
+    (url: string): import("@buttergolf/app").EventSourceLike => {
       const fullUrl = url.startsWith("http") ? url : `${apiUrl}${url}`;
-      const es = new RNEventSource(fullUrl, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      return es as unknown as import("@buttergolf/app").EventSourceLike;
-    };
-  }, [apiUrl, authToken]);
+
+      let realSource: RNEventSource | null = null;
+      let closed = false;
+      const pendingListeners: Array<{
+        type: string;
+        listener: (event: { data: string }) => void;
+      }> = [];
+
+      void getToken()
+        .then((token) => {
+          if (closed) return;
+          realSource = new RNEventSource(fullUrl, {
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          });
+          for (const { type, listener } of pendingListeners) {
+            (realSource as unknown as import("@buttergolf/app").EventSourceLike).addEventListener(
+              type,
+              listener
+            );
+          }
+        })
+        .catch((err) => {
+          console.error("[SSE] Failed to resolve auth token for stream:", err);
+        });
+
+      return {
+        addEventListener(type, listener) {
+          if (realSource) {
+            (realSource as unknown as import("@buttergolf/app").EventSourceLike).addEventListener(
+              type,
+              listener
+            );
+          } else {
+            pendingListeners.push({ type, listener });
+          }
+        },
+        close() {
+          closed = true;
+          realSource?.close();
+        },
+      };
+    },
+    [apiUrl, getToken]
+  );
 
   return (
     <MessageThreadScreen
@@ -1761,13 +1646,16 @@ function HomeScreenWrapper({
 }) {
   return (
     <HomeScreen
-      onFetchProducts={fetchProducts}
       onSellPress={() => navigation.navigate("Sell")}
       isAuthenticated={isAuthenticated}
       onAccountPress={() => navigation.navigate("Account")}
       onWishlistPress={() => navigation.navigate("Favourites")}
       onMessagesPress={() => navigation.navigate("Messages")}
       onCategoryPress={(slug) => navigation.navigate("Category", { slug })}
+      // The home screen has no product list of its own; route searches to the
+      // Products listing screen. A dedicated search-results screen (with the
+      // query applied server-side) would be a worthwhile follow-up.
+      onSearch={(query) => navigation.navigate("Products", { query })}
       onLoginPress={onLoginPress}
       hideBuySellToggle={true}
     />
@@ -1787,91 +1675,18 @@ function ProductDetailScreenWrapper({
   isAuthenticated: boolean;
 }) {
   const { getToken } = useAuth();
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+  const apiUrl = API_URL;
 
-  // State for checkout sheet
-  const [checkoutSheetOpen, setCheckoutSheetOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<{
-    id: string;
-    title: string;
-    price: number;
-    sellerId: string;
-  } | null>(null);
-
-  // Memoize getToken callback to avoid recreating every render
-  const getTokenCallback = useCallback(async () => {
-    return getToken();
-  }, [getToken]);
-
-  const handleBuyNow = useCallback((id: string, _: number) => {
-    fetchProduct(id)
-      .then((product) => {
-        if (product) {
-          setSelectedProduct({
-            id: product.id,
-            title: product.title,
-            price: product.price,
-            sellerId: product.user?.id || "",
-          });
-          setCheckoutSheetOpen(true);
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to fetch product for Buy Now:", error);
-        Alert.alert(
-          "Unable to load product",
-          "Something went wrong while loading this product. Please try again."
-        );
-      });
-  }, []);
-
-  const handleMakeOffer = useCallback(
-    async (id: string, _price: number, offerAmount: number) => {
-      try {
-        const data = await deferredPost<{ conversationId: string }>(
-          `${apiUrl}/api/conversations`,
-          { productId: id },
-          { getToken }
-        );
-
-        // Submit the offer before navigating
-        await deferredPost(
-          `${apiUrl}/api/conversations/${data.conversationId}/offer`,
-          { amount: offerAmount },
-          { getToken }
-        );
-
-        navigation.navigate("MessageThread", {
-          conversationId: data.conversationId,
-          productTitle: "Product",
-          userRole: "buyer",
-        });
-      } catch (error) {
-        console.error("Failed to create conversation for Make Offer:", error);
-        Alert.alert("Unable to make offer", "Something went wrong. Please try again.");
-      }
-    },
-    [getToken, apiUrl, navigation]
-  );
-
-  const handleCheckoutSuccess = useCallback(
-    (_: string) => {
-      setCheckoutSheetOpen(false);
-      setSelectedProduct(null);
-      Alert.alert(
-        "Payment Successful!",
-        "Your order has been placed. You can track it in your messages.",
-        [
-          {
-            text: "View Messages",
-            onPress: () => navigation.navigate("Messages"),
-          },
-          { text: "OK" },
-        ]
-      );
-    },
-    [navigation]
-  );
+  // Shared Buy-Now / Make-Offer / checkout flow (also used by FavouritesScreenWrapper).
+  const {
+    checkoutSheetOpen,
+    setCheckoutSheetOpen,
+    selectedProduct,
+    getTokenCallback,
+    handleBuyNow,
+    handleMakeOffer,
+    handleCheckoutSuccess,
+  } = useCheckoutFlow(apiUrl, getToken, navigation, fetchProduct);
 
   return (
     <>
@@ -1879,8 +1694,8 @@ function ProductDetailScreenWrapper({
         productId={productId}
         onFetchProduct={fetchProduct}
         onBack={() => navigation.goBack()}
-        onBuyNow={handleBuyNow}
-        onMakeOffer={handleMakeOffer}
+        onBuyNow={(id) => handleBuyNow(id)}
+        onMakeOffer={(id, _price, offerAmount) => handleMakeOffer(id, offerAmount)}
         isAuthenticated={isAuthenticated}
       />
 
@@ -1907,7 +1722,7 @@ function ProductDetailScreenWrapper({
  */
 function PushTokenRegistration() {
   const { getToken } = useAuth();
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "";
+  const apiUrl = API_URL;
 
   useEffect(() => {
     let mounted = true;
@@ -2056,16 +1871,33 @@ export default function App() {
         });
       },
       (response) => {
-        // Handle notification tap - navigate to message thread
-        const orderId = response.notification.request.content.data?.orderId;
-        if (orderId) {
-          console.info("[App] Navigating to message thread:", orderId);
-          // Note: Navigation will be handled by deep linking
-        }
+        // Handle notification tap while the app is running (foreground/background):
+        // navigate to the order or message thread referenced in the payload.
+        navigateFromNotificationData(response.notification.request.content.data);
       }
     );
 
-    return unsubscribe;
+    // Handle cold-start: if the app was launched by tapping a notification,
+    // there is no live "response received" event, so read the last response
+    // and navigate once the navigator is ready.
+    let coldStartTimer: ReturnType<typeof setTimeout> | null = null;
+    void Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (!response) return;
+      const data = response.notification.request.content.data;
+      const tryNavigate = () => {
+        if (navigationRef.isReady()) {
+          navigateFromNotificationData(data);
+        } else {
+          coldStartTimer = setTimeout(tryNavigate, 250);
+        }
+      };
+      tryNavigate();
+    });
+
+    return () => {
+      unsubscribe();
+      if (coldStartTimer) clearTimeout(coldStartTimer);
+    };
   }, []);
 
   if (!fontsLoaded) return null;
@@ -2196,7 +2028,11 @@ export default function App() {
                 or revert to a hook-based approach - see context/SellerStatusContext.tsx */}
                   <SellerStatusProvider>
                     <PushTokenRegistration />
-                    <NavigationContainer linking={linking} theme={navigationTheme}>
+                    <NavigationContainer
+                      ref={navigationRef}
+                      linking={linking}
+                      theme={navigationTheme}
+                    >
                       <Stack.Navigator screenOptions={{ headerShown: false }}>
                         <Stack.Screen name="Home">
                           {({ navigation }: { navigation: any }) => (
@@ -2287,12 +2123,14 @@ export default function App() {
                             route,
                             navigation,
                           }: {
-                            route: { params?: { orderId?: string } };
+                            // Deep links use ':id' (from routes.orderDetail); in-app
+                            // navigation passes 'orderId'. Accept either.
+                            route: { params?: { id?: string; orderId?: string } };
                             navigation: any;
                           }) => (
                             <OrderDetailScreenWrapper
                               navigation={navigation}
-                              orderId={route.params?.orderId || ""}
+                              orderId={route.params?.id || route.params?.orderId || ""}
                             />
                           )}
                         </Stack.Screen>
@@ -2421,12 +2259,13 @@ function OnboardingFlow() {
         <Stack.Screen name="LoggedOutHome">
           {({ navigation }: { navigation: any }) => (
             <HomeScreen
-              onFetchProducts={fetchProducts}
               onSellPress={() => setFlowState("signIn")}
               isAuthenticated={false}
               onLoginPress={() => setFlowState("signIn")}
               onWishlistPress={() => setFlowState("signIn")}
               onCategoryPress={(slug) => navigation.navigate("Category", { slug })}
+              // No Products/search screen is registered in the signed-out flow,
+              // so search is intentionally omitted here (no-op).
               hideBuySellToggle={true}
             />
           )}

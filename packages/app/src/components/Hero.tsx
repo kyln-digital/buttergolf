@@ -152,8 +152,7 @@ function HeroHeading({
             <Heading
               key={index}
               level={1}
-              // eslint-disable-next-line react/forbid-component-props
-              fontSize={40}
+              size="$13"
               color="$text"
               fontWeight="700"
               lineHeight={46}

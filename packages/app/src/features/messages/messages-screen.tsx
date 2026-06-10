@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MessageCircle, AlertTriangle } from "@tamagui/lucide-icons";
 import { MobileBottomNav } from "../../components/mobile";
 import { formatDistanceToNow } from "date-fns";
+import { brandColors } from "@buttergolf/constants";
 
 export interface Conversation {
   id: string;
@@ -360,8 +361,8 @@ export function MessagesScreen({
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor="#F45314"
-              colors={["#F45314"]}
+              tintColor={brandColors.spicedClementine}
+              colors={[brandColors.spicedClementine]}
             />
           }
           onEndReached={hasMore ? handleLoadMore : undefined}
