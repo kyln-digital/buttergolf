@@ -3,6 +3,7 @@ import { prisma } from "@buttergolf/db";
 import { stripe } from "@/lib/stripe";
 import { calculatePricingBreakdownInPence } from "@/lib/pricing";
 import { getUserIdFromRequest } from "@/lib/auth";
+import { enforceIpRateLimit } from "@/middleware/rate-limit";
 
 // Shipping options with prices in pence
 const SHIPPING_OPTIONS = {
@@ -28,6 +29,13 @@ export async function POST(req: Request) {
   console.info("[PaymentIntent API] POST request received");
 
   try {
+    // Throttle PaymentIntent creation per IP to limit abuse
+    const limited = await enforceIpRateLimit(req, "create-payment-intent", {
+      maxRequests: 20,
+      windowMs: 60_000,
+    });
+    if (limited) return limited;
+
     // Support both web cookies and mobile Bearer tokens
     const clerkUserId = await getUserIdFromRequest(req);
 

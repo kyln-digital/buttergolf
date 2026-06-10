@@ -3,6 +3,7 @@ import { prisma, PromotionType } from "@buttergolf/db";
 import { stripe } from "@/lib/stripe";
 import { PROMOTION_PRICES, PROMOTION_DURATIONS } from "@/lib/pricing";
 import { getUserIdFromRequest } from "@/lib/auth";
+import { enforceIpRateLimit } from "@/middleware/rate-limit";
 
 /**
  * POST /api/promotions/purchase
@@ -21,6 +22,12 @@ import { getUserIdFromRequest } from "@/lib/auth";
  */
 export async function POST(request: NextRequest) {
   try {
+    const limited = await enforceIpRateLimit(request, "promotions-purchase", {
+      maxRequests: 20,
+      windowMs: 60_000,
+    });
+    if (limited) return limited;
+
     // Support both web cookies and mobile Bearer tokens
     const clerkUserId = await getUserIdFromRequest(request);
 
@@ -76,19 +83,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Cannot promote a sold product" }, { status: 400 });
     }
 
-    // Check for existing active promotion of the same type
+    // Block duplicates: an ACTIVE promotion of this type, OR a PENDING one whose
+    // payment is still plausibly in flight (created in the last hour). Without
+    // the PENDING check, two rapid purchases each create a payable intent and
+    // the seller gets double-charged for one effective promotion. Older PENDING
+    // rows are treated as abandoned and ignored.
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     const existingPromotion = await prisma.productPromotion.findFirst({
       where: {
         productId,
         type: promotionType as PromotionType,
-        status: "ACTIVE",
-        expiresAt: { gt: new Date() },
+        OR: [
+          { status: "ACTIVE", expiresAt: { gt: new Date() } },
+          { status: "PENDING", createdAt: { gt: oneHourAgo } },
+        ],
       },
     });
 
     if (existingPromotion) {
       return NextResponse.json(
-        { error: `Product already has an active ${promotionType} promotion` },
+        { error: `Product already has an active or pending ${promotionType} promotion` },
         { status: 400 }
       );
     }

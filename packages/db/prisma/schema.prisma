@@ -131,12 +131,13 @@ model Product {
   category    Category         @relation(fields: [categoryId], references: [id])
   user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, requestId])
   @@index([categoryId])
   @@index([userId])
   @@index([brandId])
   @@index([isSold])
   @@index([views])
-  @@index([requestId])
+  @@index([categoryId, isSold])
   @@map("products")
 }
 
@@ -193,7 +194,7 @@ model Address {
 model Order {
   id                   String         @id @default(cuid())
   stripePaymentId      String?        @unique
-  stripeCheckoutId     String?
+  stripeCheckoutId     String?        @unique
   amountTotal          Float
   shippingCost         Float
   sellerId             String
@@ -225,7 +226,7 @@ model Order {
   stripePayoutStatus   String?
   stripePlatformFee    Float?
   stripeSellerPayout   Float?
-  stripeTransferId     String?
+  stripeTransferId     String?        @unique
   // Vinted-style payment hold (escrow) fields
   paymentHoldStatus    PaymentHoldStatus @default(HELD)
   paymentHeldAt        DateTime?
@@ -234,7 +235,7 @@ model Order {
   buyerConfirmedAt     DateTime?
   // Buyer protection fee tracking
   buyerProtectionFee   Float?
-  stripeChargeId       String?
+  stripeChargeId       String?        @unique
   buyer                User           @relation("BuyerOrders", fields: [buyerId], references: [id])
   fromAddress          Address        @relation("FromAddress", fields: [fromAddressId], references: [id])
   product              Product        @relation(fields: [productId], references: [id])
@@ -250,6 +251,8 @@ model Order {
   @@index([status])
   @@index([paymentHoldStatus])
   @@index([autoReleaseAt])
+  @@index([buyerId, status])
+  @@index([sellerId, status])
   @@map("orders")
 }
 
@@ -272,6 +275,7 @@ model Message {
   @@index([senderId])
   @@index([createdAt])
   @@index([offerId])
+  @@index([conversationId, createdAt])
   @@map("messages")
 }
 
@@ -362,7 +366,7 @@ model ProductPromotion {
   userId          String
   type            PromotionType
   status          PromotionStatus @default(PENDING)
-  stripePaymentId String?
+  stripePaymentId String?         @unique
   amountPaid      Float
   startsAt        DateTime?
   expiresAt       DateTime?

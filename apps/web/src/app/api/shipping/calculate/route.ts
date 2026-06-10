@@ -1,42 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkRateLimit, rateLimitResponse } from "@/middleware/rate-limit";
+import { enforceIpRateLimit } from "@/middleware/rate-limit";
 import {
   calculateShippingRates,
   estimateShippingRate,
   ShippingCalculationRequest,
 } from "@/lib/shipengine";
 
-function getClientIp(request: NextRequest): string {
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  if (forwardedFor) {
-    const firstIp = forwardedFor.split(",")[0]?.trim();
-    if (firstIp) return firstIp;
-  }
-  const realIp = request.headers.get("x-real-ip")?.trim();
-  if (realIp) return realIp;
-  return "unknown";
-}
-
 // Each call hits the paid ShipEngine API, so unauthenticated traffic must be throttled.
-async function enforceRateLimit(request: NextRequest): Promise<NextResponse | null> {
-  const clientIp = getClientIp(request);
-  const { isLimited, resetAt, headers } = await checkRateLimit(clientIp, {
-    maxRequests: 20,
-    windowMs: 60_000,
-    keyFn: (ip) => `shipping-calculate:${ip}`,
-  });
-  if (isLimited) {
-    const response = rateLimitResponse(resetAt);
-    Object.entries(headers).forEach(([key, value]) => response.headers.set(key, value));
-    return response;
-  }
-  return null;
-}
+const RATE_LIMIT = { maxRequests: 20, windowMs: 60_000 };
 
 // POST /api/shipping/calculate - Calculate shipping rates for a product
 export async function POST(request: NextRequest) {
   try {
-    const limited = await enforceRateLimit(request);
+    const limited = await enforceIpRateLimit(request, "shipping-calculate", RATE_LIMIT);
     if (limited) return limited;
 
     const body: ShippingCalculationRequest = await request.json();
@@ -44,17 +20,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error calculating shipping rates:", error);
-    const message = error instanceof Error ? error.message : "Failed to calculate shipping rates";
-    const status =
-      message === "Product not found" ? 404 : message.includes("Missing required") ? 400 : 500;
-    return NextResponse.json({ error: message }, { status });
+    const raw = error instanceof Error ? error.message : "";
+    // Surface only known client-actionable errors; mask everything else.
+    if (raw === "Product not found") {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    }
+    if (raw.includes("Missing required")) {
+      return NextResponse.json({ error: "Missing required shipping details" }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Failed to calculate shipping rates" }, { status: 500 });
   }
 }
 
 // GET /api/shipping/calculate?productId=xxx&postcode=SW1A1AA - Quick rate estimate (for product pages)
 export async function GET(request: NextRequest) {
   try {
-    const limited = await enforceRateLimit(request);
+    const limited = await enforceIpRateLimit(request, "shipping-calculate", RATE_LIMIT);
     if (limited) return limited;
 
     const { searchParams } = new URL(request.url);
@@ -70,8 +51,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error estimating shipping rate:", error);
-    const message = error instanceof Error ? error.message : "Failed to estimate shipping rate";
-    const status = message === "Product not found" ? 404 : 500;
-    return NextResponse.json({ error: message }, { status });
+    const raw = error instanceof Error ? error.message : "";
+    if (raw === "Product not found") {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    }
+    return NextResponse.json({ error: "Failed to estimate shipping rate" }, { status: 500 });
   }
 }

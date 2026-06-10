@@ -41,7 +41,7 @@ async function getCategoryListings(
     isDraft: false,
     category: { slug: categorySlug },
     // Keep count/query/render parity by excluding orphaned seller relations at query time.
-    user: { is: {} },
+    user: { is: { isDeleted: false } },
   };
 
   // Condition filter

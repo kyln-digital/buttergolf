@@ -36,6 +36,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         id: { not: id },
         isSold: false,
         isDraft: false,
+        user: { is: { isDeleted: false } },
         categoryId: product.categoryId,
         price: {
           gte: priceMin,
