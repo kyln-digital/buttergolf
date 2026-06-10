@@ -10,10 +10,11 @@
  * Platform revenue comes from buyer protection fees + optional promotions
  */
 
-// Fee configuration (amounts in pence for precision)
-const PROTECTION_FEE_PERCENT = 5; // 5%
-const PROTECTION_FEE_FIXED_PENCE = 70; // £0.70
-const PROTECTION_FEE_MINIMUM_PENCE = 70; // £0.70 minimum
+// Canonical fee formula + shipping options live in @buttergolf/constants so
+// web and mobile display math can never drift from server charge math.
+import { calculateBuyerProtectionFeeInPence } from "@buttergolf/constants";
+
+export { calculateBuyerProtectionFeeInPence };
 
 // Auto-release configuration
 export const AUTO_RELEASE_DAYS = 14; // Days after delivery before auto-release
@@ -51,28 +52,10 @@ export interface PricingBreakdownInPence {
 }
 
 /**
- * Calculate buyer protection fee in pence
- *
- * IMPORTANT: Fee is calculated on PRODUCT PRICE ONLY, not including shipping.
- * This is consistent across both checkout flows:
- * - EmbeddedCheckout: Protection fee calculated before shipping is known
- * - PaymentElement: Protection fee calculated with known shipping but excludes it
- *
- * This design decision ensures:
- * 1. Fee is predictable for buyers regardless of shipping option chosen
- * 2. Sellers aren't penalized for higher shipping costs
- * 3. Calculation matches what's shown to buyers before checkout
- *
- * Formula: (productPrice × 5%) + £0.70, minimum £0.70
- */
-export function calculateBuyerProtectionFeeInPence(productPriceInPence: number): number {
-  const percentFee = Math.round(productPriceInPence * (PROTECTION_FEE_PERCENT / 100));
-  const totalFee = percentFee + PROTECTION_FEE_FIXED_PENCE;
-  return Math.max(totalFee, PROTECTION_FEE_MINIMUM_PENCE);
-}
-
-/**
  * Calculate buyer protection fee in pounds
+ *
+ * IMPORTANT: Fee is calculated on PRODUCT PRICE ONLY, not including shipping
+ * (see @buttergolf/constants checkout.ts for the canonical formula and why).
  */
 export function calculateBuyerProtectionFee(productPrice: number): number {
   const productPriceInPence = Math.round(productPrice * 100);

@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { RadioGroup, Radio, RadioIndicator, Label, Row } from "@buttergolf/ui";
-import { CATEGORIES } from "@buttergolf/db";
+import { CATEGORIES } from "@buttergolf/constants";
 
 interface CategoryFilterProps {
   selectedCategory: string | null;

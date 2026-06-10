@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma, Prisma, ProductCondition } from "@buttergolf/db";
+import { prisma, ProductCondition } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
-import type { ProductCardData } from "@buttergolf/app";
+import {
+  buildListingWhere,
+  getListingOrderBy,
+  getListingFilterOptions,
+  toProductCardData,
+  PRODUCT_CARD_INCLUDE,
+} from "@/lib/listings";
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,13 +18,16 @@ export async function GET(request: NextRequest) {
     const limit = Number.parseInt(searchParams.get("limit") || "24");
     const skip = (page - 1) * limit;
 
-    // Build where clause
-    const where: Prisma.ProductWhereInput = {
-      isSold: false,
-      isDraft: false,
-      // Keep count/query/render parity by excluding orphaned seller relations at query time.
-      user: { is: { isDeleted: false } },
-    };
+    // Shared filter building (same logic as /listings and /category SSR pages)
+    const minPrice = searchParams.get("minPrice");
+    const maxPrice = searchParams.get("maxPrice");
+    const where = buildListingWhere({
+      categorySlug: searchParams.get("category") || undefined,
+      conditions: searchParams.getAll("condition") as ProductCondition[],
+      minPrice: minPrice ? parseFloat(minPrice) : undefined,
+      maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+      brandIds: searchParams.getAll("brand"),
+    });
 
     // Favourites filter (requires authentication)
     const showFavouritesOnly = searchParams.get("favourites") === "true";
@@ -59,34 +68,6 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    // Category filter (slug)
-    const category = searchParams.get("category");
-    if (category) {
-      where.category = { slug: category };
-    }
-
-    // Condition filter (multiple)
-    const conditions = searchParams.getAll("condition") as ProductCondition[];
-    if (conditions.length > 0) {
-      where.condition = { in: conditions };
-    }
-
-    // Price range
-    const minPrice = searchParams.get("minPrice");
-    const maxPrice = searchParams.get("maxPrice");
-    if (minPrice || maxPrice) {
-      where.price = {
-        ...(minPrice && { gte: parseFloat(minPrice) }),
-        ...(maxPrice && { lte: parseFloat(maxPrice) }),
-      };
-    }
-
-    // Brand filter (multiple)
-    const brands = searchParams.getAll("brand");
-    if (brands.length > 0) {
-      where.brandId = { in: brands };
-    }
-
     // Search query
     const query = searchParams.get("q");
     if (query) {
@@ -98,53 +79,16 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    // Sort options
-    const sort = searchParams.get("sort") || "newest";
-    // Default sort
-    let orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: "desc" };
-
-    switch (sort) {
-      case "price-asc":
-        orderBy = { price: "asc" };
-        break;
-      case "price-desc":
-        orderBy = { price: "desc" };
-        break;
-      case "popular":
-        orderBy = { views: "desc" };
-        break;
-      case "newest":
-      default:
-        orderBy = { createdAt: "desc" };
-        break;
-    }
+    // Sort options (shared mapping)
+    const orderBy = getListingOrderBy(searchParams.get("sort") || undefined);
 
     // Fetch products with active promotions
     // Products with active BUMP promotions appear first (boosted visibility)
-    const [products, total] = await Promise.all([
+    const [products, total, filters] = await Promise.all([
       prisma.product.findMany({
         where,
         include: {
-          images: {
-            orderBy: { sortOrder: "asc" },
-            take: 1,
-          },
-          category: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-            },
-          },
-          user: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              averageRating: true,
-              ratingCount: true,
-            },
-          },
+          ...PRODUCT_CARD_INCLUDE,
           // Include active promotions for boost sorting
           promotions: {
             where: {
@@ -166,6 +110,7 @@ export async function GET(request: NextRequest) {
         take: limit,
       }),
       prisma.product.count({ where }),
+      getListingFilterOptions(searchParams.get("category") || undefined),
     ]);
 
     // Sort products: promoted items first, then by selected sort
@@ -181,42 +126,8 @@ export async function GET(request: NextRequest) {
       return 0;
     });
 
-    // Get filter options (available brands and price range)
-    const [availableBrands, priceAgg] = await Promise.all([
-      prisma.brand.findMany({
-        where: {
-          products: {
-            some: { isSold: false, isDraft: false },
-          },
-        },
-        select: { name: true },
-        orderBy: { name: "asc" },
-      }),
-      prisma.product.aggregate({
-        where: { isSold: false, isDraft: false },
-        _min: { price: true },
-        _max: { price: true },
-      }),
-    ]);
-
     // Map to ProductCardData format (using sorted products with promotion boost)
-    const productCards: ProductCardData[] = sortedProducts.map((product) => ({
-      id: product.id,
-      title: product.title,
-      price: product.price,
-      condition: product.condition,
-      imageUrl: product.images[0]?.url || "/placeholder-product.jpg",
-      category: product.category.name,
-      seller: {
-        id: product.user.id,
-        firstName: product.user.firstName,
-        lastName: product.user.lastName,
-        averageRating: product.user.averageRating,
-        ratingCount: product.user.ratingCount,
-      },
-      // Include promotion info for UI badge/styling
-      isPromoted: product.promotions && product.promotions.length > 0,
-    }));
+    const productCards = sortedProducts.map(toProductCardData);
 
     return NextResponse.json({
       products: productCards,
@@ -224,15 +135,7 @@ export async function GET(request: NextRequest) {
       page,
       totalPages: Math.ceil(total / limit),
       hasMore: page < Math.ceil(total / limit),
-      filters: {
-        availableBrands: availableBrands
-          .map((b) => b.name)
-          .filter((name): name is string => name !== null),
-        priceRange: {
-          min: priceAgg._min.price || 0,
-          max: priceAgg._max.price || 1000,
-        },
-      },
+      filters,
     });
   } catch (error) {
     console.error("Listings API error:", error);

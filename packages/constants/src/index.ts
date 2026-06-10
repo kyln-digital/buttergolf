@@ -7,6 +7,7 @@
 
 export * from "./brandColors";
 export * from "./categories";
+export * from "./checkout";
 export * from "./errorIds";
 export * from "./images";
 export * from "./logging";

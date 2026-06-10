@@ -55,16 +55,14 @@ export { prisma };
 
 export type {
   Prisma,
-  ClubKind,
-  ShipmentStatus,
-  OrderStatus,
   Order,
   Conversation,
   Message,
   Offer,
   CounterOffer,
 } from "../generated/client";
-// Re-export enums as values (not type-only) so they can be used at runtime
+// Re-export ALL enums as values (not type-only) so consumers can use them at
+// runtime (e.g. OrderStatus.SHIPPED) - keep this list symmetrical.
 export {
   ProductCondition,
   PaymentHoldStatus,
@@ -72,5 +70,7 @@ export {
   PromotionStatus,
   OfferStatus,
   MessageType,
+  ClubKind,
+  ShipmentStatus,
+  OrderStatus,
 } from "../generated/client";
-export * from "@buttergolf/constants";

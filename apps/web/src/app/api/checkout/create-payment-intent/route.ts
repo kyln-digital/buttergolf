@@ -1,18 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
+import { getShippingOption, type ShippingOptionId } from "@buttergolf/constants";
 import { stripe } from "@/lib/stripe";
 import { calculatePricingBreakdownInPence } from "@/lib/pricing";
 import { getUserIdFromRequest } from "@/lib/auth";
 import { enforceIpRateLimit } from "@/middleware/rate-limit";
-
-// Shipping options with prices in pence
-const SHIPPING_OPTIONS = {
-  standard: { name: "Royal Mail Tracked 48", price: 499 },
-  express: { name: "Royal Mail Tracked 24", price: 699 },
-  nextDay: { name: "DPD Next Day", price: 899 },
-} as const;
-
-type ShippingOptionId = keyof typeof SHIPPING_OPTIONS;
 
 /**
  * Creates a Stripe Payment Intent for single-product purchase
@@ -61,7 +53,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Product ID is required" }, { status: 400 });
     }
 
-    if (!shippingOptionId || !SHIPPING_OPTIONS[shippingOptionId]) {
+    const shippingOption = getShippingOption(shippingOptionId);
+    if (!shippingOption) {
       return NextResponse.json({ error: "Valid shipping option is required" }, { status: 400 });
     }
 
@@ -108,7 +101,7 @@ export async function POST(req: Request) {
 
     // Calculate Vinted-style pricing (0% seller fee, buyer pays protection fee)
     const productPriceInPence = Math.round(product.price * 100);
-    const shippingAmountInPence = SHIPPING_OPTIONS[shippingOptionId].price;
+    const shippingAmountInPence = shippingOption.priceInPence;
     const pricing = calculatePricingBreakdownInPence(productPriceInPence, shippingAmountInPence);
 
     // Total includes product + shipping + buyer protection
@@ -145,7 +138,7 @@ export async function POST(req: Request) {
         sellerPayoutInPence: pricing.sellerReceivesInPence.toString(),
         // Shipping details
         shippingOptionId,
-        shippingOptionName: SHIPPING_OPTIONS[shippingOptionId].name,
+        shippingOptionName: shippingOption.name,
         source: "payment_element", // Distinguish from checkout session flow
       },
       receipt_email: buyer.email,
@@ -163,11 +156,6 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("[PaymentIntent API] FATAL ERROR:", error);
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Failed to create payment intent",
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to create payment intent" }, { status: 500 });
   }
 }
