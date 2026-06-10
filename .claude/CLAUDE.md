@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-ButterGolf is a cross-platform golf course management and booking application built with a modern monorepo architecture. It supports both web (Next.js) and mobile (Expo) platforms with shared business logic and UI components.
+ButterGolf is a cross-platform peer-to-peer marketplace for buying and selling used golf equipment (Vinted-style), built with a modern monorepo architecture. It supports both web (Next.js) and mobile (Expo) platforms with shared business logic and UI components. Core domains: product listings, offers/messaging, orders with Stripe Connect escrow payouts, and shipping.
 
 ## Architecture
 
@@ -764,6 +764,10 @@ await prisma.course.delete({
 ## Layout Pattern Documentation
 
 **IMPORTANT**: The codebase recently completed a comprehensive layout migration. All routes now follow the minimal shim pattern for Row/Column components.
+
+### Layout Patterns
+
+Row and Column are minimal shims over Tamagui primitives (see the Quick Reference below).
 
 ### Quick Reference: Layout Patterns
 

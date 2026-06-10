@@ -1,194 +1,80 @@
-# ButterGolf Monorepo.
+# ButterGolf
 
-A monorepo setup for ButterGolf using Turborepo, Next.js (web), and Expo (iOS/Android).
+ButterGolf is a cross-platform peer-to-peer marketplace for buying and selling used golf equipment (Vinted-style). It runs on web (Next.js) and mobile (Expo) from a shared Turborepo monorepo.
 
-## What's inside?
+## Architecture
 
-This Turborepo includes the following packages/apps:
+```
+buttergolf/
+├── apps/
+│   ├── web/          # Next.js 16 web app (App Router)
+│   └── mobile/       # Expo app (iOS/Android, React Navigation + Solito)
+└── packages/
+    ├── ui/           # Tamagui cross-platform components (@buttergolf/ui)
+    ├── app/          # Shared Solito screens & business logic (@buttergolf/app)
+    ├── db/           # Prisma client & schema (@buttergolf/db)
+    ├── config/       # Tamagui configuration (@buttergolf/config)
+    ├── constants/    # Shared constants (@buttergolf/constants)
+    ├── assets/       # Shared assets (@buttergolf/assets)
+    ├── eslint-config/      # Shared ESLint config
+    └── typescript-config/  # Shared tsconfig bases
+```
 
-### Apps and Packages
+All internal packages use the `@buttergolf/` namespace and the `workspace:*` protocol.
 
-- `web`: a [Next.js](https://nextjs.org/) app for the website
-- `mobile`: an [Expo](https://expo.dev/) app for iOS/Android mobile experience
-- `@my-scope/ui`: a shared React component library compatible with both web and React Native
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+## Stack
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+- **Build**: Turborepo + pnpm workspaces
+- **UI**: Tamagui (web + native); Tailwind CSS v4 on web
+- **Navigation**: Next.js App Router (web), React Navigation + Solito (mobile)
+- **Database**: Prisma 6 + PostgreSQL (Neon)
+- **Auth**: Clerk
+- **Payments**: Stripe Connect (separate charges & transfers with escrow/payment hold)
+- **Shipping**: ShipEngine (UK)
+- **Images**: Cloudinary
 
-## Getting Started
+## Requirements
 
-### Prerequisites
+- Node.js 22+
+- pnpm 10+ (`packageManager` is pinned in `package.json`)
 
-- Node.js >= 18
-- pnpm 10.20.0 (managed via package.json "packageManager")
+## Getting started
 
-### Installation
-
-1. Clone the repository
-2. Install dependencies:
-
-```sh
+```bash
 pnpm install
+cp .env.example .env        # fill in the required secrets
+pnpm db:generate            # generate the Prisma client
+pnpm dev                    # start all apps
 ```
 
-### Utilities
+App-specific dev servers:
 
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Development
-
-Run all apps in development mode:
-
-```sh
-pnpm dev
+```bash
+pnpm dev:web                # Next.js on http://localhost:3000
+pnpm dev:mobile             # Expo dev server
 ```
 
-Run specific apps:
+## Common commands
 
-```sh
-# Web app only
-pnpm dev:web
+```bash
+pnpm build         # build all apps
+pnpm check         # format + lint + type-check (run before pushing)
+pnpm typecheck     # TypeScript only
+pnpm lint          # ESLint
+pnpm format        # Prettier
 
-# Mobile app only
-pnpm dev:mobile
+pnpm db:migrate:dev   # create & apply a migration (development)
+pnpm db:studio        # open Prisma Studio
+pnpm db:seed          # seed the database
 ```
 
-Or use turbo filters directly:
+## Documentation
 
-```sh
-# Web app
-pnpm turbo dev --filter=web
+- `docs/STRIPE_CONNECT_MODEL.md` — payment architecture (escrow, payouts, onboarding)
+- `docs/STRIPE_EMBEDDED_ONBOARDING_GUIDE.md` — embedded Connect onboarding
+- `docs/CODEBASE_REVIEW.md` — full codebase review and findings
+- `.claude/CLAUDE.md` — conventions and design-system rules
 
-# Mobile app
-pnpm turbo dev --filter=mobile
-```
+## Environment
 
-### Build
-
-Build all apps and packages:
-
-```sh
-pnpm build
-```
-
-Build a specific app:
-
-```sh
-pnpm turbo build --filter=web
-# or
-pnpm turbo build --filter=mobile
-```
-
-### Linting & Type Checking
-
-```sh
-# Lint all packages
-pnpm lint
-
-# Type check all packages
-pnpm check-types
-```
-
-## Monorepo Setup Details
-
-### Metro Configuration (Expo)
-
-The iOS app uses a custom `metro.config.js` that:
-
-- Watches all files in the monorepo (workspace root)
-- Resolves modules from both project and workspace `node_modules`
-- Disables hierarchical lookup for consistent resolution
-- Uses Turborepo cache when possible
-
-### Shared Packages
-
-The `@my-scope/ui` package is configured to work with both React (web) and React Native (iOS):
-
-- Uses peer dependencies for framework compatibility
-- React Native is marked as optional for web-only usage
-- Components can be imported in both Next.js and Expo apps
-
-### Turborepo Configuration
-
-The `turbo.json` is configured to:
-
-- Handle both Next.js (`.next/**`) and Expo (`.expo/**`) build outputs
-- Support persistent dev servers for both platforms
-- Run tasks with proper dependency ordering
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started at [vercel.com](https://vercel.com/signup).
-
-To enable remote caching:
-
-```sh
-pnpm turbo login
-pnpm turbo link
-```
-
-## Design System & Styling
-
-This project uses [Tamagui](https://tamagui.dev) for cross-platform UI components and theming. **Always use theme tokens instead of hardcoded values.**
-
-### Quick Start
-
-```tsx
-// ✅ Good - Using theme tokens
-<YStack backgroundColor="$bg" padding="$4">
-  <Text color="$text" fontSize="$5">Hello</Text>
-</YStack>
-
-// ❌ Bad - Hardcoded values
-<YStack backgroundColor="#fbfbf9" padding={16}>
-  <Text color="#0f1720">Hello</Text>
-</YStack>
-```
-
-### Documentation
-
-- **[Tamagui Best Practices](./docs/TAMAGUI_BEST_PRACTICES.md)** - Component creation, styling patterns, and token usage
-- **[Migration Example](./docs/MIGRATION_EXAMPLE.md)** - Step-by-step guide to migrate from hardcoded values
-- **[Usage Audit](./docs/TAMAGUI_USAGE_AUDIT.md)** - Detailed analysis and recommendations
-- **[Contributing Guide](./CONTRIBUTING.md)** - Development guidelines
-
-### Run Tamagui Audit
-
-```sh
-node scripts/audit-tamagui-usage.js
-```
-
-## Database
-
-This project uses Prisma with PostgreSQL. See [docs/AUTH_SETUP_CLERK.md](./docs/AUTH_SETUP_CLERK.md) for full setup.
-
-```sh
-# Generate Prisma Client
-pnpm db:generate
-
-# Push schema changes (development)
-pnpm db:push
-
-# Create migration (production)
-pnpm db:migrate:dev --name migration-name
-
-# Open Prisma Studio
-pnpm db:studio
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+See `.env.example` for the full list of required variables (Clerk, Stripe, Database, ShipEngine, Cloudinary, Resend, plus `MOBILE_SESSION_SECRET`, `CRON_SECRET`, and `ADMIN_USER_IDS`).
