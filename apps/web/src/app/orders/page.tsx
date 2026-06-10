@@ -21,7 +21,8 @@ export default async function OrdersPage() {
     redirect("/sign-in?redirect_url=%2Forders");
   }
 
-  // Fetch user's orders
+  // Fetch user's orders. Counterparty email is intentionally not selected -
+  // buyers and sellers must not receive each other's email addresses.
   const orders = await prisma.order.findMany({
     where: {
       OR: [{ buyerId: user.id }, { sellerId: user.id }],
@@ -40,7 +41,6 @@ export default async function OrdersPage() {
           id: true,
           firstName: true,
           lastName: true,
-          email: true,
           imageUrl: true,
         },
       },
@@ -49,7 +49,6 @@ export default async function OrdersPage() {
           id: true,
           firstName: true,
           lastName: true,
-          email: true,
           imageUrl: true,
         },
       },
@@ -57,6 +56,7 @@ export default async function OrdersPage() {
       toAddress: true,
     },
     orderBy: { createdAt: "desc" },
+    take: 100,
   });
 
   // Add role information to each order

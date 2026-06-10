@@ -42,7 +42,12 @@ export async function GET(req: Request) {
       whereClause.status = status;
     }
 
-    // Fetch orders
+    // Pagination (cap page size to avoid unbounded result sets)
+    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "50", 10), 1), 100);
+    const offset = Math.max(parseInt(searchParams.get("offset") || "0", 10), 0);
+
+    // Fetch orders. Note: counterparty email is intentionally NOT selected -
+    // buyers and sellers should not receive each other's email addresses.
     const orders = await prisma.order.findMany({
       where: whereClause,
       include: {
@@ -59,7 +64,6 @@ export async function GET(req: Request) {
             id: true,
             firstName: true,
             lastName: true,
-            email: true,
             imageUrl: true,
           },
         },
@@ -68,7 +72,6 @@ export async function GET(req: Request) {
             id: true,
             firstName: true,
             lastName: true,
-            email: true,
             imageUrl: true,
           },
         },
@@ -76,6 +79,8 @@ export async function GET(req: Request) {
         toAddress: true,
       },
       orderBy: { createdAt: "desc" },
+      take: limit,
+      skip: offset,
     });
 
     // Add role information to each order
