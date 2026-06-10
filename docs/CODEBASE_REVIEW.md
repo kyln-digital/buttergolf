@@ -291,17 +291,68 @@ Both checkout routes pre-check `isSold`, but neither webhook handler re-checks i
 
 ## 5. Review fixes applied on this branch
 
-The following critical items were fixed directly on this branch immediately after the review (see commit history):
+Fixes were applied across the codebase on this branch (see commit history). `pnpm check` (format + lint + type-check) passes on every package.
 
-- **SEC-1** — `mobile-session.ts` now requires `MOBILE_SESSION_SECRET` (no Stripe-key or hardcoded fallback).
+**Security**
+
+- **SEC-1** — `mobile-session.ts` requires `MOBILE_SESSION_SECRET` (no Stripe-key or hardcoded fallback).
 - **SEC-2** — `getMyProducts` derives the user from `auth()`; no caller-supplied `clerkId`.
 - **SEC-3** — `by-session` order lookup requires auth + buyer/seller ownership.
 - **SEC-4** — `debug-clerk` and Sentry example route/page removed.
-- **SEC-5** — rate limiting on `/api/shipping/calculate`.
+- **SEC-6** — CORS allowlist in `proxy.ts` (no origin reflection / `*`); auth-header debug logging removed.
+- **SEC-7** — rate limiting added to shipping-calculate, waitlist, upload, create-payment-intent, promotions (shared `enforceIpRateLimit`/`checkRateLimit` helpers).
+- **SEC-8** — error responses genericised (no internal `error.message` leakage) across seller-status, mobile-onboard, mobile-session, account-session, shipping.
 - **SEC-9** — admin IDs moved from `proxy.ts` to `ADMIN_USER_IDS` env var.
-- **PAY-1** — refund/dispute now set `paymentHoldStatus`; release cron verifies the charge before transferring.
-- **PAY-2** — Connect drain: atomic claim + Stripe idempotency key.
-- **WEB-1/DB-3** — `isDraft: false` added to all public read paths.
-- **Baseline** — `pnpm check` green: svg typing include fixed, generated Prisma client prettier-ignored.
 
-**Deliberately not auto-fixed** (need product/design decisions or mobile-binary changes — recommend separate PRs): PAY-3 (PaymentSheet shipping collection — changes the mobile checkout UX and ships in the app binary), PAY-4 (atomic claim needs an auto-refund policy decision), PAY-6/7 (delivery-verification policy), DB-1 (money-type migration needs a maintenance window + backfill).
+**Payments**
+
+- **PAY-1** — refund/dispute set `paymentHoldStatus` (REFUNDED/DISPUTED); release cron verifies the charge isn't refunded/disputed before transferring; dispute handlers freeze/unfreeze escrow.
+- **PAY-2** — Connect onboarding drain: per-order atomic claim + Stripe idempotency key.
+- **PAY-4** — double-sell guard: conflicting-order detection + auto-refund; product marked sold atomically with order creation (transaction) in both checkout and PaymentElement paths.
+- **PAY-5** — unified `release:${orderId}` idempotency key across all three transfer sites; atomic claim in confirm-receipt.
+- **PAY-7** — carrier webhook sets `autoReleaseAt` on delivery; never regresses a DELIVERED order.
+- **PAY-8** — `payment_intent.succeeded` returns non-2xx on order-creation failure so Stripe retries (discriminated `CreateOrderResult`); refunded-duplicate acks.
+- **PAY-9 / PAY-10** — release cron drains `PENDING_SELLER_ONBOARDING` orders and logs orphaned `RELEASED`-without-transfer rows.
+- **PAY-11** — refunds only relist unshipped items.
+- **PAY-12** — ShipEngine webhook requires its signature secret (fails closed); EasyPost dead integration removed.
+- **PAY-13** — promotion duplicate/PENDING guard + amount validation on activation.
+
+**Data model & infra**
+
+- **DB-2** — deleted sellers' products excluded from every public read; user-deletion webhook hardened (deletes only order-less products).
+- **DB-3 / WEB-1** — `isDraft: false` on all public read paths (incl. sitemap); drafts visible to owner only.
+- **DB-5 / DB-6** — unique constraints (ProductPromotion.stripePaymentId, Order stripeCheckout/charge/transfer, Product `(userId, requestId)`) + composite indexes; migration SQL in `packages/db/prisma/migrations/20260610120000_review_hardening_constraints_indexes`.
+- **DB-8** — repair script moved out of the migrations directory into `scripts/`.
+- **INF-1** — HSTS + Permissions-Policy headers added.
+- **INF-2** — CI workflow (`.github/workflows/ci.yml`: format + lint + type-check); pre-push type-check re-enabled.
+- **INF-3 / INF-6** — `.env.example` + `turbo.json` env vars reconciled; dead `db:generate` inputs removed.
+- **Baseline** — `pnpm check` fixed (svg typings include; generated Prisma client prettier-ignored).
+
+**Web**
+
+- **WEB-2** — product `generateMetadata` + Product JSON-LD (wired the unused `SeoJsonLd`).
+- **WEB-3** — counterparty email no longer returned from orders API/page.
+- **WEB-4** — root `error.tsx` + `not-found.tsx`.
+- **WEB-5** — pagination caps on orders queries.
+- **WEB-11 / WEB-13** — 8 dead components removed; orphaned-asset cleanup now logged.
+
+**Mobile & shared**
+
+- **MOB-1** infinite refetch loop, **MOB-2** push-token sign-out deregistration, **MOB-3** SSE token refresh, **MOB-4** invisible Sell header buttons, **MOB-5** notification-tap navigation, **MOB-6** linking/route alignment, **MOB-9** error/retry states; duplicated wrapper logic and `formatCurrency` extracted to shared helpers; dead components removed.
+
+**Documentation**
+
+- **DOC-1** — CLAUDE.md product description + dead links fixed; `packages/db` CLAUDE.md `db`→`prisma`; README rewritten; repo clutter removed/git-ignored (INF-4).
+
+### Deliberately deferred (with rationale)
+
+These require a live database, a running app/device, or a coordinated maintenance window to do safely — applying them blind would risk regressions worse than the finding:
+
+- **DB-1 (money `Float` → `Int` pence)** — needs a data backfill (×100) and synchronized changes at every read/write/display site across web, mobile, and shared packages. The current code is not exploitable (`Math.round` absorbs FP noise); a half-applied migration could corrupt live values. Ship as its own migration PR against staging.
+- **DB-4 (cascade → Restrict on promotions/offers)** — would change product/user deletion behaviour; the existing "block delete if product has orders" guard already protects sale-linked records transitively. Needs deletion-flow testing.
+- **DB-7 (stringly-typed state → enums)** — requires data backfill of existing string values.
+- **PAY-3 (mobile PaymentSheet shipping collection)** — ships in the app binary and changes checkout UX; PAY-8 now makes the failure loud (Stripe retries) rather than silent in the meantime.
+- **PAY-6 (carrier-verified delivery gating for auto-release)** — a fraud/policy decision (how to treat seller-set DELIVERED).
+- **WEB-6/7/8/9/10 (server-component dashboard, shared `getListings`, ISR, design-token sweep, component splitting)** — refactors/perf on the highest-traffic pages that need the app running to verify; the report rated them Medium/Low.
+- **CSP header** — a wrong policy breaks Stripe/Clerk/Cloudinary; needs iterative testing against the live app.
+- **Automated tests** — the most valuable follow-up; CI is now in place to run them once written.
