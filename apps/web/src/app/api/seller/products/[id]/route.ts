@@ -164,7 +164,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         for (const cdnUrl of urlsToCleanup) {
           const publicId = extractPublicId(cdnUrl);
           if (publicId) {
-            cloudinary.uploader.destroy(publicId).catch(() => {});
+            cloudinary.uploader.destroy(publicId).catch((err) => {
+              // Orphaned CDN asset - log for later reconciliation, don't fail the request.
+              console.error("Failed to delete Cloudinary asset:", { publicId, err });
+            });
           }
         }
       }
