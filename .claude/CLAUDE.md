@@ -27,8 +27,8 @@ buttergolf/
 
 ### Technology Stack
 
-- **Build System**: Turborepo 2.6.0 for orchestration and caching
-- **Package Manager**: pnpm 10.20.0 with workspace protocol
+- **Build System**: Turborepo 2.7.3 for orchestration and caching
+- **Package Manager**: pnpm 10.30.2 with workspace protocol
 - **UI Framework**: Tamagui 1.135.7 for cross-platform UI
 - **Database**: Prisma 6.x with PostgreSQL
 - **React**: 19.1.0 (aligned across web and mobile)
@@ -454,7 +454,7 @@ Row and Column components do NOT have custom variants. Always use native Tamagui
 The design system rules above are enforced. Before committing, verify:
 
 - [ ] No raw HTML elements (`<div>`, `<h1>-<h6>`, `<p>`, `<button>`, `<input>`, `<select>`, `<textarea>`)
-- [ ] No `fontSize` prop on Text components (use `size` instead) — ESLint blocks this
+- [ ] No `fontSize` prop on Text components (use `size` instead) - ESLint blocks this
 - [ ] No hardcoded hex colors (use semantic tokens like `$primary`, `$text`)
 - [ ] No raw pixel values for spacing (use `$xs`, `$sm`, `$md`, `$lg`, `$xl`, `$2xl`, `$3xl`)
 - [ ] All form inputs use design system components (Input, Select, TextArea, Radio)
@@ -478,6 +478,7 @@ pnpm check-types      # TypeScript validation
 # Database
 pnpm db:generate      # Generate Prisma Client
 pnpm db:migrate:dev   # Create and apply migration
+pnpm db:push          # Push schema changes without a migration file
 pnpm db:studio        # Open Prisma Studio
 pnpm db:seed          # Seed database
 
@@ -763,14 +764,6 @@ await prisma.course.delete({
 ## Layout Pattern Documentation
 
 **IMPORTANT**: The codebase recently completed a comprehensive layout migration. All routes now follow the minimal shim pattern for Row/Column components.
-
-### Migration Documentation
-
-For detailed information about layout patterns and component architecture:
-
-- **[Layout Migration Complete](../docs/LAYOUT_MIGRATION_COMPLETE.md)** - Complete migration report with statistics and verification
-- **[Component Library Audit](../docs/COMPONENT_LIBRARY_AUDIT.md)** - Full audit of all UI components with variant usage guidelines
-- **[Listings Layout Fix](../docs/LISTINGS_LAYOUT_FIX_COMPLETE.md)** - Deep dive into the pattern that established best practices
 
 ### Quick Reference: Layout Patterns
 
