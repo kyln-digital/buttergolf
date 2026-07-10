@@ -1,0 +1,3 @@
+# pnpm's lockfile has its own canonical format; formatting it with Prettier
+# de-canonicalises it and makes every `pnpm install` rewrite ~24k lines.
+pnpm-lock.yaml
