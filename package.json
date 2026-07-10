@@ -116,7 +116,7 @@
     "@types/react": "19.2.14"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx,mjs,cjs,json,md,yaml,yml}": [
+    "*.{js,jsx,ts,tsx,mjs,cjs,json,md}": [
       "pnpm exec prettier --write"
     ],
     "*.{js,jsx,ts,tsx,mjs,cjs}": [
