@@ -57,7 +57,9 @@
       "react-native": "0.81.5",
       "react-native-svg": "15.12.1",
       "react-native-reanimated": "4.1.1",
-      "expo-constants": "18.0.13"
+      "expo-constants": "18.0.13",
+      "simple-git": "^3.36.0",
+      "shell-quote": "^1.8.4"
     },
     "ignoredBuiltDependencies": [
       "@clerk/shared",
