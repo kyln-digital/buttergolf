@@ -48,5 +48,9 @@ yarn-error.log*
 apps/web/public/sitemap*.xml
 apps/web/public/robots.txt
 
+# Lighthouse CI / local report artifacts (may contain session-shaped data)
+lighthouse-*.json
+lighthouse-*.html
+
 # Audit Reports
 TAMAGUI_AUDIT_REPORT.json
