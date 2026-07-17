@@ -133,9 +133,7 @@ describe("mapClerkErrorToMessage", () => {
   it("maps known Clerk error codes to friendly messages", () => {
     expect(mapClerkErrorToMessage("identifier_not_found")).toBe("Email address not found");
     expect(mapClerkErrorToMessage("password_incorrect")).toBe("Incorrect password");
-    expect(mapClerkErrorToMessage("duplicate_identifier")).toBe(
-      "This email is already registered"
-    );
+    expect(mapClerkErrorToMessage("duplicate_identifier")).toBe("This email is already registered");
     expect(mapClerkErrorToMessage("verification_code_expired")).toBe(
       "Verification code has expired. Please request a new one."
     );
