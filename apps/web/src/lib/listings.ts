@@ -13,6 +13,7 @@ export interface ListingFilterParams {
   conditions?: ProductCondition[];
   minPrice?: number;
   maxPrice?: number;
+  /** Brand *names* from the listings UI `brand` query param (not CUID ids). */
   brandIds?: string[];
 }
 
@@ -45,7 +46,8 @@ export function buildListingWhere(filters: ListingFilterParams): Prisma.ProductW
     };
   }
   if (filters.brandIds && filters.brandIds.length > 0) {
-    where.brandId = { in: filters.brandIds };
+    // UI / BrandFilter pass brand names; Brand.id is a CUID.
+    where.brand = { name: { in: filters.brandIds } };
   }
 
   return where;
