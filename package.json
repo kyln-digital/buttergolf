@@ -50,10 +50,10 @@
   },
   "pnpm": {
     "overrides": {
-      "react": "19.1.0",
+      "react": "19.2.7",
       "react-dom": "19.1.0",
       "react-is": "19.1.0",
-      "@types/react": "19.2.14",
+      "@types/react": "19.2.17",
       "@types/react-dom": "19.1.0",
       "jsdom": "false",
       "webidl-conversions": "5.0.0",
@@ -127,7 +127,7 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@types/react": "19.2.14"
+    "@types/react": "19.2.17"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,cjs,json,md}": [
