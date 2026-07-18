@@ -86,19 +86,19 @@ export const Badge = styled(View, {
       },
       // Numeric tokens for parity with Button (size="$3" etc.).
       // Mapped onto the equivalent named sizes.
-      "$2": {
+      $2: {
         paddingHorizontal: "$2",
         paddingVertical: "$1",
         minHeight: 20,
         minWidth: 20,
       },
-      "$3": {
+      $3: {
         paddingHorizontal: "$2.5",
         paddingVertical: "$1.5",
         minHeight: 24,
         minWidth: 24,
       },
-      "$4": {
+      $4: {
         paddingHorizontal: "$3",
         paddingVertical: "$2",
         minHeight: 28,
