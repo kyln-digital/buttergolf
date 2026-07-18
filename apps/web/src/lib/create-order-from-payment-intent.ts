@@ -77,6 +77,8 @@ export async function createOrderFromPaymentIntent(
       );
     } catch (refundError) {
       console.error("[createOrderFromPaymentIntent] Failed to auto-refund:", refundError);
+      // Do not claim the buyer was refunded when Stripe did not confirm it.
+      return { status: "pending", reason: "refund_failed" };
     }
     return { status: "refunded_duplicate" };
   }

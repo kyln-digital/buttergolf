@@ -223,10 +223,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         }
       );
     } catch (stripeError) {
-      // Transfer failed - release the claim so the order can be retried
+      // Transfer failed - release the claim so the order can be retried.
+      // Also clear buyerConfirmedAt, which was set optimistically with the claim.
       await prisma.order.update({
         where: { id: order.id },
-        data: { paymentHoldStatus: "HELD" },
+        data: { paymentHoldStatus: "HELD", buyerConfirmedAt: null },
       });
       throw stripeError;
     }

@@ -39,10 +39,10 @@ export function buildListingWhere(filters: ListingFilterParams): Prisma.ProductW
   if (filters.conditions && filters.conditions.length > 0) {
     where.condition = { in: filters.conditions };
   }
-  if (filters.minPrice || filters.maxPrice) {
+  if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
     where.price = {
-      ...(filters.minPrice && { gte: filters.minPrice }),
-      ...(filters.maxPrice && { lte: filters.maxPrice }),
+      ...(filters.minPrice !== undefined && { gte: filters.minPrice }),
+      ...(filters.maxPrice !== undefined && { lte: filters.maxPrice }),
     };
   }
   if (filters.brandIds && filters.brandIds.length > 0) {
@@ -130,6 +130,8 @@ export async function getListingFilterOptions(categorySlug?: string) {
   const productScope = {
     isSold: false,
     isDraft: false,
+    // Match buildListingWhere — exclude deleted sellers from filter facets.
+    user: { is: { isDeleted: false } },
     ...(categorySlug && { category: { slug: categorySlug } }),
   };
 
