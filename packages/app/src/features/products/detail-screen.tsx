@@ -204,7 +204,8 @@ export function ProductDetailScreen({
                   <Heart
                     size={20}
                     color="$pureWhite"
-                    fill={isFavourited ? "currentColor" : "none"}
+                    // RN SVG does not reliably honour CSS currentColor; match $pureWhite.
+                    fill={isFavourited ? "#FFFFFF" : "none"}
                   />
                 }
               />
