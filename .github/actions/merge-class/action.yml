@@ -1,0 +1,45 @@
+name: merge-class
+description: >
+  Classify a pull request as Class A (maintenance / auto-merge eligible) or
+  Class B (human review required). Labels the PR and requests the human reviewer
+  on Class B. Mechanical rules only — author + size + paths (KYL-1292 / KYL-1316).
+inputs:
+  human-reviewer:
+    description: GitHub login requested as reviewer on Class B PRs
+    required: false
+    default: Josh-moreton
+  max-lines:
+    description: Max changed lines (additions + deletions) for Class A
+    required: false
+    default: "150"
+  max-files:
+    description: Max changed files for Class A
+    required: false
+    default: "10"
+  github-token:
+    description: Token with pull-requests write (labels + request reviewers)
+    required: true
+outputs:
+  class:
+    description: A or B
+    value: ${{ steps.classify.outputs.class }}
+  label:
+    description: class:maintenance or class:review
+    value: ${{ steps.classify.outputs.label }}
+  reason:
+    description: Short classification reason
+    value: ${{ steps.classify.outputs.reason }}
+runs:
+  using: composite
+  steps:
+    - name: Classify PR
+      id: classify
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        GH_REPO: ${{ github.repository }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        HUMAN_REVIEWER: ${{ inputs.human-reviewer }}
+        MAX_LINES: ${{ inputs.max-lines }}
+        MAX_FILES: ${{ inputs.max-files }}
+      run: bash "${{ github.action_path }}/classify.sh"

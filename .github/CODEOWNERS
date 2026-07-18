@@ -1,0 +1,6 @@
+# L0 merge policy (KYL-1316) — Josh is code owner for all paths at L0.
+# Class B PRs also request Josh via the merge-class Action. Branch protection
+# does not require code-owner reviews yet (so Class A can auto-merge); L1
+# hardens this once agents have a separate GitHub identity.
+
+* @Josh-moreton
