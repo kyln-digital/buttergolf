@@ -48,19 +48,19 @@ export const Spinner = styled(TamaguiSpinner, {
         height: "$6",
       },
       // Numeric tokens for parity with Button (size="$4" etc.)
-      "$3": {
+      $3: {
         width: "$3",
         height: "$3",
       },
-      "$4": {
+      $4: {
         width: "$4",
         height: "$4",
       },
-      "$5": {
+      $5: {
         width: "$5",
         height: "$5",
       },
-      "$6": {
+      $6: {
         width: "$6",
         height: "$6",
       },
