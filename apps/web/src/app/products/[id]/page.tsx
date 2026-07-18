@@ -214,7 +214,8 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.title,
-    description: product.description,
+    // Omit when null/empty — JSON-LD validators warn on description: null.
+    ...(product.description ? { description: product.description } : {}),
     image: product.images?.map((img) => img.url) ?? [],
     category: product.category?.name,
     brand: product.brand ? { "@type": "Brand", name: product.brand } : undefined,
