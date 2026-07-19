@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
+import { requesterOwnsCheckoutSession } from "@/lib/checkout-session-ownership";
 import { stripe } from "@/lib/stripe";
 
 /**
@@ -19,7 +20,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ sessionI
 
     const requester = await prisma.user.findUnique({
       where: { clerkId: clerkUserId },
-      select: { id: true },
+      select: { id: true, email: true },
     });
     if (!requester) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -58,11 +59,25 @@ export async function GET(req: Request, { params }: { params: Promise<{ sessionI
       },
     });
 
-    // If not found, the webhook might not have processed yet
-    // Fetch session from Stripe and check if payment is complete
+    // If not found, the webhook might not have processed yet — or the
+    // session belongs to someone else. Never disclose Stripe session state
+    // (paid / processing / open / expired) to a non-owner.
     if (!order) {
+      // Existing order for another party: 404 before any Stripe call.
+      const foreignOrder = await prisma.order.findFirst({
+        where: { stripeCheckoutId: sessionId },
+        select: { id: true },
+      });
+      if (foreignOrder) {
+        return NextResponse.json({ error: "Order not found" }, { status: 404 });
+      }
+
       try {
         const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+        if (!requesterOwnsCheckoutSession(session, requester)) {
+          return NextResponse.json({ error: "Order not found" }, { status: 404 });
+        }
 
         if (session.status === "complete" && session.payment_status === "paid") {
           // Payment is complete but order not yet created
@@ -81,7 +96,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ sessionI
         }
       } catch (stripeError) {
         console.error("Error fetching session from Stripe:", stripeError);
-        return NextResponse.json({ error: "Invalid session ID" }, { status: 404 });
+        return NextResponse.json({ error: "Order not found" }, { status: 404 });
       }
 
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
