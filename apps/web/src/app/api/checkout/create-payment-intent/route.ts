@@ -67,9 +67,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Get product with seller information
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
+    // Public purchase path — same visibility as listings: no drafts, no deleted sellers
+    const product = await prisma.product.findFirst({
+      where: {
+        id: productId,
+        isDraft: false,
+        user: { is: { isDeleted: false } },
+      },
       include: {
         user: true,
         images: {
