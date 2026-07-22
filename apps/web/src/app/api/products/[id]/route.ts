@@ -24,9 +24,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         id,
         ...(ownerUserId
           ? {
-              OR: [{ isDraft: false }, { isDraft: true, userId: ownerUserId }],
+              // Public published listings stay draft/deleted-seller blocked;
+              // owner may still load own drafts for SellFormClient resume.
+              OR: [
+                { isDraft: false, user: { is: { isDeleted: false } } },
+                { isDraft: true, userId: ownerUserId },
+              ],
             }
-          : { isDraft: false }),
+          : { isDraft: false, user: { is: { isDeleted: false } } }),
       },
       include: {
         images: {
