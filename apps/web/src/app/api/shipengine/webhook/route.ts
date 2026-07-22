@@ -27,11 +27,7 @@ const SHIPMENT_RANK: Record<ShipmentStatus, number> = {
 };
 
 // Sticky terminals: once set, never overwritten by a different shipment status.
-const STICKY_SHIPMENT_STATUSES = new Set<ShipmentStatus>([
-  "DELIVERED",
-  "RETURNED",
-  "CANCELLED",
-]);
+const STICKY_SHIPMENT_STATUSES = new Set<ShipmentStatus>(["DELIVERED", "RETURNED", "CANCELLED"]);
 
 interface ShipEngineTrackingWebhookPayload {
   resource_url: string;
