@@ -13,16 +13,25 @@ import {
 // Rank of shipment states so we never regress an order to an earlier stage
 // (e.g. a late "in transit" event must not undo a DELIVERED status, which
 // would knock the order out of the auto-release flow).
+// RETURNED/CANCELLED sit above DELIVERED/FAILED so a late carrier event cannot
+// flip a terminal return/cancel and re-arm fund release.
 const SHIPMENT_RANK: Record<ShipmentStatus, number> = {
   PENDING: 0,
   PRE_TRANSIT: 1,
   IN_TRANSIT: 2,
   OUT_FOR_DELIVERY: 3,
   DELIVERED: 4,
-  RETURNED: 4,
   FAILED: 4,
-  CANCELLED: 4,
+  RETURNED: 5,
+  CANCELLED: 5,
 };
+
+// Sticky terminals: once set, never overwritten by a different shipment status.
+const STICKY_SHIPMENT_STATUSES = new Set<ShipmentStatus>([
+  "DELIVERED",
+  "RETURNED",
+  "CANCELLED",
+]);
 
 interface ShipEngineTrackingWebhookPayload {
   resource_url: string;
@@ -169,10 +178,12 @@ export async function POST(req: Request) {
       const shipmentStatus = mapShipEngineStatus(trackingData.status_code);
       const orderStatus = mapToOrderStatus(shipmentStatus);
 
-      // Ignore out-of-order/late events that would move the order backwards.
+      // Ignore out-of-order/late events that would move the order backwards,
+      // or that would leave a sticky terminal (DELIVERED/RETURNED/CANCELLED).
       const isRegression =
         SHIPMENT_RANK[shipmentStatus] < SHIPMENT_RANK[order.shipmentStatus] ||
-        (order.shipmentStatus === "DELIVERED" && shipmentStatus !== "DELIVERED");
+        (STICKY_SHIPMENT_STATUSES.has(order.shipmentStatus) &&
+          shipmentStatus !== order.shipmentStatus);
 
       if (isRegression) {
         console.info("Ignoring out-of-order shipment event:", {

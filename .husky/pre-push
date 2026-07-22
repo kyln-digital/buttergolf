@@ -1,3 +1,4 @@
+#!/usr/bin/env sh
 export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
 
 # Type-check before pushing so type errors can't reach the remote (CI runs the
