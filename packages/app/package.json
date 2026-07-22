@@ -22,14 +22,14 @@
     "@tamagui/toast": "catalog:",
     "react": "catalog:",
     "react-native": "catalog:",
-    "react-native-otp-entry": "^1.8.5",
+    "react-native-otp-entry": "^1.8.6",
     "solito": "catalog:",
     "tamagui": "catalog:"
   },
   "devDependencies": {
     "@buttergolf/typescript-config": "workspace:*",
     "@types/react": "19.2.14",
-    "expo-image-picker": "^17.0.10",
+    "expo-image-picker": "^17.0.11",
     "next": "catalog:",
     "typescript": "catalog:"
   }

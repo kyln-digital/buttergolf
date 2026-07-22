@@ -34,7 +34,7 @@
     "burnt": "^0.13.0",
     "expo": "catalog:",
     "expo-auth-session": "catalog:",
-    "expo-dev-client": "^6.0.20",
+    "expo-dev-client": "^6.0.21",
     "expo-font": "catalog:",
     "expo-image-picker": "catalog:",
     "expo-notifications": "catalog:",
@@ -62,10 +62,10 @@
     "@buttergolf/typescript-config": "workspace:*",
     "@tamagui/babel-plugin": "catalog:",
     "@types/react": "catalog:",
-    "babel-plugin-module-resolver": "^5.0.0",
+    "babel-plugin-module-resolver": "^5.0.3",
     "eslint": "catalog:",
     "eslint-config-expo": "catalog:",
-    "react-native-svg-transformer": "^1.5.2",
+    "react-native-svg-transformer": "^1.5.3",
     "typescript": "catalog:"
   },
   "expo": {
