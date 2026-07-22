@@ -32,19 +32,24 @@
         "STRIPE_WEBHOOK_SECRET",
         "STRIPE_CONNECT_WEBHOOK_SECRET",
         "BLOB_READ_WRITE_TOKEN",
-        "EASYPOST_API_KEY",
-        "EASYPOST_WEBHOOK_SECRET",
         "SHIPENGINE_API_KEY",
         "SHIPENGINE_WEBHOOK_SECRET",
         "RESEND_API_KEY",
         "CLOUDINARY_API_KEY",
         "CLOUDINARY_API_SECRET",
+        "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME",
         "MOBILE_SESSION_SECRET",
         "SENTRY_AUTH_TOKEN",
         "TAMAGUI_DEBUG",
         "TAMAGUI_DISABLE_MISSING_TOKEN_LOG",
         "NODE_ENV",
         "SITE_URL",
+        "APP_URL",
+        "NEXT_PUBLIC_APP_URL",
+        "NEXT_PUBLIC_BASE_URL",
+        "NEXT_PUBLIC_COMING_SOON_ENABLED",
+        "NEXT_PUBLIC_APP_STORE_URL",
+        "NEXT_PUBLIC_PLAY_STORE_URL",
         "ANALYZE",
         "DISABLE_EXTRACTION",
         "CI",
@@ -52,13 +57,13 @@
         "SUPABASE_SERVICE_ROLE_KEY",
         "VERCEL_URL",
         "CRON_SECRET",
+        "ADMIN_USER_IDS",
         "ALLOWED_ORIGINS",
         "NEXT_RUNTIME"
       ]
     },
     "db:generate": {
-      "cache": false,
-      "inputs": ["prisma/schema.prisma"]
+      "cache": false
     },
     "db:push": {
       "cache": false
@@ -81,6 +86,9 @@
     },
     "check-types": {
       "dependsOn": ["^check-types"]
+    },
+    "test": {
+      "dependsOn": ["^build", "db:generate"]
     },
     "dev": {
       "cache": false,

@@ -15,6 +15,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Alert, Image as RNImage } from "react-native";
+import { formatCurrencyFromPence as formatCurrency } from "../../utils/format-currency";
 
 type ListingStatus = "ACTIVE" | "SOLD" | "DRAFT" | "INACTIVE";
 
@@ -172,9 +173,6 @@ export function SellerListingsScreen({
     },
     [onDeleteListing, fetchListings]
   );
-
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(amount / 100);
 
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString("en-GB", {

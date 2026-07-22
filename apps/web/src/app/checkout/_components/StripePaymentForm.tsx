@@ -15,19 +15,14 @@ import { useTheme } from "tamagui";
 import { useAuth } from "@clerk/nextjs";
 import { useRouter, usePathname } from "next/navigation";
 import { calculateBuyerProtectionFee, formatPrice } from "@/lib/pricing";
+import { SHIPPING_OPTIONS, type ShippingOptionId } from "@buttergolf/constants";
 import { Info, Lock, ShieldCheck, Package } from "@tamagui/lucide-icons";
 
 // Initialize Stripe outside component to avoid re-creating on every render
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-// Shipping options
-const SHIPPING_OPTIONS = [
-  { id: "standard", name: "Royal Mail Tracked 48", price: 499, days: "2-4 business days" },
-  { id: "express", name: "Royal Mail Tracked 24", price: 699, days: "1-2 business days" },
-  { id: "nextDay", name: "DPD Next Day", price: 899, days: "Next business day" },
-] as const;
-
-type ShippingOptionId = (typeof SHIPPING_OPTIONS)[number]["id"];
+// Shipping options come from @buttergolf/constants - single source of truth
+// shared with the server charge math and the mobile checkout sheet.
 
 interface StripePaymentFormProps {
   productId: string;
@@ -70,7 +65,7 @@ export function StripePaymentForm({
 
   const selectedShipping = SHIPPING_OPTIONS.find((o) => o.id === shippingOption)!;
   const buyerProtectionFee = calculateBuyerProtectionFee(productPrice);
-  const totalPrice = productPrice + selectedShipping.price / 100 + buyerProtectionFee;
+  const totalPrice = productPrice + selectedShipping.priceInPence / 100 + buyerProtectionFee;
 
   // Create payment intent when user confirms shipping
   const handleContinueToPayment = useCallback(async () => {
@@ -155,7 +150,7 @@ export function StripePaymentForm({
                     </Text>
                   </Column>
                   <Text fontWeight="700" color={isSelected ? "$primary" : "$text"}>
-                    £{(option.price / 100).toFixed(2)}
+                    £{(option.priceInPence / 100).toFixed(2)}
                   </Text>
                 </Row>
               </Card>
@@ -172,7 +167,7 @@ export function StripePaymentForm({
             </Row>
             <Row justifyContent="space-between">
               <Text color="$textSecondary">Shipping</Text>
-              <Text fontWeight="500">£{(selectedShipping.price / 100).toFixed(2)}</Text>
+              <Text fontWeight="500">£{(selectedShipping.priceInPence / 100).toFixed(2)}</Text>
             </Row>
             <Row justifyContent="space-between" alignItems="center">
               <Row gap="$xs" alignItems="center">
@@ -344,7 +339,7 @@ function CheckoutForm({
   const [isPaymentComplete, setIsPaymentComplete] = useState(false);
 
   const buyerProtectionFee = calculateBuyerProtectionFee(productPrice);
-  const totalPrice = productPrice + shippingOption.price / 100 + buyerProtectionFee;
+  const totalPrice = productPrice + shippingOption.priceInPence / 100 + buyerProtectionFee;
   const canSubmit =
     stripe &&
     elements &&
@@ -514,7 +509,7 @@ function CheckoutForm({
             </Row>
             <Row justifyContent="space-between">
               <Text color="$textSecondary">Shipping ({shippingOption.name})</Text>
-              <Text fontWeight="500">£{(shippingOption.price / 100).toFixed(2)}</Text>
+              <Text fontWeight="500">£{(shippingOption.priceInPence / 100).toFixed(2)}</Text>
             </Row>
             <Row justifyContent="space-between" alignItems="center">
               <Row gap="$xs" alignItems="center">

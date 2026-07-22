@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Column,
   Row,
@@ -11,14 +11,11 @@ import {
   type BuySellMode,
 } from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import type { ProductCardData } from "../../types/product";
 import { Hero } from "../../components/Hero";
 import { images } from "@buttergolf/assets";
 import { MobileSearchBar, MobileBottomNav } from "../../components/mobile";
 
 interface HomeScreenProps {
-  products?: ProductCardData[];
-  onFetchProducts?: () => Promise<ProductCardData[]>;
   onSellPress?: () => void;
   onLoginPress?: () => void;
   onAccountPress?: () => void;
@@ -26,26 +23,30 @@ interface HomeScreenProps {
   onMessagesPress?: () => void;
   /** Callback when a category is pressed */
   onCategoryPress?: (slug: string) => void;
+  /**
+   * Callback when the user submits a search query. Wired by the platform
+   * wrapper to navigate to the listings/category search experience. The home
+   * screen itself does not render a product list, so this is the only way a
+   * typed query reaches a results view.
+   */
+  onSearch?: (query: string) => void;
   isAuthenticated?: boolean;
   /** Hide the buying/selling toggle (mobile uses bottom nav for selling) */
   hideBuySellToggle?: boolean;
 }
 
 export function HomeScreen({
-  products: initialProducts = [],
-  onFetchProducts,
   onSellPress,
   onLoginPress,
   onAccountPress,
   onWishlistPress,
   onMessagesPress,
   onCategoryPress,
+  onSearch,
   isAuthenticated = false,
   hideBuySellToggle = false,
 }: Readonly<HomeScreenProps>) {
   const insets = useSafeAreaInsets();
-  const [products, setProducts] = useState<ProductCardData[]>(initialProducts);
-  const [loading, setLoading] = useState(false);
   const [buySellMode, setBuySellMode] = useState<BuySellMode>("buying");
 
   // Category press handlers - use callback prop
@@ -54,24 +55,13 @@ export function HomeScreen({
   const handleWedgesPress = () => onCategoryPress?.("wedges");
   const handlePuttersPress = () => onCategoryPress?.("putters");
 
-  useEffect(() => {
-    if (onFetchProducts && products.length === 0 && !loading) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLoading(true);
-      onFetchProducts()
-        .then((fetchedProducts) => {
-          console.info(`Fetched ${fetchedProducts.length} products`);
-          if (fetchedProducts.length > 0) {
-            console.info("First product image URL:", fetchedProducts[0]?.imageUrl);
-          }
-          setProducts(fetchedProducts);
-        })
-        .catch((error) => {
-          console.error("Failed to fetch products:", error);
-        })
-        .finally(() => setLoading(false));
-    }
-  }, [onFetchProducts, products.length, loading]);
+  // The home screen only shows the hero + category grid; it does not render a
+  // product list. Submitting a search hands the query to the wrapper so it can
+  // navigate to a results screen. Falling back to a no-op keeps web usage safe.
+  const handleSearch = (query: string) => {
+    const trimmed = query.trim();
+    if (trimmed) onSearch?.(trimmed);
+  };
 
   return (
     <Column flex={1} backgroundColor="$background">
@@ -89,10 +79,7 @@ export function HomeScreen({
             elevation: 12,
           }}
         >
-          <MobileSearchBar
-            placeholder="What are you looking for?"
-            onSearch={(query: string) => console.info("Search query:", query)}
-          />
+          <MobileSearchBar placeholder="What are you looking for?" onSearch={handleSearch} />
         </Column>
       </Column>
 

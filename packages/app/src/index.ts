@@ -16,6 +16,8 @@ export * from "./provider";
 
 export * from "./hooks";
 
+export * from "./utils/format-currency";
+
 export * from "./types/product";
 export * from "./components/ProductCard";
 export * from "./components/Hero";

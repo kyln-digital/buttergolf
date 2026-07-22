@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo } from "react";
-import { CATEGORIES } from "@buttergolf/db";
+import { CATEGORIES } from "@buttergolf/constants";
 import Link from "next/link";
 import Image from "next/image";
 import { Column, Heading, Text } from "@buttergolf/ui";

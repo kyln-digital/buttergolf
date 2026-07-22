@@ -49,6 +49,15 @@ interface ProductDetailScreenProps {
   onMakeOffer?: (productId: string, price: number, offerAmount: number) => Promise<void>;
   /** Whether the user is authenticated (for showing proper auth prompts) */
   isAuthenticated?: boolean;
+  /** Whether this product is currently favourited (controls the heart icon fill). */
+  isFavourited?: boolean;
+  /**
+   * Toggle this product as a favourite. Wired like CategoryList/Home.
+   * TODO: the mobile ProductDetail wrapper does not yet pass this prop, so the
+   * heart is a no-op there until favourites state is threaded through. Defaults
+   * to a no-op so the button is always safe to render/press.
+   */
+  onToggleFavourite?: (productId: string) => void;
 }
 
 export function ProductDetailScreen({
@@ -58,6 +67,8 @@ export function ProductDetailScreen({
   onBuyNow,
   onMakeOffer,
   isAuthenticated = true,
+  isFavourited = false,
+  onToggleFavourite,
 }: Readonly<ProductDetailScreenProps>) {
   const insets = useSafeAreaInsets();
   const [product, setProduct] = useState<Product | null>(null);
@@ -175,6 +186,8 @@ export function ProductDetailScreen({
               circular
               backgroundColor="$primary"
               pressStyle={{ backgroundColor: "$primaryPress" }}
+              aria-label="Go back"
+              accessibilityLabel="Go back"
               icon={<ArrowLeft size={20} color="$pureWhite" />}
             />
             {/* Action buttons overlay */}
@@ -184,7 +197,17 @@ export function ProductDetailScreen({
                 circular
                 backgroundColor="$primary"
                 pressStyle={{ backgroundColor: "$primaryPress" }}
-                icon={<Heart size={20} color="$pureWhite" />}
+                aria-label={isFavourited ? "Remove from favourites" : "Add to favourites"}
+                accessibilityLabel={isFavourited ? "Remove from favourites" : "Add to favourites"}
+                onPress={() => onToggleFavourite?.(productId)}
+                icon={
+                  <Heart
+                    size={20}
+                    color="$pureWhite"
+                    // RN SVG does not reliably honour CSS currentColor; match $pureWhite.
+                    fill={isFavourited ? "#FFFFFF" : "none"}
+                  />
+                }
               />
             </Row>
             {/* Sold badge */}

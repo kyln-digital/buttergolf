@@ -16,6 +16,7 @@ import {
   Star,
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { formatCurrencyFromPence as formatCurrency } from "../../utils/format-currency";
 
 interface SellerStats {
   totalSales: number;
@@ -202,9 +203,6 @@ export function SellerDashboardScreen({
       </Column>
     );
   }
-
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(amount / 100);
 
   return (
     <Column flex={1} backgroundColor="$background" paddingTop={insets.top}>

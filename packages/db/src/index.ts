@@ -16,7 +16,13 @@ const prisma: PrismaClient = (() => {
     const prismaStub: any = new Proxy(
       {},
       {
-        get() {
+        get(_target, prop) {
+          // Don't throw on promise/inspection probes (await, console.log, etc.).
+          // Returning undefined for `then`/symbols keeps the error clear and
+          // makes it fire only on an actual model/method access.
+          if (prop === "then" || typeof prop === "symbol") {
+            return undefined;
+          }
           throw new Error(
             "Prisma Client is not available in React Native. Use server API routes instead."
           );
@@ -55,16 +61,14 @@ export { prisma };
 
 export type {
   Prisma,
-  ClubKind,
-  ShipmentStatus,
-  OrderStatus,
   Order,
   Conversation,
   Message,
   Offer,
   CounterOffer,
 } from "../generated/client";
-// Re-export enums as values (not type-only) so they can be used at runtime
+// Re-export ALL enums as values (not type-only) so consumers can use them at
+// runtime (e.g. OrderStatus.SHIPPED) - keep this list symmetrical.
 export {
   ProductCondition,
   PaymentHoldStatus,
@@ -72,5 +76,7 @@ export {
   PromotionStatus,
   OfferStatus,
   MessageType,
+  ClubKind,
+  ShipmentStatus,
+  OrderStatus,
 } from "../generated/client";
-export * from "@buttergolf/constants";

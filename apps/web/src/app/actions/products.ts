@@ -1,5 +1,6 @@
 "use server";
 
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@buttergolf/db";
 import type { ProductCardData } from "@buttergolf/app";
 import { getBaseUrl } from "@/lib/base-url";
@@ -11,6 +12,7 @@ export async function getRecentProducts(limit: number = 12): Promise<ProductCard
       where: {
         isSold: false, // Only show available products
         isDraft: false, // Exclude unpublished drafts
+        user: { is: { isDeleted: false } }, // Hide products of deleted sellers
       },
       orderBy: { createdAt: "desc" },
       include: {
@@ -97,11 +99,13 @@ export async function getRecentProducts(limit: number = 12): Promise<ProductCard
   }
 }
 
-export async function getMyProducts(
-  clerkId: string,
-  limit: number = 12
-): Promise<ProductCardData[]> {
+export async function getMyProducts(limit: number = 12): Promise<ProductCardData[]> {
   try {
+    // Server actions are publicly invokable endpoints, so the user must be
+    // derived from the session — never accepted as a caller-supplied argument.
+    const { userId: clerkId } = await auth();
+    if (!clerkId) return [];
+
     const user = await prisma.user.findUnique({
       where: { clerkId },
       select: { id: true },

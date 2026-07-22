@@ -158,8 +158,15 @@ model Booking {
 ### Import Pattern
 
 ```typescript
-import { db } from "@buttergolf/db";
+// The singleton client is exported as `prisma` (there is no `db` export).
+import { prisma } from "@buttergolf/db";
 ```
+
+> Note: the CRUD snippets below use illustrative model names (course/hole/booking)
+> to demonstrate the Prisma API. The actual schema is a golf-equipment
+> **marketplace** — real models include `Product`, `Order`, `Offer`,
+> `CounterOffer`, `Conversation`, `Message`, `Address`, `SellerRating`,
+> `ProductPromotion`, and `User`. See `prisma/schema.prisma` for the source of truth.
 
 ### CRUD Operations
 
@@ -782,7 +789,7 @@ try {
 ## Testing
 
 ```typescript
-import { db } from "@buttergolf/db";
+import { prisma } from "@buttergolf/db";
 
 describe("Course", () => {
   beforeEach(async () => {

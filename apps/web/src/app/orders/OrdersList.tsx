@@ -63,14 +63,12 @@ interface Order {
     id: string;
     firstName: string | null;
     lastName: string | null;
-    email: string;
     imageUrl: string | null;
   };
   buyer: {
     id: string;
     firstName: string | null;
     lastName: string | null;
-    email: string;
     imageUrl: string | null;
   };
 }
@@ -199,7 +197,7 @@ function OrderCard({ order }: { order: Order }) {
   const productImage = order.product.images[0]?.url;
   const otherParty = order.userRole === "buyer" ? order.seller : order.buyer;
   const otherPartyName =
-    `${otherParty.firstName || ""} ${otherParty.lastName || ""}`.trim() || otherParty.email;
+    `${otherParty.firstName || ""} ${otherParty.lastName || ""}`.trim() || "User";
   const roleLabel = order.userRole === "buyer" ? "Sold by" : "Purchased by";
 
   return (

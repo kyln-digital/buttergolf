@@ -23,7 +23,7 @@ import {
   Button,
 } from "@buttergolf/ui";
 import { useThemeName } from "tamagui";
-import { CATEGORIES } from "@buttergolf/db";
+import { CATEGORIES } from "@buttergolf/constants";
 import { MenuIcon } from "./icons";
 
 // Build navigation from single source of truth

@@ -2,6 +2,11 @@ import { useState, useCallback, memo } from "react";
 import { Sheet } from "@tamagui/sheet";
 import { InteractionManager } from "react-native";
 import { Column, Row, Text, Button, Heading, Card, Spinner } from "@buttergolf/ui";
+import {
+  SHIPPING_OPTIONS,
+  calculateBuyerProtectionFeeInPence,
+  type ShippingOptionId,
+} from "@buttergolf/constants";
 import { Info, Lock, Package, CheckCircle } from "@tamagui/lucide-icons";
 import { addBreadcrumb } from "../lib/breadcrumbs";
 
@@ -24,18 +29,11 @@ try {
 const CollectionMode = _CollectionMode;
 const AddressCollectionMode = _AddressCollectionMode;
 
-// Shipping options matching the web API
-const SHIPPING_OPTIONS = [
-  { id: "standard", name: "Royal Mail Tracked 48", price: 499, days: "2-4 business days" },
-  { id: "express", name: "Royal Mail Tracked 24", price: 699, days: "1-2 business days" },
-  { id: "nextDay", name: "DPD Next Day", price: 899, days: "Next business day" },
-] as const;
-
-type ShippingOptionId = (typeof SHIPPING_OPTIONS)[number]["id"];
-
-// Calculate buyer protection fee (5% + £0.70 in pence)
+// Shipping options + fee formula come from @buttergolf/constants - the same
+// source the server uses to compute the actual charge, so the displayed total
+// can never drift from the charged total.
 function calculateBuyerProtectionFee(priceInPounds: number): number {
-  return Math.round(priceInPounds * 0.05 * 100 + 70) / 100;
+  return calculateBuyerProtectionFeeInPence(Math.round(priceInPounds * 100)) / 100;
 }
 
 interface MobileCheckoutSheetProps {
@@ -155,7 +153,7 @@ const SheetContents = memo(function SheetContents({
 
   const selectedShipping = SHIPPING_OPTIONS.find((o) => o.id === shippingOption)!;
   const buyerProtectionFee = calculateBuyerProtectionFee(productPrice);
-  const totalPrice = productPrice + selectedShipping.price / 100 + buyerProtectionFee;
+  const totalPrice = productPrice + selectedShipping.priceInPence / 100 + buyerProtectionFee;
 
   const handleCheckout = useCallback(async () => {
     addBreadcrumb("turbomodule.stripe", "Starting checkout flow", { productId });
@@ -426,7 +424,7 @@ const SheetContents = memo(function SheetContents({
                     </Text>
                   </Column>
                   <Text fontWeight="700" color={isSelected ? "$primary" : "$text"}>
-                    £{(option.price / 100).toFixed(2)}
+                    £{(option.priceInPence / 100).toFixed(2)}
                   </Text>
                 </Row>
               </Card>
@@ -443,7 +441,7 @@ const SheetContents = memo(function SheetContents({
             </Row>
             <Row justifyContent="space-between">
               <Text color="$textSecondary">Shipping</Text>
-              <Text fontWeight="500">£{(selectedShipping.price / 100).toFixed(2)}</Text>
+              <Text fontWeight="500">£{(selectedShipping.priceInPence / 100).toFixed(2)}</Text>
             </Row>
             <Row justifyContent="space-between" alignItems="center">
               <Row gap="$xs" alignItems="center">

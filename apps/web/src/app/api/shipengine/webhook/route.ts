@@ -2,12 +2,32 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma, Prisma, ShipmentStatus, OrderStatus } from "@buttergolf/db";
 import crypto from "crypto";
+import { calculateAutoReleaseDate } from "@/lib/pricing";
 import {
   sendLabelGeneratedEmail,
   sendInTransitEmail,
   sendOutForDeliveryEmail,
   sendDeliveredEmail,
 } from "@/lib/email";
+
+// Rank of shipment states so we never regress an order to an earlier stage
+// (e.g. a late "in transit" event must not undo a DELIVERED status, which
+// would knock the order out of the auto-release flow).
+// RETURNED/CANCELLED sit above DELIVERED/FAILED so a late carrier event cannot
+// flip a terminal return/cancel and re-arm fund release.
+const SHIPMENT_RANK: Record<ShipmentStatus, number> = {
+  PENDING: 0,
+  PRE_TRANSIT: 1,
+  IN_TRANSIT: 2,
+  OUT_FOR_DELIVERY: 3,
+  DELIVERED: 4,
+  FAILED: 4,
+  RETURNED: 5,
+  CANCELLED: 5,
+};
+
+// Sticky terminals: once set, never overwritten by a different shipment status.
+const STICKY_SHIPMENT_STATUSES = new Set<ShipmentStatus>(["DELIVERED", "RETURNED", "CANCELLED"]);
 
 interface ShipEngineTrackingWebhookPayload {
   resource_url: string;
@@ -96,6 +116,14 @@ function verifyWebhookSignature(payload: string, signature: string, secret: stri
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.SHIPENGINE_WEBHOOK_SECRET;
 
+  // Fail closed: this webhook drives shipment state, which gates payment
+  // release. Without a configured secret we cannot trust the payload, so we
+  // refuse to process it rather than accepting unsigned requests.
+  if (!WEBHOOK_SECRET) {
+    console.error("SHIPENGINE_WEBHOOK_SECRET not configured - rejecting webhook");
+    return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
+  }
+
   try {
     const body = await req.text();
     const headerPayload = await headers();
@@ -103,16 +131,14 @@ export async function POST(req: Request) {
     // ShipEngine sends signature in X-ShipEngine-Signature header
     const signature = headerPayload.get("x-shipengine-signature");
 
-    // Verify signature if webhook secret is configured
-    if (WEBHOOK_SECRET && signature) {
-      const isValid = verifyWebhookSignature(body, signature, WEBHOOK_SECRET);
-      if (!isValid) {
-        console.error("ShipEngine webhook signature verification failed");
-        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-      }
-    } else if (WEBHOOK_SECRET && !signature) {
+    if (!signature) {
       console.error("Missing ShipEngine webhook signature");
       return NextResponse.json({ error: "Missing signature" }, { status: 401 });
+    }
+
+    if (!verifyWebhookSignature(body, signature, WEBHOOK_SECRET)) {
+      console.error("ShipEngine webhook signature verification failed");
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
     const payload: ShipEngineTrackingWebhookPayload = JSON.parse(body);
@@ -148,6 +174,22 @@ export async function POST(req: Request) {
       const shipmentStatus = mapShipEngineStatus(trackingData.status_code);
       const orderStatus = mapToOrderStatus(shipmentStatus);
 
+      // Ignore out-of-order/late events that would move the order backwards,
+      // or that would leave a sticky terminal (DELIVERED/RETURNED/CANCELLED).
+      const isRegression =
+        SHIPMENT_RANK[shipmentStatus] < SHIPMENT_RANK[order.shipmentStatus] ||
+        (STICKY_SHIPMENT_STATUSES.has(order.shipmentStatus) &&
+          shipmentStatus !== order.shipmentStatus);
+
+      if (isRegression) {
+        console.info("Ignoring out-of-order shipment event:", {
+          orderId: order.id,
+          current: order.shipmentStatus,
+          incoming: shipmentStatus,
+        });
+        return NextResponse.json({ received: true, orderId: order.id, ignored: true });
+      }
+
       // Prepare update data
       const updateData: Prisma.OrderUpdateInput = {
         shipmentStatus,
@@ -160,11 +202,17 @@ export async function POST(req: Request) {
         updateData.estimatedDelivery = new Date(trackingData.estimated_delivery_date);
       }
 
-      // Update delivered timestamp if delivered
+      // Update delivered timestamp if delivered, and start the buyer-protection
+      // auto-release clock so honest sellers get paid even when the buyer never
+      // manually confirms receipt. Only set once (first transition to DELIVERED).
       if (shipmentStatus === "DELIVERED") {
-        updateData.deliveredAt = trackingData.actual_delivery_date
+        const deliveredAt = trackingData.actual_delivery_date
           ? new Date(trackingData.actual_delivery_date)
           : new Date();
+        updateData.deliveredAt = deliveredAt;
+        if (!order.autoReleaseAt) {
+          updateData.autoReleaseAt = calculateAutoReleaseDate(deliveredAt);
+        }
       }
 
       // Update shipped timestamp if in transit for the first time

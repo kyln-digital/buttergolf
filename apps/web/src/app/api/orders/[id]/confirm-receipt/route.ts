@@ -63,6 +63,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         RELEASED: "Payment has already been released to the seller",
         DISPUTED: "This order is currently under dispute",
         REFUNDED: "This order has been refunded",
+        PENDING_SELLER_ONBOARDING:
+          "Receipt already confirmed. Funds will be released once the seller completes account setup.",
       };
 
       return NextResponse.json(
@@ -176,30 +178,59 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       amount: transferAmountInPence,
     });
 
+    // Atomically claim the order before transferring. The auto-release cron
+    // claims the same HELD orders with the same check-and-set, so without this
+    // a cron run landing between our read above and the transfer below would
+    // produce two transfers. Only the path that flips HELD->RELEASED proceeds.
+    const claimed = await prisma.order.updateMany({
+      where: { id: order.id, paymentHoldStatus: "HELD", stripeTransferId: null },
+      data: { paymentHoldStatus: "RELEASED", buyerConfirmedAt: new Date() },
+    });
+
+    if (claimed.count === 0) {
+      return NextResponse.json(
+        { error: "Payment has already been released to the seller" },
+        { status: 400 }
+      );
+    }
+
     // Create transfer to seller's Stripe Connect account
     // source_transaction links this transfer to the original charge, ensuring:
     // 1. Transfer succeeds even if platform balance hasn't settled
     // 2. Automatic payouts don't drain funds before transfer
-    const transfer = await stripe.transfers.create(
-      {
-        amount: transferAmountInPence,
-        currency: "gbp",
-        destination: order.seller.stripeConnectId!,
-        transfer_group: order.id,
-        source_transaction: order.stripeChargeId!,
-        metadata: {
-          orderId: order.id,
-          productId: order.productId,
-          buyerId: buyer.id,
-          sellerId: order.sellerId,
-          reason: "buyer_confirmed_receipt",
+    let transfer;
+    try {
+      transfer = await stripe.transfers.create(
+        {
+          amount: transferAmountInPence,
+          currency: "gbp",
+          destination: order.seller.stripeConnectId!,
+          transfer_group: order.id,
+          source_transaction: order.stripeChargeId!,
+          metadata: {
+            orderId: order.id,
+            productId: order.productId,
+            buyerId: buyer.id,
+            sellerId: order.sellerId,
+            reason: "buyer_confirmed_receipt",
+          },
         },
-      },
-      {
-        // Prevent duplicate payouts if we retry after a partial failure.
-        idempotencyKey: `confirm-receipt:${order.id}`,
-      }
-    );
+        {
+          // Single key per order across every release path (confirm-receipt,
+          // auto-release cron, onboarding drain). The transfer params are
+          // identical per order, so Stripe dedupes a double-release for us.
+          idempotencyKey: `release:${order.id}`,
+        }
+      );
+    } catch (stripeError) {
+      // Transfer failed - release the claim so the order can be retried.
+      // Also clear buyerConfirmedAt, which was set optimistically with the claim.
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { paymentHoldStatus: "HELD", buyerConfirmedAt: null },
+      });
+      throw stripeError;
+    }
 
     console.info("Transfer created successfully:", {
       transferId: transfer.id,
@@ -207,13 +238,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       destination: transfer.destination,
     });
 
-    // Update order status
+    // Record transfer details on the already-claimed order
     const updatedOrder = await prisma.order.update({
       where: { id: order.id },
       data: {
-        paymentHoldStatus: "RELEASED",
         paymentReleasedAt: new Date(),
-        buyerConfirmedAt: new Date(),
         stripeTransferId: transfer.id,
         stripePayoutStatus: "completed",
       },
@@ -250,8 +279,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   } catch (error) {
     console.error("Error confirming receipt:", error);
 
-    // Handle Stripe-specific errors
-    if (error instanceof Error && error.message.includes("stripe")) {
+    // Stripe errors carry a `type` like "StripeCardError"/"StripeAPIError";
+    // string-matching on the message is unreliable.
+    const isStripeError =
+      typeof error === "object" &&
+      error !== null &&
+      "type" in error &&
+      typeof (error as { type?: unknown }).type === "string" &&
+      (error as { type: string }).type.startsWith("Stripe");
+
+    if (isStripeError) {
       return NextResponse.json(
         { error: "Payment transfer failed. Please try again or contact support." },
         { status: 500 }

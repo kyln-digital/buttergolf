@@ -11,8 +11,6 @@ describe("pricing constants", () => {
   });
 
   it("renders the bounds message using the configured limits", () => {
-    expect(getListingPriceBoundsMessage()).toBe(
-      "Price must be between GBP 1 and GBP 10000."
-    );
+    expect(getListingPriceBoundsMessage()).toBe("Price must be between GBP 1 and GBP 10000.");
   });
 });

@@ -196,7 +196,6 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: "Failed to create onboarding link",
-        details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );

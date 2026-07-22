@@ -132,6 +132,39 @@ export async function GET(request: NextRequest) {
           continue;
         }
 
+        // Verify the charge is still intact - a refunded or disputed charge
+        // must never auto-release to the seller (the buyer already has, or may
+        // get, their money back). The refund/dispute webhooks normally take
+        // the order out of HELD, but this guards against missed events.
+        if (order.stripeChargeId) {
+          const charge = await stripe.charges.retrieve(order.stripeChargeId);
+
+          if (charge.refunded || (charge.amount_refunded || 0) > 0 || charge.disputed) {
+            console.error("Skipping auto-release - charge refunded or disputed:", {
+              orderId: order.id,
+              chargeId: order.stripeChargeId,
+              refunded: charge.refunded,
+              amountRefunded: charge.amount_refunded,
+              disputed: charge.disputed,
+            });
+
+            // Sync the hold status so the order stops matching this query
+            if (charge.refunded || charge.disputed) {
+              await prisma.order.updateMany({
+                where: { id: order.id, paymentHoldStatus: "HELD" },
+                data: { paymentHoldStatus: charge.refunded ? "REFUNDED" : "DISPUTED" },
+              });
+            }
+
+            results.push({
+              orderId: order.id,
+              status: "failed",
+              error: "Charge refunded or disputed - release blocked",
+            });
+            continue;
+          }
+        }
+
         // STEP 2: All preconditions verified - now use transaction to atomically:
         // 1. Claim the order (optimistic lock)
         // 2. Create the Stripe transfer
@@ -188,8 +221,10 @@ export async function GET(request: NextRequest) {
               },
             },
             {
-              // Prevent duplicate payouts if transfer succeeds but DB update fails.
-              idempotencyKey: `auto-release:${order.id}`,
+              // Single key per order across every release path (confirm-receipt,
+              // this cron, onboarding drain) so a double-release can never mint
+              // two transfers for the same order.
+              idempotencyKey: `release:${order.id}`,
             }
           );
         } catch (stripeError) {
@@ -272,21 +307,117 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Second pass: drain orders the buyer already confirmed but which were
+    // parked because the seller hadn't finished onboarding. The Connect webhook
+    // normally releases these, but if that event is missed they would otherwise
+    // be stuck forever - this is the reconciliation safety net.
+    const pendingOnboarding = await prisma.order.findMany({
+      where: {
+        paymentHoldStatus: "PENDING_SELLER_ONBOARDING",
+        seller: { stripeOnboardingComplete: true, stripeConnectId: { not: null } },
+      },
+      include: { seller: true, product: true },
+    });
+
+    for (const order of pendingOnboarding) {
+      try {
+        const transferAmountInPence = Math.round((order.stripeSellerPayout || 0) * 100);
+        if (!order.seller.stripeConnectId || transferAmountInPence <= 0 || order.stripeTransferId) {
+          continue;
+        }
+
+        // Atomic claim: only the run that flips the status proceeds.
+        const claimed = await prisma.order.updateMany({
+          where: {
+            id: order.id,
+            paymentHoldStatus: "PENDING_SELLER_ONBOARDING",
+            stripeTransferId: null,
+          },
+          data: { paymentHoldStatus: "RELEASED" },
+        });
+        if (claimed.count === 0) continue;
+
+        try {
+          const transfer = await stripe.transfers.create(
+            {
+              amount: transferAmountInPence,
+              currency: "gbp",
+              destination: order.seller.stripeConnectId,
+              transfer_group: order.id,
+              ...(order.stripeChargeId ? { source_transaction: order.stripeChargeId } : {}),
+              metadata: {
+                orderId: order.id,
+                productId: order.productId,
+                sellerId: order.sellerId,
+                reason: "onboarding_completed_reconciliation",
+              },
+            },
+            { idempotencyKey: `release:${order.id}` }
+          );
+
+          await prisma.order.update({
+            where: { id: order.id },
+            data: {
+              paymentReleasedAt: new Date(),
+              stripeTransferId: transfer.id,
+              stripePayoutStatus: "completed",
+            },
+          });
+
+          results.push({ orderId: order.id, status: "success", transferId: transfer.id });
+        } catch (stripeError) {
+          await prisma.order.update({
+            where: { id: order.id },
+            data: { paymentHoldStatus: "PENDING_SELLER_ONBOARDING" },
+          });
+          results.push({
+            orderId: order.id,
+            status: "failed",
+            error: stripeError instanceof Error ? stripeError.message : "Stripe transfer failed",
+          });
+        }
+      } catch (orderError) {
+        console.error("Error draining pending-onboarding order:", {
+          orderId: order.id,
+          orderError,
+        });
+        results.push({
+          orderId: order.id,
+          status: "failed",
+          error: orderError instanceof Error ? orderError.message : "Unknown error",
+        });
+      }
+    }
+
+    // Reconciliation alert: orders claimed RELEASED but with no transfer recorded
+    // indicate a crash between claim and transfer - they need manual attention.
+    const orphanedReleases = await prisma.order.count({
+      where: { paymentHoldStatus: "RELEASED", stripeTransferId: null },
+    });
+    if (orphanedReleases > 0) {
+      console.error("RECONCILIATION: orders marked RELEASED with no transfer:", {
+        count: orphanedReleases,
+      });
+    }
+
+    const totalProcessed = ordersToRelease.length + pendingOnboarding.length;
     const successCount = results.filter((r) => r.status === "success").length;
     const failedCount = results.filter((r) => r.status === "failed").length;
 
     console.info("Auto-release cron job completed:", {
-      total: ordersToRelease.length,
+      total: totalProcessed,
       success: successCount,
       failed: failedCount,
+      orphanedReleases,
     });
 
     return NextResponse.json({
       success: true,
-      message: `Processed ${ordersToRelease.length} orders`,
-      processed: ordersToRelease.length,
+      message: `Processed ${totalProcessed} orders`,
+      processed: totalProcessed,
       successCount,
       failedCount,
+      orphanedReleases,
       results,
     });
   } catch (error) {

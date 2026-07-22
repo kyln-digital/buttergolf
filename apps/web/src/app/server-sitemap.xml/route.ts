@@ -14,6 +14,8 @@ export async function GET() {
     const products = await prisma.product.findMany({
       where: {
         isSold: false, // Only include available products
+        isDraft: false,
+        user: { is: { isDeleted: false } },
       },
       select: {
         id: true,

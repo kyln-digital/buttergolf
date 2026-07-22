@@ -214,15 +214,6 @@ Uses numeric tokens `$1` through `$16`:
 | `Image`      | `Image.tsx`      | Cross-platform image |
 | `ScrollView` | `ScrollView.tsx` | Scrollable container |
 
-#### Brand Backgrounds
-
-| Component                | Location               | Description             |
-| ------------------------ | ---------------------- | ----------------------- |
-| `VanillaCreamBackground` | `BrandBackgrounds.tsx` | Cream background        |
-| `LemonHazeBackground`    | `BrandBackgrounds.tsx` | Lemon Haze background   |
-| `LemonHazeCard`          | `BrandBackgrounds.tsx` | Card with Lemon Haze    |
-| `VanillaCreamCard`       | `BrandBackgrounds.tsx` | Card with Vanilla Cream |
-
 ---
 
 ## 3. Frameworks & Libraries

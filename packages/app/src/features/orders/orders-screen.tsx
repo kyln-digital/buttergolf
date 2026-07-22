@@ -14,6 +14,7 @@ import {
 } from "@buttergolf/ui";
 import { ArrowLeft, Package, Truck, CheckCircle, Clock, RefreshCw } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { formatCurrency } from "../../utils/format-currency";
 
 type OrderStatus =
   | "PAYMENT_CONFIRMED"
@@ -137,10 +138,6 @@ function formatDate(dateString: string): string {
     month: "short",
     year: "numeric",
   });
-}
-
-function formatCurrency(amount: number): string {
-  return `£${amount.toFixed(2)}`;
 }
 
 type FilterTab = "all" | "active" | "delivered";

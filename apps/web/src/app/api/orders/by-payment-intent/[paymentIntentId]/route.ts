@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
+import { requesterOwnsPaymentIntent } from "@/lib/payment-intent-ownership";
 import { stripe } from "@/lib/stripe";
 import { createOrderFromPaymentIntent } from "@/lib/create-order-from-payment-intent";
 
@@ -56,10 +57,21 @@ export async function GET(
       },
     });
 
-    if (!order) {
-      // Order not yet created - check if webhook was missed by verifying with Stripe
+    if (order) {
+      // Existing order: only the buyer or seller may see it.
+      if (order.buyerId !== buyer.id && order.sellerId !== buyer.id) {
+        return NextResponse.json({ error: "Order not found" }, { status: 404 });
+      }
+    } else {
+      // Order not yet created - check if webhook was missed by verifying with Stripe.
+      // Ownership must be proven BEFORE createOrderFromPaymentIntent or disclosing
+      // `{ status: "processing" }` — otherwise a guessed paymentIntentId is BOLA.
       try {
         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+        if (!requesterOwnsPaymentIntent(paymentIntent, buyer)) {
+          return NextResponse.json({ error: "Order not found" }, { status: 404 });
+        }
 
         if (paymentIntent.status === "succeeded") {
           // Payment succeeded but webhook was missed/delayed - create order as fallback
@@ -67,9 +79,16 @@ export async function GET(
             "[by-payment-intent] Webhook missed, creating order from PaymentIntent:",
             paymentIntentId
           );
-          const createdOrder = await createOrderFromPaymentIntent(paymentIntent);
+          const result = await createOrderFromPaymentIntent(paymentIntent);
 
-          if (createdOrder) {
+          if (result.status === "refunded_duplicate") {
+            return NextResponse.json({
+              status: "refunded",
+              message: "This item was already sold; your payment has been refunded.",
+            });
+          }
+
+          if (result.status === "ok") {
             // Re-fetch with full includes for the response
             order = await prisma.order.findFirst({
               where: { stripePaymentId: paymentIntentId },
@@ -91,20 +110,16 @@ export async function GET(
         }
       } catch (stripeError) {
         console.error("[by-payment-intent] Error checking PaymentIntent with Stripe:", stripeError);
+        return NextResponse.json({ error: "Order not found" }, { status: 404 });
       }
     }
 
     if (!order) {
-      // Still no order - payment may genuinely still be processing
+      // Owned PaymentIntent, but order still materialising
       return NextResponse.json({
         status: "processing",
         message: "Order is being processed",
       });
-    }
-
-    // Verify user owns this order (either buyer or seller)
-    if (order.buyerId !== buyer.id && order.sellerId !== buyer.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
     // Return same format as by-session route

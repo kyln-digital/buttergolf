@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { prisma } from "@buttergolf/db";
+import { stripe } from "@/lib/stripe";
 import {
   sendOrderConfirmationEmail,
   sendNewSaleEmail,
@@ -8,6 +9,19 @@ import {
 } from "@/lib/email";
 import { generateShippingLabel } from "@/lib/shipengine";
 
+type OrderRecord = Awaited<ReturnType<typeof prisma.order.create>>;
+
+/**
+ * Result of attempting to create an order from a PaymentIntent.
+ * - "ok": order created or already existed (caller should ack / return it)
+ * - "refunded_duplicate": product already sold, this buyer was refunded (ack)
+ * - "pending": order could not be created yet (caller should retry / show processing)
+ */
+export type CreateOrderResult =
+  | { status: "ok"; order: OrderRecord }
+  | { status: "refunded_duplicate" }
+  | { status: "pending"; reason: string };
+
 /**
  * Creates an order from a succeeded PaymentIntent (PaymentElement flow).
  *
@@ -15,14 +29,16 @@ import { generateShippingLabel } from "@/lib/shipengine";
  * - The Stripe webhook handler (payment_intent.succeeded)
  * - The by-payment-intent API route (fallback when webhook is missed/delayed)
  *
- * It is idempotent: if an order already exists for this PaymentIntent, it returns the existing order.
+ * It is idempotent: if an order already exists for this PaymentIntent, it returns it.
  */
-export async function createOrderFromPaymentIntent(paymentIntent: Stripe.PaymentIntent) {
+export async function createOrderFromPaymentIntent(
+  paymentIntent: Stripe.PaymentIntent
+): Promise<CreateOrderResult> {
   const { productId, sellerId, buyerId, source } = paymentIntent.metadata;
 
   // Only handle PaymentElement flow
   if (source !== "payment_element") {
-    return null;
+    return { status: "pending", reason: "not_payment_element" };
   }
 
   if (!productId || !sellerId || !buyerId) {
@@ -30,7 +46,7 @@ export async function createOrderFromPaymentIntent(paymentIntent: Stripe.Payment
       "[createOrderFromPaymentIntent] Missing required metadata:",
       paymentIntent.metadata
     );
-    return null;
+    return { status: "pending", reason: "missing_metadata" };
   }
 
   // Idempotency check - don't create twice
@@ -39,7 +55,32 @@ export async function createOrderFromPaymentIntent(paymentIntent: Stripe.Payment
   });
 
   if (existingOrder) {
-    return existingOrder;
+    return { status: "ok", order: existingOrder };
+  }
+
+  // Double-sell guard: if another payment already produced an order for this
+  // product, refund this buyer instead of selling a second copy. Keyed on a
+  // different payment intent so our own retries don't self-refund.
+  const conflictingOrder = await prisma.order.findFirst({
+    where: { productId, stripePaymentId: { not: paymentIntent.id } },
+  });
+
+  if (conflictingOrder) {
+    console.error(
+      "[createOrderFromPaymentIntent] Product already sold - refunding duplicate purchase:",
+      { productId, conflictingOrderId: conflictingOrder.id, paymentIntentId: paymentIntent.id }
+    );
+    try {
+      await stripe.refunds.create(
+        { payment_intent: paymentIntent.id },
+        { idempotencyKey: `double-sell-refund:${paymentIntent.id}` }
+      );
+    } catch (refundError) {
+      console.error("[createOrderFromPaymentIntent] Failed to auto-refund:", refundError);
+      // Do not claim the buyer was refunded when Stripe did not confirm it.
+      return { status: "pending", reason: "refund_failed" };
+    }
+    return { status: "refunded_duplicate" };
   }
 
   // Get product details
@@ -63,7 +104,7 @@ export async function createOrderFromPaymentIntent(paymentIntent: Stripe.Payment
 
   if (!product) {
     console.error("[createOrderFromPaymentIntent] Product not found:", productId);
-    return null;
+    return { status: "pending", reason: "product_not_found" };
   }
 
   // Get buyer information
@@ -73,7 +114,7 @@ export async function createOrderFromPaymentIntent(paymentIntent: Stripe.Payment
 
   if (!buyer) {
     console.error("[createOrderFromPaymentIntent] Buyer not found:", buyerId);
-    return null;
+    return { status: "pending", reason: "buyer_not_found" };
   }
 
   // Get shipping details from the payment intent
@@ -81,7 +122,7 @@ export async function createOrderFromPaymentIntent(paymentIntent: Stripe.Payment
 
   if (!shippingDetails?.address) {
     console.error("[createOrderFromPaymentIntent] Missing shipping details in payment intent");
-    return null;
+    return { status: "pending", reason: "missing_shipping" };
   }
 
   // Create buyer's shipping address (To Address)
@@ -146,35 +187,39 @@ export async function createOrderFromPaymentIntent(paymentIntent: Stripe.Payment
 
   const autoReleaseAt = null;
 
-  // Create the order with HELD status (escrow-style)
-  const order = await prisma.order.create({
-    data: {
-      stripePaymentId: paymentIntent.id,
-      stripeCheckoutId: null,
-      stripeChargeId,
-      amountTotal,
-      shippingCost,
-      buyerProtectionFee,
-      stripePlatformFee: buyerProtectionFee,
-      stripeSellerPayout: sellerPayout,
-      stripePayoutStatus: "pending",
-      paymentHoldStatus: "HELD",
-      paymentHeldAt: new Date(),
-      autoReleaseAt,
-      sellerId,
-      buyerId,
-      productId,
-      fromAddressId: fromAddress.id,
-      toAddressId: toAddress.id,
-      shipmentStatus: "PENDING",
-      status: "PAYMENT_CONFIRMED",
-    },
-  });
+  // Create the order and mark the product sold atomically so a crash between
+  // the two can't leave a paid-for product still on sale.
+  const order = await prisma.$transaction(async (tx) => {
+    const created = await tx.order.create({
+      data: {
+        stripePaymentId: paymentIntent.id,
+        stripeCheckoutId: null,
+        stripeChargeId,
+        amountTotal,
+        shippingCost,
+        buyerProtectionFee,
+        stripePlatformFee: buyerProtectionFee,
+        stripeSellerPayout: sellerPayout,
+        stripePayoutStatus: "pending",
+        paymentHoldStatus: "HELD",
+        paymentHeldAt: new Date(),
+        autoReleaseAt,
+        sellerId,
+        buyerId,
+        productId,
+        fromAddressId: fromAddress.id,
+        toAddressId: toAddress.id,
+        shipmentStatus: "PENDING",
+        status: "PAYMENT_CONFIRMED",
+      },
+    });
 
-  // Mark product as sold
-  await prisma.product.update({
-    where: { id: productId },
-    data: { isSold: true },
+    await tx.product.update({
+      where: { id: productId },
+      data: { isSold: true },
+    });
+
+    return created;
   });
 
   console.info("[createOrderFromPaymentIntent] Order created successfully:", order.id);
@@ -194,7 +239,7 @@ export async function createOrderFromPaymentIntent(paymentIntent: Stripe.Payment
     console.error("[createOrderFromPaymentIntent] Post-order tasks failed:", err);
   });
 
-  return order;
+  return { status: "ok", order };
 }
 
 /**

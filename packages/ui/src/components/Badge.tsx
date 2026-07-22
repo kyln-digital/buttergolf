@@ -65,6 +65,7 @@ export const Badge = styled(View, {
     },
 
     size: {
+      // Named variants (legacy / documented in CLAUDE.md)
       sm: {
         paddingHorizontal: "$2",
         paddingVertical: "$1",
@@ -78,6 +79,26 @@ export const Badge = styled(View, {
         minWidth: 24,
       },
       lg: {
+        paddingHorizontal: "$3",
+        paddingVertical: "$2",
+        minHeight: 28,
+        minWidth: 28,
+      },
+      // Numeric tokens for parity with Button (size="$3" etc.).
+      // Mapped onto the equivalent named sizes.
+      $2: {
+        paddingHorizontal: "$2",
+        paddingVertical: "$1",
+        minHeight: 20,
+        minWidth: 20,
+      },
+      $3: {
+        paddingHorizontal: "$2.5",
+        paddingVertical: "$1.5",
+        minHeight: 24,
+        minWidth: 24,
+      },
+      $4: {
         paddingHorizontal: "$3",
         paddingVertical: "$2",
         minHeight: 28,
