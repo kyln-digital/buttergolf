@@ -22,6 +22,8 @@ export function HeaderSearch({ autoFocus = false, onNavigate }: HeaderSearchProp
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  // An auto-focused field (mobile menu) should not pop the dropdown until the user engages.
+  const skipInitialFocusRef = useRef(autoFocus);
 
   // Close on outside click or Escape
   useEffect(() => {
@@ -92,7 +94,14 @@ export function HeaderSearch({ autoFocus = false, onNavigate }: HeaderSearchProp
             setQuery(text);
             setOpen(true);
           }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => {
+            if (skipInitialFocusRef.current) {
+              skipInitialFocusRef.current = false;
+              return;
+            }
+            setOpen(true);
+          }}
+          onPointerDown={() => setOpen(true)}
           onKeyDown={(event) => {
             if (event.key === "Enter") {
               event.preventDefault();
