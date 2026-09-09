@@ -82,6 +82,7 @@ const CategoryNav = styled(Row, {
   name: "CategoryNav",
   tag: "nav",
   alignItems: "center",
+  justifyContent: "center",
   gap: "$xs",
   width: "100%",
   overflow: "hidden",
