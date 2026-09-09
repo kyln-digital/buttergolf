@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
       minPrice: minPrice ? parseFloat(minPrice) : undefined,
       maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
       brandIds: searchParams.getAll("brand"),
+      query: searchParams.get("q") || undefined,
     });
 
     // Favourites filter (requires authentication)
@@ -66,17 +67,6 @@ export async function GET(request: NextRequest) {
           userId: user.id,
         },
       };
-    }
-
-    // Search query
-    const query = searchParams.get("q");
-    if (query) {
-      where.OR = [
-        { title: { contains: query, mode: "insensitive" } },
-        { description: { contains: query, mode: "insensitive" } },
-        { model: { contains: query, mode: "insensitive" } },
-        { brand: { name: { contains: query, mode: "insensitive" } } },
-      ];
     }
 
     // Sort options (shared mapping)

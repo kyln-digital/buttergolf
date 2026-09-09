@@ -162,22 +162,10 @@ export function HeroRedesign() {
           <Spacer size="$md" />
 
           <Row gap="$md" justifyContent="center" flexWrap="wrap">
-            <Button
-              butterVariant="primary"
-              size="$4"
-              borderRadius="$full"
-              paddingHorizontal="$5"
-              onPress={() => router.push("/sell")}
-            >
+            <Button butterVariant="primary" size="$5" onPress={() => router.push("/sell")}>
               Sell now
             </Button>
-            <Button
-              butterVariant="secondary"
-              size="$4"
-              borderRadius="$full"
-              paddingHorizontal="$5"
-              onPress={() => router.push("/listings")}
-            >
+            <Button butterVariant="secondary" size="$5" onPress={() => router.push("/listings")}>
               Shop now
             </Button>
           </Row>

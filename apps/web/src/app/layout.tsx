@@ -96,7 +96,7 @@ export default function RootLayout({
             <ConditionalLayout excludeRoutes={EXCLUDED_CHROME_ROUTES}>
               <ErrorBoundary
                 name="ButterHeader"
-                fallback={<div style={{ height: 72, backgroundColor: "#f5f5f5" }} />}
+                fallback={<div style={{ height: 76, backgroundColor: "#f5f5f5" }} />}
               >
                 <ButterHeader />
               </ErrorBoundary>

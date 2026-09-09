@@ -57,6 +57,7 @@ export function ListingsClient({
 }: Readonly<ListingsClientProps>) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const searchQuery = searchParams.get("q");
 
   // Parse initial filters from URL
   const getInitialFilters = (): FilterState => {
@@ -200,6 +201,7 @@ export function ListingsClient({
       if (newFilters.showFavouritesOnly) params.set("favourites", "true");
       if (newSort !== "newest") params.set("sort", newSort);
       if (newPage > 1) params.set("page", newPage.toString());
+      if (searchQuery) params.set("q", searchQuery);
 
       const queryString = params.toString();
 
@@ -213,7 +215,7 @@ export function ListingsClient({
       // No category = /listings
       return queryString ? `/listings?${queryString}` : "/listings";
     },
-    [initialFilters.priceRange]
+    [initialFilters.priceRange, searchQuery]
   );
 
   // Calculate total pages
@@ -243,6 +245,7 @@ export function ListingsClient({
           params.append("brand", b);
         }
         if (filters.showFavouritesOnly) params.set("favourites", "true");
+        if (searchQuery) params.set("q", searchQuery);
         params.set("sort", sort);
         params.set("page", newPage.toString());
         params.set("limit", "24");
@@ -276,7 +279,7 @@ export function ListingsClient({
         setIsPaginating(false);
       }
     },
-    [filters, sort, router, buildURL]
+    [filters, sort, router, buildURL, searchQuery]
   );
 
   // Debounced fetch on filter change

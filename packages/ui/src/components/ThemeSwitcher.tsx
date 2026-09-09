@@ -2,7 +2,8 @@
 
 import { useState, useEffect, type ComponentType, type ReactNode } from "react";
 import { Moon, Sun, Monitor } from "@tamagui/lucide-icons";
-import { XStack, SizableText, Button, styled, type GetProps } from "tamagui";
+import { XStack, SizableText, styled, type GetProps } from "tamagui";
+import { Button } from "./Button";
 import { useTheme, type ThemeMode } from "@buttergolf/app/src/hooks/useTheme";
 
 /**
@@ -200,7 +201,7 @@ export function ThemeToggleButton({
   // to prevent layout shift while avoiding hydration mismatch
   if (!mounted) {
     return (
-      <Button chromeless circular size="$4" role="button" aria-hidden {...props}>
+      <Button butterVariant="ghost" circular size="$4" role="button" aria-hidden {...props}>
         <Sun size={iconSize} color="$text" style={{ opacity: 0 }} />
       </Button>
     );
@@ -208,7 +209,7 @@ export function ThemeToggleButton({
 
   return (
     <Button
-      chromeless
+      butterVariant="ghost"
       circular
       size="$4"
       onPress={handleToggle}
