@@ -55,7 +55,7 @@ const CategoryItem = styled(Row, {
   position: "relative",
   alignItems: "center",
   justifyContent: "center",
-  height: 44,
+  height: 32,
   paddingHorizontal: 12,
   borderRadius: "$md",
   cursor: "pointer",
@@ -75,6 +75,8 @@ const CategoryItem = styled(Row, {
   },
 });
 
+const CATEGORY_ROW_INSET = 6;
+
 /** Browser anchors underline their text; the Row renders as <a> on web. */
 const anchorReset = { textDecorationLine: "none" } as const;
 
@@ -84,6 +86,8 @@ const CategoryNav = styled(Row, {
   alignItems: "center",
   justifyContent: "center",
   gap: "$xs",
+  // Inset the 32px chips so hover never touches the row's hairlines (row = 44px).
+  paddingVertical: CATEGORY_ROW_INSET,
   width: "100%",
   overflow: "hidden",
 });
@@ -128,13 +132,13 @@ export function CategorySelector({
               </Text>
             )}
 
-            {/* Active indicator - sits on the bar's bottom edge */}
+            {/* Active indicator - sits on the row's bottom edge, below the inset chip */}
             {isActive && (
               <Row
                 position="absolute"
                 left={12}
                 right={12}
-                bottom={0}
+                bottom={-CATEGORY_ROW_INSET}
                 height={2}
                 borderRadius="$full"
                 backgroundColor="$primary"
