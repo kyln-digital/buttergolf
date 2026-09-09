@@ -127,7 +127,7 @@ export function HeroRedesign() {
 
         {/* Centered content - the card keeps its cream background in every theme,
             so the copy and buttons always use light-theme tokens. */}
-        <Theme name="light">
+        <Theme name="light" forceClassName>
           <Column
             position="relative"
             zIndex={2}
