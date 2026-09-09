@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ProductCardData } from "@buttergolf/app";
 import { Button, Column, Row, Text, Heading } from "@buttergolf/ui";
@@ -60,11 +59,9 @@ export function RecentlyListedSectionClient({ products }: RecentlyListedSectionC
 
         {/* View All Button - Centered Below Carousel */}
         <Row alignItems="center" justifyContent="center" width="100%" paddingTop="$sm">
-          <Link href="/listings" passHref style={{ textDecoration: "none" }}>
-            <Button butterVariant="secondary" size="$5">
-              View all listings
-            </Button>
-          </Link>
+          <Button butterVariant="secondary" size="$5" onPress={() => router.push("/listings")}>
+            View all listings
+          </Button>
         </Row>
       </Column>
     </Column>

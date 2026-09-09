@@ -201,7 +201,17 @@ export function ThemeToggleButton({
   // to prevent layout shift while avoiding hydration mismatch
   if (!mounted) {
     return (
-      <Button butterVariant="ghost" circular size="$4" role="button" aria-hidden {...props}>
+      <Button
+        butterVariant="ghost"
+        circular
+        size="$4"
+        role="button"
+        aria-hidden
+        {...props}
+        tabIndex={-1}
+        pointerEvents="none"
+        onPress={undefined}
+      >
         <Sun size={iconSize} color="$text" style={{ opacity: 0 }} />
       </Button>
     );

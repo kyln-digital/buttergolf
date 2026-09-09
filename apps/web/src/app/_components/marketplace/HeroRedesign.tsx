@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Column, Row, Text, Heading, Button, Spacer } from "@buttergolf/ui";
+import { Column, Row, Text, Heading, Button, Spacer, Theme } from "@buttergolf/ui";
 import { imagePaths } from "@buttergolf/assets";
 
 /**
@@ -125,51 +125,54 @@ export function HeroRedesign() {
           }}
         />
 
-        {/* Centered content */}
-        <Column
-          position="relative"
-          zIndex={2}
-          alignItems="center"
-          justifyContent="center"
-          paddingVertical="$xl"
-          paddingHorizontal="$lg"
-          minHeight={300}
-          $gtMd={{ minHeight: 360 }}
-        >
-          <Heading
-            level={1}
-            color="$text"
-            textAlign="center"
-            style={{
-              fontFamily: "var(--font-urbanist)",
-              fontSize: "5rem",
-              fontStyle: "normal",
-              fontWeight: 700,
-              lineHeight: "5rem",
-            }}
+        {/* Centered content - the card keeps its cream background in every theme,
+            so the copy and buttons always use light-theme tokens. */}
+        <Theme name="light">
+          <Column
+            position="relative"
+            zIndex={2}
+            alignItems="center"
+            justifyContent="center"
+            paddingVertical="$xl"
+            paddingHorizontal="$lg"
+            minHeight={300}
+            $gtMd={{ minHeight: 360 }}
           >
-            Butter Up
-            <br />
-            Your Game
-          </Heading>
+            <Heading
+              level={1}
+              color="$text"
+              textAlign="center"
+              style={{
+                fontFamily: "var(--font-urbanist)",
+                fontSize: "5rem",
+                fontStyle: "normal",
+                fontWeight: 700,
+                lineHeight: "5rem",
+              }}
+            >
+              Butter Up
+              <br />
+              Your Game
+            </Heading>
 
-          <Spacer size="$sm" />
+            <Spacer size="$sm" />
 
-          <Text size="$11" color="$text" textAlign="center" fontWeight="500">
-            The Marketplace to Buy, Sell & Upgrade
-          </Text>
+            <Text size="$11" color="$text" textAlign="center" fontWeight="500">
+              The Marketplace to Buy, Sell & Upgrade
+            </Text>
 
-          <Spacer size="$md" />
+            <Spacer size="$md" />
 
-          <Row gap="$md" justifyContent="center" flexWrap="wrap">
-            <Button butterVariant="primary" size="$5" onPress={() => router.push("/sell")}>
-              Sell now
-            </Button>
-            <Button butterVariant="secondary" size="$5" onPress={() => router.push("/listings")}>
-              Shop now
-            </Button>
-          </Row>
-        </Column>
+            <Row gap="$md" justifyContent="center" flexWrap="wrap">
+              <Button butterVariant="primary" size="$5" onPress={() => router.push("/sell")}>
+                Sell now
+              </Button>
+              <Button butterVariant="secondary" size="$5" onPress={() => router.push("/listings")}>
+                Shop now
+              </Button>
+            </Row>
+          </Column>
+        </Theme>
       </div>
     </Column>
   );

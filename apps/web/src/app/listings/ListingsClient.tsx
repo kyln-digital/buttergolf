@@ -167,6 +167,7 @@ export function ListingsClient({
   // Track previous filter values to detect actual changes
   const prevFiltersRef = useRef<FilterState>(filters);
   const prevSortRef = useRef<string>(sort);
+  const prevSearchRef = useRef(searchQuery);
 
   // Set mounted flag on initial mount
   useEffect(() => {
@@ -290,14 +291,16 @@ export function ListingsClient({
     // Check if filters or sort actually changed
     const filtersChanged = !areFiltersEqual(prevFiltersRef.current, filters);
     const sortChanged = prevSortRef.current !== sort;
+    const searchChanged = prevSearchRef.current !== searchQuery;
 
-    if (!filtersChanged && !sortChanged) {
+    if (!filtersChanged && !sortChanged && !searchChanged) {
       return;
     }
 
     // Update refs
     prevFiltersRef.current = filters;
     prevSortRef.current = sort;
+    prevSearchRef.current = searchQuery;
 
     // Reset pagination state immediately so UI/URL never stays on a stale page.
     if (page !== 1) {
@@ -310,7 +313,7 @@ export function ListingsClient({
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [filters, sort, isMounted, fetchProducts, page]);
+  }, [filters, sort, searchQuery, isMounted, fetchProducts, page]);
 
   // Redirect to last valid page if current page exceeds total pages
   useEffect(() => {

@@ -11,7 +11,11 @@ interface SearchResultItemProps {
 
 export function SearchResultItem({ product, onSelect }: SearchResultItemProps) {
   return (
-    <Link href={`/products/${product.id}`} onClick={onSelect}>
+    <Link
+      href={`/products/${product.id}`}
+      onClick={onSelect}
+      style={{ textDecoration: "none", display: "block" }}
+    >
       <Row
         padding="$3"
         gap="$3"
