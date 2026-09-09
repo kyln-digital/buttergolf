@@ -9,10 +9,13 @@
  * `circular`, `chromeless`, `unstyled`, `size`, text props) via `useButton`.
  *
  * Variants (via `butterVariant`):
- * - primary:   Spiced Clementine fill, white text, tinted lift shadow. Main CTA.
- * - secondary: Surface fill with a 1.5px outline, warms to Vanilla Cream on hover.
- * - ghost:     Text-only, subtle brand tint on hover. Nav links, tertiary actions.
+ * - primary:   Spiced Clementine fill, white text. Main CTA.
+ * - secondary: Soft neutral tonal fill, no border. Paired actions, "Shop now", "Cancel".
+ * - ghost:     Text-only; hover takes the secondary's resting fill. Nav links, tertiary.
  * - icon:      Outlined circular control for icon-only buttons (wishlist etc).
+ *
+ * All variants share one interaction model: same pill, same type, nothing moves;
+ * the fill shifts one tone on hover and one more on press.
  *
  * Sizes map to a compact geometric scale (height / text):
  *   $1 28/12 · $2 32/13 · $3 36/14 · $4 40/15 · $4.5 44/15 · $5 48/16 · $6 56/18
@@ -85,25 +88,7 @@ function getButtonMetrics(size: unknown): ButtonMetrics {
 
 const isWeb = Platform.OS === "web";
 
-/** Tinted lift shadow for the primary CTA. Web: layered box-shadow. Native: RN shadow + elevation. */
-const primaryShadow = isWeb
-  ? { boxShadow: "0px 1px 2px rgba(50, 50, 50, 0.08), 0px 4px 12px rgba(244, 83, 20, 0.28)" }
-  : {
-      shadowColor: "rgba(244, 83, 20, 0.35)" as const,
-      shadowOffset: { width: 0, height: 4 } as const,
-      shadowRadius: 10 as const,
-      shadowOpacity: 1 as const,
-      elevation: 4 as const,
-    };
-
-const primaryShadowHover = isWeb
-  ? { boxShadow: "0px 2px 4px rgba(50, 50, 50, 0.1), 0px 8px 20px rgba(244, 83, 20, 0.32)" }
-  : {};
-
-const primaryShadowPress = isWeb
-  ? { boxShadow: "0px 1px 2px rgba(50, 50, 50, 0.08), 0px 2px 6px rgba(244, 83, 20, 0.22)" }
-  : {};
-
+/** Buttons are flat; only `chromeless` / `unstyled` need to clear inherited shadows. */
 const noShadow = isWeb
   ? { boxShadow: "none" }
   : { shadowOpacity: 0 as const, elevation: 0 as const };
@@ -164,36 +149,30 @@ const ButtonFrame = styled(ThemeableStack, {
       },
     },
 
+    // One interaction language for every variant: nothing moves, the fill shifts
+    // one tone on hover and one more on press. Ghost hover == secondary rest.
     butterVariant: {
       primary: {
         backgroundColor: "$primary",
         borderWidth: 0,
-        ...primaryShadow,
         hoverStyle: {
           backgroundColor: "$primaryHover",
-          y: -1,
-          ...primaryShadowHover,
         },
         pressStyle: {
           backgroundColor: "$primaryPress",
-          y: 0,
           scale: 0.98,
-          ...primaryShadowPress,
         },
         focusVisibleStyle: focusRing,
       },
 
       secondary: {
         backgroundColor: "$buttonSecondaryBg",
-        borderWidth: 1.5,
-        borderColor: "$buttonSecondaryBorder",
+        borderWidth: 0,
         hoverStyle: {
           backgroundColor: "$buttonSecondaryBgHover",
-          borderColor: "$buttonSecondaryBorderHover",
         },
         pressStyle: {
           backgroundColor: "$buttonSecondaryBgPress",
-          borderColor: "$buttonSecondaryBorderHover",
           scale: 0.98,
         },
         focusVisibleStyle: focusRing,
@@ -217,13 +196,11 @@ const ButtonFrame = styled(ThemeableStack, {
         borderWidth: 1.5,
         borderColor: "$buttonSecondaryBorder",
         hoverStyle: {
-          borderColor: "$primary",
-          backgroundColor: "$primaryLight",
+          backgroundColor: "$buttonGhostBgHover",
         },
         pressStyle: {
-          borderColor: "$primary",
-          backgroundColor: "$primaryLight",
-          scale: 0.95,
+          backgroundColor: "$buttonGhostBgPress",
+          scale: 0.98,
         },
         focusVisibleStyle: focusRing,
       },

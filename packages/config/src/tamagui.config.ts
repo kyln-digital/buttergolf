@@ -408,15 +408,15 @@ const lightTheme = {
   controlSecondaryBgPress: brandColors.cloudMistPress,
   controlSecondaryText: brandColors.ironstone,
 
-  // Button surfaces - secondary (outlined) and ghost (text-only) variants
-  buttonSecondaryBg: brandColors.pureWhite,
-  buttonSecondaryBgHover: brandColors.vanillaCream,
-  buttonSecondaryBgPress: brandColors.lemonHaze,
+  // Button surfaces - one tonal ladder shared by secondary (tonal) and ghost (text)
+  // variants: ghost hover == secondary rest, so the family reads as steps of one system.
+  buttonSecondaryBg: brandColors.cloudMist,
+  buttonSecondaryBgHover: brandColors.cloudMistHover,
+  buttonSecondaryBgPress: brandColors.cloudMistPress,
   buttonSecondaryBorder: brandColors.cloudMistPress,
-  buttonSecondaryBorderHover: brandColors.burntOlive,
   buttonSecondaryText: brandColors.ironstone,
-  buttonGhostBgHover: "rgba(244, 83, 20, 0.08)",
-  buttonGhostBgPress: "rgba(244, 83, 20, 0.16)",
+  buttonGhostBgHover: brandColors.cloudMist,
+  buttonGhostBgPress: brandColors.cloudMistHover,
 
   // Text semantic colors
   text: brandColors.ironstone,
@@ -514,15 +514,14 @@ const darkTheme = {
   controlSecondaryBgPress: brandColors.cloudMistPress,
   controlSecondaryText: brandColors.ironstone,
 
-  // Button surfaces - secondary (outlined) and ghost (text-only) variants on dark
+  // Button surfaces on dark - same tonal ladder using light overlays
   buttonSecondaryBg: brandColors.overlayLight10,
   buttonSecondaryBgHover: brandColors.overlayLight20,
   buttonSecondaryBgPress: brandColors.overlayLight30,
   buttonSecondaryBorder: brandColors.overlayLight30,
-  buttonSecondaryBorderHover: brandColors.overlayLight60,
   buttonSecondaryText: brandColors.pureWhite,
-  buttonGhostBgHover: "rgba(255, 255, 255, 0.08)",
-  buttonGhostBgPress: "rgba(255, 255, 255, 0.14)",
+  buttonGhostBgHover: brandColors.overlayLight10,
+  buttonGhostBgPress: brandColors.overlayLight20,
 
   // Text semantic colors - override for dark mode
   text: brandColors.pureWhite,
