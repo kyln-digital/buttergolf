@@ -9,9 +9,11 @@ Canonical source: `AGENTS.md` (root). `CLAUDE.md` imports it via `@AGENTS.md`.
 - Merging is the release decision: only when CI is green, the preview has been checked, and a human has asked for it.
 - **Migrations are not applied by the build.** `db:generate` is the only database-related prerequisite of `turbo run build` (its other dependency is `^build`, upstream package builds). Apply them with `pnpm db:migrate:deploy`, which reads `DATABASE_URL` from `packages/db/.env` (per `packages/db/prisma.config.ts`); pull the **production** value into that file first with `vercel env pull packages/db/.env --environment=production`, never trusting whatever is already there. **Migrate first, then merge**, so code deploying on merge never meets an un-migrated schema, and keep migrations backwards-compatible with the deployed code (expand, then contract).
 
-## Database (one database, every environment)
+## Database (one database, previews included)
 
-`DATABASE_URL` is a **single Vercel variable scoped to `Production, Preview, Development`** — one value, one Neon database, read by production, by every preview deploy, and by local development. There is no staging copy. (Verified 2026-09-10: `vercel env ls --project buttergolf-web` lists one `DATABASE_URL` across all three environments, and independent tables return identical CUIDs from `buttergolf.co.uk` and a preview URL.)
+`DATABASE_URL` is a **single Vercel variable scoped to `Production, Preview, Development`** — one value, one Neon database, behind production and behind every preview deploy. There is no staging copy, and no environment you can point a migration at without pointing it at production. (Verified 2026-09-10: `vercel env ls --project buttergolf-web` lists one `DATABASE_URL` across all three environments, and independent tables return identical CUIDs from `buttergolf.co.uk` and a preview URL.)
+
+Local development is the exception, and only because it is configured separately: `packages/db/.env.example` ships with the Neon block commented out and a Docker URL active, so a fresh `cp .env.example .env` points at localhost. It points at production the moment anyone runs `vercel env pull` — and since the variable carries the same value in all three Vercel environments, `--environment=development` is production too.
 
 Two consequences, and they are the reason schema work here is delicate:
 
@@ -22,7 +24,7 @@ Until previews get their own database, work with it rather than round it:
 
 - Keep migrations **additive and backwards-compatible** — expand now, contract in a later release — so a schema that runs ahead of the deployed code is harmless.
 - Apply deliberately, close to the merge that needs it: `vercel env pull packages/db/.env --environment=production` then `pnpm db:migrate:deploy`. (An exported `DATABASE_URL` works too — the db tasks declare it in `turbo.json`, which otherwise filters it out of the task environment.) **Migrate first, then merge** (merging deploys to production — see the release model above).
-- Never point `db:migrate:deploy`, `db:push` or `db:reset` at a URL you have not just checked. Everything in `packages/db/.env` is production.
+- Check `packages/db/.env` before running anything that writes — `db:migrate:deploy`, `db:push`, `db:seed`, or `prisma migrate reset` (there is no `db:reset` script). A Docker URL there is local; anything pulled from Vercel is production, whichever environment it was pulled from.
 - The `migrations` CI job (below) runs against a throwaway container and proves the migrations are _internally_ consistent. It says nothing about whether they have been applied to the live database, and it never connects to it.
 
 **Removing the trap** is a dashboard change on Neon/Vercel, not a code change: enable database branching on the `buttergolf-db` integration so each preview deploy gets its own Neon branch, then narrow the committed `DATABASE_URL` to `Production` only. After that, previews become disposable, CI can apply migrations to a real preview branch, and schema changes stop being production releases.
@@ -39,7 +41,7 @@ Triggers: `pull_request` (all) and `push` to `main`, with per-ref concurrency ca
 
 **`migrations` — migrations apply & match the schema**
 
-Runs against a `postgres:16` **service container**, never a real database (see [the database note](#database-one-database-every-environment)):
+Runs against a `postgres:16` **service container**, never a real database (see [the database note](#database-one-database-previews-included)):
 
 1. `pnpm db:migrate:deploy` — every migration still applies, in order, to an empty database
 2. `prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code` — the migrations produce exactly the schema the client is generated from (exit code 2 = drift, and the step prints how to fix it)
@@ -90,7 +92,7 @@ Defined in `vercel.json`; all protected by `CRON_SECRET` bearer token (fail clos
 
 - **Clerk**: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET`, `NEXT_PUBLIC_CLERK_PROXY_URL` (prod only)
 - **Stripe**: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_CONNECT_WEBHOOK_SECRET` (separate secret for the Connect webhook)
-- **Database**: `DATABASE_URL` (one Neon database for all three environments — see [Database](#database-one-database-every-environment))
+- **Database**: `DATABASE_URL` (one Neon database for all three environments — see [Database](#database-one-database-previews-included))
 - **ShipEngine**: `SHIPENGINE_API_KEY`, `SHIPENGINE_WEBHOOK_SECRET`
 - **Cloudinary**: cloud name (public) + API key/secret
 - **Resend**: `RESEND_API_KEY`
