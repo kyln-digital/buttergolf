@@ -247,7 +247,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
             </Card>
 
             {imageCount > 1 && (
-              <Row gap="$sm" flexWrap="wrap" role="tablist" aria-label="Product images">
+              <Row gap="$sm" flexWrap="wrap" aria-label="Product images">
                 {product.images.map((img, index) => {
                   const isSelected = index === selectedImageIndex;
                   return (
@@ -258,9 +258,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                       variant="outlined"
                       interactive
                       padding={0}
-                      role="tab"
-                      aria-selected={isSelected}
-                      aria-label={`Image ${index + 1} of ${imageCount}`}
+                      aria-pressed={isSelected}
+                      aria-label={`Show image ${index + 1} of ${imageCount}`}
                       onPress={() => setSelectedImageIndex(index)}
                       borderColor={isSelected ? "$primary" : "$border"}
                       borderWidth={isSelected ? 2 : 1}

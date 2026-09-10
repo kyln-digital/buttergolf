@@ -167,7 +167,7 @@ export const Label = styled(TamaguiLabel, {
 // This ensures TypeScript knows about inherited props like color, textAlign, size, etc.
 export type TextProps = GetProps<typeof Text> &
   Omit<TamaguiParagraphProps, keyof GetProps<typeof Text>>;
-export type HeadingProps = GetProps<typeof HeadingFrame> &
-  Omit<TamaguiParagraphProps, keyof GetProps<typeof HeadingFrame>>;
+export type HeadingProps = GetProps<typeof Heading> &
+  Omit<TamaguiParagraphProps, keyof GetProps<typeof Heading>>;
 export type LabelProps = GetProps<typeof Label> &
   Omit<TamaguiLabelProps, keyof GetProps<typeof Label>>;

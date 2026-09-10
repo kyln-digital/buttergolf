@@ -13,27 +13,33 @@ const CARD_GAP = 16;
 const SECONDS_PER_CATEGORY = 4;
 const MARQUEE_DURATION_SECONDS = CATEGORIES.length * SECONDS_PER_CATEGORY;
 const MOBILE_MEDIA_QUERY = "(max-width: 768px)";
+const REDUCED_MOTION_MEDIA_QUERY = "(prefers-reduced-motion: reduce)";
 
 export function CategoriesSection() {
   const [isPaused, setIsPaused] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-
-  const prefersReducedMotion = useMemo(() => {
-    if (globalThis.window === undefined) return false;
-    return globalThis.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  }, []);
+  // Read after mount (and track changes) so the server render and the first
+  // client render agree; the marquee only starts once mounted anyway.
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   // Three copies so the marquee can loop without a visible seam.
   const duplicatedCategories = useMemo(() => [...CATEGORIES, ...CATEGORIES, ...CATEGORIES], []);
 
   useEffect(() => {
     setIsMounted(true); // eslint-disable-line react-hooks/set-state-in-effect -- Required for hydration
-    const mq = window.matchMedia(MOBILE_MEDIA_QUERY);
-    setIsMobile(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
+    const mobile = window.matchMedia(MOBILE_MEDIA_QUERY);
+    const reducedMotion = window.matchMedia(REDUCED_MOTION_MEDIA_QUERY);
+    setIsMobile(mobile.matches);
+    setPrefersReducedMotion(reducedMotion.matches);
+    const onMobile = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    const onReducedMotion = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mobile.addEventListener("change", onMobile);
+    reducedMotion.addEventListener("change", onReducedMotion);
+    return () => {
+      mobile.removeEventListener("change", onMobile);
+      reducedMotion.removeEventListener("change", onReducedMotion);
+    };
   }, []);
 
   const shouldAnimate = isMounted && !prefersReducedMotion && !isMobile;

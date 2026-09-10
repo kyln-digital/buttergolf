@@ -3,10 +3,11 @@
 import { styled, GetProps, YStack } from "tamagui";
 import { useState } from "react";
 
-// Visible checkbox box
+// Visible checkbox box - a real <button role="checkbox"> so a <label htmlFor>
+// activates it natively and Enter / Space toggle it without custom key handling.
 const CheckboxBox = styled(YStack, {
   name: "CheckboxBox",
-  tag: "div" as const,
+  tag: "button" as const,
   width: 20,
   height: 20,
   borderWidth: 2,
@@ -115,15 +116,10 @@ export function Checkbox({
     onChange?.(newChecked);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === " " || e.key === "Enter") {
-      e.preventDefault();
-      handleChange();
-    }
-  };
-
   return (
     <CheckboxBox
+      {...{ type: "button" }}
+      id={id}
       role="checkbox"
       checked={checked}
       disabled={disabled}
@@ -133,22 +129,18 @@ export function Checkbox({
       aria-disabled={disabled}
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
-      tabIndex={disabled ? -1 : 0}
-      {...({ onKeyDown: handleKeyDown } as {
-        onKeyDown: React.KeyboardEventHandler;
-      })}
     >
-      {/* Hidden input for form integration */}
+      {/* Hidden input for native form submission only (the button is the control) */}
       <input
         type="checkbox"
         checked={checked}
         disabled={disabled}
         onChange={() => {}}
-        id={id}
         name={name}
         value={value}
         tabIndex={-1}
-        style={{ position: "absolute", opacity: 0, width: 0, height: 0 }}
+        aria-hidden
+        style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
       />
       {checked && (
         <svg

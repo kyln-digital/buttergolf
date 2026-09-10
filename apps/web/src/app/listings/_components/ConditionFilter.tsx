@@ -32,7 +32,6 @@ export function ConditionFilter({ selectedConditions, onChange }: Readonly<Condi
     <Column>
       {CONDITIONS.map((condition) => {
         const checkboxId = `${idPrefix}-${condition.value}`;
-        const labelId = `${checkboxId}-label`;
         return (
           <Row key={condition.value} gap="$sm" alignItems="center" minHeight={36}>
             <Checkbox
@@ -40,16 +39,14 @@ export function ConditionFilter({ selectedConditions, onChange }: Readonly<Condi
               checked={selectedConditions.includes(condition.value)}
               onChange={() => handleToggle(condition.value)}
               size="sm"
-              aria-labelledby={labelId}
             />
-            {/* Names the checkbox via aria-labelledby; pressing it toggles the box. */}
+            {/* htmlFor points at the checkbox button, so the label click toggles it natively. */}
             <Label
-              id={labelId}
+              htmlFor={checkboxId}
               size="$4"
               fontWeight="400"
               marginBottom={0}
               cursor="pointer"
-              onPress={() => handleToggle(condition.value)}
             >
               {condition.label}
             </Label>
