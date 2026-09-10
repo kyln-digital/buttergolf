@@ -1,7 +1,15 @@
 "use client";
 
 import { useId } from "react";
-import { Column, Row, Text, Button, SwitchWithLabel, Sheet, SheetScrollView } from "@buttergolf/ui";
+import {
+  Column,
+  Row,
+  Heading,
+  Button,
+  SwitchWithLabel,
+  Sheet,
+  SheetScrollView,
+} from "@buttergolf/ui";
 import { FilterSection } from "./FilterSection";
 import { CategoryFilter } from "./CategoryFilter";
 import { ConditionFilter } from "./ConditionFilter";
@@ -15,6 +23,7 @@ interface MobileFilterSheetProps {
   filters: FilterState;
   availableBrands: string[];
   priceRange: { min: number; max: number };
+  activeFilterCount: number;
   onChange: (filters: Partial<FilterState>) => void;
   onClearAll: () => void;
   onApply: () => void;
@@ -26,6 +35,7 @@ export function MobileFilterSheet({
   filters,
   availableBrands,
   priceRange,
+  activeFilterCount,
   onChange,
   onClearAll,
   onApply,
@@ -33,52 +43,53 @@ export function MobileFilterSheet({
   const headingId = useId();
 
   return (
-    <Sheet modal open={open} onOpenChange={onOpenChange} snapPoints={[85]} dismissOnSnapToBottom>
+    <Sheet modal open={open} onOpenChange={onOpenChange} snapPoints={[88]} dismissOnSnapToBottom>
       <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
       <Sheet.Frame
         aria-modal={true}
         aria-labelledby={headingId}
-        backgroundColor="$surface"
+        backgroundColor="$background"
         borderTopLeftRadius="$2xl"
         borderTopRightRadius="$2xl"
       >
-        <Sheet.Handle backgroundColor="$fieldBorder" />
+        <Sheet.Handle backgroundColor="$border" />
 
         {/* Header */}
-        <Column
-          paddingHorizontal="$4"
-          paddingVertical="$3"
-          borderBottomWidth={1}
-          borderBottomColor="$fieldBorder"
+        <Row
+          alignItems="center"
+          justifyContent="space-between"
+          paddingHorizontal="$md"
+          paddingVertical="$sm"
+          minHeight={56}
         >
-          <Row alignItems="center" justifyContent="space-between">
-            <Text id={headingId} fontWeight="700" size="$6">
-              Filters
-            </Text>
-            <Text color="$primary" size="$3" cursor="pointer" onPress={onClearAll}>
-              Clear All
-            </Text>
-          </Row>
-        </Column>
+          <Heading id={headingId} level={2} size="$5">
+            Filters
+          </Heading>
+          {activeFilterCount > 0 && (
+            <Button butterVariant="ghost" size="$3" onPress={onClearAll}>
+              Clear all
+            </Button>
+          )}
+        </Row>
 
         {/* Body */}
         <SheetScrollView>
-          <Column padding="$4" gap="$lg">
-            <FilterSection title="Category" defaultExpanded>
+          <Column paddingHorizontal="$md" paddingBottom="$md">
+            <FilterSection title="Category">
               <CategoryFilter
                 selectedCategory={filters.category}
                 onChange={(category) => onChange({ category })}
               />
             </FilterSection>
 
-            <FilterSection title="Condition" defaultExpanded>
+            <FilterSection title="Condition">
               <ConditionFilter
                 selectedConditions={filters.conditions}
                 onChange={(conditions) => onChange({ conditions })}
               />
             </FilterSection>
 
-            <FilterSection title="Price Range" defaultExpanded>
+            <FilterSection title="Price">
               <PriceRangeFilter
                 minPrice={priceRange.min}
                 maxPrice={priceRange.max}
@@ -88,7 +99,7 @@ export function MobileFilterSheet({
               />
             </FilterSection>
 
-            <FilterSection title="Brand" defaultExpanded>
+            <FilterSection title="Brand">
               <BrandFilter
                 availableBrands={availableBrands}
                 selectedBrands={filters.brands}
@@ -96,7 +107,7 @@ export function MobileFilterSheet({
               />
             </FilterSection>
 
-            <FilterSection title="Favourites" defaultExpanded>
+            <FilterSection title="Favourites">
               <SwitchWithLabel
                 label="Show favourites only"
                 checked={filters.showFavouritesOnly}
@@ -108,29 +119,28 @@ export function MobileFilterSheet({
         </SheetScrollView>
 
         {/* Footer */}
-        <Column
-          paddingHorizontal="$4"
-          paddingVertical="$4"
+        <Row
+          gap="$sm"
+          paddingHorizontal="$md"
+          paddingVertical="$md"
           borderTopWidth={1}
-          borderTopColor="$fieldBorder"
+          borderTopColor="$border"
         >
-          <Row gap="$md">
-            <Button size="$4" flex={1} chromeless onPress={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button
-              butterVariant="primary"
-              size="$4"
-              flex={1}
-              onPress={() => {
-                onApply();
-                onOpenChange(false);
-              }}
-            >
-              Apply Filters
-            </Button>
-          </Row>
-        </Column>
+          <Button butterVariant="ghost" size="$5" flex={1} onPress={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            butterVariant="primary"
+            size="$5"
+            flex={1}
+            onPress={() => {
+              onApply();
+              onOpenChange(false);
+            }}
+          >
+            Apply filters
+          </Button>
+        </Row>
       </Sheet.Frame>
     </Sheet>
   );

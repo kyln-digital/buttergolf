@@ -1,6 +1,6 @@
 "use client";
 
-import { Column, Button, Text, SwitchWithLabel } from "@buttergolf/ui";
+import { Column, Row, Button, Heading, SwitchWithLabel } from "@buttergolf/ui";
 import { FilterSection } from "./FilterSection";
 import { CategoryFilter } from "./CategoryFilter";
 import { ConditionFilter } from "./ConditionFilter";
@@ -20,35 +20,43 @@ interface FilterSidebarProps {
   readonly filters: FilterState;
   readonly availableBrands: string[];
   readonly priceRange: { readonly min: number; readonly max: number };
+  readonly activeFilterCount: number;
   readonly onChange: (filters: Partial<FilterState>) => void;
   readonly onClearAll: () => void;
 }
+
+/** Sticky offset: header bar + category bar. */
+const STICKY_TOP = 136;
 
 export function FilterSidebar({
   filters,
   availableBrands,
   priceRange,
+  activeFilterCount,
   onChange,
   onClearAll,
 }: Readonly<FilterSidebarProps>) {
   return (
     <Column
-      width={280}
+      tag="aside"
+      aria-label="Filters"
+      width={260}
+      flexShrink={0}
       style={{ position: "sticky" }}
-      top={140}
-      minHeight={200}
-      backgroundColor="$surface"
-      borderWidth={1}
-      borderColor="$fieldBorder"
-      borderRadius="$md"
-      padding="$lg"
-      gap="$lg"
+      top={STICKY_TOP}
       display="none"
       $gtLg={{ display: "flex" }}
     >
-      <Text fontWeight="700" size="$6">
-        Filters
-      </Text>
+      <Row alignItems="center" justifyContent="space-between" minHeight={40} paddingBottom="$sm">
+        <Heading level={2} size="$5">
+          Filters
+        </Heading>
+        {activeFilterCount > 0 && (
+          <Button butterVariant="ghost" size="$3" onPress={onClearAll}>
+            Clear all
+          </Button>
+        )}
+      </Row>
 
       <FilterSection title="Category">
         <CategoryFilter
@@ -64,7 +72,7 @@ export function FilterSidebar({
         />
       </FilterSection>
 
-      <FilterSection title="Price Range">
+      <FilterSection title="Price">
         <PriceRangeFilter
           minPrice={priceRange.min}
           maxPrice={priceRange.max}
@@ -90,10 +98,6 @@ export function FilterSidebar({
           size="$3"
         />
       </FilterSection>
-
-      <Button chromeless size="$4" onPress={onClearAll}>
-        Clear All
-      </Button>
     </Column>
   );
 }

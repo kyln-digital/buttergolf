@@ -4,7 +4,7 @@ import { Column, Row, Text, Checkbox } from "@buttergolf/ui";
 
 const CONDITIONS = [
   { value: "NEW", label: "New" },
-  { value: "LIKE_NEW", label: "Like New" },
+  { value: "LIKE_NEW", label: "Like new" },
   { value: "EXCELLENT", label: "Excellent" },
   { value: "GOOD", label: "Good" },
   { value: "FAIR", label: "Fair" },
@@ -26,22 +26,17 @@ export function ConditionFilter({ selectedConditions, onChange }: Readonly<Condi
   };
 
   return (
-    <Column gap="$xs">
+    <Column>
       {CONDITIONS.map((condition) => (
-        <Row
-          key={condition.value}
-          gap="$sm"
-          alignItems="center"
-          paddingVertical="$xs"
-          cursor="pointer"
-          onClick={() => handleToggle(condition.value)}
-        >
+        <Row key={condition.value} gap="$sm" alignItems="center" minHeight={36}>
           <Checkbox
             checked={selectedConditions.includes(condition.value)}
             onChange={() => handleToggle(condition.value)}
             size="sm"
           />
-          <Text size="$3">{condition.label}</Text>
+          <Text size="$4" cursor="pointer" onPress={() => handleToggle(condition.value)}>
+            {condition.label}
+          </Text>
         </Row>
       ))}
     </Column>

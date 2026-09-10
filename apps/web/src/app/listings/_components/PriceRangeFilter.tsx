@@ -43,7 +43,6 @@ export function PriceRangeFilter({
   const [localMax, setLocalMax] = useState(initialMax);
 
   // Sync with props when they change (e.g., filter reset)
-  // This is a legitimate use of setState in effect - syncing local state with prop changes
   useEffect(() => {
     const [nextMin, nextMax] = normaliseRange(selectedMin, selectedMax);
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -77,7 +76,7 @@ export function PriceRangeFilter({
   };
 
   return (
-    <Column gap="$md" width="100%">
+    <Column gap="$md" width="100%" paddingTop="$sm">
       <Slider
         min={normalisedMinPrice}
         max={normalisedMaxPrice}
@@ -85,49 +84,49 @@ export function PriceRangeFilter({
         value={[localMin, localMax]}
         onValueChange={handleSliderChange}
         width="100%"
+        aria-label="Price range"
       >
         <Slider.Track>
           <Slider.TrackActive />
         </Slider.Track>
-        <Slider.Thumb index={0} />
-        <Slider.Thumb index={1} />
+        <Slider.Thumb index={0} aria-label="Minimum price" />
+        <Slider.Thumb index={1} aria-label="Maximum price" />
       </Slider>
-      <Row gap="$sm" alignItems="center" width="100%">
+      <Row gap="$sm" alignItems="flex-end" width="100%">
         <Column gap="$xs" flex={1} minWidth={0}>
           <Text size="$2" color="$textSecondary">
-            Min
+            Min (£)
           </Text>
           <Input
-            size="$3"
+            size="sm"
             type="number"
+            inputMode="numeric"
             step={1}
             value={localMin.toString()}
             onChange={(e) => handleMinInputChange(e.target.value)}
-            placeholder="Min"
+            aria-label="Minimum price in pounds"
             width="100%"
           />
         </Column>
-        <Text color="$textSecondary" paddingTop="$lg" flexShrink={0}>
-          −
+        <Text color="$textSecondary" paddingBottom="$sm" flexShrink={0}>
+          –
         </Text>
         <Column gap="$xs" flex={1} minWidth={0}>
           <Text size="$2" color="$textSecondary">
-            Max
+            Max (£)
           </Text>
           <Input
-            size="$3"
+            size="sm"
             type="number"
+            inputMode="numeric"
             step={1}
             value={localMax.toString()}
             onChange={(e) => handleMaxInputChange(e.target.value)}
-            placeholder="Max"
+            aria-label="Maximum price in pounds"
             width="100%"
           />
         </Column>
       </Row>
-      <Text size="$2" color="$textSecondary">
-        ${localMin.toLocaleString("en-GB")} - ${localMax.toLocaleString("en-GB")}
-      </Text>
     </Column>
   );
 }

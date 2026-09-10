@@ -78,48 +78,60 @@ export const Text = styled(TamaguiParagraph, {
  * The level prop controls the semantic HTML tag and the default size,
  * but you can override with an explicit size prop.
  */
-export const Heading = styled(TamaguiParagraph, {
-  name: "Heading",
-  color: "$text",
-  fontFamily: "$heading",
-  fontWeight: "700",
-  letterSpacing: 0, // Prevent tight/condensed letter spacing
-  // LineHeight is now handled by Tamagui's font token system (headingFont.lineHeight)
-  // The level variant sets fontSize which automatically applies the correct lineHeight from tokens
-  // This fixes text overlap issues caused by unitless multipliers overriding token values
+export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
-  variants: {
-    level: {
-      1: {
-        tag: "h1",
-        fontSize: "$10", // 48px heading (use fontSize in variant, size on component)
+const HeadingFrame = styled(
+  TamaguiParagraph,
+  {
+    name: "Heading",
+    color: "$text",
+    fontFamily: "$heading",
+    fontWeight: "700",
+    letterSpacing: 0, // Prevent tight/condensed letter spacing
+    // LineHeight is now handled by Tamagui's font token system (headingFont.lineHeight)
+    // The level variant sets fontSize which automatically applies the correct lineHeight from tokens
+    // This fixes text overlap issues caused by unitless multipliers overriding token values
+
+    variants: {
+      level: {
+        1: {
+          fontSize: "$10", // 48px heading (use fontSize in variant, size on component)
+        },
+        2: {
+          fontSize: "$9", // 40px heading
+        },
+        3: {
+          fontSize: "$8", // 32px heading
+        },
+        4: {
+          fontSize: "$7", // 28px heading
+        },
+        5: {
+          fontSize: "$6", // 24px heading
+        },
+        6: {
+          fontSize: "$5", // 20px heading
+        },
       },
-      2: {
-        tag: "h2",
-        fontSize: "$9", // 40px heading
-      },
-      3: {
-        tag: "h3",
-        fontSize: "$8", // 32px heading
-      },
-      4: {
-        tag: "h4",
-        fontSize: "$7", // 28px heading
-      },
-      5: {
-        tag: "h5",
-        fontSize: "$6", // 24px heading
-      },
-      6: {
-        tag: "h6",
-        fontSize: "$5", // 20px heading
-      },
+    } as const,
+
+    defaultVariants: {
+      level: 2,
     },
-  } as const,
-
-  defaultVariants: {
-    level: 2,
   },
+  {
+    // The optimizing compiler would otherwise flatten a static <Heading> into a
+    // bare <p>, skipping the wrapper below that sets the semantic tag.
+    neverFlatten: true,
+  }
+);
+
+// `tag` set inside a variant is ignored by styled(), so the semantic element
+// is applied here: level 1 renders <h1>, level 2 <h2>, and so on. An explicit
+// `tag` prop still wins.
+export const Heading = HeadingFrame.styleable((props, ref) => {
+  const level = ((props as { level?: HeadingLevel }).level ?? 2) as HeadingLevel;
+  return <HeadingFrame ref={ref} tag={`h${level}`} {...props} />;
 });
 
 /**
@@ -155,7 +167,7 @@ export const Label = styled(TamaguiLabel, {
 // This ensures TypeScript knows about inherited props like color, textAlign, size, etc.
 export type TextProps = GetProps<typeof Text> &
   Omit<TamaguiParagraphProps, keyof GetProps<typeof Text>>;
-export type HeadingProps = GetProps<typeof Heading> &
-  Omit<TamaguiParagraphProps, keyof GetProps<typeof Heading>>;
+export type HeadingProps = GetProps<typeof HeadingFrame> &
+  Omit<TamaguiParagraphProps, keyof GetProps<typeof HeadingFrame>>;
 export type LabelProps = GetProps<typeof Label> &
   Omit<TamaguiLabelProps, keyof GetProps<typeof Label>>;

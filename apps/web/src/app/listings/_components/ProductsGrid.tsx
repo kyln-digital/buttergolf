@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Column, View, Text } from "@buttergolf/ui";
+import { Button, Column, View, Text } from "@buttergolf/ui";
 import { ProductCard } from "@/components/ProductCard";
-import { DotPagination } from "@/components/DotPagination";
+import { Pagination } from "@/components/Pagination";
+import { CardGrid } from "@/app/_components/marketplace/Section";
 import type { ProductCardData } from "@buttergolf/app";
 
 interface ProductsGridProps {
@@ -13,18 +14,20 @@ interface ProductsGridProps {
   readonly currentPage: number;
   readonly totalPages: number;
   readonly onPageChange: (page: number) => void;
+  readonly onClearFilters?: () => void;
 }
 
+/** Same footprint as a card: 4:3 image plus the text block. */
 function LoadingSkeleton() {
   return (
     <Column
       width="100%"
       paddingBottom="111.11%"
-      backgroundColor="$border"
+      backgroundColor="$backgroundHover"
       borderRadius="$lg"
       position="relative"
       overflow="hidden"
-      animation="quick"
+      aria-hidden
     />
   );
 }
@@ -78,7 +81,7 @@ function AnimatedGridContent({
   if (isLoading) {
     return (
       <>
-        {Array.from({ length: 24 }, (_, i) => (
+        {Array.from({ length: 12 }, (_, i) => (
           <LoadingSkeleton key={`loading-skeleton-${i}`} />
         ))}
       </>
@@ -118,45 +121,48 @@ export function ProductsGrid({
   currentPage,
   totalPages,
   onPageChange,
+  onClearFilters,
 }: Readonly<ProductsGridProps>) {
   if (!isLoading && !isPaginating && products.length === 0) {
     return (
-      <Column alignItems="center" justifyContent="center" paddingVertical="$10" gap="$md">
-        <Text size="$7" fontWeight="600" color="$textSecondary">
-          No products found
-        </Text>
-        <Text color="$text">Try adjusting your filters or search query</Text>
+      <Column
+        alignItems="center"
+        justifyContent="center"
+        paddingVertical="$3xl"
+        paddingHorizontal="$md"
+        gap="$md"
+        role="status"
+      >
+        <Column alignItems="center" gap="$xs">
+          <Text size="$7" fontWeight="600" color="$text" textAlign="center">
+            No products found
+          </Text>
+          <Text size="$4" color="$textSecondary" textAlign="center">
+            Try adjusting your filters or search query
+          </Text>
+        </Column>
+        {onClearFilters && (
+          <Button butterVariant="secondary" size="$4" onPress={onClearFilters}>
+            Clear all filters
+          </Button>
+        )}
       </Column>
     );
   }
 
   return (
-    <Column gap="$lg" width="100%">
-      {/* Products Grid - Responsive: 2 col mobile, 3 col tablet, 4 col desktop */}
-      <Column
-        width="100%"
-        style={{ display: "grid" }}
-        gridTemplateColumns="repeat(2, 1fr)"
-        gap="$md"
-        $gtSm={{
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "$lg",
-        }}
-        $gtMd={{
-          gridTemplateColumns: "repeat(4, 1fr)",
-        }}
-      >
+    <Column gap="$md" width="100%" aria-busy={isLoading || isPaginating}>
+      <CardGrid maxColumns={4}>
         <AnimatedGridContent
           products={products}
           isLoading={isLoading}
           isPaginating={isPaginating}
           currentPage={currentPage}
         />
-      </Column>
+      </CardGrid>
 
-      {/* Pagination */}
-      {!isLoading && totalPages > 1 && (
-        <DotPagination
+      {!isLoading && (
+        <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={onPageChange}

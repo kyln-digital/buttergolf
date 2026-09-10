@@ -23,29 +23,24 @@ export function BrandFilter({
 
   if (availableBrands.length === 0) {
     return (
-      <Text size="$3" color="$textSecondary">
+      <Text size="$4" color="$textSecondary">
         No brands available
       </Text>
     );
   }
 
   return (
-    <Column gap="$xs">
+    <Column>
       {availableBrands.map((brand) => (
-        <Row
-          key={brand}
-          gap="$sm"
-          alignItems="center"
-          paddingVertical="$xs"
-          cursor="pointer"
-          onPress={() => handleToggle(brand)}
-        >
+        <Row key={brand} gap="$sm" alignItems="center" minHeight={36}>
           <Checkbox
             checked={selectedBrands.includes(brand)}
             onChange={() => handleToggle(brand)}
             size="sm"
           />
-          <Text size="$3">{brand}</Text>
+          <Text size="$4" cursor="pointer" onPress={() => handleToggle(brand)}>
+            {brand}
+          </Text>
         </Row>
       ))}
     </Column>
