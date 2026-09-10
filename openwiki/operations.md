@@ -9,13 +9,42 @@ Canonical source: `AGENTS.md` (root). `CLAUDE.md` imports it via `@AGENTS.md`.
 - Merging is the release decision: only when CI is green, the preview has been checked, and a human has asked for it.
 - **Migrations are not applied by the build.** `db:generate` is the only database-related prerequisite of `turbo run build` (its other dependency is `^build`, upstream package builds). Apply them with `pnpm db:migrate:deploy`, which reads `DATABASE_URL` from `packages/db/.env` (per `packages/db/prisma.config.ts`); pull the **production** value into that file first with `vercel env pull packages/db/.env --environment=production`, never trusting whatever is already there. **Migrate first, then merge**, so code deploying on merge never meets an un-migrated schema, and keep migrations backwards-compatible with the deployed code (expand, then contract).
 
+## Database (one database, every environment)
+
+`DATABASE_URL` is a **single Vercel variable scoped to `Production, Preview, Development`** — one value, one Neon database, read by production, by every preview deploy, and by local development. There is no staging copy. (Verified 2026-09-10: `vercel env ls --project buttergolf-web` lists one `DATABASE_URL` across all three environments, and independent tables return identical CUIDs from `buttergolf.co.uk` and a preview URL.)
+
+Two consequences, and they are the reason schema work here is delicate:
+
+- **A migration is a production change the moment it is applied**, whatever branch you ran it from.
+- **A preview can only be exercised against a schema production already has.** A PR that adds a column has two states and both are wrong: apply the migration and production's schema runs ahead of the code deployed against it; don't, and the preview 500s on a column Prisma selects but the database doesn't have. That second one is exactly the `isBrandProcessed` incident on 2026-09-10 — every page reading `product_images` returned a 500 until the field was removed.
+
+Until previews get their own database, work with it rather than round it:
+
+- Keep migrations **additive and backwards-compatible** — expand now, contract in a later release — so a schema that runs ahead of the deployed code is harmless.
+- Apply deliberately, close to the merge that needs it: `vercel env pull packages/db/.env --environment=production` then `pnpm db:migrate:deploy`. **Migrate first, then merge** (merging deploys to production — see the release model above).
+- Never point `db:migrate:deploy`, `db:push` or `db:reset` at a URL you have not just checked. Everything in `packages/db/.env` is production.
+- The `migrations` CI job (below) runs against a throwaway container and proves the migrations are _internally_ consistent. It says nothing about whether they have been applied to the live database, and it never connects to it.
+
+**Removing the trap** is a dashboard change on Neon/Vercel, not a code change: enable database branching on the `buttergolf-db` integration so each preview deploy gets its own Neon branch, then narrow the committed `DATABASE_URL` to `Production` only. After that, previews become disposable, CI can apply migrations to a real preview branch, and schema changes stop being production releases.
+
 ## CI (`.github/workflows/ci.yml`)
 
-Triggers: `pull_request` (all) and `push` to `main`, with per-ref concurrency cancel-in-progress. Single `validate` job on Node 22:
+Triggers: `pull_request` (all) and `push` to `main`, with per-ref concurrency cancel-in-progress. Two jobs, both on Node 22.
+
+**`validate` — lint, format & type-check**
 
 1. `pnpm install --frozen-lockfile`
 2. `pnpm db:generate` (Prisma client — required before type-check)
 3. `pnpm format:check` → `pnpm lint` → `pnpm typecheck` → `pnpm test`
+
+**`migrations` — migrations apply & match the schema**
+
+Runs against a `postgres:16` **service container**, never a real database (see [the database note](#database-one-database-every-environment)):
+
+1. `pnpm db:migrate:deploy` — every migration still applies, in order, to an empty database
+2. `prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code` — the migrations produce exactly the schema the client is generated from (exit code 2 = drift, and the step prints how to fix it)
+
+The second check is the one that would have caught the `isBrandProcessed` incident on 2026-09-10: a model field shipped whose column the deployed database did not have, so every page reading `product_images` returned a 500. What it cannot check is whether the migrations have been _applied_ to the shared database — nothing automated can, while previews and production point at the same one.
 
 No build or deploy step in CI — Vercel handles deploys from branch activity. There is also an `openwiki-update.yml` workflow (manual dispatch + daily 08:00 UTC, `main` only) that runs an OpenWiki docs update and opens a PR onto `openwiki/update`. `.openwikiignore` excludes secrets and generated/build output and restricts host `execute` during those runs.
 
@@ -61,7 +90,7 @@ Defined in `vercel.json`; all protected by `CRON_SECRET` bearer token (fail clos
 
 - **Clerk**: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET`, `NEXT_PUBLIC_CLERK_PROXY_URL` (prod only)
 - **Stripe**: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_CONNECT_WEBHOOK_SECRET` (separate secret for the Connect webhook)
-- **Database**: `DATABASE_URL`
+- **Database**: `DATABASE_URL` (one Neon database for all three environments — see [Database](#database-one-database-every-environment))
 - **ShipEngine**: `SHIPENGINE_API_KEY`, `SHIPENGINE_WEBHOOK_SECRET`
 - **Cloudinary**: cloud name (public) + API key/secret
 - **Resend**: `RESEND_API_KEY`
