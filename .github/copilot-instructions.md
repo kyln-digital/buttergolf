@@ -1364,9 +1364,13 @@ If you see "Drift detected: Your database schema is not in sync with your migrat
 
 ```bash
 cd packages/db
+# WARNING: this DROPS the database. Check where you are pointed FIRST:
+#   echo $DATABASE_URL   # an exported value WINS over .env
+#   cat .env             # only consulted when nothing is exported
+# Anything pulled from Vercel is production, whichever environment it came from.
 pnpm prisma migrate reset --force  # Drops DB, reapplies all migrations
 cd ../..
-pnpm db:seed  # Reseeds all data
+pnpm db:seed  # Separate step: migrate reset does NOT seed (no seed hook is configured)
 ```
 
 This is the ONLY proper way to resolve drift. It ensures migration history is clean and the database can be deployed to production safely.
@@ -1384,7 +1388,7 @@ This is the ONLY proper way to resolve drift. It ensures migration history is cl
 **Understanding Prisma Commands:**
 
 - `prisma migrate dev` - ✅ THE ONLY COMMAND YOU SHOULD USE - Creates migration files, version-controlled, production-safe
-- `prisma migrate reset --force` - ✅ CORRECT way to resolve drift - Drops database, reapplies all migrations, reseeds data
+- `prisma migrate reset --force` - ✅ CORRECT way to resolve drift - Drops the database and reapplies all migrations. It does **not** reseed: no `prisma.seed` is configured in `package.json` or `prisma.config.ts`, so run `pnpm db:seed` afterwards. Check `$DATABASE_URL` before running it — an exported value beats `packages/db/.env`
 - `prisma db push` - ❌ FORBIDDEN - Never use this, it causes drift
 - `prisma migrate resolve` - ❌ DO NOT USE - Does not actually fix drift, makes it worse
 
