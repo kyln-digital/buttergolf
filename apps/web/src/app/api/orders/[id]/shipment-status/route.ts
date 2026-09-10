@@ -1,8 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma, ShipmentStatus } from "@buttergolf/db";
+import { prisma, ShipmentStatus, OrderStatus } from "@buttergolf/db";
 import { calculateAutoReleaseDate } from "@/lib/pricing";
 import { sendPaymentOnHoldEmail } from "@/lib/email";
 import { getUserIdFromRequest } from "@/lib/auth";
+
+/**
+ * Keep Order.status in step with the shipment. Mirrors the mapping the
+ * ShipEngine webhook uses, so a manual update and a carrier event leave the
+ * order in the same place.
+ */
+function mapShipmentToOrderStatus(shipmentStatus: ShipmentStatus): OrderStatus {
+  switch (shipmentStatus) {
+    case "DELIVERED":
+      return "DELIVERED";
+    case "PRE_TRANSIT":
+    case "IN_TRANSIT":
+    case "OUT_FOR_DELIVERY":
+      return "SHIPPED";
+    default:
+      // FAILED / RETURNED / CANCELLED / PENDING stay put until resolved.
+      return "LABEL_GENERATED";
+  }
+}
 
 /**
  * PATCH /api/orders/[id]/shipment-status
@@ -76,15 +95,19 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       );
     }
 
-    // Build update data
+    // Build update data. Order.status has to move with the shipment, or the
+    // seller's card shows "Shipped" until the page reloads and the row still
+    // says LABEL_GENERATED.
     const updateData: {
       shipmentStatus: ShipmentStatus;
+      status?: OrderStatus;
       shippedAt?: Date;
       deliveredAt?: Date;
       actualDelivery?: Date;
       autoReleaseAt?: Date;
     } = {
       shipmentStatus: status,
+      status: mapShipmentToOrderStatus(status),
     };
 
     // Set timestamps based on status
@@ -141,6 +164,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({
       success: true,
       orderId,
+      status: updatedOrder.status,
       shipmentStatus: updatedOrder.shipmentStatus,
       autoReleaseAt: updatedOrder.autoReleaseAt,
       deliveredAt: updatedOrder.deliveredAt,

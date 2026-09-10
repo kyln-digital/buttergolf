@@ -160,6 +160,30 @@ const HelperText = ({ children }: { children: React.ReactNode }) => (
 
 const SELL_DRAFT_STORAGE_KEY = "buttergolf-sell-draft-v1";
 
+/** Bump whenever FormData gains or loses a field. Stale drafts are discarded. */
+const SELL_DRAFT_SCHEMA_VERSION = 2;
+
+/**
+ * What will actually be declared to the carrier: the seller's typed overrides
+ * where they gave one, the chosen preset everywhere else.
+ *
+ * Overrides are held as strings so a half-typed "1" never becomes a real 1cm
+ * dimension — only a finite, positive number beats the preset.
+ */
+function resolveParcelFromForm(data: FormData) {
+  const preset = getParcelPreset(data.parcelPresetId);
+  const override = (value: string, fallback: number) => {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  };
+  return {
+    length: override(data.parcelLength, preset?.length ?? 0),
+    width: override(data.parcelWidth, preset?.width ?? 0),
+    height: override(data.parcelHeight, preset?.height ?? 0),
+    weight: override(data.parcelWeight, preset?.weight ?? 0),
+  };
+}
+
 /** Shown when a save is attempted before the record being edited has loaded. */
 const RECORD_NOT_READY_MESSAGE =
   "Still loading this listing. Give it a moment and try again — or reload the page if this persists.";
@@ -206,7 +230,7 @@ function hasMeaningfulDraftContent(data: FormData): boolean {
     data.gripCondition !== 7 ||
     data.headCondition !== 7 ||
     data.shaftCondition !== 7 ||
-    data.parcelPresetId.trim().length > 0 ||
+    (data.parcelPresetId ?? "").trim().length > 0 ||
     data.images.length > 0
   );
 }
@@ -277,7 +301,13 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     : SELL_DRAFT_STORAGE_KEY;
 
   const [formData, setFormData, { isHydrated, clear: clearLocalDraft }] =
-    useLocalStorageState<FormData>(storageKey, EMPTY_FORM_DATA, { debounceMs: 1000 });
+    useLocalStorageState<FormData>(storageKey, EMPTY_FORM_DATA, {
+      debounceMs: 1000,
+      // Bumped when the parcel fields were added. A draft saved before them
+      // hydrates without `parcelPresetId`, and reading it would throw while
+      // rendering — the seller could not open the sell form at all.
+      schemaVersion: SELL_DRAFT_SCHEMA_VERSION,
+    });
 
   // Track whether the user has dismissed the recovery prompt
   const [recoveryDismissed, setRecoveryDismissed] = useState(false);
@@ -330,14 +360,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   // --- Postage ---
   const selectedParcelPreset = getParcelPreset(formData.parcelPresetId);
 
-  // What we'll declare to the carrier: the seller's overrides where they gave
-  // one, the preset everywhere else.
-  const resolvedParcel = {
-    length: Number.parseFloat(formData.parcelLength) || selectedParcelPreset?.length || 0,
-    width: Number.parseFloat(formData.parcelWidth) || selectedParcelPreset?.width || 0,
-    height: Number.parseFloat(formData.parcelHeight) || selectedParcelPreset?.height || 0,
-    weight: Number.parseFloat(formData.parcelWeight) || selectedParcelPreset?.weight || 0,
-  };
+  const resolvedParcel = resolveParcelFromForm(formData);
 
   const parcelErrors = selectedParcelPreset ? validateParcel(resolvedParcel) : [];
 
@@ -397,6 +420,10 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
             gripCondition: data.gripCondition,
             headCondition: data.headCondition,
             shaftCondition: data.shaftCondition,
+            // Postage has to autosave too. Without it, a seller who picks a
+            // parcel after the first autosave loses that choice on reload.
+            parcelPresetId: data.parcelPresetId || null,
+            ...(data.parcelPresetId ? resolveParcelFromForm(data) : {}),
             // Drafts carry their photos too, so the seller hub can render a
             // thumbnail instead of a broken image.
             images: data.images.map((url, index) => ({ url, sortOrder: index })),
@@ -423,6 +450,11 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
             ...data,
             price: safePrice,
             brandName: undefined,
+            ...(data.parcelPresetId ? resolveParcelFromForm(data) : {}),
+            parcelLength: undefined,
+            parcelWidth: undefined,
+            parcelHeight: undefined,
+            parcelWeight: undefined,
             requestId: draftRequestIdRef.current,
             isDraft: true,
           }),

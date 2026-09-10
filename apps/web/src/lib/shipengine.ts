@@ -36,6 +36,13 @@ function cmToInches(cm: number): number {
   return Math.round((cm / 2.54) * 100) / 100;
 }
 
+/**
+ * How long one label attempt holds its claim on an order. Long enough to
+ * cover a ShipEngine round trip including retries, short enough that a
+ * genuine retry after a failure is never blocked in practice.
+ */
+const LABEL_CLAIM_LEASE_MS = 60_000;
+
 /** grams -> ounces, at the precision ShipEngine actually uses. */
 function gramsToOunces(grams: number): number {
   return Math.round((grams / 28.3495) * 100) / 100;
@@ -669,6 +676,35 @@ export async function generateShippingLabel(params: {
 
   if (order.labelUrl) {
     throw new LabelGenerationError("Label already generated for this order", "ALREADY_GENERATED");
+  }
+
+  // Claim the order before spending money at the carrier.
+  //
+  // Automatic generation after payment and the seller's manual retry can both
+  // pass the read above, buy two labels, and race to overwrite tracking —
+  // leaving a paid-for label nobody can see. This conditional update is
+  // atomic in the database, so exactly one caller wins.
+  //
+  // The claim is a short lease rather than a permanent flag: an attempt that
+  // dies mid-flight (lambda timeout, deploy) must not lock the order out of
+  // ever getting a label. LABEL_CLAIM_LEASE_MS comfortably exceeds a
+  // ShipEngine round trip while staying well under the time it takes a seller
+  // to fix an address and click retry.
+  const claimedAfter = new Date(Date.now() - LABEL_CLAIM_LEASE_MS);
+  const claim = await prisma.order.updateMany({
+    where: {
+      id: orderId,
+      labelUrl: null,
+      OR: [{ labelAttemptedAt: null }, { labelAttemptedAt: { lt: claimedAfter } }],
+    },
+    data: { labelAttemptedAt: new Date() },
+  });
+
+  if (claim.count === 0) {
+    throw new LabelGenerationError(
+      "Label generation is already in progress for this order",
+      "ALREADY_GENERATED"
+    );
   }
 
   // Validate seller address using comprehensive validation

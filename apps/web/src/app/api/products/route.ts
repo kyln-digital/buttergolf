@@ -9,6 +9,7 @@ import {
   type ParcelDimensions,
 } from "@buttergolf/constants";
 import { getUserIdFromRequest } from "@/lib/auth";
+import { validateUKAddress, type ShippingAddress } from "@/lib/address-validation";
 import { mapSlidersToConditionEnum } from "@/lib/product-condition";
 
 export async function POST(request: Request) {
@@ -233,11 +234,31 @@ export async function POST(request: Request) {
         where: { userId: user.id, isDefault: true },
       });
 
-      if (!sellerAddress || sellerAddress.street1 === "Address pending") {
+      // Run the same validation label purchase will run. Checking only for a
+      // missing row let a half-filled address through, and it then failed at
+      // label time — after the buyer had paid, which is the failure this gate
+      // exists to prevent.
+      // Validate the address the way label purchase will, so a listing can't
+      // pass here and then fail after the buyer has paid. validateSellerCanShip
+      // is worded for buyers ("this seller hasn't...") and names no field, so
+      // go to the field-level validator and tell the seller what to fix.
+      if (!sellerAddress) {
         return NextResponse.json(
           {
             error: "Add your postage address before publishing a listing",
             code: "SELLER_ADDRESS_REQUIRED",
+          },
+          { status: 400 }
+        );
+      }
+
+      const addressCheck = validateUKAddress(sellerAddress as ShippingAddress, { isSeller: true });
+      if (!addressCheck.isValid) {
+        return NextResponse.json(
+          {
+            error: `Your postage address needs fixing before you can publish: ${addressCheck.errors[0].message}`,
+            code: "SELLER_ADDRESS_REQUIRED",
+            errors: addressCheck.errors,
           },
           { status: 400 }
         );

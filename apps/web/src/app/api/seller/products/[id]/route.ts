@@ -6,6 +6,7 @@ import {
   getParcelPreset,
   validateParcel,
 } from "@buttergolf/constants";
+import { validateUKAddress, type ShippingAddress } from "@/lib/address-validation";
 import { getUserIdFromRequest } from "@/lib/auth";
 import { cloudinary, extractPublicId, isValidCloudinaryUrl } from "@/lib/cloudinary";
 import { mapSlidersToConditionEnum } from "@/lib/product-condition";
@@ -243,11 +244,27 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         where: { userId: user.id, isDefault: true },
       });
 
-      if (!sellerAddress || sellerAddress.street1 === "Address pending") {
+      // Validate the address the way label purchase will, so a listing can't
+      // pass here and then fail after the buyer has paid. validateSellerCanShip
+      // is worded for buyers ("this seller hasn't...") and names no field, so
+      // go to the field-level validator and tell the seller what to fix.
+      if (!sellerAddress) {
         return NextResponse.json(
           {
             error: "Add your postage address before publishing a listing",
             code: "SELLER_ADDRESS_REQUIRED",
+          },
+          { status: 400 }
+        );
+      }
+
+      const addressCheck = validateUKAddress(sellerAddress as ShippingAddress, { isSeller: true });
+      if (!addressCheck.isValid) {
+        return NextResponse.json(
+          {
+            error: `Your postage address needs fixing before you can publish: ${addressCheck.errors[0].message}`,
+            code: "SELLER_ADDRESS_REQUIRED",
+            errors: addressCheck.errors,
           },
           { status: 400 }
         );

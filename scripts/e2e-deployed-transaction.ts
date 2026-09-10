@@ -32,6 +32,33 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-11-17.clover" as never,
 });
 
+/**
+ * These scripts create users, charge a card and buy a shipping label against
+ * whatever target they are given. Pointed at production with live keys that
+ * is real money and real fixture data in front of customers, so refuse
+ * anything that isn't clearly a test target unless explicitly overridden.
+ */
+function assertSafeTarget(baseUrl: string): void {
+  if (process.env.E2E_ALLOW_UNSAFE_TARGET === "true") return;
+
+  const stripeKey = process.env.STRIPE_SECRET_KEY ?? "";
+  if (!stripeKey.startsWith("sk_test_")) {
+    console.error("Refusing to run: STRIPE_SECRET_KEY is not a test key.");
+    console.error("Set E2E_ALLOW_UNSAFE_TARGET=true only if you really mean it.");
+    process.exit(1);
+  }
+
+  const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(baseUrl);
+  const isPreview = baseUrl.includes(".vercel.app");
+  if (!isLocal && !isPreview) {
+    console.error(`Refusing to run against ${baseUrl}: not a localhost or preview target.`);
+    console.error("Set E2E_ALLOW_UNSAFE_TARGET=true only if you really mean it.");
+    process.exit(1);
+  }
+}
+
+assertSafeTarget(BASE);
+
 const pass: string[] = [];
 const fail: string[] = [];
 function check(label: string, ok: boolean, detail = "") {
