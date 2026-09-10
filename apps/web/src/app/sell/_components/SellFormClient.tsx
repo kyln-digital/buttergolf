@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useReducer } from "react";
+import { useState, useEffect, useCallback, useRef, useReducer, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -46,6 +46,7 @@ import {
 } from "../_lib/sell-record-state";
 import { createSaveQueue, type SaveQueue } from "../_lib/save-queue";
 import { fetchJsonWithTimeout } from "../_lib/fetch-with-timeout";
+import { sellStorageKey } from "../_lib/sell-storage-key";
 
 interface Category {
   id: string;
@@ -173,8 +174,6 @@ const HelperText = ({ children }: { children: React.ReactNode }) => (
   </Text>
 );
 
-const SELL_DRAFT_STORAGE_KEY = "buttergolf-sell-draft-v1";
-
 /** Bump whenever FormData gains or loses a field. Stale drafts are discarded. */
 const SELL_DRAFT_SCHEMA_VERSION = 2;
 
@@ -263,6 +262,12 @@ const SaveStatusIndicator = ({
   );
 };
 
+/** The form together with the record generation that produced it. */
+interface AutoSavePayload {
+  form: FormData;
+  generation: number;
+}
+
 interface SellFormClientProps {
   /** If provided, loads an existing draft from the database instead of starting fresh */
   draftId?: string;
@@ -292,15 +297,23 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   const titleManuallyOverriddenRef = useRef(false);
 
   // --- Persisted form state (localStorage) ---
-  // Editing a live listing gets its own key so it can't clobber (or be
-  // pre-filled from) an unrelated new-listing draft the seller has on the go.
-  const storageKey = isEditingListing
-    ? `${SELL_DRAFT_STORAGE_KEY}-edit-${editProductId}`
-    : SELL_DRAFT_STORAGE_KEY;
+  // One key per record. Sharing a key across records is not just untidy: the
+  // hook syncs across tabs, so two tabs resuming *different* drafts would push
+  // each other's fields into one another and then autosave them to the wrong
+  // row. The generation machinery can't catch that — from each tab's point of
+  // view the record never changed — so the keys have to be distinct.
+  //
+  // The bare key stays reserved for a brand-new listing, which is what the
+  // recovery banner offers to restore.
+  const storageKey = sellStorageKey({ draftId, editProductId });
 
   const [formData, setFormData, { isHydrated, clear: clearLocalDraft }] =
     useLocalStorageState<FormData>(storageKey, EMPTY_FORM_DATA, {
       debounceMs: 1000,
+      // Another tab's save must not replace the fields being typed here — and
+      // whatever arrived would then be autosaved as if the seller had entered
+      // it, against this tab's row.
+      syncAcrossTabs: false,
       // Bumped when the parcel fields were added. A draft saved before them
       // hydrates without `parcelPresetId`, and reading it would throw while
       // rendering — the seller could not open the sell form at all.
@@ -346,6 +359,12 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   // The route as of this render. Async guards compare against it so a prop
   // change closes the write window immediately, without waiting for the
   // passive route-change effect.
+  // The generation whose data is currently in `formData`. State, not a ref, so
+  // it lands in the same commit as the form itself — the debounced autosave
+  // snapshots the pair together and they can never disagree. A ref updates in a
+  // different commit from the data, leaving a window in which a timer could
+  // attribute the new record's generation to the old record's fields.
+  const [formDataGeneration, setFormDataGeneration] = useState(0);
   const routeIdRef = useRef<string | null>(loadProductId ?? null);
   routeIdRef.current = loadProductId ?? null;
 
@@ -359,7 +378,10 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   // record alone leaves a window where the previous listing still looks
   // saveable under the new URL.
   const isRecordReadyToSave = canSave(record) && record.routeId === (loadProductId ?? null);
-  const isLoadingRecord = isHydrating(record);
+  // A route mismatch counts as loading. Otherwise, for the render between the
+  // route changing and the passive effect, the previous listing stays editable
+  // and anything typed is silently discarded when the new record lands.
+  const isLoadingRecord = isHydrating(record) || !matchesRoute(record, loadProductId ?? null);
   const recordLoadFailed = hasLoadFailed(record);
 
   // --- Write ordering ---
@@ -369,10 +391,6 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   // publish with `isDraft: true`.
   const saveQueueRef = useRef<SaveQueue | null>(null);
   saveQueueRef.current ??= createSaveQueue();
-
-  // The reducer was initialised with the first route, so the effect below only
-  // dispatches for genuine switches.
-  const hasRunLoadEffectRef = useRef(false);
 
   // Show the recovery banner when localStorage has meaningful data and
   // we're NOT loading a specific draft from the DB
@@ -475,23 +493,27 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     [isEditingListing, applyRecordEvent]
   );
 
+  // The form and the generation it came from, snapshotted together by the
+  // debounce so a queued payload always says which record produced it.
+  const autoSavePayload = useMemo(
+    () => ({ form: formData, generation: formDataGeneration }),
+    [formData, formDataGeneration]
+  );
+
   const handleAutoSave = useCallback(
-    async (data: FormData): Promise<AutoSaveResult> => {
+    async (payload: AutoSavePayload): Promise<AutoSaveResult> => {
       // Queued like every other write, so it can never overtake or be overtaken
       // by a publish. persistDraft re-checks the record when it actually runs.
       if (isSubmittingRef.current) {
         return "skipped";
       }
-      // The generation `data` belongs to, captured now rather than when the
-      // queued task eventually runs.
-      const dataGeneration = recordRef.current.generation;
-      return saveQueueRef.current!.enqueue(() => persistDraft(data, dataGeneration));
+      return saveQueueRef.current!.enqueue(() => persistDraft(payload.form, payload.generation));
     },
     [persistDraft]
   );
 
-  const { status: autoSaveStatus } = useAutoSave<FormData>({
-    data: formData,
+  const { status: autoSaveStatus } = useAutoSave<AutoSavePayload>({
+    data: autoSavePayload,
     onSave: handleAutoSave,
     debounceMs: 10_000,
     // When we're loading an existing draft or listing, autosave must wait until
@@ -505,15 +527,18 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   // phase, the idempotency key, and the generation that invalidates work
   // already in flight for the record being left.
   useEffect(() => {
-    if (!hasRunLoadEffectRef.current) {
-      // The reducer was initialised with this route already.
-      hasRunLoadEffectRef.current = true;
-      return;
-    }
+    const currentRouteId = loadProductId ?? null;
+
+    // Idempotent by comparing against the record itself rather than a
+    // "have I run before?" flag. Strict Mode mounts effects twice in
+    // development, and a flag would read the second mount as a record switch —
+    // wiping a recovered local draft on /sell, or discarding the first load and
+    // bumping the generation for a routed record.
+    if (recordRef.current.routeId === currentRouteId) return;
 
     applyRecordEvent({
       type: "route-changed",
-      routeId: loadProductId ?? null,
+      routeId: currentRouteId,
       createRequestId: uuidv4(),
     });
 
@@ -522,14 +547,17 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     titleManuallyOverriddenRef.current = false;
     setUserAddedText("");
 
-    if (!loadProductId) {
-      // useLocalStorageState only replaces in-memory state when the new key has
-      // something stored, so without this the previous listing's fields and
-      // photos stay on screen — and a blank form is immediately saveable, so
-      // autosave would create a fresh draft duplicating it.
-      setFormData(EMPTY_FORM_DATA);
+    if (!currentRouteId) {
+      // The form is now the blank one for the generation just created
+      // (applyRecordEvent updates the ref synchronously). Clearing the fields
+      // themselves is useLocalStorageState's job: the key changed, so it either
+      // hydrates whatever the new key holds or resets to the default.
+      setFormDataGeneration(recordRef.current.generation);
     }
-  }, [loadProductId, setFormData, applyRecordEvent]);
+    // For a routed record the form still holds the *previous* record's data
+    // until the load lands, so formDataGeneration deliberately stays behind —
+    // any autosave of it is skipped rather than written to the new row.
+  }, [loadProductId, applyRecordEvent]);
 
   // --- Loading the routed record ---
   // Driven by the state machine rather than by the route directly: it runs
@@ -542,10 +570,12 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     if (recordPhase !== "loading" || !recordRouteId) return;
 
     let applied = false;
+    let cancelled = false;
 
     const loadRecord = async () => {
       try {
         const response = await fetch(`/api/products/${recordRouteId}`);
+        if (cancelled) return;
         if (!response.ok) {
           applyRecordEvent({ type: "load-failed", generation: recordGeneration });
           return;
@@ -582,7 +612,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
         // outside it — so without this check an out-of-order response could
         // still push its data onto the screen, leaving the form showing one
         // record while targeting another.
-        if (!canApplyLoad(recordRef.current, recordGeneration)) return;
+        if (cancelled || !canApplyLoad(recordRef.current, recordGeneration)) return;
 
         // A stored title is the seller's, whether they typed it or accepted the
         // generated one. Without this the auto-title effect would regenerate
@@ -594,18 +624,27 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
         applied = true;
         setFormData(loaded);
+        setFormDataGeneration(recordGeneration);
         applyRecordEvent({ type: "load-succeeded", generation: recordGeneration });
       } catch {
         // Surface the failure rather than leaving a spinner up forever. Saving
         // stays blocked either way, so a failed fetch can never overwrite the
         // record with a blank form.
-        if (!applied) {
+        if (!applied && !cancelled) {
           applyRecordEvent({ type: "load-failed", generation: recordGeneration });
         }
       }
     };
 
     void loadRecord();
+
+    // The generation alone is not enough to identify *this* run: Strict Mode
+    // replays the effect with the same generation, so a delayed replay would
+    // still pass canApplyLoad and overwrite edits made since the first response
+    // landed. Only the active run may touch the form.
+    return () => {
+      cancelled = true;
+    };
   }, [recordPhase, recordRouteId, recordGeneration, setFormData, applyRecordEvent]);
 
   // Helper function to singularize category names
