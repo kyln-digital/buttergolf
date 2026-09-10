@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useReducer } from "react";
+import { useState, useEffect, useCallback, useRef, useReducer, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { LISTING_PRICE_LIMITS, getListingPriceBoundsMessage } from "@buttergolf/constants";
@@ -234,6 +234,12 @@ const SaveStatusIndicator = ({
   );
 };
 
+/** The form together with the record generation that produced it. */
+interface AutoSavePayload {
+  form: FormData;
+  generation: number;
+}
+
 interface SellFormClientProps {
   /** If provided, loads an existing draft from the database instead of starting fresh */
   draftId?: string;
@@ -301,10 +307,12 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   // The route as of this render. Async guards compare against it so a prop
   // change closes the write window immediately, without waiting for the
   // passive route-change effect.
-  // The generation whose data is currently in `formData`. Tracked where the
-  // form is assigned rather than read when a save fires, so a debounced payload
-  // can never be attributed to a record it did not come from.
-  const formDataGenerationRef = useRef(0);
+  // The generation whose data is currently in `formData`. State, not a ref, so
+  // it lands in the same commit as the form itself — the debounced autosave
+  // snapshots the pair together and they can never disagree. A ref updates in a
+  // different commit from the data, leaving a window in which a timer could
+  // attribute the new record's generation to the old record's fields.
+  const [formDataGeneration, setFormDataGeneration] = useState(0);
   const routeIdRef = useRef<string | null>(loadProductId ?? null);
   routeIdRef.current = loadProductId ?? null;
 
@@ -424,21 +432,27 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     [isEditingListing, applyRecordEvent]
   );
 
+  // The form and the generation it came from, snapshotted together by the
+  // debounce so a queued payload always says which record produced it.
+  const autoSavePayload = useMemo(
+    () => ({ form: formData, generation: formDataGeneration }),
+    [formData, formDataGeneration]
+  );
+
   const handleAutoSave = useCallback(
-    async (data: FormData): Promise<AutoSaveResult> => {
+    async (payload: AutoSavePayload): Promise<AutoSaveResult> => {
       // Queued like every other write, so it can never overtake or be overtaken
       // by a publish. persistDraft re-checks the record when it actually runs.
       if (isSubmittingRef.current) {
         return "skipped";
       }
-      const dataGeneration = formDataGenerationRef.current;
-      return saveQueueRef.current!.enqueue(() => persistDraft(data, dataGeneration));
+      return saveQueueRef.current!.enqueue(() => persistDraft(payload.form, payload.generation));
     },
     [persistDraft]
   );
 
-  const { status: autoSaveStatus } = useAutoSave<FormData>({
-    data: formData,
+  const { status: autoSaveStatus } = useAutoSave<AutoSavePayload>({
+    data: autoSavePayload,
     onSave: handleAutoSave,
     debounceMs: 10_000,
     // When we're loading an existing draft or listing, autosave must wait until
@@ -477,10 +491,10 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       // (applyRecordEvent updates the ref synchronously). Clearing the fields
       // themselves is useLocalStorageState's job: the key changed, so it either
       // hydrates whatever the new key holds or resets to the default.
-      formDataGenerationRef.current = recordRef.current.generation;
+      setFormDataGeneration(recordRef.current.generation);
     }
     // For a routed record the form still holds the *previous* record's data
-    // until the load lands, so formDataGenerationRef deliberately stays behind —
+    // until the load lands, so formDataGeneration deliberately stays behind —
     // any autosave of it is skipped rather than written to the new row.
   }, [loadProductId, applyRecordEvent]);
 
@@ -540,7 +554,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
         applied = true;
         setFormData(loaded);
-        formDataGenerationRef.current = recordGeneration;
+        setFormDataGeneration(recordGeneration);
         applyRecordEvent({ type: "load-succeeded", generation: recordGeneration });
       } catch {
         // Surface the failure rather than leaving a spinner up forever. Saving
