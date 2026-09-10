@@ -22,6 +22,18 @@ export const MAX_UPLOAD_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 export const MAX_UPLOAD_FILE_SIZE_LABEL = "10MB";
 
 /**
+ * Every MIME type that counts as HEIC/HEIF. Declared once so the client-side
+ * detection and the server-side allow-list can't disagree about, say, whether a
+ * burst shot is supported.
+ */
+const HEIC_MIME_TYPES_LIST = [
+  "image/heic",
+  "image/heif",
+  "image/heic-sequence",
+  "image/heif-sequence",
+] as const;
+
+/**
  * MIME types accepted by the upload pipeline, shared by the client-side hook
  * and the `/api/upload` route so the two can't drift apart.
  *
@@ -35,8 +47,10 @@ export const ALLOWED_UPLOAD_MIME_TYPES = [
   "image/png",
   "image/webp",
   "image/gif",
-  "image/heic",
-  "image/heif",
+  // Kept in step with HEIC_MIME_TYPES below — the sequence type included, since
+  // a burst shot is detected as HEIC client-side and would otherwise be
+  // rejected by the API on the direct (mobile) upload path.
+  ...HEIC_MIME_TYPES_LIST,
 ] as const;
 
 /** True when `contentType` is an image format the upload pipeline accepts. */
@@ -47,7 +61,7 @@ export function isAllowedUploadType(contentType: string | null | undefined): boo
   return (ALLOWED_UPLOAD_MIME_TYPES as readonly string[]).includes(mime);
 }
 
-const HEIC_MIME_TYPES = new Set(["image/heic", "image/heif", "image/heic-sequence"]);
+const HEIC_MIME_TYPES = new Set<string>(HEIC_MIME_TYPES_LIST);
 const HEIC_EXTENSIONS = [".heic", ".heif"];
 
 /**

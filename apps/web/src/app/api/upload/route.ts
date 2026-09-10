@@ -3,7 +3,11 @@ import { NextResponse } from "next/server";
 import { getUserIdFromRequest } from "@/lib/auth";
 import { checkRateLimit, rateLimitResponse } from "@/middleware/rate-limit";
 import { cloudinary } from "@/lib/cloudinary";
-import { isAllowedUploadType } from "@/lib/image-file";
+import {
+  isAllowedUploadType,
+  MAX_UPLOAD_FILE_SIZE_BYTES,
+  MAX_UPLOAD_FILE_SIZE_LABEL,
+} from "@/lib/image-file";
 import {
   logError,
   UPLOAD_CLOUDINARY_CONFIG_MISSING,
@@ -139,6 +143,20 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
   }
 
+  // Enforce the size limit before buffering. The browser checks it too, but
+  // mobile and any other authenticated client post here directly, and reading
+  // an unbounded body into memory (then base64-encoding it, ~1.33x) is a cheap
+  // way to exhaust the function. Content-Length is advisory, so the decoded
+  // buffer is re-checked below.
+  const declaredLength = Number(request.headers.get("content-length"));
+
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_UPLOAD_FILE_SIZE_BYTES) {
+    return NextResponse.json(
+      { error: `File size must be less than ${MAX_UPLOAD_FILE_SIZE_LABEL}` },
+      { status: 413, headers: corsHeaders }
+    );
+  }
+
   try {
     // Convert request body to base64 for Cloudinary upload
     let arrayBuffer: ArrayBuffer;
@@ -148,6 +166,15 @@ export async function POST(request: Request): Promise<NextResponse> {
     try {
       arrayBuffer = await request.arrayBuffer();
       buffer = Buffer.from(arrayBuffer);
+
+      // Content-Length can be absent or wrong, so the real size decides.
+      if (buffer.length > MAX_UPLOAD_FILE_SIZE_BYTES) {
+        return NextResponse.json(
+          { error: `File size must be less than ${MAX_UPLOAD_FILE_SIZE_LABEL}` },
+          { status: 413, headers: corsHeaders }
+        );
+      }
+
       base64Image = `data:${contentType};base64,${buffer.toString("base64")}`;
     } catch (conversionError) {
       logError("Failed to convert request body to base64", conversionError, {
