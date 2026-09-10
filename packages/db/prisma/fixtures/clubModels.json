@@ -76,6 +76,7 @@
     { "brand": "ping", "models": ["Anser", "Anser 2", "B60", "Pal", "Pal 2", "Zing", "Cra-Z", "B61", "Scottsdale", "Sedona", "Sigma", "Sigma 2", "Vault 2.0", "PLD Anser", "PLD DS72"] },
     { "brand": "odyssey", "models": ["White Hot", "White Hot 2", "White Hot XG", "White Hot Pro", "White Hot OG", "2-Ball", "Tri-Ball", "Rossie", "Works", "Tank", "Stroke Lab", "Eleven", "Tri-Hot 5K", "Ai-One"] },
     { "brand": "scotty-cameron", "models": ["Newport", "Newport 2", "Newport 2.5", "Newport Beach", "Select Newport", "Select Newport 2", "Studio Select", "Studio Design", "Futura", "Futura X", "Phantom", "Phantom X", "Special Select", "Super Rat"] },
+    { "brand": "lab-golf", "models": ["LINK.1", "MEZZ.1 MAX", "MEZZ.1", "DF2.1", "OZ.1", "OZ.1i", "OZ.1iHS", "DF3", "DF3i", "LINK 2.2", "LINK 2.1", "VZN.1i"] },
     { "brand": "taylormade", "models": ["Rossa", "Ghost", "Spider", "Spider Tour", "Daddy Long Legs", "TP Collection", "Truss", "Spider GT", "Spider Tour X", "Spider Tour Black"] },
     { "brand": "callaway", "models": ["Rossie", "Divine Nine", "Big Bertha", "Odyssey Works", "Stroke Lab", "Toulon Design"] },
     { "brand": "titleist", "models": ["Scotty Cameron", "Bulls Eye", "Cameron Newport"] },
