@@ -1,7 +1,15 @@
 "use client";
 
-import { useId } from "react";
-import { Column, Row, Text, Button, SwitchWithLabel, Sheet, SheetScrollView } from "@buttergolf/ui";
+import { useEffect, useId, useMemo, useState } from "react";
+import {
+  Column,
+  Row,
+  Heading,
+  Button,
+  SwitchWithLabel,
+  Sheet,
+  SheetScrollView,
+} from "@buttergolf/ui";
 import { FilterSection } from "./FilterSection";
 import { CategoryFilter } from "./CategoryFilter";
 import { ConditionFilter } from "./ConditionFilter";
@@ -12,95 +20,141 @@ import type { FilterState } from "./FilterSidebar";
 interface MobileFilterSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Committed filters; the sheet edits a draft copy until Apply. */
   filters: FilterState;
   availableBrands: string[];
   priceRange: { min: number; max: number };
-  onChange: (filters: Partial<FilterState>) => void;
-  onClearAll: () => void;
-  onApply: () => void;
+  onApply: (next: FilterState) => void;
 }
 
+/**
+ * Mobile filters edit a draft: Apply commits it to the listings, Cancel (or
+ * swiping the sheet away) discards it, so nothing refetches mid-edit.
+ */
 export function MobileFilterSheet({
   open,
   onOpenChange,
   filters,
   availableBrands,
   priceRange,
-  onChange,
-  onClearAll,
   onApply,
 }: Readonly<MobileFilterSheetProps>) {
   const headingId = useId();
 
+  const priceBounds = useMemo(
+    () => ({ min: Math.floor(priceRange.min), max: Math.ceil(priceRange.max) }),
+    [priceRange.min, priceRange.max]
+  );
+
+  const [draft, setDraft] = useState<FilterState>(filters);
+
+  // Start every session from the committed filters.
+  useEffect(() => {
+    if (open) {
+      setDraft(filters); // eslint-disable-line react-hooks/set-state-in-effect -- reset the draft when the sheet opens
+    }
+  }, [open, filters]);
+
+  const updateDraft = (patch: Partial<FilterState>) => {
+    setDraft((prev) => ({ ...prev, ...patch }));
+  };
+
+  const clearDraft = () => {
+    setDraft({
+      category: null,
+      conditions: [],
+      minPrice: priceBounds.min,
+      maxPrice: priceBounds.max,
+      brands: [],
+      showFavouritesOnly: false,
+    });
+  };
+
+  const draftCount =
+    (draft.category ? 1 : 0) +
+    draft.conditions.length +
+    draft.brands.length +
+    (draft.minPrice !== priceBounds.min || draft.maxPrice !== priceBounds.max ? 1 : 0) +
+    (draft.showFavouritesOnly ? 1 : 0);
+
+  const handleApply = () => {
+    onApply(draft);
+    onOpenChange(false);
+  };
+
   return (
-    <Sheet modal open={open} onOpenChange={onOpenChange} snapPoints={[85]} dismissOnSnapToBottom>
+    <Sheet modal open={open} onOpenChange={onOpenChange} snapPoints={[88]} dismissOnSnapToBottom>
       <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
       <Sheet.Frame
         aria-modal={true}
         aria-labelledby={headingId}
-        backgroundColor="$surface"
+        backgroundColor="$background"
         borderTopLeftRadius="$2xl"
         borderTopRightRadius="$2xl"
       >
-        <Sheet.Handle backgroundColor="$fieldBorder" />
+        <Sheet.Handle backgroundColor="$border" />
 
         {/* Header */}
-        <Column
-          paddingHorizontal="$4"
-          paddingVertical="$3"
-          borderBottomWidth={1}
-          borderBottomColor="$fieldBorder"
+        <Row
+          alignItems="center"
+          justifyContent="space-between"
+          paddingHorizontal="$md"
+          paddingVertical="$sm"
+          minHeight={56}
         >
-          <Row alignItems="center" justifyContent="space-between">
-            <Text id={headingId} fontWeight="700" size="$6">
-              Filters
-            </Text>
-            <Text color="$primary" size="$3" cursor="pointer" onPress={onClearAll}>
-              Clear All
-            </Text>
-          </Row>
-        </Column>
+          <Heading id={headingId} level={2} size="$5">
+            Filters
+          </Heading>
+          {draftCount > 0 && (
+            <Button butterVariant="ghost" size="$3" onPress={clearDraft}>
+              Clear all
+            </Button>
+          )}
+        </Row>
 
         {/* Body */}
         <SheetScrollView>
-          <Column padding="$4" gap="$lg">
-            <FilterSection title="Category" defaultExpanded>
+          <Column paddingHorizontal="$md" paddingBottom="$md">
+            <FilterSection title="Category">
+              {/* Stays in the draft; the URL changes only when Apply commits it */}
               <CategoryFilter
-                selectedCategory={filters.category}
-                onChange={(category) => onChange({ category })}
+                selectedCategory={draft.category}
+                onChange={(category) => updateDraft({ category })}
+                navigateOnChange={false}
               />
             </FilterSection>
 
-            <FilterSection title="Condition" defaultExpanded>
+            <FilterSection title="Condition">
               <ConditionFilter
-                selectedConditions={filters.conditions}
-                onChange={(conditions) => onChange({ conditions })}
+                selectedConditions={draft.conditions}
+                onChange={(conditions) => updateDraft({ conditions })}
               />
             </FilterSection>
 
-            <FilterSection title="Price Range" defaultExpanded>
+            <FilterSection title="Price">
               <PriceRangeFilter
                 minPrice={priceRange.min}
                 maxPrice={priceRange.max}
-                selectedMin={filters.minPrice}
-                selectedMax={filters.maxPrice}
-                onChange={(minPrice, maxPrice) => onChange({ minPrice, maxPrice })}
+                selectedMin={draft.minPrice}
+                selectedMax={draft.maxPrice}
+                onChange={(minPrice, maxPrice) => updateDraft({ minPrice, maxPrice })}
               />
             </FilterSection>
 
-            <FilterSection title="Brand" defaultExpanded>
+            <FilterSection title="Brand">
               <BrandFilter
                 availableBrands={availableBrands}
-                selectedBrands={filters.brands}
-                onChange={(brands) => onChange({ brands })}
+                selectedBrands={draft.brands}
+                onChange={(brands) => updateDraft({ brands })}
               />
             </FilterSection>
 
-            <FilterSection title="Favourites" defaultExpanded>
+            <FilterSection title="Favourites">
               <SwitchWithLabel
+                id="mobile-show-favourites-only"
                 label="Show favourites only"
-                checked={filters.showFavouritesOnly}
-                onCheckedChange={(checked) => onChange({ showFavouritesOnly: checked })}
+                checked={draft.showFavouritesOnly}
+                onCheckedChange={(checked) => updateDraft({ showFavouritesOnly: checked })}
                 size="$3"
               />
             </FilterSection>
@@ -108,29 +162,20 @@ export function MobileFilterSheet({
         </SheetScrollView>
 
         {/* Footer */}
-        <Column
-          paddingHorizontal="$4"
-          paddingVertical="$4"
+        <Row
+          gap="$sm"
+          paddingHorizontal="$md"
+          paddingVertical="$md"
           borderTopWidth={1}
-          borderTopColor="$fieldBorder"
+          borderTopColor="$border"
         >
-          <Row gap="$md">
-            <Button size="$4" flex={1} chromeless onPress={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button
-              butterVariant="primary"
-              size="$4"
-              flex={1}
-              onPress={() => {
-                onApply();
-                onOpenChange(false);
-              }}
-            >
-              Apply Filters
-            </Button>
-          </Row>
-        </Column>
+          <Button butterVariant="ghost" size="$5" flex={1} onPress={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button butterVariant="primary" size="$5" flex={1} onPress={handleApply}>
+            Apply filters
+          </Button>
+        </Row>
       </Sheet.Frame>
     </Sheet>
   );

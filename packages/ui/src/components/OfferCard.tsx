@@ -52,7 +52,7 @@ function getOfferLabel(type: MessageType, isOwnMessage: boolean): string {
   }
 }
 
-function getStatusColor(type: MessageType): "$primary" | "$success" | "$error" | "$textTertiary" {
+function getStatusColor(type: MessageType): "$primary" | "$success" | "$error" | "$textSecondary" {
   switch (type) {
     case "OFFER":
     case "COUNTER_OFFER":
@@ -62,7 +62,7 @@ function getStatusColor(type: MessageType): "$primary" | "$success" | "$error" |
     case "OFFER_REJECTED":
       return "$error";
     case "OFFER_EXPIRED":
-      return "$textTertiary";
+      return "$textSecondary";
   }
 }
 
@@ -77,7 +77,7 @@ function getStatusIcon(type: MessageType) {
     case "OFFER_REJECTED":
       return <X size={16} color="$error" />;
     case "OFFER_EXPIRED":
-      return <Tag size={16} color="$textTertiary" />;
+      return <Tag size={16} color="$textSecondary" />;
   }
 }
 
@@ -199,7 +199,7 @@ export function OfferCard({
           )}
 
           {/* Timestamp */}
-          <Text size="$1" color="$textTertiary" textAlign="right">
+          <Text size="$1" color="$textSecondary" textAlign="right">
             {timestamp}
           </Text>
         </Column>

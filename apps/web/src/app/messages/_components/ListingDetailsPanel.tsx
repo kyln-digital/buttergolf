@@ -167,9 +167,9 @@ export function ListingDetailsPanel({
         <Column padding="$lg" gap="$lg" minHeight="100%">
           <Row alignItems="center" justifyContent="space-between">
             <Text id="listing-details-panel-title" size="$6" fontWeight="700" color="$text">
-              Listing Details
+              Listing details
             </Text>
-            <Button chromeless size="$3" onPress={onClose}>
+            <Button butterVariant="ghost" size="$3" onPress={onClose}>
               Close
             </Button>
           </Row>
@@ -246,7 +246,7 @@ export function ListingDetailsPanel({
                 <ExternalLink size={14} color="$textInverse" />
               </Row>
             </Button>
-            <Button size="$4" backgroundColor="$cloudMist" color="$text" onPress={onClose}>
+            <Button size="$4" butterVariant="secondary" onPress={onClose}>
               Back
             </Button>
           </Row>

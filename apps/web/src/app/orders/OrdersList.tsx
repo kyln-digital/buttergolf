@@ -9,13 +9,12 @@ import {
   Card,
   Badge,
   Heading,
-  Container,
   SegmentedTabs,
   View,
 } from "@buttergolf/ui";
-import Link from "next/link";
 import Image from "next/image";
-import { ShoppingBag, Package, Eye, Download, ExternalLink } from "@tamagui/lucide-icons";
+import { ShoppingBag, Package, Download, ExternalLink } from "@tamagui/lucide-icons";
+import { useLinkPress } from "@/hooks/useLinkPress";
 
 type OrderStatus =
   | "PAYMENT_CONFIRMED"
@@ -100,13 +99,25 @@ const STATUS_BADGE_VARIANT: Record<ShipmentStatus, BadgeVariant> = {
 
 const STATUS_LABELS: Record<ShipmentStatus, string> = {
   PENDING: "Pending",
-  PRE_TRANSIT: "Label Created",
-  IN_TRANSIT: "In Transit",
-  OUT_FOR_DELIVERY: "Out for Delivery",
+  PRE_TRANSIT: "Label created",
+  IN_TRANSIT: "In transit",
+  OUT_FOR_DELIVERY: "Out for delivery",
   DELIVERED: "Delivered",
   RETURNED: "Returned",
   FAILED: "Failed",
   CANCELLED: "Cancelled",
+};
+
+/** Badge text colour: filled variants read white, tinted ones read dark. */
+const BADGE_TEXT_COLOR: Record<BadgeVariant, "$textInverse" | "$text"> = {
+  primary: "$textInverse",
+  secondary: "$textInverse",
+  success: "$text",
+  error: "$text",
+  warning: "$text",
+  info: "$text",
+  neutral: "$text",
+  outline: "$text",
 };
 
 function formatDate(date: Date): string {
@@ -118,6 +129,7 @@ function formatDate(date: Date): string {
 }
 
 export function OrdersList({ orders }: Readonly<OrdersListProps>) {
+  const linkPress = useLinkPress();
   const [filter, setFilter] = useState<"all" | "buyer" | "seller">("all");
 
   const filteredOrders = orders.filter((order) => {
@@ -127,208 +139,220 @@ export function OrdersList({ orders }: Readonly<OrdersListProps>) {
 
   const purchasesCount = orders.filter((o) => o.userRole === "buyer").length;
   const salesCount = orders.filter((o) => o.userRole === "seller").length;
+  const countLabel = `${orders.length} ${orders.length === 1 ? "order" : "orders"}`;
 
   return (
-    <Container size="lg" paddingHorizontal="$md" paddingVertical="$xl">
-      <Column gap="$lg">
-        <Heading level={1}>My Orders</Heading>
-
-        {/* Filter Tabs */}
-        <SegmentedTabs
-          value={filter}
-          onValueChange={(val) => setFilter(val as "all" | "buyer" | "seller")}
-        >
-          <SegmentedTabs.List activeValue={filter}>
-            <SegmentedTabs.Tab value="all" count={orders.length}>
-              All Orders
-            </SegmentedTabs.Tab>
-            <SegmentedTabs.Tab
-              value="buyer"
-              icon={<ShoppingBag size={16} color="$textSecondary" />}
-              count={purchasesCount}
-            >
-              Purchases
-            </SegmentedTabs.Tab>
-            <SegmentedTabs.Tab
-              value="seller"
-              icon={<Package size={16} color="$textSecondary" />}
-              count={salesCount}
-            >
-              Sales
-            </SegmentedTabs.Tab>
-          </SegmentedTabs.List>
-        </SegmentedTabs>
-
-        {/* Orders List */}
-        {filteredOrders.length === 0 ? (
-          <Card variant="outlined" padding="$xl">
-            <Column alignItems="center" gap="$md" paddingVertical="$xl">
-              <Package size={48} color="$textMuted" />
-              <Heading level={4} color="$textSecondary">
-                No orders found
-              </Heading>
-              <Text size="$4" color="$textMuted" textAlign="center">
-                {filter === "all"
-                  ? "You haven't made any purchases or sales yet."
-                  : filter === "buyer"
-                    ? "You haven't purchased anything yet."
-                    : "You haven't sold anything yet."}
-              </Text>
-              <Link href="/listings" style={{ textDecoration: "none" }}>
-                <Button butterVariant="primary" size="$4">
-                  Start Shopping
-                </Button>
-              </Link>
-            </Column>
-          </Card>
-        ) : (
-          <Column gap="$md">
-            {filteredOrders.map((order) => (
-              <OrderCard key={order.id} order={order} />
-            ))}
-          </Column>
-        )}
+    <Column
+      width="100%"
+      maxWidth={1024}
+      marginHorizontal="auto"
+      paddingHorizontal="$md"
+      paddingTop="$lg"
+      paddingBottom="$3xl"
+      gap="$lg"
+      $gtMd={{ paddingHorizontal: "$xl", paddingTop: "$xl" }}
+    >
+      <Column gap="$xs">
+        <Heading level={1} size="$8" color="$text">
+          Orders
+        </Heading>
+        <Text size="$4" color="$textSecondary">
+          {countLabel}
+        </Text>
       </Column>
-    </Container>
+
+      {/* Filter tabs */}
+      <SegmentedTabs
+        value={filter}
+        onValueChange={(val) => setFilter(val as "all" | "buyer" | "seller")}
+      >
+        <SegmentedTabs.List activeValue={filter}>
+          <SegmentedTabs.Tab value="all" count={orders.length}>
+            All orders
+          </SegmentedTabs.Tab>
+          <SegmentedTabs.Tab
+            value="buyer"
+            icon={<ShoppingBag size={16} color="$textSecondary" />}
+            count={purchasesCount}
+          >
+            Purchases
+          </SegmentedTabs.Tab>
+          <SegmentedTabs.Tab
+            value="seller"
+            icon={<Package size={16} color="$textSecondary" />}
+            count={salesCount}
+          >
+            Sales
+          </SegmentedTabs.Tab>
+        </SegmentedTabs.List>
+      </SegmentedTabs>
+
+      {filteredOrders.length === 0 ? (
+        <Column alignItems="center" gap="$md" paddingVertical="$3xl" role="status">
+          <View
+            width={72}
+            height={72}
+            borderRadius="$full"
+            backgroundColor="$backgroundHover"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <Package size={32} color="$textSecondary" />
+          </View>
+          <Column alignItems="center" gap="$xs" maxWidth={400}>
+            <Heading level={2} size="$6" color="$text" textAlign="center">
+              No orders yet
+            </Heading>
+            <Text size="$4" color="$textSecondary" textAlign="center">
+              {filter === "all"
+                ? "You haven't made any purchases or sales yet."
+                : filter === "buyer"
+                  ? "You haven't purchased anything yet."
+                  : "You haven't sold anything yet."}
+            </Text>
+          </Column>
+          <Button
+            butterVariant="primary"
+            size="$5"
+            tag="a"
+            href="/listings"
+            onPress={linkPress("/listings")}
+          >
+            Start shopping
+          </Button>
+        </Column>
+      ) : (
+        <Column gap="$md">
+          {filteredOrders.map((order) => (
+            <OrderCard key={order.id} order={order} />
+          ))}
+        </Column>
+      )}
+    </Column>
   );
 }
 
 function OrderCard({ order }: { order: Order }) {
+  const linkPress = useLinkPress();
   const productImage = order.product.images[0]?.url;
   const otherParty = order.userRole === "buyer" ? order.seller : order.buyer;
   const otherPartyName =
     `${otherParty.firstName || ""} ${otherParty.lastName || ""}`.trim() || "User";
   const roleLabel = order.userRole === "buyer" ? "Sold by" : "Purchased by";
+  const badgeVariant = STATUS_BADGE_VARIANT[order.shipmentStatus];
+  const href = `/orders/${order.id}`;
 
   return (
-    <Card variant="elevated" padding="$md" interactive>
+    <Card variant="outlined" padding="$md" borderRadius="$lg">
       <Row gap="$md" flexWrap="wrap">
-        {/* Product Image */}
+        {/* Product image */}
         <View
-          width={100}
-          height={100}
+          width={96}
+          height={96}
           borderRadius="$md"
           overflow="hidden"
-          backgroundColor="$surface"
+          backgroundColor="$backgroundHover"
           flexShrink={0}
         >
           {productImage ? (
             <Image
               src={productImage}
-              alt={order.product.title}
-              width={100}
-              height={100}
-              style={{ objectFit: "cover" }}
+              alt=""
+              width={96}
+              height={96}
+              style={{ objectFit: "cover", width: 96, height: 96 }}
             />
           ) : (
-            <View
-              width="100%"
-              height="100%"
-              alignItems="center"
-              justifyContent="center"
-              backgroundColor="$border"
-            >
-              <Text color="$textMuted" size="$3">
+            <View width="100%" height="100%" alignItems="center" justifyContent="center">
+              <Text color="$textSecondary" size="$2">
                 No image
               </Text>
             </View>
           )}
         </View>
 
-        {/* Order Info */}
+        {/* Order summary */}
         <Column flex={1} gap="$sm" minWidth={200}>
           <Row justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap="$sm">
-            <Column gap="$xs" flex={1}>
-              <Text size="$5" fontWeight="600" numberOfLines={1}>
+            <Column gap={2} flex={1} minWidth={0}>
+              <Text size="$5" fontWeight="600" numberOfLines={1} color="$text">
                 {order.product.title}
               </Text>
               <Text size="$4" color="$textSecondary">
                 {roleLabel} {otherPartyName}
               </Text>
-              <Text size="$3" color="$textMuted">
-                Order #{order.id.slice(0, 8)} • {formatDate(order.createdAt)}
+              <Text size="$3" color="$textSecondary">
+                Order #{order.id.slice(0, 8)} · {formatDate(order.createdAt)}
               </Text>
             </Column>
             <Column alignItems="flex-end" gap="$xs">
-              <Text size="$6" fontWeight="700">
+              <Text size="$6" fontWeight="700" color="$text">
                 £{order.amountTotal.toFixed(2)}
               </Text>
-              <Badge variant={STATUS_BADGE_VARIANT[order.shipmentStatus]} size="sm">
-                {STATUS_LABELS[order.shipmentStatus]}
+              <Badge variant={badgeVariant} size="sm">
+                <Text size="$2" fontWeight="600" color={BADGE_TEXT_COLOR[badgeVariant]}>
+                  {STATUS_LABELS[order.shipmentStatus]}
+                </Text>
               </Badge>
             </Column>
           </Row>
 
-          {/* Carrier Info */}
           {order.carrier && (
-            <Row gap="$sm" alignItems="center" flexWrap="wrap">
-              <Text size="$4" color="$textSecondary">
-                {order.carrier}
-                {order.service && ` (${order.service})`}
-              </Text>
-              {order.trackingCode && order.trackingUrl && (
-                <a
-                  href={order.trackingUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ textDecoration: "none" }}
-                >
-                  <Row gap="$xs" alignItems="center">
-                    <Text size="$4" color="$primary" fontWeight="500">
-                      Track
-                    </Text>
-                    <ExternalLink size={14} color="$primary" />
-                  </Row>
-                </a>
-              )}
-            </Row>
+            <Text size="$4" color="$textSecondary">
+              {order.carrier}
+              {order.service && ` (${order.service})`}
+            </Text>
           )}
 
-          {/* Actions */}
-          <Row gap="$sm" marginTop="$xs" flexWrap="wrap">
-            <Link href={`/orders/${order.id}`} style={{ textDecoration: "none" }}>
-              <Button butterVariant="primary" size="$3" icon={<Eye size={14} color="white" />}>
-                View Details
+          {/* Actions: one tonal primary per card, everything else ghost */}
+          <Row gap="$sm" flexWrap="wrap" alignItems="center">
+            <Button
+              butterVariant="secondary"
+              size="$3"
+              tag="a"
+              href={href}
+              onPress={linkPress(href)}
+            >
+              View order
+            </Button>
+            {order.trackingCode && order.trackingUrl && (
+              <Button
+                butterVariant="ghost"
+                size="$3"
+                tag="a"
+                href={order.trackingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                iconAfter={ExternalLink}
+              >
+                Track parcel
               </Button>
-            </Link>
+            )}
             {order.userRole === "seller" && order.labelUrl && (
-              <a
+              <Button
+                butterVariant="ghost"
+                size="$3"
+                tag="a"
                 href={order.labelUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ textDecoration: "none" }}
+                icon={Download}
               >
-                <Button
-                  size="$3"
-                  backgroundColor="$success"
-                  color="$textInverse"
-                  paddingHorizontal="$md"
-                  borderRadius="$md"
-                  icon={<Download size={14} color="white" />}
-                >
-                  Download PDF Label
-                </Button>
-              </a>
+                PDF label
+              </Button>
             )}
             {order.userRole === "seller" && order.labelZplUrl && (
-              <a
+              <Button
+                butterVariant="ghost"
+                size="$3"
+                tag="a"
                 href={order.labelZplUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ textDecoration: "none" }}
+                icon={Download}
               >
-                <Button
-                  size="$3"
-                  borderWidth={1}
-                  borderColor="$border"
-                  backgroundColor="transparent"
-                  paddingHorizontal="$md"
-                  borderRadius="$md"
-                  icon={<Download size={14} />}
-                >
-                  ZPL Label
-                </Button>
-              </a>
+                ZPL label
+              </Button>
             )}
           </Row>
         </Column>

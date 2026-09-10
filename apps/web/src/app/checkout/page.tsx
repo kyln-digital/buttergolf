@@ -13,10 +13,10 @@ import {
   Image,
   Button,
 } from "@buttergolf/ui";
-import Link from "next/link";
 import { Lock, Package, CheckCircle } from "@tamagui/lucide-icons";
 import { StripeEmbeddedCheckout } from "./_components/StripeEmbeddedCheckout";
-import { PageHero } from "../_components/marketplace/PageHero";
+import { SECTION_MAX_WIDTH } from "../_components/marketplace/Section";
+import { useLinkPress } from "@/hooks/useLinkPress";
 import { TrustSection } from "../_components/marketplace/TrustSection";
 import { NewsletterSection } from "../_components/marketplace/NewsletterSection";
 import { FooterSection } from "../_components/marketplace/FooterSection";
@@ -31,6 +31,7 @@ interface ProductInfo {
 }
 
 function CheckoutPageContent() {
+  const linkPress = useLinkPress();
   const searchParams = useSearchParams();
   const productId = searchParams.get("productId");
   const offerId = searchParams.get("offerId");
@@ -106,11 +107,15 @@ function CheckoutPageContent() {
               Please try again or contact support if the issue persists.
             </Text>
           </Column>
-          <Link href="/" style={{ textDecoration: "none" }}>
-            <Button butterVariant="primary" size="$5">
-              Back to Shop
-            </Button>
-          </Link>
+          <Button
+            butterVariant="primary"
+            size="$5"
+            tag="a"
+            href="/listings"
+            onPress={linkPress("/listings")}
+          >
+            Back to shop
+          </Button>
         </Column>
       </Container>
     );
@@ -118,12 +123,20 @@ function CheckoutPageContent() {
 
   return (
     <>
-      {/* Page Hero */}
-      <PageHero />
-
-      {/* Main Content - Two Column Layout */}
+      {/* Main content - two column layout */}
       <Column backgroundColor="$background">
-        <Container size="xl" paddingVertical="$2xl">
+        <Column
+          width="100%"
+          maxWidth={SECTION_MAX_WIDTH}
+          marginHorizontal="auto"
+          paddingHorizontal="$md"
+          paddingVertical="$lg"
+          gap="$lg"
+          $gtMd={{ paddingHorizontal: "$xl", paddingVertical: "$xl" }}
+        >
+          <Heading level={1} size="$8" color="$text">
+            Checkout
+          </Heading>
           <Row
             gap="$xl"
             width="100%"
@@ -154,9 +167,11 @@ function CheckoutPageContent() {
               minWidth={0}
               $gtMd={{ maxWidth: 350 }}
             >
-              <Card variant="elevated" padding="$lg">
+              <Card variant="outlined" padding="$lg" borderRadius="$lg">
                 <Column gap="$md">
-                  <Heading level={4}>Order Summary</Heading>
+                  <Heading level={2} size="$5">
+                    Order summary
+                  </Heading>
 
                   {/* Product Preview */}
                   <Row gap="$md" alignItems="flex-start">
@@ -193,7 +208,7 @@ function CheckoutPageContent() {
                     borderTopColor="$border"
                   >
                     <Text color="$textSecondary">Subtotal</Text>
-                    <Text fontWeight="700" size="$6" color="$primary">
+                    <Text fontWeight="700" size="$6" color="$text">
                       £{product.price.toFixed(2)}
                     </Text>
                   </Row>
@@ -227,7 +242,7 @@ function CheckoutPageContent() {
               </Card>
             </Column>
           </Row>
-        </Container>
+        </Column>
       </Column>
 
       {/* Trust Section */}

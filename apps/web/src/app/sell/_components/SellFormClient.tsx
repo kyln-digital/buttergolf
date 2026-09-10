@@ -1121,19 +1121,27 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     <Column backgroundColor="$background" minHeight="100vh" alignItems="center" width="100%">
       <Column
         maxWidth={1100}
-        paddingHorizontal="$8"
+        paddingHorizontal="$md"
         width="100%"
         alignSelf="center"
         marginHorizontal="auto"
+        $gtMd={{ paddingHorizontal: "$xl" }}
       >
-        <Column gap="$xl" paddingVertical="$10" width="100%" alignItems="stretch">
+        <Column
+          gap="$lg"
+          paddingTop="$lg"
+          paddingBottom="$3xl"
+          width="100%"
+          alignItems="stretch"
+          $gtMd={{ paddingTop: "$xl" }}
+        >
           {/* Header */}
-          <Column gap="$sm" alignItems="center">
-            <Row gap="$md" alignItems="center">
-              <Heading level={2}>{isEditingListing ? "Edit listing" : "Sell an item"}</Heading>
-              <SaveStatusIndicator status={autoSaveStatus} isEditingListing={isEditingListing} />
-            </Row>
-          </Column>
+          <Row gap="$md" alignItems="center" justifyContent="space-between" flexWrap="wrap">
+            <Heading level={1} size="$8">
+              {isEditingListing ? "Edit listing" : "Sell an item"}
+            </Heading>
+            <SaveStatusIndicator status={autoSaveStatus} isEditingListing={isEditingListing} />
+          </Row>
 
           {/* While an existing record is loading, the fields below still hold
               the previous listing's data (or nothing) and would be replaced
@@ -1178,26 +1186,22 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                 </Text>
                 <Row gap="$sm">
                   <Button
+                    butterVariant="ghost"
                     size="$3"
-                    chromeless
                     onPress={() => {
                       clearLocalDraft();
                       setFormData(EMPTY_FORM_DATA);
                       setRecoveryDismissed(true);
                     }}
                   >
-                    <Text size="$4" color="$textSecondary">
-                      Discard
-                    </Text>
+                    Discard
                   </Button>
                   <Button
                     butterVariant="primary"
                     size="$3"
                     onPress={() => setRecoveryDismissed(true)}
                   >
-                    <Text size="$4" color="$textInverse">
-                      Continue
-                    </Text>
+                    Continue
                   </Button>
                 </Row>
               </Row>
@@ -1206,7 +1210,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
           {/* Main Form Card */}
           <Card
-            variant="elevated"
+            variant="outlined"
             padding="$0"
             backgroundColor="$surface"
             borderRadius="$lg"
@@ -1847,7 +1851,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                   {/* Action Buttons - Sticky footer style */}
                   <Column
                     gap="$sm"
-                    padding="$5"
+                    padding="$md"
                     backgroundColor="$background"
                     borderTopWidth={1}
                     borderTopColor="$border"
@@ -1856,6 +1860,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                     <Row gap="$sm" justifyContent="space-between" width="100%">
                       {isEditingListing ? (
                         <Button
+                          butterVariant="secondary"
                           size="$5"
                           onPress={() => router.push("/seller/listings")}
                           disabled={loading}
@@ -1865,6 +1870,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                         </Button>
                       ) : (
                         <Button
+                          butterVariant="secondary"
                           size="$5"
                           onPress={handleSaveDraft}
                           disabled={loading || !isRecordReadyToSave}
@@ -1875,6 +1881,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                       )}
                       {/* Use type="submit" for native form submission only - no onPress to prevent dual submission */}
                       <Button
+                        butterVariant="primary"
                         size="$5"
                         disabled={loading || !isRecordReadyToSave}
                         type="submit"

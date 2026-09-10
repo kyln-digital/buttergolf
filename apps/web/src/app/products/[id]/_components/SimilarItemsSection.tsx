@@ -1,8 +1,8 @@
 "use client";
 
-import { Column, Heading, Text } from "@buttergolf/ui";
 import type { ProductCardData } from "@buttergolf/app";
-import { ProductCarousel } from "../../../_components/shared/ProductCarousel";
+import { ProductCard } from "@/components/ProductCard";
+import { CardGrid, Section, SectionHeader } from "@/app/_components/marketplace/Section";
 
 interface SimilarItemsSectionProps {
   products: ProductCardData[];
@@ -15,27 +15,16 @@ export function SimilarItemsSection({ products, category }: SimilarItemsSectionP
   }
 
   return (
-    <Column paddingVertical="$3xl" backgroundColor="$surface" width="100%">
-      <Column
-        maxWidth={1440}
-        marginHorizontal="auto"
-        paddingHorizontal="$xl"
-        width="100%"
-        gap="$3xl"
-      >
-        {/* Header */}
-        <Column alignItems="center" gap="$md" width="100%">
-          <Heading level={2} size="$9" $gtMd={{ size: "$10" }} color="$text" textAlign="center">
-            Similar Items
-          </Heading>
-          <Text size="$6" $gtMd={{ size: "$7" }} color="$textSecondary" textAlign="center">
-            Other {category.toLowerCase()} items you might like
-          </Text>
-        </Column>
-
-        {/* Products Carousel */}
-        <ProductCarousel products={products} autoplay={true} autoplayDelay={5000} />
-      </Column>
-    </Column>
+    <Section label="Similar items">
+      <SectionHeader
+        title="Similar items"
+        subtitle={`Other ${category.toLowerCase()} items you might like`}
+      />
+      <CardGrid maxColumns={4}>
+        {products.slice(0, 8).map((product) => (
+          <ProductCard key={product.id} product={product} />
+        ))}
+      </CardGrid>
+    </Section>
   );
 }

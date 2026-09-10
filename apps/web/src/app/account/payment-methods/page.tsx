@@ -1,8 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { Column, Row, Heading, Text, Button, Card } from "@buttergolf/ui";
-import { CreditCard, Lightbulb } from "@tamagui/lucide-icons";
+import { ArrowLeft, CreditCard, Lightbulb } from "@tamagui/lucide-icons";
+import { useLinkPress } from "@/hooks/useLinkPress";
 
 /**
  * Payment Methods Page
@@ -11,70 +11,94 @@ import { CreditCard, Lightbulb } from "@tamagui/lucide-icons";
  * Note: This is separate from seller payout settings which uses Stripe Connect.
  */
 export default function PaymentMethodsPage() {
-  const router = useRouter();
+  const linkPress = useLinkPress();
 
   return (
     <Column
       maxWidth={800}
-      paddingHorizontal="$6"
+      paddingHorizontal="$md"
+      paddingTop="$lg"
+      paddingBottom="$3xl"
       width="100%"
       alignSelf="center"
       marginHorizontal="auto"
+      gap="$xl"
     >
-      <Column gap="$xl" paddingVertical="$6" width="100%">
-        {/* Header */}
-        <Column gap="$sm">
-          <Button chromeless size="$3" onPress={() => router.push("/account")}>
-            ← Back to Account
-          </Button>
-          <Heading level={2}>Payment Methods</Heading>
-          <Text color="$textSecondary">Manage your saved payment methods for faster checkout</Text>
+      {/* Header */}
+      <Column gap="$sm" alignItems="flex-start">
+        <Button
+          butterVariant="ghost"
+          size="$3"
+          icon={ArrowLeft}
+          tag="a"
+          href="/account"
+          onPress={linkPress("/account")}
+        >
+          Back to account
+        </Button>
+        <Column gap="$xs">
+          <Heading level={1} size="$8">
+            Payment methods
+          </Heading>
+          <Text size="$4" color="$textSecondary">
+            Manage your saved payment methods for faster checkout
+          </Text>
         </Column>
-
-        {/* Coming Soon Card */}
-        <Card variant="outlined" padding="$xl">
-          <Column gap="$lg" alignItems="center">
-            <Column backgroundColor="$backgroundHover" borderRadius="$full" padding="$4">
-              <CreditCard size={48} color="$textMuted" />
-            </Column>
-            <Column gap="$sm" alignItems="center">
-              <Heading level={3}>Coming Soon</Heading>
-              <Text color="$textSecondary" textAlign="center" maxWidth={400}>
-                We&apos;re working on letting you save payment methods for faster checkout. For now,
-                you&apos;ll enter your payment details at checkout.
-              </Text>
-            </Column>
-            <Button butterVariant="primary" size="$4" onPress={() => router.push("/account")}>
-              Back to Account
-            </Button>
-          </Column>
-        </Card>
-
-        {/* Info Card */}
-        <Card variant="filled" padding="$lg" backgroundColor="$secondaryLight">
-          <Row gap="$md" alignItems="flex-start">
-            <Lightbulb size={20} color="$secondary" />
-            <Column gap="$xs" flex={1}>
-              <Text fontWeight="500" color="$secondary">
-                Looking for payout settings?
-              </Text>
-              <Text size="$4" color="$textSecondary">
-                To manage how you receive payments from sales, go to your{" "}
-                <Text
-                  size="$4"
-                  color="$primary"
-                  fontWeight="500"
-                  onPress={() => router.push("/seller/settings")}
-                  style={{ cursor: "pointer", textDecorationLine: "underline" }}
-                >
-                  Seller Settings
-                </Text>
-                .
-              </Text>
-            </Column>
-          </Row>
-        </Card>
       </Column>
+
+      {/* Coming soon */}
+      <Card variant="outlined" padding="$xl" borderRadius="$lg">
+        <Column gap="$lg" alignItems="center">
+          <Column backgroundColor="$backgroundHover" borderRadius="$full" padding="$md">
+            <CreditCard size={40} color="$textSecondary" />
+          </Column>
+          <Column gap="$xs" alignItems="center">
+            <Heading level={2} size="$6">
+              Coming soon
+            </Heading>
+            <Text size="$4" color="$textSecondary" textAlign="center" maxWidth={400}>
+              We&apos;re working on letting you save payment methods for faster checkout. For now,
+              you&apos;ll enter your payment details at checkout.
+            </Text>
+          </Column>
+          <Button
+            butterVariant="secondary"
+            size="$4"
+            tag="a"
+            href="/account"
+            onPress={linkPress("/account")}
+          >
+            Back to account
+          </Button>
+        </Column>
+      </Card>
+
+      {/* Payout pointer */}
+      <Card variant="filled" padding="$md" backgroundColor="$secondaryLight" borderRadius="$lg">
+        <Row gap="$md" alignItems="flex-start">
+          <Lightbulb size={20} color="$secondary" />
+          <Column gap={2} flex={1}>
+            <Text size="$5" fontWeight="600" color="$secondary">
+              Looking for payout settings?
+            </Text>
+            <Text size="$4" color="$textSecondary">
+              To manage how you receive payments from sales, go to your{" "}
+              <Text
+                size="$4"
+                color="$primary"
+                fontWeight="600"
+                tag="a"
+                {...{ href: "/seller/settings" }}
+                onPress={linkPress("/seller/settings")}
+                textDecorationLine="underline"
+              >
+                seller settings
+              </Text>
+              .
+            </Text>
+          </Column>
+        </Row>
+      </Card>
     </Column>
   );
 }

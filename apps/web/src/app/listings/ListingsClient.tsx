@@ -2,13 +2,15 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef, startTransition } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Column, Row, Text, Button, Badge, View } from "@buttergolf/ui";
+import { SlidersHorizontal, X } from "@tamagui/lucide-icons";
+import { Column, Row, Text, Heading, Button } from "@buttergolf/ui";
 import type { ProductCardData } from "@buttergolf/app";
+import { getCategoryBySlug } from "@buttergolf/constants";
 import { FilterSidebar, type FilterState } from "./_components/FilterSidebar";
 import { MobileFilterSheet } from "./_components/MobileFilterSheet";
 import { SortDropdown } from "./_components/SortDropdown";
 import { ProductsGrid } from "./_components/ProductsGrid";
-import { PageHero } from "../_components/marketplace/PageHero";
+import { SECTION_MAX_WIDTH } from "../_components/marketplace/Section";
 import { TrustSection } from "../_components/marketplace/TrustSection";
 import { NewsletterSection } from "../_components/marketplace/NewsletterSection";
 import { FooterSection } from "../_components/marketplace/FooterSection";
@@ -26,6 +28,16 @@ interface ListingsClientProps {
 }
 
 const STORAGE_KEY = "buttergolf-listings-filters";
+const PAGE_SIZE = 24;
+
+const CONDITION_LABELS: Record<string, string> = {
+  NEW: "New",
+  LIKE_NEW: "Like new",
+  EXCELLENT: "Excellent",
+  GOOD: "Good",
+  FAIR: "Fair",
+  POOR: "Poor",
+};
 
 function areStringArraysEqual(a: readonly string[], b: readonly string[]) {
   if (a === b) return true;
@@ -48,6 +60,26 @@ function areFiltersEqual(a: FilterState | undefined, b: FilterState) {
   );
 }
 
+interface FilterChipProps {
+  readonly label: string;
+  readonly onRemove: () => void;
+}
+
+/** Active filter as a tonal pill; the × removes it. */
+function FilterChip({ label, onRemove }: FilterChipProps) {
+  return (
+    <Button
+      butterVariant="secondary"
+      size="$2"
+      iconAfter={X}
+      aria-label={`Remove ${label} filter`}
+      onPress={onRemove}
+    >
+      {label}
+    </Button>
+  );
+}
+
 export function ListingsClient({
   initialProducts,
   initialTotal,
@@ -59,10 +91,20 @@ export function ListingsClient({
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get("q");
 
+  // Whole-pound bounds: the same rounding the price filter displays, so a
+  // fractional catalogue bound never reads as an "active" price filter.
+  const priceBounds = useMemo(
+    () => ({
+      min: Math.floor(initialFilters.priceRange.min),
+      max: Math.ceil(initialFilters.priceRange.max),
+    }),
+    [initialFilters.priceRange.min, initialFilters.priceRange.max]
+  );
+
   // Parse initial filters from URL
   const getInitialFilters = (): FilterState => {
-    const priceMinBound = Math.floor(initialFilters.priceRange.min);
-    const priceMaxBound = Math.ceil(initialFilters.priceRange.max);
+    const priceMinBound = priceBounds.min;
+    const priceMaxBound = priceBounds.max;
 
     const parseNumericParam = (value: string | null): number | undefined => {
       const parsed = Number.parseFloat(value ?? "");
@@ -168,6 +210,9 @@ export function ListingsClient({
   const prevFiltersRef = useRef<FilterState>(filters);
   const prevSortRef = useRef<string>(sort);
   const prevSearchRef = useRef(searchQuery);
+  // Monotonic id per fetch: a slow response for an older query must not
+  // overwrite the newer one's products, totals, filters or URL.
+  const requestSeqRef = useRef(0);
 
   // Set mounted flag on initial mount
   useEffect(() => {
@@ -181,6 +226,12 @@ export function ListingsClient({
     }
   }, [filters]);
 
+  const isPriceFiltered = useCallback(
+    (state: FilterState) =>
+      state.minPrice !== priceBounds.min || state.maxPrice !== priceBounds.max,
+    [priceBounds]
+  );
+
   // Build URL from filters - uses clean category URLs for SEO
   const buildURL = useCallback(
     (newFilters: FilterState, newSort: string, newPage: number = 1) => {
@@ -190,10 +241,10 @@ export function ListingsClient({
       for (const c of newFilters.conditions) {
         params.append("condition", c);
       }
-      if (newFilters.minPrice !== initialFilters.priceRange.min) {
+      if (newFilters.minPrice !== priceBounds.min) {
         params.set("minPrice", newFilters.minPrice.toString());
       }
-      if (newFilters.maxPrice !== initialFilters.priceRange.max) {
+      if (newFilters.maxPrice !== priceBounds.max) {
         params.set("maxPrice", newFilters.maxPrice.toString());
       }
       for (const b of newFilters.brands) {
@@ -216,16 +267,18 @@ export function ListingsClient({
       // No category = /listings
       return queryString ? `/listings?${queryString}` : "/listings";
     },
-    [initialFilters.priceRange, searchQuery]
+    [priceBounds, searchQuery]
   );
 
   // Calculate total pages
-  const totalPages = Math.max(1, Math.ceil(total / 24));
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   // Fetch products with debouncing
   // isPaginationOnly: when true, don't show loading skeletons or scroll
   const fetchProducts = useCallback(
     async (newPage: number = 1, isPaginationOnly: boolean = false) => {
+      const requestId = ++requestSeqRef.current;
+      const isCurrent = () => requestId === requestSeqRef.current;
       // For pagination, use isPaginating (keeps products visible)
       // For filter changes, use isLoading (shows skeletons)
       if (isPaginationOnly) {
@@ -249,13 +302,16 @@ export function ListingsClient({
         if (searchQuery) params.set("q", searchQuery);
         params.set("sort", sort);
         params.set("page", newPage.toString());
-        params.set("limit", "24");
+        params.set("limit", String(PAGE_SIZE));
 
         const response = await fetch(`/api/listings?${params.toString()}`);
         if (!response.ok) {
           throw new Error(`Failed to fetch listings: ${response.status}`);
         }
         const data = await response.json();
+
+        // A newer request started while this one was in flight; let it win.
+        if (!isCurrent()) return;
 
         // Batch non-urgent data updates together using startTransition
         startTransition(() => {
@@ -275,9 +331,11 @@ export function ListingsClient({
       } catch (error) {
         console.error("Failed to fetch products:", error);
       } finally {
-        // Reset loading states
-        setIsLoading(false);
-        setIsPaginating(false);
+        // Only the latest request owns the loading state
+        if (isCurrent()) {
+          setIsLoading(false);
+          setIsPaginating(false);
+        }
       }
     },
     [filters, sort, router, buildURL, searchQuery]
@@ -335,8 +393,8 @@ export function ListingsClient({
     const defaultFilters: FilterState = {
       category: null,
       conditions: [],
-      minPrice: initialFilters.priceRange.min,
-      maxPrice: initialFilters.priceRange.max,
+      minPrice: priceBounds.min,
+      maxPrice: priceBounds.max,
       brands: [],
       showFavouritesOnly: false,
     };
@@ -344,6 +402,15 @@ export function ListingsClient({
     if (globalThis.window !== undefined) {
       localStorage.removeItem(STORAGE_KEY);
     }
+  };
+
+  // Mobile sheet Apply: commit the draft as a whole. The filter-change effect
+  // above treats it like any other filter edit - page resets to 1 and one
+  // debounced fetch/URL update runs - and the explicit reset keeps the
+  // pagination state honest in the meantime.
+  const handleApplyFilters = (next: FilterState) => {
+    setFilters(next);
+    setPage(1);
   };
 
   // Handle page change - uses pagination mode (no skeleton flash, no scroll)
@@ -357,213 +424,143 @@ export function ListingsClient({
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (filters.category) count++;
-    if (filters.conditions.length > 0) count += filters.conditions.length;
-    if (filters.brands.length > 0) count += filters.brands.length;
-    if (
-      filters.minPrice !== initialFilters.priceRange.min ||
-      filters.maxPrice !== initialFilters.priceRange.max
-    ) {
-      count++;
-    }
+    count += filters.conditions.length;
+    count += filters.brands.length;
+    if (isPriceFiltered(filters)) count++;
+    if (filters.showFavouritesOnly) count++;
     return count;
-  }, [filters, initialFilters.priceRange]);
+  }, [filters, isPriceFiltered]);
+
+  const categoryName = filters.category ? getCategoryBySlug(filters.category)?.name : undefined;
+  const pageTitle = searchQuery ? `Results for "${searchQuery}"` : (categoryName ?? "Shop all");
+  const countLabel = `${total} ${total === 1 ? "product" : "products"}`;
+  const filtersLabel = activeFilterCount > 0 ? `Filters (${activeFilterCount})` : "Filters";
 
   return (
-    <Column width="100%" backgroundColor="$surface">
-      {/* Page Hero */}
-      <PageHero />
+    <Column width="100%" backgroundColor="$background">
+      {/* Listings */}
+      <Column
+        width="100%"
+        maxWidth={SECTION_MAX_WIDTH}
+        marginHorizontal="auto"
+        paddingHorizontal="$md"
+        paddingTop="$lg"
+        paddingBottom="$2xl"
+        gap="$lg"
+        $gtMd={{ paddingHorizontal: "$xl", paddingTop: "$xl", paddingBottom: "$3xl" }}
+      >
+        {/* Title row */}
+        <Row alignItems="flex-end" justifyContent="space-between" flexWrap="wrap" gap="$md">
+          <Column gap="$xs">
+            <Heading level={1} size="$8" color="$text">
+              {pageTitle}
+            </Heading>
+            <Text size="$4" color="$textSecondary" aria-live="polite">
+              {countLabel}
+            </Text>
+          </Column>
 
-      {/* Listings Content */}
-      <Column width="100%" paddingVertical="$lg">
-        <Column
-          maxWidth={1280}
-          marginHorizontal="auto"
-          paddingHorizontal="$md"
-          $gtSm={{ paddingHorizontal: "$lg" }}
-          $gtMd={{ paddingHorizontal: "$xl" }}
-          $gtLg={{ paddingHorizontal: "$2xl" }}
-          width="100%"
-          gap="$lg"
-        >
-          {/* Header */}
-          <Row alignItems="center" justifyContent="space-between" flexWrap="wrap" gap="$md">
-            <Column gap="$xs">
-              <Text size="$7" $gtMd={{ size: "$9" }} fontWeight="700">
-                Shop All Products
-              </Text>
-              <Text color="$textSecondary">
-                {total} {total === 1 ? "product" : "products"} found
-              </Text>
-            </Column>
-
-            <Row gap="$md" alignItems="center">
-              {/* Mobile filter button */}
-              <Row display="flex" $gtLg={{ display: "none" }}>
-                <Button size="$4" chromeless onPress={() => setMobileFilterOpen(true)}>
-                  <Row gap="$sm" alignItems="center">
-                    <Text>Filters</Text>
-                    {activeFilterCount > 0 && (
-                      <Badge variant="primary" size="sm">
-                        {activeFilterCount}
-                      </Badge>
-                    )}
-                  </Row>
-                </Button>
-              </Row>
-
-              {/* Sort dropdown */}
-              <SortDropdown value={sort} onChange={setSort} />
-            </Row>
-          </Row>
-
-          {/* Active filters chips */}
-          {activeFilterCount > 0 && (
-            <Row gap="$sm" flexWrap="wrap" alignItems="center">
-              <Text size="$3" color="$textSecondary">
-                Active filters:
-              </Text>
-              {filters.category && (
-                <Row
-                  gap="$2"
-                  alignItems="center"
-                  backgroundColor="$surface"
-                  borderWidth={1}
-                  borderColor="$border"
-                  borderRadius="$full"
-                  paddingVertical="$1.5"
-                  paddingLeft="$3"
-                  paddingRight="$2"
-                >
-                  <Text size="$3">{filters.category}</Text>
-                  <View
-                    cursor="pointer"
-                    onPress={() => handleFilterChange({ category: null })}
-                    aria-label="Remove category filter"
-                    hoverStyle={{ opacity: 0.7 }}
-                  >
-                    <Text color="$textSecondary" size="$4">
-                      ×
-                    </Text>
-                  </View>
-                </Row>
-              )}
-              {filters.conditions.map((condition) => (
-                <Row
-                  key={condition}
-                  gap="$2"
-                  alignItems="center"
-                  backgroundColor="$surface"
-                  borderWidth={1}
-                  borderColor="$border"
-                  borderRadius="$full"
-                  paddingVertical="$1.5"
-                  paddingLeft="$3"
-                  paddingRight="$2"
-                >
-                  <Text size="$3">{condition.replace("_", " ")}</Text>
-                  <View
-                    cursor="pointer"
-                    onPress={() =>
-                      handleFilterChange({
-                        conditions: filters.conditions.filter((c) => c !== condition),
-                      })
-                    }
-                    aria-label={`Remove ${condition} filter`}
-                    hoverStyle={{ opacity: 0.7 }}
-                  >
-                    <Text color="$textSecondary" size="$4">
-                      ×
-                    </Text>
-                  </View>
-                </Row>
-              ))}
-              {filters.brands.map((brand) => (
-                <Row
-                  key={brand}
-                  gap="$2"
-                  alignItems="center"
-                  backgroundColor="$surface"
-                  borderWidth={1}
-                  borderColor="$border"
-                  borderRadius="$full"
-                  paddingVertical="$1.5"
-                  paddingLeft="$3"
-                  paddingRight="$2"
-                >
-                  <Text size="$3">{brand}</Text>
-                  <View
-                    cursor="pointer"
-                    onPress={() =>
-                      handleFilterChange({
-                        brands: filters.brands.filter((b) => b !== brand),
-                      })
-                    }
-                    aria-label={`Remove ${brand} filter`}
-                    hoverStyle={{ opacity: 0.7 }}
-                  >
-                    <Text color="$textSecondary" size="$4">
-                      ×
-                    </Text>
-                  </View>
-                </Row>
-              ))}
-              <Text
-                size="$3"
-                color="$primary"
-                cursor="pointer"
-                onPress={handleClearAll}
-                hoverStyle={{ textDecorationLine: "underline" }}
-                paddingVertical="$1.5"
-                paddingHorizontal="$2"
+          <Row gap="$sm" alignItems="center">
+            <Row $gtLg={{ display: "none" }}>
+              <Button
+                butterVariant="secondary"
+                size="$4"
+                icon={SlidersHorizontal}
+                onPress={() => setMobileFilterOpen(true)}
               >
-                Clear all
-              </Text>
+                {filtersLabel}
+              </Button>
             </Row>
-          )}
-
-          {/* Main content: Sidebar + Grid */}
-          <Row gap="$2xl" alignItems="flex-start" style={{ overflow: "visible" }} width="100%">
-            {/* Desktop sidebar */}
-            <FilterSidebar
-              filters={filters}
-              availableBrands={availableFilters?.availableBrands || []}
-              priceRange={availableFilters?.priceRange || { min: 0, max: 10000 }}
-              onChange={handleFilterChange}
-              onClearAll={handleClearAll}
-            />
-
-            {/* Products grid */}
-            <Column flex={1}>
-              <ProductsGrid
-                products={products}
-                isLoading={isLoading}
-                isPaginating={isPaginating}
-                currentPage={page}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-              />
-            </Column>
+            <SortDropdown value={sort} onChange={setSort} />
           </Row>
-        </Column>
+        </Row>
 
-        {/* Mobile filter sheet */}
-        <MobileFilterSheet
-          open={mobileFilterOpen}
-          onOpenChange={setMobileFilterOpen}
-          filters={filters}
-          availableBrands={availableFilters?.availableBrands || []}
-          priceRange={availableFilters?.priceRange || { min: 0, max: 10000 }}
-          onChange={handleFilterChange}
-          onClearAll={handleClearAll}
-          onApply={() => fetchProducts(1)}
-        />
+        {/* Active filters */}
+        {activeFilterCount > 0 && (
+          <Row gap="$sm" flexWrap="wrap" alignItems="center">
+            {filters.category && categoryName && (
+              <FilterChip
+                label={categoryName}
+                onRemove={() => handleFilterChange({ category: null })}
+              />
+            )}
+            {filters.conditions.map((condition) => (
+              <FilterChip
+                key={condition}
+                label={CONDITION_LABELS[condition] ?? condition.replace("_", " ")}
+                onRemove={() =>
+                  handleFilterChange({
+                    conditions: filters.conditions.filter((c) => c !== condition),
+                  })
+                }
+              />
+            ))}
+            {filters.brands.map((brand) => (
+              <FilterChip
+                key={brand}
+                label={brand}
+                onRemove={() =>
+                  handleFilterChange({ brands: filters.brands.filter((b) => b !== brand) })
+                }
+              />
+            ))}
+            {isPriceFiltered(filters) && (
+              <FilterChip
+                label={`£${filters.minPrice.toLocaleString("en-GB")} – £${filters.maxPrice.toLocaleString("en-GB")}`}
+                onRemove={() =>
+                  handleFilterChange({ minPrice: priceBounds.min, maxPrice: priceBounds.max })
+                }
+              />
+            )}
+            {filters.showFavouritesOnly && (
+              <FilterChip
+                label="Favourites only"
+                onRemove={() => handleFilterChange({ showFavouritesOnly: false })}
+              />
+            )}
+            <Button butterVariant="ghost" size="$2" onPress={handleClearAll}>
+              Clear all
+            </Button>
+          </Row>
+        )}
+
+        {/* Sidebar + grid */}
+        <Row gap="$xl" $gtLg={{ gap: "$2xl" }} alignItems="flex-start" width="100%">
+          <FilterSidebar
+            filters={filters}
+            availableBrands={availableFilters?.availableBrands || []}
+            priceRange={availableFilters?.priceRange || { min: 0, max: 10000 }}
+            activeFilterCount={activeFilterCount}
+            onChange={handleFilterChange}
+            onClearAll={handleClearAll}
+          />
+
+          <Column flex={1} minWidth={0}>
+            <ProductsGrid
+              products={products}
+              isLoading={isLoading}
+              isPaginating={isPaginating}
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              onClearFilters={activeFilterCount > 0 ? handleClearAll : undefined}
+            />
+          </Column>
+        </Row>
       </Column>
 
-      {/* Trust & Newsletter Sections */}
+      {/* Mobile filter sheet */}
+      <MobileFilterSheet
+        open={mobileFilterOpen}
+        onOpenChange={setMobileFilterOpen}
+        filters={filters}
+        availableBrands={availableFilters?.availableBrands || []}
+        priceRange={availableFilters?.priceRange || { min: 0, max: 10000 }}
+        onApply={handleApplyFilters}
+      />
+
       <TrustSection />
       <NewsletterSection />
-
-      {/* Footer */}
       <FooterSection />
     </Column>
   );

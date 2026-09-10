@@ -436,6 +436,13 @@ const lightTheme = {
   borderFocus: brandColors.spicedClementine,
   borderPress: brandColors.spicedClementinePress,
 
+  // Field borders (inputs, selects, textareas) - Ironstone so fields read as editable
+  fieldBorder: brandColors.ironstone,
+  fieldBorderHover: brandColors.ironstoneHover,
+  fieldBorderFocus: brandColors.spicedClementine,
+  fieldBorderPress: brandColors.ironstonePress,
+  fieldBorderDisabled: brandColors.cloudMist,
+
   // Shadow colors
   shadowColor: brandColors.overlayDark10,
   shadowColorHover: brandColors.overlayDark20,
@@ -542,6 +549,14 @@ const darkTheme = {
   borderHover: brandColors.cloudMist,
   borderFocus: brandColors.spicedClementine,
   borderPress: brandColors.spicedClementinePress,
+
+  // Field borders - light overlays so inputs stay visible on dark surfaces
+  // (the token default is Ironstone, which is the dark page background itself)
+  fieldBorder: brandColors.overlayLight30,
+  fieldBorderHover: brandColors.overlayLight40,
+  fieldBorderFocus: brandColors.spicedClementine,
+  fieldBorderPress: brandColors.overlayLight40,
+  fieldBorderDisabled: brandColors.overlayLight10,
 
   // Shadow colors - override for dark mode
   shadowColor: brandColors.overlayDark20,

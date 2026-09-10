@@ -2,8 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { Column, Row, Heading, Text, Card, Spinner, Button } from "@buttergolf/ui";
-import { Package, Eye, Heart, DollarSign, TrendingUp, AlertCircle } from "@tamagui/lucide-icons";
+import {
+  Package,
+  Eye,
+  Heart,
+  DollarSign,
+  TrendingUp,
+  AlertCircle,
+  Plus,
+} from "@tamagui/lucide-icons";
 import Link from "next/link";
+import { useLinkPress } from "@/hooks/useLinkPress";
 
 interface SellerStats {
   totalListings: number;
@@ -32,6 +41,7 @@ const EMPTY_SELLER_STATS: SellerStats = {
  * - Recent activity summary
  */
 export default function SellerDashboardPage() {
+  const linkPress = useLinkPress();
   const [stats, setStats] = useState<SellerStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -91,14 +101,21 @@ export default function SellerDashboardPage() {
       {/* Header */}
       <Row alignItems="center" justifyContent="space-between" fullWidth>
         <Column gap="$xs">
-          <Heading level={1}>Seller Dashboard</Heading>
+          <Heading level={1} size="$8">
+            Seller dashboard
+          </Heading>
           <Text color="$textSecondary">Manage your listings, payments, and payouts</Text>
         </Column>
-        <Link href="/sell">
-          <Button butterVariant="primary" size="$4">
-            + New Listing
-          </Button>
-        </Link>
+        <Button
+          butterVariant="primary"
+          size="$4"
+          icon={Plus}
+          tag="a"
+          href="/sell"
+          onPress={linkPress("/sell")}
+        >
+          New listing
+        </Button>
       </Row>
 
       {/* Stats Grid */}
@@ -129,7 +146,9 @@ export default function SellerDashboardPage() {
 
       {/* Quick Actions */}
       <Column gap="$md">
-        <Heading level={3}>Quick Actions</Heading>
+        <Heading level={2} size="$5">
+          Quick actions
+        </Heading>
         <Row gap="$md" flexWrap="wrap">
           <QuickActionCard
             title="View Payments"
@@ -153,9 +172,11 @@ export default function SellerDashboardPage() {
       </Column>
 
       {/* Performance Summary */}
-      <Card variant="elevated" padding="$lg">
+      <Card variant="outlined" padding="$lg" borderRadius="$lg">
         <Column gap="$md">
-          <Heading level={3}>Performance Summary</Heading>
+          <Heading level={2} size="$5">
+            Performance summary
+          </Heading>
           <Row gap="$xl" flexWrap="wrap">
             <Column gap="$xs">
               <Text size="$3" color="$textSecondary">
@@ -200,11 +221,11 @@ interface StatCardProps {
 function StatCard({ title, value, icon, href }: StatCardProps) {
   const content = (
     <Card
-      variant="elevated"
+      variant="outlined"
       padding="$lg"
       flex={1}
       minWidth={200}
-      hoverStyle={href ? { backgroundColor: "$cloudMist" } : undefined}
+      hoverStyle={href ? { backgroundColor: "$backgroundHover" } : undefined}
     >
       <Row alignItems="center" justifyContent="space-between">
         <Column gap="$xs">
@@ -244,7 +265,7 @@ function QuickActionCard({ title, description, href, icon }: QuickActionCardProp
       <Card
         variant="outlined"
         padding="$md"
-        hoverStyle={{ backgroundColor: "$cloudMist", borderColor: "$primary" }}
+        hoverStyle={{ backgroundColor: "$backgroundHover", borderColor: "$borderHover" }}
       >
         <Row gap="$md" alignItems="center">
           <Text color="$primary">{icon}</Text>

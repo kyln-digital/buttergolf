@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@buttergolf/db";
 import ProductDetailClient, { type Product } from "./ProductDetailClient";
-import { PageHero } from "@/app/_components/marketplace/PageHero";
 import { TrustSection } from "@/app/_components/marketplace/TrustSection";
 import { NewsletterSection } from "@/app/_components/marketplace/NewsletterSection";
 import { FooterSection } from "@/app/_components/marketplace/FooterSection";
@@ -233,7 +232,6 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   return (
     <>
       <SeoJsonLd data={productJsonLd} />
-      <PageHero />
       <ProductDetailClient product={product} />
       <SimilarItemsSection
         products={similarProducts}

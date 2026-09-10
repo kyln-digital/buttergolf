@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { RadioGroup, Radio, RadioIndicator, Label, Row } from "@buttergolf/ui";
 import { CATEGORIES } from "@buttergolf/constants";
@@ -7,74 +8,77 @@ import { CATEGORIES } from "@buttergolf/constants";
 interface CategoryFilterProps {
   selectedCategory: string | null;
   onChange: (category: string | null) => void;
+  /**
+   * Navigate to the clean category URL as soon as a radio is chosen (desktop
+   * sidebar). The mobile sheet passes false so the choice stays in its draft
+   * until Apply.
+   */
+  navigateOnChange?: boolean;
 }
 
-export function CategoryFilter({ selectedCategory, onChange }: Readonly<CategoryFilterProps>) {
+const OPTIONS = [
+  { slug: "all", name: "All categories" },
+  ...CATEGORIES.map((category) => ({ slug: category.slug, name: category.name })),
+];
+
+export function CategoryFilter({
+  selectedCategory,
+  onChange,
+  navigateOnChange = true,
+}: Readonly<CategoryFilterProps>) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const idPrefix = useId();
 
   // Build URL preserving other filters when navigating to category
   const buildCategoryUrl = (slug: string | null) => {
-    if (slug === null) {
-      // "All Categories" → go to /listings with current filters (except category)
-      const params = new URLSearchParams(searchParams.toString());
-      params.delete("category");
-      const queryString = params.toString();
-      return queryString ? `/listings?${queryString}` : "/listings";
-    }
-
-    // Navigate to clean category URL with filters preserved
     const params = new URLSearchParams(searchParams.toString());
-    params.delete("category"); // Clean URLs don't need category param
+    params.delete("category"); // Clean URLs don't carry the category param
     params.delete("page"); // Reset to page 1
     const queryString = params.toString();
-    return queryString ? `/category/${slug}?${queryString}` : `/category/${slug}`;
+    const base = slug === null ? "/listings" : `/category/${slug}`;
+    return queryString ? `${base}?${queryString}` : base;
   };
 
   const handleCategoryChange = (value: string) => {
     const slug = value === "all" ? null : value;
-    // Navigate to the appropriate URL
-    router.push(buildCategoryUrl(slug));
-    // Also call onChange for local state (used by parent components)
+    if (navigateOnChange) {
+      router.push(buildCategoryUrl(slug));
+    }
     onChange(slug);
   };
 
+  const selectedValue = selectedCategory ?? "all";
+
   return (
-    <RadioGroup value={selectedCategory ?? "all"} onValueChange={handleCategoryChange} gap="$xs">
-      <Row alignItems="center" gap="$sm" paddingVertical="$xs">
-        <Radio value="all" size="$3">
-          <RadioIndicator />
-        </Radio>
-        <Label
-          htmlFor="all"
-          size="$3"
-          marginBottom={0}
-          cursor="pointer"
-          onPress={() => handleCategoryChange("all")}
-          color={selectedCategory === null ? "$primary" : "$text"}
-          fontWeight={selectedCategory === null ? "600" : "400"}
-        >
-          All Categories
-        </Label>
-      </Row>
-      {CATEGORIES.map((category) => (
-        <Row key={category.slug} alignItems="center" gap="$sm" paddingVertical="$xs">
-          <Radio value={category.slug} size="$3">
-            <RadioIndicator />
-          </Radio>
-          <Label
-            htmlFor={category.slug}
-            size="$3"
-            marginBottom={0}
-            cursor="pointer"
-            onPress={() => handleCategoryChange(category.slug)}
-            color={selectedCategory === category.slug ? "$primary" : "$text"}
-            fontWeight={selectedCategory === category.slug ? "600" : "400"}
-          >
-            {category.name}
-          </Label>
-        </Row>
-      ))}
+    <RadioGroup
+      value={selectedValue}
+      onValueChange={handleCategoryChange}
+      gap={0}
+      aria-label="Category"
+    >
+      {OPTIONS.map((option) => {
+        const isSelected = selectedValue === option.slug;
+        const radioId = `${idPrefix}-${option.slug}`;
+        return (
+          <Row key={option.slug} alignItems="center" gap="$sm" minHeight={36}>
+            <Radio id={radioId} value={option.slug} size="sm">
+              <RadioIndicator />
+            </Radio>
+            {/* htmlFor points at the radio's id, so the label click selects it. */}
+            <Label
+              htmlFor={radioId}
+              size="$4"
+              marginBottom={0}
+              cursor="pointer"
+              color="$text"
+              fontWeight={isSelected ? "600" : "400"}
+            >
+              {option.name}
+            </Label>
+          </Row>
+        );
+      })}
     </RadioGroup>
   );
 }

@@ -1,216 +1,187 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
-import { CATEGORIES } from "@buttergolf/constants";
-import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { Column, Heading, Text } from "@buttergolf/ui";
+import Link from "next/link";
+import { CATEGORIES } from "@buttergolf/constants";
+import { Column, Row, Text } from "@buttergolf/ui";
+import { SECTION_MAX_WIDTH, SectionHeader } from "./Section";
+
+/** Card width: two-up on phones, capped on desktop. Shared by layout and the marquee maths. */
+const CARD_WIDTH = "clamp(200px, 40vw, 280px)";
+const CARD_GAP = 16;
+const SECONDS_PER_CATEGORY = 4;
+const MARQUEE_DURATION_SECONDS = CATEGORIES.length * SECONDS_PER_CATEGORY;
+const MOBILE_MEDIA_QUERY = "(max-width: 768px)";
+const REDUCED_MOTION_MEDIA_QUERY = "(prefers-reduced-motion: reduce)";
 
 export function CategoriesSection() {
-  const trackRef = useRef<HTMLDivElement>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  // Read after mount (and track changes) so the server render and the first
+  // client render agree; the marquee only starts once mounted anyway.
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
-  // Check for reduced motion preference (memoized)
-  const prefersReducedMotion = useMemo(() => {
-    if (globalThis.window === undefined) return false;
-    return globalThis.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  }, []);
-
-  // Duplicate categories for seamless infinite loop
-  const duplicatedCategories = useMemo(() => {
-    // Triple the categories for smoother infinite loop
-    return [...CATEGORIES, ...CATEGORIES, ...CATEGORIES];
-  }, []);
+  // Three copies so the marquee can loop without a visible seam.
+  const duplicatedCategories = useMemo(() => [...CATEGORIES, ...CATEGORIES, ...CATEGORIES], []);
 
   useEffect(() => {
     setIsMounted(true); // eslint-disable-line react-hooks/set-state-in-effect -- Required for hydration
-    const mq = window.matchMedia("(max-width: 768px)");
-    setIsMobile(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
+    const mobile = window.matchMedia(MOBILE_MEDIA_QUERY);
+    const reducedMotion = window.matchMedia(REDUCED_MOTION_MEDIA_QUERY);
+    setIsMobile(mobile.matches);
+    setPrefersReducedMotion(reducedMotion.matches);
+    const onMobile = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    const onReducedMotion = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mobile.addEventListener("change", onMobile);
+    reducedMotion.addEventListener("change", onReducedMotion);
+    return () => {
+      mobile.removeEventListener("change", onMobile);
+      reducedMotion.removeEventListener("change", onReducedMotion);
+    };
   }, []);
 
-  // Calculate animation duration based on number of items
-  const animationDuration = CATEGORIES.length * 4; // 4 seconds per category
+  const shouldAnimate = isMounted && !prefersReducedMotion && !isMobile;
+  // The animation lives in classes (not an inline style) so the paused class
+  // can override it: an inline `animation` shorthand resets play-state to
+  // running and beats any class.
+  const trackClassName = [
+    "categories-track",
+    shouldAnimate && "categories-track--animate",
+    isPaused && "categories-track--paused",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    <Column width="100%" paddingVertical="$2xl" backgroundColor="$background" overflow="hidden">
-      <Column maxWidth={1200} marginHorizontal="auto" paddingHorizontal="$md" marginBottom="$2xl">
-        {/* Headings */}
-        <Column gap="$sm" alignItems="center">
-          <Heading
-            level={2}
-            color="$text"
-            textAlign="center"
-            width="100%"
-            maxWidth={282}
-            style={{
-              fontFamily: "var(--font-urbanist)",
-              fontStyle: "normal",
-              fontWeight: 700,
-              lineHeight: "normal",
-              fontSize: "2.1875rem",
-            }}
-          >
-            Shop by category
-          </Heading>
-          <Text
-            color="$text"
-            textAlign="center"
-            style={{
-              fontFamily: "var(--font-urbanist)",
-              fontStyle: "normal",
-              fontWeight: 500,
-              lineHeight: "normal",
-              fontSize: "1.5625rem",
-            }}
-          >
-            Find exactly what you need - faster.
-          </Text>
-        </Column>
+    <Column
+      tag="section"
+      aria-label="Shop by category"
+      width="100%"
+      backgroundColor="$background"
+      overflow="hidden"
+      paddingVertical="$2xl"
+      gap="$xl"
+      $gtMd={{ paddingVertical: "$3xl", gap: "$2xl" }}
+    >
+      <Column
+        width="100%"
+        maxWidth={SECTION_MAX_WIDTH}
+        marginHorizontal="auto"
+        paddingHorizontal="$md"
+        $gtMd={{ paddingHorizontal: "$xl" }}
+      >
+        <SectionHeader title="Shop by category" subtitle="Find exactly what you need - faster." />
       </Column>
 
-      {/* Carousel Container - Full Width */}
-      <section
-        aria-label="Product categories carousel"
-        style={{
-          position: "relative",
-          width: "100%",
-          overflowY: "visible",
-          WebkitOverflowScrolling: "touch",
-          padding: "20px 0",
-        }}
-        className="categories-carousel-container"
+      {/* Full-bleed track: auto-scrolls on desktop, swipes on mobile */}
+      <Column
+        className="categories-carousel"
+        width="100%"
+        paddingVertical="$xs"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         onFocus={() => setIsPaused(true)}
         onBlur={() => setIsPaused(false)}
       >
-        <div
-          ref={trackRef}
-          style={{
-            display: "flex",
-            gap: "16px",
-            paddingLeft: "16px",
-            paddingRight: "16px",
-            willChange: isMobile ? "auto" : "transform",
-            // Disable animation on mobile — user scrolls manually
-            animation:
-              isMounted && !prefersReducedMotion && !isMobile
-                ? `scroll-infinite ${animationDuration}s linear infinite`
-                : "none",
-            animationPlayState: isPaused ? "paused" : "running",
-          }}
-          className="categories-track"
-        >
+        <Row className={trackClassName} gap={CARD_GAP} paddingHorizontal="$md">
           {(isMobile ? CATEGORIES : duplicatedCategories).map((category, index) => (
             <Link
               key={`${category.slug}-${index}`}
               href={`/category/${category.slug}`}
               className="category-card"
-              style={{
-                position: "relative",
-                width: "clamp(220px, 40vw, 296px)",
-                aspectRatio: "9 / 10",
-                borderRadius: "14px",
-                flexShrink: 0,
-                textDecoration: "none",
-                boxShadow: "0 8px 16px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1)",
-                transition: "transform 0.3s ease, box-shadow 0.3s ease",
-              }}
+              style={{ width: CARD_WIDTH, flexShrink: 0 }}
             >
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  borderRadius: "14px",
-                  overflow: "hidden",
-                }}
+              <Column
+                width="100%"
+                aspectRatio={9 / 10}
+                borderRadius="$lg"
+                overflow="hidden"
+                position="relative"
+                backgroundColor="$backgroundHover"
               >
                 <Image
                   src={category.imageUrl}
-                  alt={category.name}
+                  alt=""
                   fill
-                  sizes="(max-width: 768px) 280px, 296px"
-                  style={{
-                    objectFit: "cover",
-                    borderRadius: "14px",
-                  }}
-                  priority={false}
+                  sizes="(max-width: 768px) 40vw, 280px"
+                  style={{ objectFit: "cover" }}
                 />
-
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    background:
-                      "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0) 100%)",
-                    borderRadius: "14px",
-                  }}
+                <Column
+                  className="category-card__scrim"
+                  position="absolute"
+                  top={0}
+                  right={0}
+                  bottom={0}
+                  left={0}
                 />
-
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: "16px",
-                    left: "16px",
-                    fontFamily: "var(--font-urbanist)",
-                    fontSize: "clamp(18px, 4vw, 24px)",
-                    fontWeight: 600,
-                    lineHeight: 1,
-                    color: "#FFFAD2",
-                    textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                  }}
+                <Text
+                  position="absolute"
+                  bottom="$md"
+                  left="$md"
+                  size="$7"
+                  fontWeight="600"
+                  color="$cream"
                 >
                   {category.name}
-                </div>
-              </div>
+                </Text>
+              </Column>
             </Link>
           ))}
-        </div>
-      </section>
+        </Row>
+      </Column>
 
-      {/* CSS Keyframes for Infinite Scroll + Mobile Styles */}
       <style>{`
-        @keyframes scroll-infinite {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            /* Move exactly one set of categories (card + gap); use fixed width for animation */
-            transform: translateX(calc(-1 * ${CATEGORIES.length} * (260px + 16px)));
-          }
+        @keyframes categories-marquee {
+          from { transform: translateX(0); }
+          to { transform: translateX(calc(-1 * ${CATEGORIES.length} * (${CARD_WIDTH} + ${CARD_GAP}px))); }
         }
 
-        /* Desktop: clip the infinite scroll animation */
-        .categories-carousel-container {
+        .categories-carousel {
           overflow-x: hidden;
           overflow-y: visible;
         }
+        .categories-track--animate {
+          animation: categories-marquee ${MARQUEE_DURATION_SECONDS}s linear infinite;
+          will-change: transform;
+        }
+        /* Declared after --animate so it wins the play-state on hover / focus. */
+        .categories-track--paused {
+          animation-play-state: paused;
+        }
 
-        /* Mobile: manual touch scroll replaces auto-animation */
-        @media (max-width: 768px) {
-          .categories-carousel-container {
+        .category-card {
+          display: block;
+          text-decoration: none;
+          border-radius: 14px;
+        }
+        .category-card:focus-visible {
+          outline: 2px solid var(--primary);
+          outline-offset: 3px;
+        }
+
+        /* Legibility scrim; hover lifts it a touch instead of moving the card */
+        .category-card__scrim {
+          background: linear-gradient(to top, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.28) 50%, rgba(0, 0, 0, 0) 100%);
+          transition: opacity 200ms ease;
+        }
+        .category-card:hover .category-card__scrim {
+          opacity: 0.8;
+        }
+
+        /* Mobile: manual swipe with snapping replaces the marquee */
+        @media ${MOBILE_MEDIA_QUERY} {
+          .categories-carousel {
             overflow-x: auto;
             overflow-y: hidden;
             -webkit-overflow-scrolling: touch;
             scroll-snap-type: x mandatory;
             scrollbar-width: none;
-            -ms-overflow-style: none;
-            cursor: grab;
           }
-
-          .categories-carousel-container:active {
-            cursor: grabbing;
-          }
-
-          .categories-carousel-container::-webkit-scrollbar {
+          .categories-carousel::-webkit-scrollbar {
             display: none;
           }
-
           .categories-track > a {
             scroll-snap-align: center;
           }
@@ -220,20 +191,13 @@ export function CategoriesSection() {
           .categories-track {
             animation: none !important;
           }
-
-          .categories-carousel-container {
+          .categories-carousel {
             overflow-x: auto;
             scroll-snap-type: x mandatory;
           }
-
           .categories-track > a {
             scroll-snap-align: start;
           }
-        }
-
-        .category-card:hover {
-          transform: scale(1.05);
-          box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.15);
         }
       `}</style>
     </Column>

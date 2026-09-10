@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { Platform } from "react-native";
+import type { GestureResponderEvent } from "react-native";
 import {
   Card,
   GlassmorphismCard,
@@ -11,18 +11,32 @@ import {
   Text,
   Image,
   View,
-  Button,
 } from "@buttergolf/ui";
 import { Heart } from "@tamagui/lucide-icons";
 import type { ProductCardData } from "../types/product";
 
 export interface ProductCardProps {
   product: ProductCardData;
-  onPress?: () => void;
+  /**
+   * Web only: when set the card renders as a real anchor so open-in-new-tab,
+   * copy-link and keyboard navigation work. Pair with a press handler that
+   * calls `preventDefault` for plain clicks (see `useLinkPress` on web).
+   */
+  href?: string;
+  onPress?: (event: GestureResponderEvent) => void;
   onFavourite?: (productId: string) => void;
   isFavourited?: boolean;
-  onQuickView?: (productId: string) => void;
 }
+
+/** Two lines of the `$5` body size (22px line-height each). */
+const TITLE_HEIGHT = 44;
+
+const focusRing = {
+  outlineColor: "$primary",
+  outlineStyle: "solid",
+  outlineWidth: 2,
+  outlineOffset: 2,
+} as const;
 
 /**
  * Heart icon component (cross-platform via Tamagui Lucide).
@@ -34,8 +48,7 @@ export interface ProductCardProps {
  * "Type 'string' is not assignable to type GetThemeValueForKey<'color'>".
  *
  * Keep colour values as theme tokens (for example "$primary", "$textInverse")
- * and use opacity for subtle unfilled-state styling. This preserves the visual
- * appearance and prevents repeated type-regression fixes.
+ * and use opacity for subtle unfilled-state styling.
  */
 function HeartIcon({ filled }: Readonly<{ filled: boolean }>) {
   return (
@@ -50,221 +63,175 @@ function HeartIcon({ filled }: Readonly<{ filled: boolean }>) {
 }
 
 /**
- * ProductCard - Shopify/Airbnb style layout
+ * ProductCard
  *
- * Layout: Image on top (4:3 aspect ratio), content area below (96px)
- * Only overlays on image: favourite heart (top-right), optional condition badge (top-left)
- * Desktop hover: reveals quick action buttons at bottom of image
+ * Flat, outlined card: image on top (4:3), title, price, seller. The link
+ * (a real anchor on web) covers the whole card; the favourite heart is a
+ * sibling laid over the image rather than a control nested inside the anchor,
+ * so keyboard and screen-reader users get two distinct actions. Nothing moves
+ * on hover - the border shifts one tone, matching the Button family.
  */
 export function ProductCard({
   product,
+  href,
   onPress,
   onFavourite,
   isFavourited = false,
-  onQuickView,
 }: Readonly<ProductCardProps>) {
-  const [isHovered, setIsHovered] = useState(false);
+  const isWeb = Platform.OS === "web";
+  const sellerName = product.seller?.firstName || "Seller";
+  const sellerRatingCount = product.seller?.ratingCount ?? 0;
+  const sellerRating = product.seller?.averageRating;
+  // On web the link is a real anchor; the inline reset keeps the browser's
+  // underline off it without relying on global CSS.
+  const anchorProps =
+    isWeb && href
+      ? {
+          tag: "a" as const,
+          href,
+          className: "product-card-link",
+          style: { textDecoration: "none" },
+        }
+      : {};
 
-  const handleFavouriteClick = () => {
+  const handleFavouritePress = (event?: GestureResponderEvent) => {
+    event?.stopPropagation?.();
     onFavourite?.(product.id);
   };
 
-  const isWeb = Platform.OS === "web";
-  const sellerName = product.seller?.firstName || "Seller";
-  const isNewSeller = product.seller?.ratingCount === 0;
-  const sellerRatingCount = product.seller?.ratingCount ?? 0;
-
   return (
     <Card
-      variant="elevated"
+      variant="outlined"
       padding={0}
-      backgroundColor="$card"
-      borderColor="$border"
-      borderWidth={1}
-      borderRadius={16}
-      cursor="pointer"
-      onPress={onPress}
       width="100%"
-      overflow="hidden"
-      onMouseEnter={isWeb ? () => setIsHovered(true) : undefined}
-      onMouseLeave={isWeb ? () => setIsHovered(false) : undefined}
-      style={
-        isWeb
-          ? {
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06)",
-              transition: "box-shadow 0.2s ease, transform 0.2s ease",
-            }
-          : undefined
-      }
-      hoverStyle={{
-        borderColor: "$borderHover",
-      }}
+      backgroundColor="$card"
+      borderRadius="$lg"
+      overflow="visible"
+      position="relative"
+      pressStyle={{ scale: 0.98 }}
     >
-      {/* Image Area - 4:3 aspect ratio */}
-      <Column position="relative" width="100%" aspectRatio={4 / 3} overflow="hidden">
-        <Image
-          source={{ uri: product.imageUrl }}
-          alt={product.title}
-          width="100%"
-          height="100%"
-          objectFit="cover"
-          borderTopLeftRadius={16}
-          borderTopRightRadius={16}
-        />
+      {/* The link: image + text. Its focus ring is drawn around the card. */}
+      <Column
+        width="100%"
+        borderRadius="$lg"
+        overflow="hidden"
+        cursor="pointer"
+        onPress={onPress}
+        focusable
+        focusVisibleStyle={focusRing}
+        {...anchorProps}
+      >
+        {/* Image - 4:3 */}
+        <Column position="relative" width="100%" aspectRatio={4 / 3} overflow="hidden">
+          <Image
+            source={{ uri: product.imageUrl }}
+            alt={product.title}
+            width="100%"
+            height="100%"
+            objectFit="cover"
+          />
 
-        {/* Promotion Badge - Top Left */}
-        {product.activePromotion && (
-          <View
-            position="absolute"
-            top={10}
-            left={10}
-            backgroundColor={product.activePromotion.type === "BUMP" ? "$primary" : "$success"}
-            paddingHorizontal={10}
-            paddingVertical={4}
-            borderRadius={12}
-            zIndex={2}
-          >
-            <Row alignItems="center" gap={4}>
-              <Text size="$2" fontWeight="700" color="$textInverse">
+          {/* Promotion badge - top left */}
+          {product.activePromotion && (
+            <View
+              position="absolute"
+              top="$sm"
+              left="$sm"
+              backgroundColor={product.activePromotion.type === "BUMP" ? "$primary" : "$success"}
+              paddingHorizontal="$sm"
+              paddingVertical="$xs"
+              borderRadius="$full"
+              zIndex={2}
+            >
+              <Text size="$1" fontWeight="700" color="$textInverse">
                 {product.activePromotion.type === "BUMP" ? "BOOSTED" : "PRO SHOP"}
               </Text>
-            </Row>
-          </View>
-        )}
-
-        {/* Favourite Heart Button - Top Right with Glassmorphism */}
-        <GlassmorphismCard
-          intensity="medium"
-          blur="medium"
-          position="absolute"
-          top={10}
-          right={10}
-          width={36}
-          height={36}
-          borderRadius="$full"
-          alignItems="center"
-          justifyContent="center"
-          zIndex={2}
-          cursor="pointer"
-          onPress={(e) => {
-            e?.stopPropagation?.();
-            handleFavouriteClick();
-          }}
-          hoverStyle={{ transform: "scale(1.1)" }}
-          pressStyle={{ transform: "scale(0.9)", opacity: 0.8 }}
-          animation="quick"
-          role="button"
-          aria-label={isFavourited ? "Remove from favourites" : "Add to favourites"}
-          style={
-            isWeb
-              ? {
-                  ...getGlassmorphismStyles("medium"),
-                  transition: "transform 0.15s ease-out, opacity 0.15s ease-out",
-                }
-              : undefined
-          }
-        >
-          <HeartIcon filled={isFavourited} />
-        </GlassmorphismCard>
-
-        {/* Hover Actions Overlay - Desktop only */}
-        {isWeb && onQuickView && (
-          <View
-            position="absolute"
-            bottom={0}
-            left={0}
-            right={0}
-            paddingHorizontal={12}
-            paddingVertical={12}
-            zIndex={3}
-            style={{
-              background: "linear-gradient(transparent, rgba(0,0,0,0.5))",
-              opacity: isHovered ? 1 : 0,
-              transform: isHovered ? "translateY(0)" : "translateY(8px)",
-              transition: "opacity 0.2s ease, transform 0.2s ease",
-              pointerEvents: isHovered ? "auto" : "none",
-            }}
-          >
-            <Row justifyContent="center">
-              <Button
-                butterVariant="primary"
-                size="$4"
-                borderRadius="$full"
-                paddingHorizontal="$6"
-                onPress={(e) => {
-                  e?.stopPropagation?.();
-                  onQuickView(product.id);
-                }}
-              >
-                View
-              </Button>
-            </Row>
-          </View>
-        )}
-      </Column>
-
-      {/* Content Area - Fixed height for consistent grid alignment */}
-      <Column
-        paddingHorizontal={16}
-        paddingVertical={14}
-        gap={6}
-        minHeight={96}
-        justifyContent="flex-start"
-      >
-        {/* Title - 2 lines max with line-clamp */}
-        <Text
-          size="$5"
-          fontWeight="600"
-          color="$text"
-          numberOfLines={2}
-          height={40}
-          style={
-            isWeb
-              ? {
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                }
-              : undefined
-          }
-        >
-          {product.title}
-        </Text>
-
-        {/* Price Row */}
-        <Text size="$6" fontWeight="700" color="$text">
-          £{product.price.toFixed(2)}
-        </Text>
-
-        {/* Seller + Rating Row */}
-        <Row alignItems="center" gap={6} flexWrap="wrap">
-          <Text size="$4" color="$textSecondary" numberOfLines={1} flexShrink={1}>
-            {sellerName}
-          </Text>
-          {sellerRatingCount > 0 ? (
-            <Row alignItems="center" gap={3}>
-              <Text color="$primary" size="$4">
-                ★
-              </Text>
-              <Text size="$4" fontWeight="500" color="$textSecondary">
-                {product.seller?.averageRating?.toFixed(1)}
-              </Text>
-            </Row>
-          ) : isNewSeller ? (
-            <View
-              backgroundColor="$primary"
-              paddingHorizontal={8}
-              paddingVertical={2}
-              borderRadius={10}
-            >
-              <Text size="$2" fontWeight="600" color="$textInverse">
-                NEW SELLER
-              </Text>
             </View>
-          ) : null}
-        </Row>
+          )}
+        </Column>
+
+        {/* Content */}
+        <Column paddingHorizontal="$md" paddingTop="$sm" paddingBottom="$md" gap="$xs">
+          <Text
+            size="$5"
+            fontWeight="600"
+            color="$text"
+            numberOfLines={2}
+            height={TITLE_HEIGHT}
+            style={
+              isWeb
+                ? {
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }
+                : undefined
+            }
+          >
+            {product.title}
+          </Text>
+
+          <Text size="$6" fontWeight="700" color="$text">
+            £{product.price.toFixed(2)}
+          </Text>
+
+          <Row alignItems="center" gap="$sm" flexWrap="wrap">
+            <Text size="$4" color="$textSecondary" numberOfLines={1} flexShrink={1}>
+              {sellerName}
+            </Text>
+            {sellerRatingCount > 0 ? (
+              <Row alignItems="center" gap="$xs">
+                <Text color="$primary" size="$4">
+                  ★
+                </Text>
+                <Text size="$4" fontWeight="500" color="$textSecondary">
+                  {sellerRating?.toFixed(1)}
+                </Text>
+              </Row>
+            ) : (
+              <View
+                backgroundColor="$buttonSecondaryBg"
+                paddingHorizontal="$sm"
+                paddingVertical={2}
+                borderRadius="$full"
+              >
+                <Text size="$1" fontWeight="600" color="$textSecondary">
+                  NEW SELLER
+                </Text>
+              </View>
+            )}
+          </Row>
+        </Column>
       </Column>
+
+      {/* Favourite - top right, a sibling of the link so it is never nested in
+          it, and a real <button> on web so Enter / Space toggle it */}
+      <GlassmorphismCard
+        {...(isWeb ? { tag: "button" as const, type: "button" } : {})}
+        intensity="medium"
+        padding={0}
+        position="absolute"
+        top="$sm"
+        right="$sm"
+        width={36}
+        height={36}
+        borderRadius="$full"
+        alignItems="center"
+        justifyContent="center"
+        zIndex={2}
+        cursor="pointer"
+        role="button"
+        focusable
+        aria-label={isFavourited ? "Remove from favourites" : "Add to favourites"}
+        aria-pressed={isFavourited}
+        onPress={handleFavouritePress}
+        pressStyle={{ scale: 0.92, opacity: 0.85 }}
+        focusVisibleStyle={focusRing}
+        style={isWeb ? getGlassmorphismStyles("medium") : undefined}
+      >
+        <HeartIcon filled={isFavourited} />
+      </GlassmorphismCard>
     </Card>
   );
 }

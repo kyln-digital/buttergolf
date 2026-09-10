@@ -24,12 +24,12 @@ export function EmptyConversation() {
         alignItems="center"
         justifyContent="center"
       >
-        <MessageSquare size={36} color="$textTertiary" />
+        <MessageSquare size={36} color="$textSecondary" />
       </Column>
-      <Text size="$6" fontWeight="500" color="$textSecondary">
+      <Text size="$6" fontWeight="600" color="$text">
         Select a conversation
       </Text>
-      <Text size="$4" color="$textTertiary" textAlign="center" maxWidth={280}>
+      <Text size="$4" color="$textSecondary" textAlign="center" maxWidth={280}>
         Choose a conversation from the list to start messaging.
       </Text>
     </Column>

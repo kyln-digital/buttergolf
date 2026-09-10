@@ -3,10 +3,11 @@
 import { styled, GetProps, YStack } from "tamagui";
 import { useState } from "react";
 
-// Visible checkbox box
+// Visible checkbox box - a real <button role="checkbox"> so a <label htmlFor>
+// activates it natively and Enter / Space toggle it without custom key handling.
 const CheckboxBox = styled(YStack, {
   name: "CheckboxBox",
-  tag: "div" as const,
+  tag: "button" as const,
   width: 20,
   height: 20,
   borderWidth: 2,
@@ -80,6 +81,10 @@ export interface CheckboxProps {
   id?: string;
   name?: string;
   value?: string;
+  /** Accessible name for the control (use one of these or a visible label). */
+  "aria-label"?: string;
+  /** Id of the element that labels the control. */
+  "aria-labelledby"?: string;
 }
 
 export function Checkbox({
@@ -91,6 +96,8 @@ export function Checkbox({
   id,
   name,
   value,
+  "aria-label": ariaLabel,
+  "aria-labelledby": ariaLabelledBy,
 }: CheckboxProps) {
   const [uncontrolledChecked, setUncontrolledChecked] = useState(defaultChecked);
 
@@ -109,54 +116,52 @@ export function Checkbox({
     onChange?.(newChecked);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === " " || e.key === "Enter") {
-      e.preventDefault();
-      handleChange();
-    }
-  };
-
   return (
-    <CheckboxBox
-      checked={checked}
-      disabled={disabled}
-      size={size}
-      onPress={handleChange}
-      aria-checked={checked}
-      aria-disabled={disabled}
-      tabIndex={disabled ? -1 : 0}
-      {...({ onKeyDown: handleKeyDown } as {
-        onKeyDown: React.KeyboardEventHandler;
-      })}
-    >
-      {/* Hidden input for form integration */}
-      <input
-        type="checkbox"
+    <>
+      <CheckboxBox
+        {...{ type: "button" }}
+        id={id}
+        role="checkbox"
         checked={checked}
         disabled={disabled}
-        onChange={() => {}}
-        id={id}
-        name={name}
-        value={value}
-        tabIndex={-1}
-        style={{ position: "absolute", opacity: 0, width: 0, height: 0 }}
-      />
-      {checked && (
-        <svg
-          width={checkmarkSizes[size]}
-          height={checkmarkSizes[size]}
-          viewBox="0 0 12 12"
-          fill="none"
-          stroke="white"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{ pointerEvents: "none" }}
-        >
-          <polyline points="2,6 5,9 10,3" />
-        </svg>
-      )}
-    </CheckboxBox>
+        size={size}
+        onPress={handleChange}
+        aria-checked={checked}
+        aria-disabled={disabled}
+        aria-label={ariaLabel}
+        aria-labelledby={ariaLabelledBy}
+      >
+        {checked && (
+          <svg
+            width={checkmarkSizes[size]}
+            height={checkmarkSizes[size]}
+            viewBox="0 0 12 12"
+            fill="none"
+            stroke="white"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ pointerEvents: "none" }}
+          >
+            <polyline points="2,6 5,9 10,3" />
+          </svg>
+        )}
+      </CheckboxBox>
+      {/* Form participation only: a sibling (never inside the button) that submits with the form */}
+      {name ? (
+        <input
+          type="checkbox"
+          checked={checked}
+          disabled={disabled}
+          onChange={() => {}}
+          name={name}
+          value={value}
+          tabIndex={-1}
+          aria-hidden
+          style={{ display: "none" }}
+        />
+      ) : null}
+    </>
   );
 }
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useLinkPress } from "@/hooks/useLinkPress";
 import { Column, Row, Text, Heading, Button, Card, Spinner } from "@buttergolf/ui";
 import type { ColorTokens } from "tamagui";
 import {
@@ -118,7 +119,7 @@ interface SalesOrdersListProps {
 }
 
 const STATUS_CONFIG: Record<OrderStatus, { label: string; fg: ColorTokens; bg: ColorTokens }> = {
-  PAYMENT_CONFIRMED: { label: "Awaiting Label", fg: "$primary", bg: "$primaryLight" },
+  PAYMENT_CONFIRMED: { label: "Awaiting label", fg: "$primary", bg: "$primaryLight" },
   LABEL_GENERATED: { label: "Ready to Ship", fg: "$secondary", bg: "$secondaryLight" },
   SHIPPED: { label: "Shipped", fg: "$primary", bg: "$primaryLight" },
   DELIVERED: { label: "Delivered", fg: "$success", bg: "$successLight" },
@@ -187,6 +188,7 @@ function StatCard({
 }
 
 function OrderCard({ order }: { order: Order }) {
+  const linkPress = useLinkPress();
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [labelUrl, setLabelUrl] = useState(order.labelUrl);
@@ -388,7 +390,7 @@ function OrderCard({ order }: { order: Order }) {
                   </Text>
                   <Link href="/sell" style={{ textDecoration: "none" }}>
                     <Text size="$2" fontWeight="600" color="$secondary">
-                      Complete Verification →
+                      Complete verification →
                     </Text>
                   </Link>
                 </Column>
@@ -427,14 +429,17 @@ function OrderCard({ order }: { order: Order }) {
           {status === "PAYMENT_CONFIRMED" && (
             <>
               {needsAddressUpdate ? (
-                <Link href="/account/addresses" style={{ width: "100%" }}>
-                  <Button size="$4" backgroundColor="$warning" color="$textInverse" width="100%">
-                    <AlertCircle size={16} />
-                    <Text color="$textInverse" marginLeft="$xs">
-                      Update Address
-                    </Text>
-                  </Button>
-                </Link>
+                <Button
+                  butterVariant="primary"
+                  size="$4"
+                  width="100%"
+                  icon={AlertCircle}
+                  tag="a"
+                  href="/account/addresses"
+                  onPress={linkPress("/account/addresses")}
+                >
+                  Update address
+                </Button>
               ) : (
                 <Button
                   butterVariant="primary"
@@ -489,48 +494,40 @@ function OrderCard({ order }: { order: Order }) {
                 </Column>
               )}
               {/* PDF download */}
-              <a
+              <Button
+                butterVariant="primary"
+                size="$4"
+                width="100%"
+                icon={Download}
+                tag="a"
                 href={labelUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ width: "100%" }}
               >
-                <Button size="$4" backgroundColor="$success" color="$textInverse" width="100%">
-                  <Download size={16} />
-                  <Text color="$textInverse" marginLeft="$xs">
-                    Download PDF Label
-                  </Text>
-                </Button>
-              </a>
+                Download PDF label
+              </Button>
               {/* ZPL download for thermal printers */}
               {labelZplUrl && (
-                <a
+                <Button
+                  butterVariant="secondary"
+                  size="$4"
+                  width="100%"
+                  icon={Download}
+                  tag="a"
                   href={labelZplUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ width: "100%" }}
                 >
-                  <Button
-                    size="$4"
-                    borderWidth={1}
-                    borderColor="$border"
-                    backgroundColor="transparent"
-                    width="100%"
-                  >
-                    <Download size={16} />
-                    <Text marginLeft="$xs">ZPL (Thermal Printer)</Text>
-                  </Button>
-                </a>
+                  ZPL (thermal printer)
+                </Button>
               )}
             </Column>
           )}
 
           {labelUrl && shipmentStatus === "PRE_TRANSIT" && (
             <Button
+              butterVariant="secondary"
               size="$4"
-              borderWidth={1}
-              borderColor="$border"
-              backgroundColor="transparent"
               width="100%"
               onPress={handleMarkShipped}
               disabled={markingShipped}
@@ -547,30 +544,30 @@ function OrderCard({ order }: { order: Order }) {
           )}
 
           {trackingUrl && (
-            <a
+            <Button
+              butterVariant="secondary"
+              size="$4"
+              width="100%"
+              icon={ExternalLink}
+              tag="a"
               href={trackingUrl}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ width: "100%" }}
             >
-              <Button
-                size="$4"
-                borderWidth={1}
-                borderColor="$border"
-                backgroundColor="transparent"
-                width="100%"
-              >
-                <ExternalLink size={16} />
-                <Text marginLeft="$xs">Track: {trackingCode?.slice(0, 10)}...</Text>
-              </Button>
-            </a>
+              {`Track: ${trackingCode?.slice(0, 10)}...`}
+            </Button>
           )}
 
-          <Link href={`/orders/${order.id}`} style={{ width: "100%", textDecoration: "none" }}>
-            <Button size="$3" chromeless width="100%">
-              View Details →
-            </Button>
-          </Link>
+          <Button
+            butterVariant="ghost"
+            size="$3"
+            width="100%"
+            tag="a"
+            href={`/orders/${order.id}`}
+            onPress={linkPress(`/orders/${order.id}`)}
+          >
+            View details
+          </Button>
         </Column>
       </Row>
     </Card>
@@ -596,20 +593,24 @@ export function SalesOrdersList({ orders, stats }: SalesOrdersListProps) {
   return (
     <Column gap="$lg" fullWidth>
       {/* Header */}
-      <Row justifyContent="space-between" alignItems="center" flexWrap="wrap" gap="$md">
-        <Heading level={2}>Sales</Heading>
-        <Text color="$textSecondary">Manage your orders and shipping</Text>
-      </Row>
+      <Column gap="$xs">
+        <Heading level={1} size="$8">
+          Sales
+        </Heading>
+        <Text size="$4" color="$textSecondary">
+          Manage your orders and shipping
+        </Text>
+      </Column>
 
       {/* Stats */}
       <Row gap="$md" flexWrap="wrap">
         <StatCard
-          label="Total Orders"
+          label="Total orders"
           value={stats.total}
           icon={<Package size={20} color="$primary" />}
         />
         <StatCard
-          label="Awaiting Label"
+          label="Awaiting label"
           value={stats.awaitingLabel}
           icon={<Clock size={20} color="$primary" />}
         />
@@ -624,7 +625,7 @@ export function SalesOrdersList({ orders, stats }: SalesOrdersListProps) {
           icon={<CheckCircle size={20} color="$success" />}
         />
         <StatCard
-          label="Total Revenue"
+          label="Total revenue"
           value={`£${stats.revenue.toFixed(2)}`}
           icon={<CheckCircle size={20} color="$success" />}
         />
@@ -634,19 +635,17 @@ export function SalesOrdersList({ orders, stats }: SalesOrdersListProps) {
       <Row gap="$sm" flexWrap="wrap">
         {(
           [
-            { key: "all", label: "All Orders" },
-            { key: "awaiting", label: "Awaiting Label" },
+            { key: "all", label: "All orders" },
+            { key: "awaiting", label: "Awaiting label" },
             { key: "shipped", label: "Shipped" },
             { key: "delivered", label: "Delivered" },
           ] as const
         ).map(({ key, label }) => (
           <Button
             key={key}
+            butterVariant={filter === key ? "secondary" : "ghost"}
             size="$4"
-            backgroundColor={filter === key ? "$primary" : "transparent"}
-            color={filter === key ? "$textInverse" : "$text"}
-            borderWidth={filter === key ? 0 : 1}
-            borderColor="$border"
+            aria-pressed={filter === key}
             onPress={() => setFilter(key)}
           >
             {label}
@@ -658,7 +657,7 @@ export function SalesOrdersList({ orders, stats }: SalesOrdersListProps) {
       {filteredOrders.length === 0 ? (
         <Card variant="outlined" padding="$xl">
           <Column alignItems="center" gap="$md">
-            <Package size={48} color="$textMuted" />
+            <Package size={48} color="$textSecondary" />
             <Text color="$textSecondary" textAlign="center">
               {filter === "all"
                 ? "No orders yet. Once you make a sale, it will appear here."

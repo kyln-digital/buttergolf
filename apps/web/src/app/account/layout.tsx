@@ -18,7 +18,7 @@ export default async function AccountLayout({ children }: AccountLayoutProps) {
   const { userId } = await auth();
 
   if (!userId) {
-    redirect("/sign-in?redirect=/account");
+    redirect("/sign-in?redirect_url=%2Faccount");
   }
 
   return (

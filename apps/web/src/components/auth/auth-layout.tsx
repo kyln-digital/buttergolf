@@ -16,13 +16,13 @@ interface AuthLayoutProps {
  */
 export function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <Row width="100vw" height="100vh" backgroundColor="$pureWhite">
+    <Row width="100vw" height="100vh" backgroundColor="$background">
       {/* Left Panel - Branding (hidden on mobile, visible on lg+) */}
       <Column
         flex={1}
         height="100%"
         padding="$xl"
-        backgroundColor="$pureWhite"
+        backgroundColor="$background"
         justifyContent="space-between"
         display="none"
         $gtLg={{
@@ -54,12 +54,9 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 
         {/* Tagline */}
         <Column zIndex={20} gap="$sm">
-          <Text size="$6" color="$text">
+          <Text size="$6" color="$text" maxWidth={520}>
             Your destination for premium pre-owned golf equipment. Buy and sell with fellow golfers
             in a trusted marketplace.
-          </Text>
-          <Text size="$4" color="$textSecondary">
-            ButterGolf
           </Text>
         </Column>
       </Column>
@@ -71,7 +68,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         alignItems="center"
         justifyContent="center"
         padding="$lg"
-        backgroundColor="$pureWhite"
+        backgroundColor="$background"
         $gtLg={{
           padding: "$xl",
           alignItems: "flex-start",
@@ -102,13 +99,13 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           {children}
 
           {/* Terms & Privacy */}
-          <Text size="$3" color="$textMuted" textAlign="center" paddingHorizontal="$lg">
+          <Text size="$3" color="$textSecondary" textAlign="center" paddingHorizontal="$lg">
             By continuing, you agree to our{" "}
-            <Link href="/terms" style={{ textDecoration: "underline" }}>
+            <Link href="/terms-of-service" style={{ textDecoration: "underline" }}>
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" style={{ textDecoration: "underline" }}>
+            <Link href="/privacy-policy" style={{ textDecoration: "underline" }}>
               Privacy Policy
             </Link>
             .

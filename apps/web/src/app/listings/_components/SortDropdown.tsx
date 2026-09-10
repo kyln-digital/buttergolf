@@ -1,9 +1,19 @@
 "use client";
 
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import type { TamaguiElement } from "tamagui";
 import { Check, ChevronDown } from "@tamagui/lucide-icons";
-import { Select, Adapt } from "tamagui";
-import { Sheet } from "@buttergolf/ui";
-import { useMemo } from "react";
+import {
+  AdaptContents,
+  Button,
+  Column,
+  Popover,
+  PopoverAdapt,
+  PopoverSheet,
+  PopoverSheetFrame,
+  PopoverSheetHandle,
+  PopoverSheetOverlay,
+} from "@buttergolf/ui";
 
 export interface SortOption {
   value: string;
@@ -17,85 +27,149 @@ interface SortDropdownProps {
 }
 
 const DEFAULT_SORT_OPTIONS: SortOption[] = [
-  { value: "newest", label: "Newest First" },
-  { value: "price-asc", label: "Price: Low to High" },
-  { value: "price-desc", label: "Price: High to Low" },
-  { value: "popular", label: "Most Popular" },
+  { value: "newest", label: "Newest first" },
+  { value: "price-asc", label: "Price: low to high" },
+  { value: "price-desc", label: "Price: high to low" },
+  { value: "popular", label: "Most popular" },
 ];
 
+const MENU_ITEM_SELECTOR = '[role="menuitemradio"]';
+
+/**
+ * Sort control: a tonal button that opens a menu of radio items (a bottom
+ * sheet on touch screens). Built on Popover rather than Select so the option
+ * list is never laid out off-screen. Follows the ARIA menu pattern: the
+ * current option takes focus on open, arrows move between items, Home/End
+ * jump, Enter/Space choose, Escape closes.
+ */
 export function SortDropdown({
   value,
   onChange,
   options = DEFAULT_SORT_OPTIONS,
 }: Readonly<SortDropdownProps>) {
-  const selectedLabel = useMemo(() => {
-    return options.find((opt) => opt.value === value)?.label || "Sort by";
-  }, [value, options]);
+  const [open, setOpen] = useState(false);
+  // Tamagui refs resolve to the DOM node on web; narrow at the point of use.
+  const menuRef = useRef<TamaguiElement | null>(null);
+  const selected = options.find((option) => option.value === value) ?? options[0];
+
+  const choose = (next: string) => {
+    onChange(next);
+    setOpen(false);
+  };
+
+  const getItems = (): HTMLElement[] => {
+    const menu = menuRef.current as HTMLElement | null;
+    return Array.from(menu?.querySelectorAll<HTMLElement>(MENU_ITEM_SELECTOR) ?? []);
+  };
+
+  // Move focus into the menu when it opens, landing on the current choice.
+  useEffect(() => {
+    if (!open) return;
+    const frame = requestAnimationFrame(() => {
+      const items = getItems();
+      const current = items.find((item) => item.getAttribute("aria-checked") === "true");
+      (current ?? items[0])?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open]);
+
+  const handleMenuKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    const items = getItems();
+    if (items.length === 0) return;
+    const index = items.indexOf(document.activeElement as HTMLElement);
+    let next: number | null = null;
+    switch (event.key) {
+      case "ArrowDown":
+        next = index < 0 ? 0 : (index + 1) % items.length;
+        break;
+      case "ArrowUp":
+        next = index < 0 ? items.length - 1 : (index - 1 + items.length) % items.length;
+        break;
+      case "Home":
+        next = 0;
+        break;
+      case "End":
+        next = items.length - 1;
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    items[next]?.focus();
+  };
 
   return (
-    <Select
-      value={value}
-      onValueChange={(v: string) => {
-        const valid = options.find((opt) => opt.value === v);
-        onChange(valid ? v : (options[0]?.value ?? v));
-      }}
-      disablePreventBodyScroll
-    >
-      <Select.Trigger
-        minWidth={200}
-        height={40}
-        paddingHorizontal="$3"
-        borderRadius={10}
-        borderWidth={1}
-        borderColor="$fieldBorder"
-        backgroundColor="$surface"
-        hoverStyle={{ borderColor: "$fieldBorderHover" }}
-        focusStyle={{ borderColor: "$primary", outlineWidth: 0 }}
-        iconAfter={ChevronDown}
-      >
-        <Select.Value placeholder="Sort by">{selectedLabel}</Select.Value>
-      </Select.Trigger>
-
-      <Adapt when="sm" platform="touch">
-        <Sheet
-          modal
-          dismissOnSnapToBottom
-          animationConfig={{
-            type: "spring",
-            damping: 20,
-            mass: 1.2,
-            stiffness: 250,
-          }}
+    <Popover open={open} onOpenChange={setOpen} placement="bottom-end" allowFlip>
+      <Popover.Trigger asChild>
+        <Button
+          butterVariant="secondary"
+          size="$4"
+          iconAfter={ChevronDown}
+          aria-haspopup="menu"
+          aria-expanded={open}
         >
-          <Sheet.Frame>
-            <Sheet.ScrollView>
-              <Adapt.Contents />
-            </Sheet.ScrollView>
-          </Sheet.Frame>
-          <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
-        </Sheet>
-      </Adapt>
+          {`Sort: ${selected?.label ?? "Newest first"}`}
+        </Button>
+      </Popover.Trigger>
 
-      <Select.Content zIndex={200000}>
-        <Select.Viewport minWidth={200}>
-          <Select.Group>
-            {options.map((option, index) => (
-              <Select.Item
+      <PopoverAdapt when="sm">
+        <PopoverSheet modal dismissOnSnapToBottom snapPoints={[45]}>
+          <PopoverSheetOverlay
+            animation="lazy"
+            enterStyle={{ opacity: 0 }}
+            exitStyle={{ opacity: 0 }}
+          />
+          <PopoverSheetFrame
+            backgroundColor="$background"
+            borderTopLeftRadius="$2xl"
+            borderTopRightRadius="$2xl"
+            padding="$md"
+            gap="$sm"
+          >
+            <PopoverSheetHandle backgroundColor="$border" />
+            <AdaptContents />
+          </PopoverSheetFrame>
+        </PopoverSheet>
+      </PopoverAdapt>
+
+      <Popover.Content
+        backgroundColor="$background"
+        borderWidth={1}
+        borderColor="$border"
+        borderRadius="$lg"
+        padding="$xs"
+        elevate
+        zIndex={200000}
+      >
+        <Column
+          ref={menuRef}
+          role="menu"
+          aria-label="Sort by"
+          minWidth={220}
+          gap={2}
+          {...{ onKeyDown: handleMenuKeyDown }}
+        >
+          {options.map((option) => {
+            const isSelected = option.value === value;
+            return (
+              <Button
                 key={option.value}
-                index={index}
-                value={option.value}
-                cursor="pointer"
-                hoverStyle={{ backgroundColor: "$backgroundHover" }}
+                butterVariant="ghost"
+                size="$4"
+                width="100%"
+                justifyContent="space-between"
+                borderRadius="$md"
+                role="menuitemradio"
+                aria-checked={isSelected}
+                iconAfter={isSelected ? Check : undefined}
+                onPress={() => choose(option.value)}
               >
-                <Select.ItemText>{option.label}</Select.ItemText>
-                <Select.ItemIndicator marginLeft="auto">
-                  <Check size={16} />
-                </Select.ItemIndicator>
-              </Select.Item>
-            ))}
-          </Select.Group>
-        </Select.Viewport>
-      </Select.Content>
-    </Select>
+                {option.label}
+              </Button>
+            );
+          })}
+        </Column>
+      </Popover.Content>
+    </Popover>
   );
 }

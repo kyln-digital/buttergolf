@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Column, Row, Heading, Text, Button, Card } from "@buttergolf/ui";
+import { useTheme } from "tamagui";
 import { Lock, Smartphone } from "@tamagui/lucide-icons";
 import PhoneInput, { isValidPhoneNumber, type Value } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
@@ -36,6 +37,7 @@ export function PhoneCollectionStep({
   onSkip,
   isSubmitting = false,
 }: PhoneCollectionStepProps) {
+  const theme = useTheme();
   const [phone, setPhone] = useState<Value | undefined>(initialPhone as Value | undefined);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,11 +64,11 @@ export function PhoneCollectionStep({
 
   return (
     <Column backgroundColor="$background" minHeight="100vh" alignItems="center" width="100%">
-      <Column maxWidth={600} paddingHorizontal="$6" paddingVertical="$8" width="100%" gap="$lg">
+      <Column maxWidth={600} paddingHorizontal="$md" paddingVertical="$xl" width="100%" gap="$lg">
         {/* Header */}
         <Column gap="$md" alignItems="center">
           <Smartphone size={36} color="$textSecondary" />
-          <Heading level={2} textAlign="center">
+          <Heading level={1} size="$7" textAlign="center">
             Add your mobile number
           </Heading>
           <Text color="$textSecondary" textAlign="center" size="$5">
@@ -75,18 +77,18 @@ export function PhoneCollectionStep({
         </Column>
 
         {/* Form card */}
-        <Card variant="elevated" padding="$lg">
+        <Card variant="outlined" padding="$lg" borderRadius="$lg">
           <Column gap="$lg">
             <Column gap="$xs">
               <Text size="$4" fontWeight="500">
-                Mobile Number
+                Mobile number
               </Text>
               <div
                 className="phone-input-wrapper"
                 style={{
-                  border: error ? "1px solid #dc2626" : "1px solid #EDEDED",
-                  borderRadius: 12,
-                  backgroundColor: "#FFFFFF",
+                  border: `1px solid ${error ? theme.error.val : theme.fieldBorder.val}`,
+                  borderRadius: 9999,
+                  backgroundColor: theme.surface.val,
                   padding: "4px 12px",
                 }}
               >
@@ -103,7 +105,7 @@ export function PhoneCollectionStep({
                   {error}
                 </Text>
               )}
-              <Text size="$3" color="$textTertiary">
+              <Text size="$3" color="$textSecondary">
                 Used for payment verification and delivery updates
               </Text>
             </Column>

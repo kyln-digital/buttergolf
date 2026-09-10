@@ -134,7 +134,7 @@ export function ChatBubble({
         </Text>
         {/* Timestamp + read receipt row */}
         <Row alignItems="center" justifyContent="flex-end" gap="$xs" marginTop={2}>
-          <Text size="$1" color={isOwnMessage ? "$primaryLight" : "$textTertiary"}>
+          <Text size="$1" color={isOwnMessage ? "$primaryLight" : "$textSecondary"}>
             {timestamp}
           </Text>
           {isOwnMessage &&

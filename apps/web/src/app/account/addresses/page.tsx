@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { Column, Row, Heading, Text, Button, Input, Card, SwitchWithLabel } from "@buttergolf/ui";
-import { Package } from "@tamagui/lucide-icons";
+import { ArrowLeft, Package } from "@tamagui/lucide-icons";
+import { useLinkPress } from "@/hooks/useLinkPress";
 
 interface Address {
   id: string;
@@ -63,6 +64,7 @@ const FormLabel = ({ children, required }: { children: React.ReactNode; required
 
 export default function AddressesPage() {
   const router = useRouter();
+  const linkPress = useLinkPress();
   const { isSignedIn, isLoaded } = useUser();
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,7 +108,7 @@ export default function AddressesPage() {
 
   // Redirect if not signed in
   if (isLoaded && !isSignedIn) {
-    router.push("/sign-in?redirect=/account/addresses");
+    router.push("/sign-in?redirect_url=%2Faccount%2Faddresses");
     return null;
   }
 
@@ -240,23 +242,42 @@ export default function AddressesPage() {
   return (
     <Column
       maxWidth={800}
-      paddingHorizontal="$6"
+      paddingHorizontal="$md"
       width="100%"
       alignSelf="center"
       marginHorizontal="auto"
     >
-      <Column gap="$xl" paddingVertical="$6" width="100%">
+      <Column gap="$xl" paddingTop="$lg" paddingBottom="$3xl" width="100%">
         {/* Header */}
-        <Row justifyContent="space-between" alignItems="center" width="100%">
-          <Column gap="$sm">
-            <Button chromeless size="$3" onPress={() => router.push("/account")}>
-              ← Back to Account
+        <Row
+          justifyContent="space-between"
+          alignItems="flex-end"
+          width="100%"
+          gap="$md"
+          flexWrap="wrap"
+        >
+          <Column gap="$sm" alignItems="flex-start">
+            <Button
+              butterVariant="ghost"
+              size="$3"
+              icon={ArrowLeft}
+              tag="a"
+              href="/account"
+              onPress={linkPress("/account")}
+            >
+              Back to account
             </Button>
-            <Heading level={2}>Shipping Addresses</Heading>
-            <Text color="$textSecondary">Manage addresses where you can ship items from</Text>
+            <Column gap="$xs">
+              <Heading level={1} size="$8">
+                Shipping addresses
+              </Heading>
+              <Text size="$4" color="$textSecondary">
+                Manage addresses where you can ship items from
+              </Text>
+            </Column>
           </Column>
           <Button butterVariant="primary" size="$4" onPress={() => setShowForm(true)}>
-            Add Address
+            Add address
           </Button>
         </Row>
 
@@ -268,12 +289,14 @@ export default function AddressesPage() {
 
         {/* Address Form */}
         {showForm && (
-          <Card variant="elevated" padding="$lg">
+          <Card variant="outlined" padding="$lg" borderRadius="$lg">
             <Column gap="$lg">
               <Row justifyContent="space-between" alignItems="center">
-                <Heading level={3}>{editingAddress ? "Edit Address" : "Add New Address"}</Heading>
+                <Heading level={2} size="$6">
+                  {editingAddress ? "Edit address" : "Add new address"}
+                </Heading>
                 <Button
-                  chromeless
+                  butterVariant="ghost"
                   size="$3"
                   onPress={() => {
                     setShowForm(false);
@@ -293,7 +316,7 @@ export default function AddressesPage() {
                       value={formData.firstName}
                       onChangeText={(value) => setFormData({ ...formData, firstName: value })}
                       placeholder="John"
-                      size="$4"
+                      size="md"
                       autoComplete="given-name"
                     />
                   </Column>
@@ -303,7 +326,7 @@ export default function AddressesPage() {
                       value={formData.lastName}
                       onChangeText={(value) => setFormData({ ...formData, lastName: value })}
                       placeholder="Smith"
-                      size="$4"
+                      size="md"
                       autoComplete="family-name"
                     />
                   </Column>
@@ -316,7 +339,7 @@ export default function AddressesPage() {
                     value={formData.street1}
                     onChangeText={(value) => setFormData({ ...formData, street1: value })}
                     placeholder="10 Downing Street"
-                    size="$4"
+                    size="md"
                     autoComplete="address-line1"
                   />
                 </Column>
@@ -328,7 +351,7 @@ export default function AddressesPage() {
                     value={formData.street2}
                     onChangeText={(value) => setFormData({ ...formData, street2: value })}
                     placeholder="Flat 2B"
-                    size="$4"
+                    size="md"
                     autoComplete="address-line2"
                   />
                 </Column>
@@ -341,7 +364,7 @@ export default function AddressesPage() {
                       value={formData.city}
                       onChangeText={(value) => setFormData({ ...formData, city: value })}
                       placeholder="London"
-                      size="$4"
+                      size="md"
                       autoComplete="address-level2"
                     />
                   </Column>
@@ -351,7 +374,7 @@ export default function AddressesPage() {
                       value={formData.county}
                       onChangeText={(value) => setFormData({ ...formData, county: value })}
                       placeholder="Greater London"
-                      size="$4"
+                      size="md"
                       autoComplete="address-level1"
                     />
                   </Column>
@@ -367,7 +390,7 @@ export default function AddressesPage() {
                       setPostcodeError(null);
                     }}
                     placeholder="SW1A 1AA"
-                    size="$4"
+                    size="md"
                     autoComplete="postal-code"
                   />
                   {postcodeError && (
@@ -384,7 +407,7 @@ export default function AddressesPage() {
                     value={formData.phone}
                     onChangeText={(value) => setFormData({ ...formData, phone: value })}
                     placeholder="+44 7700 900000"
-                    size="$4"
+                    size="md"
                     inputMode="tel"
                     autoComplete="tel"
                   />
@@ -407,7 +430,7 @@ export default function AddressesPage() {
               </Column>
 
               <Button butterVariant="primary" size="$5" onPress={handleSubmit}>
-                {editingAddress ? "Update Address" : "Save Address"}
+                {editingAddress ? "Update address" : "Save address"}
               </Button>
             </Column>
           </Card>
@@ -420,19 +443,27 @@ export default function AddressesPage() {
               <Column gap="$md" alignItems="center">
                 <Package size={36} color="$textSecondary" />
                 <Column gap="$sm" alignItems="center">
-                  <Heading level={4}>No shipping addresses yet</Heading>
+                  <Heading level={2} size="$6">
+                    No shipping addresses yet
+                  </Heading>
                   <Text color="$textSecondary" textAlign="center">
                     Add a shipping address to start selling items on ButterGolf
                   </Text>
                 </Column>
                 <Button butterVariant="primary" size="$4" onPress={() => setShowForm(true)}>
-                  Add Your First Address
+                  Add your first address
                 </Button>
               </Column>
             </Card>
           ) : (
             addresses.map((address) => (
-              <Card key={address.id} variant="elevated" padding="$lg" width="100%">
+              <Card
+                key={address.id}
+                variant="outlined"
+                padding="$lg"
+                width="100%"
+                borderRadius="$lg"
+              >
                 <Row justifyContent="space-between" alignItems="flex-start">
                   <Column gap="$sm" flex={1}>
                     <Row gap="$sm" alignItems="center">
@@ -443,12 +474,13 @@ export default function AddressesPage() {
                       </Text>
                       {address.isDefault && (
                         <Text
-                          size="$2"
-                          backgroundColor="$primary"
-                          color="$white"
+                          size="$1"
+                          fontWeight="600"
+                          backgroundColor="$buttonSecondaryBg"
+                          color="$textSecondary"
                           paddingHorizontal="$sm"
-                          paddingVertical="$xs"
-                          borderRadius="$sm"
+                          paddingVertical={2}
+                          borderRadius="$full"
                         >
                           DEFAULT
                         </Text>
@@ -468,15 +500,19 @@ export default function AddressesPage() {
                   </Column>
                   <Row gap="$sm">
                     {!address.isDefault && (
-                      <Button chromeless size="$3" onPress={() => handleSetDefault(address.id)}>
-                        Set Default
+                      <Button
+                        butterVariant="ghost"
+                        size="$3"
+                        onPress={() => handleSetDefault(address.id)}
+                      >
+                        Set default
                       </Button>
                     )}
-                    <Button chromeless size="$3" onPress={() => handleEdit(address)}>
+                    <Button butterVariant="ghost" size="$3" onPress={() => handleEdit(address)}>
                       Edit
                     </Button>
                     <Button
-                      chromeless
+                      butterVariant="ghost"
                       size="$3"
                       color="$error"
                       onPress={() => handleDelete(address.id)}

@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback, type CSSProperties } from "react";
+import { useState, useEffect, useCallback, useRef, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
-import { Column, Row, Container, Text, Button, Card, Image } from "@buttergolf/ui";
+import { ChevronLeft, ChevronRight, X } from "@tamagui/lucide-icons";
+import { Column, Row, Text, Button, Card, Image, View } from "@buttergolf/ui";
 import { PRODUCT_IMAGE_ASPECT_RATIO } from "@buttergolf/constants";
+import type { TamaguiElement } from "tamagui";
+import { SECTION_MAX_WIDTH } from "@/app/_components/marketplace/Section";
 import { ProductInformation } from "./_components/ProductInformation";
 import { BuyNowSheet } from "./_components/BuyNowSheet";
 
@@ -59,14 +62,21 @@ interface ProductDetailClientProps {
   product: Product;
 }
 
+const THUMB_SIZE = 64;
+const FOCUSABLE_SELECTOR = 'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])';
+
 export default function ProductDetailClient({ product }: ProductDetailClientProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [showMobileBar, setShowMobileBar] = useState(false);
   const [buyNowSheetOpen, setBuyNowSheetOpen] = useState(false);
   const router = useRouter();
+  const lightboxRef = useRef<TamaguiElement | null>(null);
+  const closeButtonRef = useRef<TamaguiElement | null>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
 
   const selectedImage = product.images[selectedImageIndex];
+  const imageCount = product.images.length;
 
   // Handle scroll for mobile bar
   useEffect(() => {
@@ -75,7 +85,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
       setShowMobileBar(scrolled);
     };
 
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -120,20 +130,63 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
     }
   };
 
+  const showPrevious = useCallback(
+    () => setSelectedImageIndex((prev) => Math.max(0, prev - 1)),
+    []
+  );
+  const showNext = useCallback(
+    () => setSelectedImageIndex((prev) => Math.min(imageCount - 1, prev + 1)),
+    [imageCount]
+  );
+
   const handleKeyboardNav = useCallback(
     (e: KeyboardEvent) => {
       if (!lightboxOpen) return;
 
-      if (e.key === "ArrowLeft" && selectedImageIndex > 0) {
-        setSelectedImageIndex((prev) => Math.max(0, prev - 1));
-      } else if (e.key === "ArrowRight" && selectedImageIndex < product.images.length - 1) {
-        setSelectedImageIndex((prev) => Math.min(product.images.length - 1, prev + 1));
+      if (e.key === "ArrowLeft") {
+        showPrevious();
+      } else if (e.key === "ArrowRight") {
+        showNext();
       } else if (e.key === "Escape") {
         setLightboxOpen(false);
+      } else if (e.key === "Tab") {
+        // Keep focus inside the dialog while it is open.
+        const root = lightboxRef.current as HTMLElement | null;
+        if (!root) return;
+        const focusable = Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        const active = document.activeElement as HTMLElement | null;
+        const inside = active ? root.contains(active) : false;
+        if (e.shiftKey && (!inside || active === first)) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && (!inside || active === last)) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     },
-    [lightboxOpen, product.images.length, selectedImageIndex]
+    [lightboxOpen, showPrevious, showNext]
   );
+
+  // Modal behaviour: move focus to Close on open, lock page scroll, and
+  // return focus to the element that opened the lightbox when it closes.
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    returnFocusRef.current = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const frame = requestAnimationFrame(() => {
+      (closeButtonRef.current as HTMLElement | null)?.focus();
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      document.body.style.overflow = previousOverflow;
+      returnFocusRef.current?.focus();
+    };
+  }, [lightboxOpen]);
 
   useEffect(() => {
     globalThis.addEventListener?.("keydown", handleKeyboardNav);
@@ -142,145 +195,157 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
 
   return (
     <>
-      <Container size="xl" padding="$md" backgroundColor="$background">
-        <Column gap="$lg" paddingVertical="$lg">
-          {/* Breadcrumb */}
-          <Row gap="$sm" alignItems="center" flexWrap="wrap">
-            <Link href="/" style={{ textDecoration: "none" }}>
-              <Text size="$3" color="$textSecondary" hoverStyle={{ color: "$primary" }}>
-                Listings
-              </Text>
-            </Link>
-            <Text size="$3" color="$textSecondary">
-              &gt;
+      <Column
+        width="100%"
+        maxWidth={SECTION_MAX_WIDTH}
+        marginHorizontal="auto"
+        paddingHorizontal="$md"
+        paddingTop="$md"
+        paddingBottom="$2xl"
+        gap="$lg"
+        $gtMd={{ paddingHorizontal: "$xl", paddingTop: "$lg", paddingBottom: "$3xl" }}
+      >
+        {/* Breadcrumb */}
+        <Row tag="nav" aria-label="Breadcrumb" gap="$xs" alignItems="center" flexWrap="wrap">
+          <Link href="/listings">
+            <Text size="$3" color="$textSecondary" hoverStyle={{ color: "$text" }}>
+              Shop all
             </Text>
-            <Link href={`/category/${product.category.slug}`} style={{ textDecoration: "none" }}>
-              <Text size="$3" color="$textSecondary" hoverStyle={{ color: "$primary" }}>
-                {product.category.name}
-              </Text>
-            </Link>
-            <Text size="$3" color="$textSecondary">
-              &gt;
+          </Link>
+          <ChevronRight size={14} color="$textSecondary" />
+          <Link href={`/category/${product.category.slug}`}>
+            <Text size="$3" color="$textSecondary" hoverStyle={{ color: "$text" }}>
+              {product.category.name}
             </Text>
-            <Text size="$3" color="$text" fontWeight="bold">
-              {product.title}
-            </Text>
-          </Row>
+          </Link>
+          <ChevronRight size={14} color="$textSecondary" />
+          <Text size="$3" color="$text" fontWeight="600" numberOfLines={1} aria-current="page">
+            {product.title}
+          </Text>
+        </Row>
 
-          {/* Main Content Grid */}
-          <Row
-            gap="$xl"
-            flexDirection="column"
-            $gtMd={{ flexDirection: "row", alignItems: "flex-start" }}
-            alignItems="stretch"
-            width="100%"
-          >
-            {/* Left Column - Image Gallery */}
-            <Column
-              gap="$lg"
-              flex={1}
-              minWidth={0}
+        {/* Gallery + information */}
+        <Row
+          gap="$xl"
+          flexDirection="column"
+          alignItems="stretch"
+          width="100%"
+          $gtMd={{ flexDirection: "row", alignItems: "flex-start", gap: "$2xl" }}
+        >
+          {/* Gallery */}
+          <Column gap="$sm" flex={1} minWidth={0} width="100%" $gtMd={{ width: "auto" }}>
+            {/* A real button so Enter / Space open the lightbox */}
+            <Card
+              tag="button"
+              {...{ type: "button" }}
+              variant="outlined"
+              interactive
+              padding={0}
+              overflow="hidden"
+              backgroundColor="$surface"
+              borderRadius="$lg"
+              position="relative"
               width="100%"
-              $gtMd={{
-                width: "auto",
-                maxWidth: "calc(100% - 420px - 32px)",
+              aspectRatio={PRODUCT_IMAGE_ASPECT_RATIO}
+              onPress={() => setLightboxOpen(true)}
+              aria-label="Open image gallery"
+              focusable
+              focusVisibleStyle={{
+                outlineColor: "$primary",
+                outlineStyle: "solid",
+                outlineWidth: 2,
+                outlineOffset: 2,
               }}
             >
-              {/* Gallery: Main Image + Thumbnails */}
-              <Column gap="$sm">
-                {/* Main Image */}
-                <Card
-                  variant="outlined"
-                  padding="$0"
-                  overflow="hidden"
-                  backgroundColor="$surface"
-                  borderRadius="$xl"
-                  cursor="pointer"
-                  onPress={() => setLightboxOpen(true)}
-                  position="relative"
-                  width="100%"
-                  aspectRatio={PRODUCT_IMAGE_ASPECT_RATIO}
+              <Image
+                source={{ uri: selectedImage.url }}
+                width="100%"
+                height="100%"
+                objectFit="contain"
+                backgroundColor="$surface"
+                alt={product.title}
+              />
+
+              {imageCount > 1 && (
+                <Row
+                  position="absolute"
+                  bottom="$md"
+                  right="$md"
+                  backgroundColor="$overlayDark50"
+                  paddingVertical="$xs"
+                  paddingHorizontal="$sm"
+                  borderRadius="$full"
+                  zIndex={10}
+                  pointerEvents="none"
                 >
-                  <Image
-                    source={{ uri: selectedImage.url }}
-                    width="100%"
-                    height="100%"
-                    objectFit="contain"
-                    backgroundColor="$surface"
-                    alt={product.title}
-                  />
+                  <Text size="$3" fontWeight="600" color="$textInverse">
+                    {selectedImageIndex + 1} / {imageCount}
+                  </Text>
+                </Row>
+              )}
+            </Card>
 
-                  {/* Image Counter */}
-                  {product.images.length > 1 && (
-                    <Row
-                      position="absolute"
-                      bottom={16}
-                      right={16}
-                      backgroundColor="$overlayDark50"
-                      paddingVertical="$xs"
-                      paddingHorizontal="$md"
-                      borderRadius="$full"
-                      zIndex={10}
+            {imageCount > 1 && (
+              <Row gap="$sm" flexWrap="wrap" aria-label="Product images">
+                {product.images.map((img, index) => {
+                  const isSelected = index === selectedImageIndex;
+                  return (
+                    <Card
+                      key={img.id}
+                      tag="button"
+                      {...{ type: "button" }}
+                      variant="outlined"
+                      interactive
+                      padding={0}
+                      aria-pressed={isSelected}
+                      aria-label={`Show image ${index + 1} of ${imageCount}`}
+                      onPress={() => setSelectedImageIndex(index)}
+                      borderColor={isSelected ? "$primary" : "$border"}
+                      borderWidth={isSelected ? 2 : 1}
+                      hoverStyle={{ borderColor: isSelected ? "$primary" : "$borderHover" }}
+                      backgroundColor="$surface"
+                      width={THUMB_SIZE}
+                      height={THUMB_SIZE}
+                      overflow="hidden"
+                      borderRadius="$md"
+                      focusable
+                      focusVisibleStyle={{
+                        outlineColor: "$primary",
+                        outlineStyle: "solid",
+                        outlineWidth: 2,
+                        outlineOffset: 2,
+                      }}
                     >
-                      <Text size="$4" fontWeight="500" color="$textInverse">
-                        {selectedImageIndex + 1} / {product.images.length}
-                      </Text>
-                    </Row>
-                  )}
-                </Card>
+                      <Image
+                        source={{ uri: img.url }}
+                        width="100%"
+                        height="100%"
+                        objectFit="cover"
+                        alt=""
+                      />
+                    </Card>
+                  );
+                })}
+              </Row>
+            )}
+          </Column>
 
-                {/* Thumbnail Gallery - Horizontal strip below main image */}
-                {product.images.length > 1 && (
-                  <Row gap="$sm" flexWrap="wrap" $gtMd={{ flexWrap: "nowrap", overflowX: "auto" }}>
-                    {product.images.map((img, index) => (
-                      <Card
-                        key={img.id}
-                        variant="outlined"
-                        padding="$0"
-                        cursor="pointer"
-                        onPress={() => setSelectedImageIndex(index)}
-                        borderColor={index === selectedImageIndex ? "$primary" : "$border"}
-                        borderWidth={index === selectedImageIndex ? 3 : 1}
-                        backgroundColor="$surface"
-                        hoverStyle={{
-                          borderColor: "$primary",
-                          transform: "scale(1.05)",
-                        }}
-                        animation="quick"
-                        width={56}
-                        height={56}
-                        $gtSm={{ width: 64, height: 64 }}
-                        overflow="hidden"
-                        borderRadius="$lg"
-                        position="relative"
-                      >
-                        <Image
-                          source={{ uri: img.url }}
-                          width="100%"
-                          height="100%"
-                          objectFit="cover"
-                          alt={`${product.title} - Image ${index + 1}`}
-                        />
-                      </Card>
-                    ))}
-                  </Row>
-                )}
-              </Column>
-            </Column>
+          {/* Information */}
+          <ProductInformation
+            product={product}
+            onBuyNow={handleBuyNow}
+            onSubmitOffer={handleSubmitOffer}
+          />
+        </Row>
+      </Column>
 
-            {/* Right Column - Product Information */}
-            <ProductInformation
-              product={product}
-              onBuyNow={handleBuyNow}
-              onSubmitOffer={handleSubmitOffer}
-            />
-          </Row>
-        </Column>
-      </Container>
-
-      {/* Lightbox Modal */}
+      {/* Lightbox */}
       {lightboxOpen && (
         <Column
+          ref={lightboxRef}
+          role="dialog"
+          aria-modal
+          aria-label="Image gallery"
           style={{ position: "fixed" } as CSSProperties}
           top={0}
           left={0}
@@ -292,94 +357,61 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
           justifyContent="center"
           padding="$lg"
         >
-          <Button
-            chromeless
-            aria-label="Close image gallery"
-            onPress={() => setLightboxOpen(false)}
+          {/* Click-away backdrop: not a control (the Close button is), so it
+              takes no focus and has no name. */}
+          <View
+            aria-hidden
             position="absolute"
             inset={0}
-            backgroundColor="transparent"
-            cursor="pointer"
-            padding={0}
+            cursor="default"
+            onPress={() => setLightboxOpen(false)}
           />
 
-          {/* Close Button */}
           <Button
-            chromeless
-            onPress={(e) => {
-              e.stopPropagation();
-              setLightboxOpen(false);
-            }}
+            ref={closeButtonRef}
+            butterVariant="secondary"
+            circular
+            size="$5"
+            aria-label="Close"
+            onPress={() => setLightboxOpen(false)}
             position="absolute"
-            top={20}
-            right={20}
-            backgroundColor="$surface"
-            borderRadius="$full"
-            width={48}
-            height={48}
-            alignItems="center"
-            justifyContent="center"
-            cursor="pointer"
+            top="$lg"
+            right="$lg"
             zIndex={10000}
-            padding={0}
           >
-            <Text size="$8" fontWeight="bold" color="$text">
-              ✕
-            </Text>
+            <X size={20} color="$text" />
           </Button>
 
-          {/* Navigation Arrows */}
           {selectedImageIndex > 0 && (
             <Button
-              chromeless
-              onPress={(e) => {
-                e.stopPropagation();
-                setSelectedImageIndex(selectedImageIndex - 1);
-              }}
+              butterVariant="secondary"
+              circular
+              size="$5"
+              aria-label="Previous image"
+              onPress={showPrevious}
               position="absolute"
-              left={20}
-              backgroundColor="$surface"
-              borderRadius="$full"
-              width={48}
-              height={48}
-              alignItems="center"
-              justifyContent="center"
-              cursor="pointer"
+              left="$lg"
               zIndex={10000}
-              padding={0}
             >
-              <Text size="$8" fontWeight="bold" color="$text">
-                ←
-              </Text>
+              <ChevronLeft size={22} color="$text" />
             </Button>
           )}
 
-          {selectedImageIndex < product.images.length - 1 && (
+          {selectedImageIndex < imageCount - 1 && (
             <Button
-              chromeless
-              onPress={(e) => {
-                e.stopPropagation();
-                setSelectedImageIndex(selectedImageIndex + 1);
-              }}
+              butterVariant="secondary"
+              circular
+              size="$5"
+              aria-label="Next image"
+              onPress={showNext}
               position="absolute"
-              right={20}
-              backgroundColor="$surface"
-              borderRadius="$full"
-              width={48}
-              height={48}
-              alignItems="center"
-              justifyContent="center"
-              cursor="pointer"
+              right="$lg"
               zIndex={10000}
-              padding={0}
             >
-              <Text size="$8" fontWeight="bold" color="$text">
-                →
-              </Text>
+              <ChevronRight size={22} color="$text" />
             </Button>
           )}
 
-          {/* Main Image */}
           <NextImage
             src={selectedImage.url}
             alt={product.title}
@@ -389,85 +421,78 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
             style={{
               maxWidth: "90%",
               maxHeight: "90%",
+              width: "auto",
+              height: "auto",
               objectFit: "contain",
               position: "relative",
               zIndex: 1,
             }}
-            onClick={(e) => e.stopPropagation()}
             priority
           />
 
-          {/* Image Counter */}
-          <Row
-            position="absolute"
-            bottom={30}
-            left="50%"
-            transform="translateX(-50%)"
-            backgroundColor="$surface"
-            paddingVertical="$sm"
-            paddingHorizontal="$lg"
-            borderRadius="$full"
-            zIndex={1}
-          >
-            <Text size="$5" fontWeight="bold" color="$text">
-              {selectedImageIndex + 1} / {product.images.length}
-            </Text>
-          </Row>
+          {imageCount > 1 && (
+            <Row
+              position="absolute"
+              bottom="$xl"
+              left="50%"
+              transform="translateX(-50%)"
+              backgroundColor="$background"
+              paddingVertical="$xs"
+              paddingHorizontal="$md"
+              borderRadius="$full"
+              zIndex={1}
+            >
+              <Text size="$4" fontWeight="600" color="$text">
+                {selectedImageIndex + 1} / {imageCount}
+              </Text>
+            </Row>
+          )}
         </Column>
       )}
 
-      {/* Mobile Sticky Bottom Bar */}
+      {/* Mobile sticky buy bar */}
       {showMobileBar && (
         <Row
+          className="mobile-sticky-bar"
           style={{ position: "fixed" } as CSSProperties}
           bottom={0}
           left={0}
           right={0}
-          backgroundColor="$surface"
-          borderTopWidth={2}
-          borderTopColor="$primary"
-          padding="$md"
+          backgroundColor="$background"
+          borderTopWidth={1}
+          borderTopColor="$border"
+          paddingHorizontal="$md"
+          paddingVertical="$sm"
           zIndex={1000}
-          shadowColor="$shadowColor"
-          shadowOffset={{ width: 0, height: -4 }}
-          shadowRadius={12}
-          shadowOpacity={0.1}
           display="none"
-          className="mobile-sticky-bar"
+          alignItems="center"
+          justifyContent="space-between"
+          gap="$md"
         >
-          <Row gap="$md" alignItems="center" justifyContent="space-between" width="100%">
-            <Column gap="$xs" flex={1}>
-              <Text size="$2" color="$textMuted" numberOfLines={1}>
-                {product.title}
-              </Text>
-              <Text size="$6" fontWeight="bold" color="$primary">
-                £{product.price.toFixed(2)}
-              </Text>
-            </Column>
-            <Button
-              butterVariant="primary"
-              size="$4"
-              onPress={handleBuyNow}
-              disabled={product.isSold}
-            >
-              {product.isSold ? "Sold" : "Buy Now"}
-            </Button>
-          </Row>
+          <Column flex={1} minWidth={0}>
+            <Text size="$3" color="$textSecondary" numberOfLines={1}>
+              {product.title}
+            </Text>
+            <Text size="$6" fontWeight="700" color="$text">
+              £{product.price.toFixed(2)}
+            </Text>
+          </Column>
+          <Button
+            butterVariant="primary"
+            size="$4.5"
+            onPress={handleBuyNow}
+            disabled={product.isSold}
+          >
+            {product.isSold ? "Sold out" : "Buy now"}
+          </Button>
         </Row>
       )}
 
-      {/* Responsive CSS */}
+      {/* Responsive CSS: the buy bar only exists below the desktop breakpoint */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
-          @media (min-width: 1024px) {
-            .product-sidebar {
-              position: sticky;
-              top: 100px;
-            }
-          }
-
-          @media (max-width: 1024px) {
+          @media (max-width: 1020px) {
             .mobile-sticky-bar {
               display: flex !important;
             }
@@ -476,7 +501,6 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
         }}
       />
 
-      {/* Buy Now Sheet */}
       <BuyNowSheet product={product} isOpen={buyNowSheetOpen} onOpenChange={setBuyNowSheetOpen} />
     </>
   );

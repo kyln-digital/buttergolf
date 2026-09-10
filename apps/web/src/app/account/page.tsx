@@ -16,7 +16,7 @@ export default async function AccountPage() {
   const { userId } = await auth();
 
   if (!userId) {
-    redirect("/sign-in?redirect=/account");
+    redirect("/sign-in?redirect_url=%2Faccount");
   }
 
   // First, get the user to get their DB id
@@ -36,7 +36,7 @@ export default async function AccountPage() {
   });
 
   if (!user) {
-    redirect("/sign-in?redirect=/account");
+    redirect("/sign-in?redirect_url=%2Faccount");
   }
 
   // Fetch counts in parallel using the user's DB id
