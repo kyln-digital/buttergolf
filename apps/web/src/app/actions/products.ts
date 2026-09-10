@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@buttergolf/db";
 import type { ProductCardData } from "@buttergolf/app";
 import { getBaseUrl } from "@/lib/base-url";
+import { resolveCoverUrl } from "@/lib/product-images";
 
 export async function getRecentProducts(limit: number = 12): Promise<ProductCardData[]> {
   try {
@@ -55,9 +56,10 @@ export async function getRecentProducts(limit: number = 12): Promise<ProductCard
     return products
       .filter((product) => product.user) // Filter out products without users
       .map((product) => {
-        let imageUrl =
-          product.images[0]?.url ||
-          "https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=400";
+        let imageUrl = resolveCoverUrl(
+          product.images,
+          "https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=400"
+        );
 
         // If the image URL is a relative path (local asset), use it for web but provide fallback for mobile
         // In production, all images should be stored in Vercel Blob with full HTTPS URLs
@@ -152,9 +154,10 @@ export async function getMyProducts(limit: number = 12): Promise<ProductCardData
     return products
       .filter((product) => product.user)
       .map((product) => {
-        let imageUrl =
-          product.images[0]?.url ||
-          "https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=400";
+        let imageUrl = resolveCoverUrl(
+          product.images,
+          "https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=400"
+        );
 
         if (imageUrl.startsWith("/")) {
           const baseUrl = getBaseUrl();

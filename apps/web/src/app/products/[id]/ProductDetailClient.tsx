@@ -44,6 +44,15 @@ export interface Product {
   images: ProductImage[];
   category: Category;
   user: User;
+  /** Driver / Fairway Wood / Hybrid — set for listings in the Woods category. */
+  woodsSubcategory: string | null;
+  flex: string | null;
+  loft: string | null;
+  headCoverIncluded: boolean | null;
+  /** Component condition ratings, 1 (Poor) to 10 (Like New). */
+  gripCondition: number | null;
+  headCondition: number | null;
+  shaftCondition: number | null;
 }
 
 interface ProductDetailClientProps {

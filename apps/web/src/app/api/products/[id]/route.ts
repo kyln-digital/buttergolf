@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
+import { resolveImageUrl } from "@/lib/product-images";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -66,7 +67,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         .catch((err) => console.error("Failed to increment views:", err));
     }
 
-    return NextResponse.json(product);
+    // `url` stays raw so the sell form can save it back untouched; `displayUrl`
+    // carries the brand treatment for the cover so clients (mobile detail
+    // screen) can render it without knowing the Cloudinary recipe.
+    return NextResponse.json({
+      ...product,
+      images: product.images.map((image, index) => ({
+        ...image,
+        displayUrl: resolveImageUrl(image, index === 0),
+      })),
+    });
   } catch (error) {
     console.error("Failed to fetch product:", error);
     return NextResponse.json({ error: "Failed to fetch product" }, { status: 500 });

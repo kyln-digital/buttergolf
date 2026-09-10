@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { isAllowedUploadType } from "@/lib/image-file";
 
 export interface UploadResult {
   url: string;
@@ -34,10 +35,10 @@ export function useImageUpload(): UseImageUploadReturn {
       throw new Error(errorMsg);
     }
 
-    // Validate file type
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
-    if (!allowedTypes.includes(file.type)) {
-      const errorMsg = "Only image files (JPEG, PNG, WebP, GIF) are allowed";
+    // Validate file type. HEIC is accepted here because mobile uploads post the
+    // original file; the web flow converts to JPEG before reaching this point.
+    if (!isAllowedUploadType(file.type)) {
+      const errorMsg = "Only image files (JPEG, PNG, WebP, GIF, HEIC) are allowed";
       setError(errorMsg);
       setUploading(false);
       throw new Error(errorMsg);

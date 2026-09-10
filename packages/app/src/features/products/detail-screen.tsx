@@ -147,7 +147,7 @@ export function ProductDetailScreen({
     );
   }
 
-  const primaryImage = product.images?.[0]?.url || "";
+  const primaryImage = product.images?.[0]?.displayUrl || product.images?.[0]?.url || "";
   const formattedCondition = product.condition?.replace("_", " ") || "Unknown";
   const sellerName =
     `${product.user.firstName || ""} ${product.user.lastName || ""}`.trim() || "Anonymous";
@@ -481,7 +481,7 @@ export function ProductDetailScreen({
                 {product.images.slice(1).map((image, index) => (
                   <Image
                     key={`${image.url}-${index}`}
-                    source={{ uri: image.url }}
+                    source={{ uri: image.displayUrl || image.url }}
                     width={100}
                     height={100}
                     objectFit="cover"

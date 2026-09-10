@@ -1,5 +1,6 @@
 import { Prisma, prisma, type ProductCondition } from "@buttergolf/db";
 import type { ProductCardData } from "@buttergolf/app";
+import { resolveCoverUrl } from "@/lib/product-images";
 
 /**
  * Shared listing-query building blocks used by /listings, /category/[slug]
@@ -106,7 +107,7 @@ export function toProductCardData(
     title: product.title,
     price: product.price,
     condition: product.condition,
-    imageUrl: product.images[0]?.url || "/placeholder-product.jpg",
+    imageUrl: resolveCoverUrl(product.images),
     category: product.category.name,
     seller: {
       id: product.user.id,

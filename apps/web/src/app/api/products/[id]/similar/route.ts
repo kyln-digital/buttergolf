@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
 import type { ProductCardData } from "@buttergolf/app";
+import { resolveCoverUrl } from "@/lib/product-images";
 
 export const dynamic = "force-dynamic";
 
@@ -84,7 +85,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       title: prod.title,
       price: prod.price,
       condition: prod.condition,
-      imageUrl: prod.images[0]?.url || "/placeholder-product.jpg",
+      imageUrl: resolveCoverUrl(prod.images),
       category: prod.category.name,
       seller: {
         id: prod.user.id,

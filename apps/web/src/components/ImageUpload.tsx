@@ -21,6 +21,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useImageUpload } from "../hooks/useImageUpload";
 import { ImageCropModal } from "./ImageCropModal";
+import { isHeicFile, normaliseImageFile } from "@/lib/image-file";
 
 export interface ImageUploadProps {
   onUploadComplete: (url: string) => void;
@@ -175,6 +176,8 @@ export function ImageUpload({
   const [dragActive, setDragActive] = useState(false);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [fileToCrop, setFileToCrop] = useState<File | null>(null);
+  const [converting, setConverting] = useState(false);
+  const [convertError, setConvertError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const sensors = useSensors(
@@ -223,8 +226,46 @@ export function ImageUpload({
     [sortableIds, currentImages, onReorderImages]
   );
 
+  /**
+   * Hands a picked file to the crop step, converting HEIC to JPEG first so the
+   * cropper (which renders the file in an <img>) can actually display it.
+   */
+  const openCropFor = useCallback(
+    async (file: File) => {
+      setConvertError(null);
+
+      if (!isHeicFile(file)) {
+        setFileToCrop(file);
+        setCropModalOpen(true);
+        return;
+      }
+
+      setConverting(true);
+      try {
+        const normalised = await normaliseImageFile(file);
+        setFileToCrop(normalised);
+        setCropModalOpen(true);
+      } catch (err) {
+        console.error("HEIC conversion failed:", err);
+        setConvertError(
+          "That iPhone photo couldn't be converted. Try exporting it as JPEG and uploading again."
+        );
+      } finally {
+        setConverting(false);
+      }
+    },
+    [setFileToCrop, setCropModalOpen]
+  );
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
+    // Reset the input straight away so picking the same file twice re-fires
+    // change, even if we bail out below.
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+
     if (!file) return;
 
     if (currentImages.length >= maxImages) {
@@ -232,12 +273,7 @@ export function ImageUpload({
       return;
     }
 
-    setFileToCrop(file);
-    setCropModalOpen(true);
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    await openCropFor(file);
   };
 
   const handleDrag = (e: React.DragEvent) => {
@@ -263,8 +299,7 @@ export function ImageUpload({
         return;
       }
 
-      setFileToCrop(file);
-      setCropModalOpen(true);
+      await openCropFor(file);
     }
   };
 
@@ -282,7 +317,9 @@ export function ImageUpload({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+          // .heic/.heif are listed by extension as well as MIME because
+          // Windows and Linux report an empty type for them.
+          accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
           onChange={handleFileChange}
           style={{ display: "none" }}
         />
@@ -314,7 +351,14 @@ export function ImageUpload({
             onDrop: handleDrop,
           }}
         >
-          {uploading ? (
+          {converting ? (
+            <Column gap="$md" alignItems="center">
+              <Spinner size="md" color="$primary" />
+              <Text size="$4" color="$textSecondary" textAlign="center">
+                Converting iPhone photo...
+              </Text>
+            </Column>
+          ) : uploading ? (
             <Column gap="$md" alignItems="center">
               <Spinner size="md" color="$primary" />
               <Text size="$4" color="$textSecondary" textAlign="center">
@@ -377,9 +421,9 @@ export function ImageUpload({
           )}
         </Column>
 
-        {error && (
+        {(error || convertError) && (
           <Text size="$3" color="$error" textAlign="center">
-            {error}
+            {error || convertError}
           </Text>
         )}
 

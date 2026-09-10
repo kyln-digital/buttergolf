@@ -1,5 +1,15 @@
 export interface ProductImage {
+  /**
+   * The raw stored image. Editors save this value back unchanged — never the
+   * display variant, or the brand treatment would be baked in permanently.
+   */
   url: string;
+  /**
+   * The URL to render. For the cover image this carries the ButterGolf brand
+   * treatment (background removed, brand pattern tiled behind); for every other
+   * image it is the same as `url`. Falls back to `url` when absent.
+   */
+  displayUrl?: string;
   alt?: string;
 }
 

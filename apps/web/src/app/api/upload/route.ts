@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getUserIdFromRequest } from "@/lib/auth";
 import { checkRateLimit, rateLimitResponse } from "@/middleware/rate-limit";
 import { cloudinary } from "@/lib/cloudinary";
+import { isAllowedUploadType } from "@/lib/image-file";
 import {
   logError,
   UPLOAD_CLOUDINARY_CONFIG_MISSING,
@@ -118,6 +119,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   // Get the file from the request
   const { searchParams } = new URL(request.url);
   const filename = searchParams.get("filename");
+  // Retained for logging only — it no longer changes how the image is stored.
   const isFirstImage = searchParams.get("isFirstImage") === "true";
 
   if (!filename) {
@@ -128,10 +130,9 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   // Validate file type (images only)
-  const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
   const contentType = request.headers.get("content-type");
 
-  if (!contentType || !allowedTypes.includes(contentType)) {
+  if (!isAllowedUploadType(contentType)) {
     return NextResponse.json(
       { error: "Invalid file type. Only images are allowed." },
       { status: 400, headers: corsHeaders }
@@ -182,33 +183,13 @@ export async function POST(request: Request): Promise<NextResponse> {
       resource_type: "image",
     };
 
-    // Apply background removal transformation ONLY to first image
-    // This transformation is applied to the ALREADY CROPPED image blob from ImageCropModal
-    if (isFirstImage) {
-      uploadOptions.transformation = [
-        {
-          effect: "background_removal",
-        },
-        {
-          // Use the ButterGolf brand tiles background pattern
-          // Uploaded from: packages/assets/images/image-backgrounds/Butter Golf_Website brand tiles_BI81_V1_AW-01.jpg
-          underlay: "backgrounds:butter-pattern-tiles",
-          flags: "tiled",
-        },
-        {
-          flags: "layer_apply",
-        },
-        {
-          // Crop the composite (foreground + tiled background) back to the
-          // original cropped input dimensions. The image is already 4:3 from
-          // ImageCropModal, so we just need to trim to iw × ih.
-          crop: "crop",
-          width: "iw",
-          height: "ih",
-          gravity: "center",
-        },
-      ];
-    }
+    // NOTE: the ButterGolf brand treatment (background removal + tiled pattern)
+    // is deliberately NOT baked in here. It used to be applied to whichever
+    // image happened to be uploaded first, which meant a seller who later
+    // reordered their photos ended up with an unbranded cover and no way to fix
+    // it. The stored asset is now always the raw cropped photo, and the
+    // treatment is applied as a delivery-time transformation to whichever image
+    // is currently the cover. See lib/product-images.ts.
 
     // Debug: Log the image dimensions being uploaded
     console.info("📐 Uploading image data:", {

@@ -41,6 +41,7 @@
     "embla-carousel-autoplay": "catalog:",
     "embla-carousel-react": "catalog:",
     "framer-motion": "catalog:",
+    "heic2any": "^0.0.4",
     "jose": "catalog:",
     "lucide-react": "catalog:",
     "next": "catalog:",

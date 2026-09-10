@@ -11,6 +11,7 @@ import { FooterSection } from "@/app/_components/marketplace/FooterSection";
 import { SimilarItemsSection } from "./_components/SimilarItemsSection";
 import { SeoJsonLd } from "@/components/seo/SeoJsonLd";
 import { getBaseUrl } from "@/lib/base-url";
+import { resolveCoverUrl, resolveProductImages } from "@/lib/product-images";
 import type { ProductCardData } from "@buttergolf/app";
 
 export const dynamic = "force-dynamic";
@@ -72,11 +73,13 @@ const getProduct = cache(async (id: string): Promise<Product | null> => {
       })
       .catch((err) => console.error("Failed to increment views:", err));
 
-    // Transform to match Product interface
+    // Transform to match Product interface. Images are ordered by sortOrder, so
+    // resolveProductImages brands the cover (index 0) and leaves the rest raw.
     return {
       ...product,
       createdAt: product.createdAt.toISOString(),
       brand: product.brand?.name || null,
+      images: resolveProductImages(product.images),
     } as Product;
   } catch (error) {
     // Rethrow so transient DB failures render the error boundary (500) instead
@@ -182,7 +185,7 @@ async function getSimilarProducts(
       title: prod.title,
       price: prod.price,
       condition: prod.condition,
-      imageUrl: prod.images[0]?.url || "/placeholder-product.jpg",
+      imageUrl: resolveCoverUrl(prod.images),
       category: prod.category.name,
       seller: {
         id: prod.user.id,

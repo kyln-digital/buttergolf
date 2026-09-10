@@ -1,19 +1,9 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
-import { prisma, ProductCondition } from "@buttergolf/db";
+import { prisma } from "@buttergolf/db";
 import { LISTING_PRICE_LIMITS, getListingPriceBoundsMessage } from "@buttergolf/constants";
 import { getUserIdFromRequest } from "@/lib/auth";
-
-// Map slider values to ProductCondition enum for backwards compatibility
-function mapSlidersToConditionEnum(grip: number, head: number, shaft: number): ProductCondition {
-  const avg = (grip + head + shaft) / 3;
-  if (avg >= 9.5) return ProductCondition.LIKE_NEW;
-  if (avg >= 8) return ProductCondition.EXCELLENT;
-  if (avg >= 6) return ProductCondition.GOOD;
-  if (avg >= 4) return ProductCondition.FAIR;
-  if (avg >= 2) return ProductCondition.POOR;
-  return ProductCondition.POOR;
-}
+import { mapSlidersToConditionEnum } from "@/lib/product-condition";
 
 export async function POST(request: Request) {
   try {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
+import { resolveCoverUrl } from "@/lib/product-images";
 import {
   logError,
   logWarning,
@@ -106,7 +107,7 @@ export async function GET(req: NextRequest) {
       description: fav.product.description,
       price: fav.product.price,
       condition: fav.product.condition,
-      imageUrl: fav.product.images[0]?.url || null,
+      imageUrl: fav.product.images.length > 0 ? resolveCoverUrl(fav.product.images) : null,
       category: fav.product.category?.name || "Uncategorized",
       seller: fav.product.user
         ? {

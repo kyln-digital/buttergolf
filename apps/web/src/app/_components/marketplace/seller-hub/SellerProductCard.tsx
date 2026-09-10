@@ -38,7 +38,6 @@ export interface SellerProduct {
 
 interface SellerProductCardProps {
   product: SellerProduct;
-  onEdit: (product: SellerProduct) => void;
   onDelete: (productId: string) => void;
   onMarkSold: (productId: string) => void;
 }
@@ -57,12 +56,7 @@ const CONDITION_LABELS: Record<string, string> = {
  *
  * Displays a seller's product with stats and management actions
  */
-export function SellerProductCard({
-  product,
-  onEdit,
-  onDelete,
-  onMarkSold,
-}: SellerProductCardProps) {
+export function SellerProductCard({ product, onDelete, onMarkSold }: SellerProductCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [showPromotionSheet, setShowPromotionSheet] = useState(false);
@@ -102,9 +96,10 @@ export function SellerProductCard({
       variant="elevated"
       padding="$0"
       overflow="hidden"
+      height="100%"
       opacity={product.isSold ? 0.7 : product.isDraft ? 0.85 : 1}
     >
-      <Column gap="$0">
+      <Column gap="$0" flex={1}>
         {/* Image with status overlay */}
         <div style={{ position: "relative", width: "100%", aspectRatio: "1" }}>
           <Image
@@ -177,7 +172,7 @@ export function SellerProductCard({
         </div>
 
         {/* Content */}
-        <Column gap="$md" padding="$md">
+        <Column gap="$md" padding="$md" flex={1}>
           {/* Title & Price */}
           <Column gap="$xs">
             <Link
@@ -205,102 +200,114 @@ export function SellerProductCard({
             </Row>
           </Column>
 
-          {/* Stats */}
-          <Row gap="$lg" alignItems="center" flexWrap="wrap">
-            <Row gap="$xs" alignItems="center">
-              <Eye size={16} color="$slateSmoke" />
-              <Text size="$3" color="$textSecondary">
-                {product.views}
-              </Text>
-            </Row>
-            <Row gap="$xs" alignItems="center">
-              <Heart size={16} color="$slateSmoke" />
-              <Text size="$3" color="$textSecondary">
-                {product.favourites}
-              </Text>
-            </Row>
-            {product.offersCount > 0 && (
+          {/* Footer — pinned to the bottom of the card so that stats, category
+              and actions line up across a row no matter how many lines the
+              title above them wraps to. */}
+          <Column gap="$md" marginTop="auto">
+            {/* Stats */}
+            <Row gap="$lg" alignItems="center" flexWrap="wrap">
               <Row gap="$xs" alignItems="center">
-                <Tag size={16} color="$slateSmoke" />
+                <Eye size={16} color="$slateSmoke" />
                 <Text size="$3" color="$textSecondary">
-                  {product.offersCount} offer
-                  {product.offersCount > 1 ? "s" : ""}
+                  {product.views}
                 </Text>
               </Row>
-            )}
-          </Row>
-
-          {/* Category & Date */}
-          <Row gap="$sm" alignItems="center" flexWrap="wrap">
-            <Badge variant="neutral" size="sm">
-              {product.categoryName}
-            </Badge>
-            <Text size="$2" color="$textSecondary">
-              Listed {new Date(product.createdAt).toLocaleDateString()}
-            </Text>
-          </Row>
-
-          {/* Actions */}
-          <Row gap="$sm" marginTop="$sm" flexWrap="wrap">
-            {/* Boost Button - Only show for active (non-draft) listings */}
-            {!product.isSold && !product.isDraft && (
-              <Button
-                butterVariant="secondary"
-                size="$4"
-                flex={1}
-                onPress={() => setShowPromotionSheet(true)}
-                disabled={isDeleting || isUpdating}
-              >
+              <Row gap="$xs" alignItems="center">
+                <Heart size={16} color="$slateSmoke" />
+                <Text size="$3" color="$textSecondary">
+                  {product.favourites}
+                </Text>
+              </Row>
+              {product.offersCount > 0 && (
                 <Row gap="$xs" alignItems="center">
-                  <Zap size={14} color="$text" />
-                  <Text color="$text" fontWeight="600">
-                    Boost
+                  <Tag size={16} color="$slateSmoke" />
+                  <Text size="$3" color="$textSecondary">
+                    {product.offersCount} offer
+                    {product.offersCount > 1 ? "s" : ""}
                   </Text>
                 </Row>
-              </Button>
-            )}
-            {product.isDraft ? (
-              <Link
-                href={`/sell?draftId=${product.id}`}
-                style={{ flex: 1, textDecoration: "none" }}
-              >
-                <Button butterVariant="primary" size="$4" width="100%" disabled={isDeleting}>
-                  <Row gap="$xs" alignItems="center">
-                    <Edit3 size={14} color="$textInverse" />
-                    <Text color="$textInverse" fontWeight="600">
-                      Continue Editing
-                    </Text>
-                  </Row>
-                </Button>
-              </Link>
-            ) : (
-              <>
+              )}
+            </Row>
+
+            {/* Category & Date */}
+            <Row gap="$sm" alignItems="center" flexWrap="wrap">
+              <Badge variant="neutral" size="sm">
+                {product.categoryName}
+              </Badge>
+              <Text size="$2" color="$textSecondary">
+                Listed {new Date(product.createdAt).toLocaleDateString()}
+              </Text>
+            </Row>
+
+            {/* Actions */}
+            <Row gap="$sm" marginTop="$sm" flexWrap="wrap">
+              {/* Boost Button - Only show for active (non-draft) listings */}
+              {!product.isSold && !product.isDraft && (
                 <Button
                   butterVariant="secondary"
                   size="$4"
                   flex={1}
-                  onPress={() => onEdit(product)}
+                  onPress={() => setShowPromotionSheet(true)}
                   disabled={isDeleting || isUpdating}
                 >
                   <Row gap="$xs" alignItems="center">
-                    <Edit3 size={14} color="$text" />
+                    <Zap size={14} color="$text" />
                     <Text color="$text" fontWeight="600">
-                      Edit
+                      Boost
                     </Text>
                   </Row>
                 </Button>
-                <Button
-                  butterVariant={product.isSold ? "secondary" : "primary"}
-                  size="$4"
-                  flex={1}
-                  onPress={handleMarkSold}
-                  disabled={isDeleting || isUpdating}
+              )}
+              {product.isDraft ? (
+                <Link
+                  href={`/sell?draftId=${product.id}`}
+                  style={{ flex: 1, textDecoration: "none" }}
                 >
-                  {isUpdating ? "..." : product.isSold ? "Relist" : "Mark Sold"}
-                </Button>
-              </>
-            )}
-          </Row>
+                  <Button butterVariant="primary" size="$4" width="100%" disabled={isDeleting}>
+                    <Row gap="$xs" alignItems="center">
+                      <Edit3 size={14} color="$textInverse" />
+                      <Text color="$textInverse" fontWeight="600">
+                        Continue Editing
+                      </Text>
+                    </Row>
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  {/* Editing opens the full sell form rather than a modal, so
+                      the seller gets the same layout (and brand background) as
+                      when they created the listing. */}
+                  <Link
+                    href={`/sell/${product.id}/edit`}
+                    style={{ flex: 1, textDecoration: "none" }}
+                  >
+                    <Button
+                      butterVariant="secondary"
+                      size="$4"
+                      width="100%"
+                      disabled={isDeleting || isUpdating}
+                    >
+                      <Row gap="$xs" alignItems="center">
+                        <Edit3 size={14} color="$text" />
+                        <Text color="$text" fontWeight="600">
+                          Edit
+                        </Text>
+                      </Row>
+                    </Button>
+                  </Link>
+                  <Button
+                    butterVariant={product.isSold ? "secondary" : "primary"}
+                    size="$4"
+                    flex={1}
+                    onPress={handleMarkSold}
+                    disabled={isDeleting || isUpdating}
+                  >
+                    {isUpdating ? "..." : product.isSold ? "Relist" : "Mark Sold"}
+                  </Button>
+                </>
+              )}
+            </Row>
+          </Column>
         </Column>
       </Column>
 

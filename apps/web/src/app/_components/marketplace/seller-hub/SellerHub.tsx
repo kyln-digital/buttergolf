@@ -8,7 +8,6 @@ import { useTheme } from "tamagui";
 import { Plus, Package, Eye, Heart, Tag } from "@tamagui/lucide-icons";
 import Link from "next/link";
 import { SellerProductCard, type SellerProduct } from "./SellerProductCard";
-import { EditProductModal, type ProductSavePayload } from "./EditProductModal";
 
 interface SellerHubStats {
   totalListings: number;
@@ -74,15 +73,26 @@ export function SellerHub() {
   );
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Edit modal state
-  const [editingProduct, setEditingProduct] = useState<SellerProduct | null>(null);
-
   // Redirect to sign-in if not authenticated
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
       router.push("/sign-in?redirect_url=%2Fseller%2Flistings");
     }
   }, [isLoaded, isSignedIn, router]);
+
+  // Show clear confirmation when returning from a successful listing edit.
+  useEffect(() => {
+    if (searchParams.get("updated") !== "1") {
+      return;
+    }
+
+    setSuccessMessage("Your changes have been saved.");
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete("updated");
+    const nextQuery = nextParams.toString();
+    router.replace(nextQuery ? `/seller/listings?${nextQuery}` : "/seller/listings");
+  }, [searchParams, router]);
 
   // Show clear confirmation when returning from successful listing publish.
   useEffect(() => {
@@ -194,22 +204,6 @@ export function SellerHub() {
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to update product");
     }
-  };
-
-  const handleSaveEdit = async (productId: string, updates: ProductSavePayload) => {
-    const response = await fetch(`/api/seller/products/${productId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updates),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Failed to update product");
-    }
-
-    // Refresh listings
-    await fetchListings(currentPage);
   };
 
   // Don't render anything while checking auth
@@ -492,7 +486,6 @@ export function SellerHub() {
                 <SellerProductCard
                   key={product.id}
                   product={product}
-                  onEdit={setEditingProduct}
                   onDelete={handleDelete}
                   onMarkSold={handleMarkSold}
                 />
@@ -544,15 +537,6 @@ export function SellerHub() {
           </Column>
         )}
       </Column>
-
-      {/* Edit Modal */}
-      {editingProduct && (
-        <EditProductModal
-          product={editingProduct}
-          onClose={() => setEditingProduct(null)}
-          onSave={handleSaveEdit}
-        />
-      )}
     </Column>
   );
 }
