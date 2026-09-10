@@ -84,6 +84,16 @@ function mapShipEngineStatus(statusCode: string): ShipmentStatus {
   }
 }
 
+/**
+ * The email senders return { success, error } rather than throwing, so a
+ * provider rejection never reaches a try/catch. Logging success
+ * unconditionally reported delivery for emails that had bounced.
+ */
+function logEmail(kind: string, result: { success: boolean; error?: string }): void {
+  if (result.success) console.info(`Sent ${kind} email`);
+  else console.error(`Failed to send ${kind} email:`, result.error);
+}
+
 // Map shipment status to order status
 function mapToOrderStatus(shipmentStatus: ShipmentStatus): OrderStatus {
   switch (shipmentStatus) {
@@ -243,7 +253,7 @@ export async function POST(req: Request) {
 
           // PRE_TRANSIT: Label generated (only if this is first time)
           if (shipmentStatus === "PRE_TRANSIT" && !order.labelGeneratedAt) {
-            await sendLabelGeneratedEmail({
+            const sent = await sendLabelGeneratedEmail({
               buyerEmail: buyer.email,
               buyerName,
               orderId: order.id,
@@ -251,7 +261,7 @@ export async function POST(req: Request) {
               estimatedDelivery: trackingData.estimated_delivery_date,
               carrier: order.carrier,
             });
-            console.info("Sent label generated email to buyer");
+            logEmail("label generated", sent);
           }
 
           // IN_TRANSIT: Package picked up and moving
@@ -261,7 +271,7 @@ export async function POST(req: Request) {
               ? `${latestEvent.city_locality}, ${latestEvent.state_province}`
               : undefined;
 
-            await sendInTransitEmail({
+            const sent = await sendInTransitEmail({
               buyerEmail: buyer.email,
               buyerName,
               orderId: order.id,
@@ -272,12 +282,12 @@ export async function POST(req: Request) {
               currentLocation,
               estimatedDelivery: trackingData.estimated_delivery_date,
             });
-            console.info("Sent in transit email to buyer");
+            logEmail("in transit", sent);
           }
 
           // OUT_FOR_DELIVERY: Package out for delivery today
           else if (shipmentStatus === "OUT_FOR_DELIVERY") {
-            await sendOutForDeliveryEmail({
+            const sent = await sendOutForDeliveryEmail({
               buyerEmail: buyer.email,
               buyerName,
               orderId: order.id,
@@ -285,20 +295,22 @@ export async function POST(req: Request) {
               trackingCode: order.trackingCode,
               trackingUrl: order.trackingUrl,
             });
-            console.info("Sent out for delivery email to buyer");
+            logEmail("out for delivery", sent);
           }
 
           // DELIVERED: Package delivered (send to both buyer and seller)
           else if (shipmentStatus === "DELIVERED") {
             // Send to buyer
-            await sendDeliveredEmail({
-              email: buyer.email,
-              name: buyerName,
-              orderId: order.id,
-              productTitle: product.title,
-              isBuyer: true,
-            });
-            console.info("Sent delivered email to buyer");
+            logEmail(
+              "delivered (buyer)",
+              await sendDeliveredEmail({
+                email: buyer.email,
+                name: buyerName,
+                orderId: order.id,
+                productTitle: product.title,
+                isBuyer: true,
+              })
+            );
 
             // Send to seller
             const seller = await prisma.user.findUnique({
@@ -307,14 +319,16 @@ export async function POST(req: Request) {
             if (seller) {
               const sellerName =
                 `${seller.firstName || ""} ${seller.lastName || ""}`.trim() || seller.email;
-              await sendDeliveredEmail({
-                email: seller.email,
-                name: sellerName,
-                orderId: order.id,
-                productTitle: product.title,
-                isBuyer: false,
-              });
-              console.info("Sent delivered email to seller");
+              logEmail(
+                "delivered (seller)",
+                await sendDeliveredEmail({
+                  email: seller.email,
+                  name: sellerName,
+                  orderId: order.id,
+                  productTitle: product.title,
+                  isBuyer: false,
+                })
+              );
             }
           }
         }

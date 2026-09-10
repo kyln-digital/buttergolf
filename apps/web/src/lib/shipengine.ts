@@ -862,7 +862,10 @@ export async function generateShippingLabel(params: {
 
     if (buyer && product) {
       const buyerName = `${buyer.firstName || ""} ${buyer.lastName || ""}`.trim() || buyer.email;
-      await sendLabelGeneratedEmail({
+      // These senders return { success, error } rather than throwing, so the
+      // surrounding catch never fires on a provider rejection — logging
+      // success unconditionally reported delivery for emails that bounced.
+      const emailResult = await sendLabelGeneratedEmail({
         buyerEmail: buyer.email,
         buyerName,
         orderId: order.id,
@@ -870,7 +873,11 @@ export async function generateShippingLabel(params: {
         estimatedDelivery: selectedRate.estimated_delivery_date,
         carrier: selectedRate.carrier_friendly_name,
       });
-      console.info("Sent label generated email to buyer");
+      if (emailResult.success) {
+        console.info("Sent label generated email to buyer");
+      } else {
+        console.error("Failed to send label generated email:", emailResult.error);
+      }
     }
   } catch (emailError) {
     // Don't fail label generation if email fails
