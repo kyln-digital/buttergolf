@@ -199,7 +199,7 @@ export function AccountHubClient({
             </Column>
 
             {/* Edit indicator */}
-            <Edit3 size={20} color="$textMuted" />
+            <Edit3 size={20} color="$textSecondary" />
           </Row>
         </Button>
 
@@ -373,7 +373,7 @@ export function AccountHubClient({
         </Column>
 
         {/* Version info */}
-        <Text size="$2" color="$textMuted" textAlign="center" marginTop="$4">
+        <Text size="$2" color="$textSecondary" textAlign="center" marginTop="$4">
           ButterGolf v1.0.0
         </Text>
       </Column>

@@ -82,11 +82,11 @@ export function SellerDashboardNav() {
       height="100%"
     >
       <Text
-        size="$3"
+        size="$2"
         color="$textSecondary"
         fontWeight="600"
-        paddingHorizontal="$sm"
-        paddingVertical="$md"
+        paddingHorizontal="$md"
+        paddingVertical="$sm"
       >
         SELLER DASHBOARD
       </Text>
@@ -101,20 +101,16 @@ export function SellerDashboardNav() {
             <Row
               gap="$sm"
               paddingHorizontal="$md"
-              paddingVertical="$sm"
-              borderRadius="$md"
+              minHeight={40}
+              borderRadius="$full"
               alignItems="center"
-              backgroundColor={isActive ? "$primaryLight" : "transparent"}
+              backgroundColor={isActive ? "$buttonSecondaryBg" : "transparent"}
               hoverStyle={{
-                backgroundColor: isActive ? "$primaryLight" : "$cloudMist",
+                backgroundColor: isActive ? "$buttonSecondaryBgHover" : "$buttonGhostBgHover",
               }}
             >
-              <Text color={isActive ? "$primary" : "$textSecondary"}>{item.icon}</Text>
-              <Text
-                size="$4"
-                color={isActive ? "$primary" : "$text"}
-                fontWeight={isActive ? "600" : "400"}
-              >
+              <Text color={isActive ? "$text" : "$textSecondary"}>{item.icon}</Text>
+              <Text size="$5" color="$text" fontWeight={isActive ? "600" : "500"}>
                 {item.label}
               </Text>
             </Row>

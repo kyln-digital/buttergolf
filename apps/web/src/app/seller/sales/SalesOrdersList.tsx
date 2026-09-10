@@ -428,10 +428,10 @@ function OrderCard({ order }: { order: Order }) {
             <>
               {needsAddressUpdate ? (
                 <Link href="/account/addresses" style={{ width: "100%" }}>
-                  <Button size="$4" backgroundColor="$warning" color="$textInverse" width="100%">
+                  <Button butterVariant="primary" size="$4" width="100%">
                     <AlertCircle size={16} />
                     <Text color="$textInverse" marginLeft="$xs">
-                      Update Address
+                      Update address
                     </Text>
                   </Button>
                 </Link>
@@ -495,10 +495,10 @@ function OrderCard({ order }: { order: Order }) {
                 rel="noopener noreferrer"
                 style={{ width: "100%" }}
               >
-                <Button size="$4" backgroundColor="$success" color="$textInverse" width="100%">
+                <Button butterVariant="primary" size="$4" width="100%">
                   <Download size={16} />
                   <Text color="$textInverse" marginLeft="$xs">
-                    Download PDF Label
+                    Download PDF label
                   </Text>
                 </Button>
               </a>
@@ -510,15 +510,9 @@ function OrderCard({ order }: { order: Order }) {
                   rel="noopener noreferrer"
                   style={{ width: "100%" }}
                 >
-                  <Button
-                    size="$4"
-                    borderWidth={1}
-                    borderColor="$border"
-                    backgroundColor="transparent"
-                    width="100%"
-                  >
+                  <Button butterVariant="secondary" size="$4" width="100%">
                     <Download size={16} />
-                    <Text marginLeft="$xs">ZPL (Thermal Printer)</Text>
+                    <Text marginLeft="$xs">ZPL (thermal printer)</Text>
                   </Button>
                 </a>
               )}
@@ -527,10 +521,8 @@ function OrderCard({ order }: { order: Order }) {
 
           {labelUrl && shipmentStatus === "PRE_TRANSIT" && (
             <Button
+              butterVariant="secondary"
               size="$4"
-              borderWidth={1}
-              borderColor="$border"
-              backgroundColor="transparent"
               width="100%"
               onPress={handleMarkShipped}
               disabled={markingShipped}
@@ -553,13 +545,7 @@ function OrderCard({ order }: { order: Order }) {
               rel="noopener noreferrer"
               style={{ width: "100%" }}
             >
-              <Button
-                size="$4"
-                borderWidth={1}
-                borderColor="$border"
-                backgroundColor="transparent"
-                width="100%"
-              >
+              <Button butterVariant="secondary" size="$4" width="100%">
                 <ExternalLink size={16} />
                 <Text marginLeft="$xs">Track: {trackingCode?.slice(0, 10)}...</Text>
               </Button>
@@ -567,7 +553,7 @@ function OrderCard({ order }: { order: Order }) {
           )}
 
           <Link href={`/orders/${order.id}`} style={{ width: "100%", textDecoration: "none" }}>
-            <Button size="$3" chromeless width="100%">
+            <Button butterVariant="ghost" size="$3" width="100%">
               View Details →
             </Button>
           </Link>

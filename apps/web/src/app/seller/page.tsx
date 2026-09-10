@@ -91,7 +91,9 @@ export default function SellerDashboardPage() {
       {/* Header */}
       <Row alignItems="center" justifyContent="space-between" fullWidth>
         <Column gap="$xs">
-          <Heading level={1}>Seller Dashboard</Heading>
+          <Heading level={1} size="$8">
+            Seller dashboard
+          </Heading>
           <Text color="$textSecondary">Manage your listings, payments, and payouts</Text>
         </Column>
         <Link href="/sell">
@@ -129,7 +131,9 @@ export default function SellerDashboardPage() {
 
       {/* Quick Actions */}
       <Column gap="$md">
-        <Heading level={3}>Quick Actions</Heading>
+        <Heading level={2} size="$5">
+          Quick actions
+        </Heading>
         <Row gap="$md" flexWrap="wrap">
           <QuickActionCard
             title="View Payments"
@@ -153,9 +157,11 @@ export default function SellerDashboardPage() {
       </Column>
 
       {/* Performance Summary */}
-      <Card variant="elevated" padding="$lg">
+      <Card variant="outlined" padding="$lg" borderRadius="$lg">
         <Column gap="$md">
-          <Heading level={3}>Performance Summary</Heading>
+          <Heading level={2} size="$5">
+            Performance summary
+          </Heading>
           <Row gap="$xl" flexWrap="wrap">
             <Column gap="$xs">
               <Text size="$3" color="$textSecondary">
@@ -200,11 +206,11 @@ interface StatCardProps {
 function StatCard({ title, value, icon, href }: StatCardProps) {
   const content = (
     <Card
-      variant="elevated"
+      variant="outlined"
       padding="$lg"
       flex={1}
       minWidth={200}
-      hoverStyle={href ? { backgroundColor: "$cloudMist" } : undefined}
+      hoverStyle={href ? { backgroundColor: "$backgroundHover" } : undefined}
     >
       <Row alignItems="center" justifyContent="space-between">
         <Column gap="$xs">
@@ -244,7 +250,7 @@ function QuickActionCard({ title, description, href, icon }: QuickActionCardProp
       <Card
         variant="outlined"
         padding="$md"
-        hoverStyle={{ backgroundColor: "$cloudMist", borderColor: "$primary" }}
+        hoverStyle={{ backgroundColor: "$backgroundHover", borderColor: "$borderHover" }}
       >
         <Row gap="$md" alignItems="center">
           <Text color="$primary">{icon}</Text>

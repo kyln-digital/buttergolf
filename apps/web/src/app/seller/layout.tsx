@@ -19,15 +19,15 @@ function SetupCallout() {
   return (
     <Card variant="outlined" padding="$md">
       <Column gap="$sm" alignItems="center">
-        <Heading level={4} textAlign="center">
-          Start Selling on ButterGolf
+        <Heading level={2} size="$6" textAlign="center">
+          Start selling on ButterGolf
         </Heading>
         <Text color="$textSecondary" textAlign="center">
           Finish setting up your account to unlock payments, payouts, and more.
         </Text>
         <Link href="/account" style={{ textDecoration: "none" }}>
           <Button butterVariant="primary" size="$4">
-            Get Started
+            Get started
           </Button>
         </Link>
       </Column>
@@ -67,17 +67,17 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
   if (error && isStripeEmbeddedRoute) {
     return (
       <Column fullWidth minHeight="60vh" alignItems="center" justifyContent="center" padding="$xl">
-        <Card variant="elevated" padding="$xl" maxWidth={500}>
+        <Card variant="outlined" padding="$xl" maxWidth={500} borderRadius="$lg">
           <Column gap="$lg" alignItems="center">
-            <Heading level={3} color="$error">
-              Unable to Load Dashboard
+            <Heading level={2} size="$6" color="$text">
+              Unable to load dashboard
             </Heading>
             <Text color="$textSecondary" textAlign="center">
               {error}
             </Text>
             <Link href="/account" style={{ textDecoration: "none" }}>
               <Button butterVariant="primary" size="$4">
-                Go to Account Settings
+                Go to account settings
               </Button>
             </Link>
           </Column>
@@ -90,17 +90,17 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
   if (!hasAccount && isStripeEmbeddedRoute) {
     return (
       <Column fullWidth minHeight="60vh" alignItems="center" justifyContent="center" padding="$xl">
-        <Card variant="elevated" padding="$xl" maxWidth={500}>
+        <Card variant="outlined" padding="$xl" maxWidth={500} borderRadius="$lg">
           <Column gap="$lg" alignItems="center">
-            <Heading level={2} textAlign="center">
-              Start Selling on ButterGolf
+            <Heading level={2} size="$6" textAlign="center">
+              Start selling on ButterGolf
             </Heading>
             <Text color="$textSecondary" textAlign="center">
               Set up your seller account to access your dashboard and start listing golf equipment.
             </Text>
             <Link href="/account" style={{ textDecoration: "none" }}>
               <Button butterVariant="primary" size="$5">
-                Get Started
+                Get started
               </Button>
             </Link>
           </Column>
@@ -116,7 +116,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
         <Text color="$textSecondary">Unable to initialize seller dashboard. Please try again.</Text>
         <Link href="/account" style={{ textDecoration: "none" }}>
           <Button butterVariant="primary" size="$4">
-            Go to Account Settings
+            Go to account settings
           </Button>
         </Link>
       </Column>
