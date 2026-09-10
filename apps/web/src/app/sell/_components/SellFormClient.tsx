@@ -33,6 +33,7 @@ import {
   hasLoadFailed,
   canApplyWrite,
   canApplyLoad,
+  type SellRecordEvent,
 } from "../_lib/sell-record-state";
 import { createSaveQueue, type SaveQueue } from "../_lib/save-queue";
 
@@ -281,12 +282,25 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   const [record, dispatchRecord] = useReducer(sellRecordReducer, undefined, () =>
     initialSellRecordState(loadProductId ?? null, uuidv4())
   );
-  // Read during async work so the *current* generation is compared, not the one
-  // captured when a closure was created.
+  // A synchronous mirror of the same reducer, for code that can't wait for a
+  // render. Serialising writes is not enough on its own: `dispatchRecord`
+  // schedules the reducer, so a publish queued behind an autosave that just
+  // created a row would still read `rowId === null` and POST a *second*
+  // product, leaving an orphaned draft beside the live listing. Every event
+  // goes through applyRecordEvent, so the ref and the state stay derived from
+  // one rule and cannot diverge.
   const recordRef = useRef(record);
-  recordRef.current = record;
 
-  const isRecordReadyToSave = canSave(record);
+  const applyRecordEvent = useCallback((event: SellRecordEvent) => {
+    recordRef.current = sellRecordReducer(recordRef.current, event);
+    dispatchRecord(event);
+  }, []);
+
+  // Readiness also compares the route: `loadProductId` changes during render
+  // while the route-change effect is passive and runs later, so checking the
+  // record alone leaves a window where the previous listing still looks
+  // saveable under the new URL.
+  const isRecordReadyToSave = canSave(record) && record.routeId === (loadProductId ?? null);
   const isLoadingRecord = isHydrating(record);
   const recordLoadFailed = hasLoadFailed(record);
 
@@ -382,7 +396,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
           const product = await response.json();
           // Stamped with the generation this write started in; the reducer
           // discards it if the form has since moved to another record.
-          dispatchRecord({ type: "row-created", generation, rowId: product.id });
+          applyRecordEvent({ type: "row-created", generation, rowId: product.id });
           return "saved";
         }
         return "error";
@@ -390,7 +404,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
         return "error";
       }
     },
-    [isEditingListing]
+    [isEditingListing, applyRecordEvent]
   );
 
   const handleAutoSave = useCallback(
@@ -429,7 +443,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       return;
     }
 
-    dispatchRecord({
+    applyRecordEvent({
       type: "route-changed",
       routeId: loadProductId ?? null,
       createRequestId: uuidv4(),
@@ -447,7 +461,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       // autosave would create a fresh draft duplicating it.
       setFormData(EMPTY_FORM_DATA);
     }
-  }, [loadProductId, setFormData]);
+  }, [loadProductId, setFormData, applyRecordEvent]);
 
   // --- Loading the routed record ---
   // Driven by the state machine rather than by the route directly: it runs
@@ -465,7 +479,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       try {
         const response = await fetch(`/api/products/${recordRouteId}`);
         if (!response.ok) {
-          dispatchRecord({ type: "load-failed", generation: recordGeneration });
+          applyRecordEvent({ type: "load-failed", generation: recordGeneration });
           return;
         }
 
@@ -505,19 +519,19 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
         applied = true;
         setFormData(loaded);
-        dispatchRecord({ type: "load-succeeded", generation: recordGeneration });
+        applyRecordEvent({ type: "load-succeeded", generation: recordGeneration });
       } catch {
         // Surface the failure rather than leaving a spinner up forever. Saving
         // stays blocked either way, so a failed fetch can never overwrite the
         // record with a blank form.
         if (!applied) {
-          dispatchRecord({ type: "load-failed", generation: recordGeneration });
+          applyRecordEvent({ type: "load-failed", generation: recordGeneration });
         }
       }
     };
 
     void loadRecord();
-  }, [recordPhase, recordRouteId, recordGeneration, setFormData]);
+  }, [recordPhase, recordRouteId, recordGeneration, setFormData, applyRecordEvent]);
 
   // Helper function to singularize category names
   const singularize = (word: string): string => {

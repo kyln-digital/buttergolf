@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { createSaveQueue } from "../apps/web/src/app/sell/_lib/save-queue";
+import {
+  initialSellRecordState,
+  sellRecordReducer,
+  saveTarget,
+} from "../apps/web/src/app/sell/_lib/sell-record-state";
 
 /** A promise whose resolution the test controls. */
 function deferred<T>() {
@@ -66,6 +71,38 @@ describe("createSaveQueue", () => {
     ]);
 
     expect(results).toEqual([1, 2, 3]);
+  });
+
+  it("hands a row created by one write to the next one in the queue", async () => {
+    // Serialising the writes is not enough on its own: if the created row id is
+    // published through React state, the next task still sees rowId === null
+    // and POSTs a *second* product, leaving an orphaned draft beside the live
+    // listing. The component mirrors the reducer into a ref for exactly this,
+    // so the hand-off is synchronous — modelled here with the real primitives.
+    const queue = createSaveQueue();
+    let state = initialSellRecordState(null, "req-1");
+
+    const applyRecordEvent = (event: Parameters<typeof sellRecordReducer>[1]) => {
+      state = sellRecordReducer(state, event);
+    };
+
+    const targetsSeen: (string | null)[] = [];
+
+    // An autosave that creates the row…
+    const create = queue.enqueue(async () => {
+      targetsSeen.push(saveTarget(state));
+      await Promise.resolve();
+      applyRecordEvent({ type: "row-created", generation: state.generation, rowId: "draft-1" });
+    });
+
+    // …and a publish queued behind it, which must update that row, not make one.
+    const publish = queue.enqueue(async () => {
+      targetsSeen.push(saveTarget(state));
+    });
+
+    await Promise.all([create, publish]);
+
+    expect(targetsSeen).toEqual([null, "draft-1"]);
   });
 
   it("drains once every enqueued task has settled", async () => {
