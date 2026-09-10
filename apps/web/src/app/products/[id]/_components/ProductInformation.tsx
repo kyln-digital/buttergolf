@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Column, Row, Text, Button, Heading, Popover, Input } from "@buttergolf/ui";
 import { Heart, Info } from "@tamagui/lucide-icons";
+import { getConditionLabel, calculateAverageCondition } from "@buttergolf/app";
 import type { Product } from "../ProductDetailClient";
 
 interface ProductInformationProps {
@@ -14,19 +15,14 @@ interface ProductInformationProps {
 /** Sellers grade each component from 1 (Poor) to 10 (Like New). */
 const MAX_CONDITION_RATING = 10;
 
-/** Maps a 1–10 component rating to the wording used across the listing flow. */
-function getConditionLabel(rating: number): string {
-  if (rating >= 9) return "Like New";
-  if (rating >= 7) return "Excellent";
-  if (rating >= 5) return "Good";
-  if (rating >= 3) return "Fair";
-  return "Poor";
-}
-
-/** Theme token for a component rating's progress bar. */
+/**
+ * Theme token for a component rating's progress bar, keyed off the same
+ * boundaries as the shared `CONDITION_LABELS` scale so the colour can't say
+ * "excellent" while the label next to it says "good".
+ */
 function getConditionColor(rating: number) {
-  if (rating >= 9) return "$success" as const;
-  if (rating >= 7) return "$secondary" as const;
+  if (rating >= 10) return "$success" as const;
+  if (rating >= 8) return "$secondary" as const;
   if (rating >= 5) return "$warning" as const;
   return "$error" as const;
 }
@@ -105,7 +101,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
     : [];
 
   const averageCondition = hasConditionRatings
-    ? Math.round((gripCondition + headCondition + shaftCondition) / 3)
+    ? calculateAverageCondition(gripCondition, headCondition, shaftCondition)
     : null;
 
   return (

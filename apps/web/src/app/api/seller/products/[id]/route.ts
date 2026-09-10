@@ -5,6 +5,12 @@ import { getUserIdFromRequest } from "@/lib/auth";
 import { cloudinary, extractPublicId, isValidCloudinaryUrl } from "@/lib/cloudinary";
 import { mapSlidersToConditionEnum } from "@/lib/product-condition";
 
+const SLIDER_LABELS = {
+  gripCondition: "Grip",
+  headCondition: "Head",
+  shaftCondition: "Shaft",
+} as const;
+
 /**
  * PATCH /api/seller/products/[id]
  *
@@ -93,6 +99,21 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }
     }
 
+    // Validate the component sliders before anything derives from them.
+    // Matches the range POST enforces; without it `gripCondition: 99` (or a
+    // string) would persist and skew the derived condition.
+    for (const field of ["gripCondition", "headCondition", "shaftCondition"] as const) {
+      if (updateData[field] === undefined) continue;
+
+      const value = updateData[field];
+      if (typeof value !== "number" || !Number.isFinite(value) || value < 1 || value > 10) {
+        return NextResponse.json(
+          { error: `${SLIDER_LABELS[field]} condition must be a number between 1 and 10` },
+          { status: 400 }
+        );
+      }
+    }
+
     // Keep the legacy `condition` enum in step with the component sliders. The
     // sell form only sends sliders, so without this an edited listing would
     // keep whatever condition it was first created with.
@@ -145,10 +166,26 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         return NextResponse.json({ error: "At least one image is required" }, { status: 400 });
       }
 
-      const categoryId =
-        (updateData.categoryId as string | undefined) ?? existingProduct.categoryId;
-      if (!categoryId) {
-        return NextResponse.json({ error: "A category is required" }, { status: 400 });
+      // Drafts are saved from any partial state, so publishing has to enforce
+      // the same minimums POST does — against the effective row (this request
+      // merged over what's already stored), not just the fields being sent.
+      const effective = { ...existingProduct, ...updateData };
+
+      const missing = (["title", "description", "categoryId"] as const).filter(
+        (field) => typeof effective[field] !== "string" || effective[field].trim().length === 0
+      );
+
+      if (missing.length > 0) {
+        return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      }
+
+      const effectivePrice = Number(effective.price);
+      if (
+        !Number.isFinite(effectivePrice) ||
+        effectivePrice < LISTING_PRICE_LIMITS.MIN ||
+        effectivePrice > LISTING_PRICE_LIMITS.MAX
+      ) {
+        return NextResponse.json({ error: getListingPriceBoundsMessage() }, { status: 400 });
       }
     }
 
@@ -157,6 +194,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     // because they require multi-step logic (delete, create, reorder) rather
     // than a direct Prisma data assignment.
     const MAX_IMAGE_IDS = 20; // safety cap
+
+    // Collected inside the transaction, acted on only after it commits — see below.
+    const urlsToCleanup: string[] = [];
 
     const updatedProduct = await prisma.$transaction(async (tx) => {
       if (body.images || body.removedImageIds) {
@@ -173,8 +213,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
               .slice(0, MAX_IMAGE_IDS)
               .filter((id: unknown) => typeof id === "string" && existingIdSet.has(id as string))
           : [];
-
-        const urlsToCleanup: string[] = [];
 
         if (removedIds.length > 0) {
           const toDelete = existingImages.filter((img) => removedIds.includes(img.id));
@@ -226,17 +264,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
             });
           }
         }
-
-        // Best-effort Cloudinary cleanup after DB ops succeed (fire-and-forget)
-        for (const cdnUrl of urlsToCleanup) {
-          const publicId = extractPublicId(cdnUrl);
-          if (publicId) {
-            cloudinary.uploader.destroy(publicId).catch((err) => {
-              // Orphaned CDN asset - log for later reconciliation, don't fail the request.
-              console.error("Failed to delete Cloudinary asset:", { publicId, err });
-            });
-          }
-        }
       }
 
       return tx.product.update({
@@ -249,6 +276,19 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         },
       });
     });
+
+    // Cloudinary cleanup runs only once the transaction has committed. Doing it
+    // inside would destroy assets that a later rollback leaves the DB still
+    // pointing at, turning a failed edit into permanently broken images.
+    // Best-effort: an orphaned asset is logged, never fails the request.
+    for (const cdnUrl of urlsToCleanup) {
+      const publicId = extractPublicId(cdnUrl);
+      if (publicId) {
+        cloudinary.uploader.destroy(publicId).catch((err) => {
+          console.error("Failed to delete Cloudinary asset:", { publicId, err });
+        });
+      }
+    }
 
     return NextResponse.json(updatedProduct);
   } catch (error) {

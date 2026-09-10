@@ -257,9 +257,19 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   // moment an autosave assigns it — a state update would not be visible to the
   // closure that is already running.
   const savedDraftIdRef = useRef<string | null>(loadProductId ?? null);
-  // The autosave request currently in flight, if any. Submit awaits it so the
-  // two writes can't land out of order.
-  const inFlightSaveRef = useRef<Promise<AutoSaveResult> | null>(null);
+  // Every autosave still in flight. A set rather than a single promise because
+  // useAutoSave can start a second save while the first is still pending —
+  // tracking only the newest would let an older PATCH land after the submit,
+  // carrying `isDraft: true` and a stale image list.
+  const inFlightSavesRef = useRef<Set<Promise<AutoSaveResult>>>(new Set());
+
+  /** Waits for every outstanding autosave so this write lands last. */
+  const settleInFlightSaves = useCallback(async () => {
+    while (inFlightSavesRef.current.size > 0) {
+      // Re-read after each pass: settling one save can start another.
+      await Promise.allSettled([...inFlightSavesRef.current]);
+    }
+  }, []);
   // Gates autosave until an existing draft/listing has been fetched. A fresh
   // listing has nothing to load, so it starts ready.
   const [isExistingRecordLoaded, setIsExistingRecordLoaded] = useState(!loadProductId);
@@ -357,13 +367,11 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       }
 
       const pending = persistDraft(data);
-      inFlightSaveRef.current = pending;
+      inFlightSavesRef.current.add(pending);
       try {
         return await pending;
       } finally {
-        if (inFlightSaveRef.current === pending) {
-          inFlightSaveRef.current = null;
-        }
+        inFlightSavesRef.current.delete(pending);
       }
     },
     [persistDraft]
@@ -409,6 +417,14 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
           shaftCondition: product.shaftCondition ?? 7,
           images: product.images?.map((img: { url: string }) => img.url) || [],
         };
+
+        // A stored title is the seller's, whether they typed it or accepted the
+        // generated one. Without this the auto-title effect would regenerate
+        // from brand/model/category as soon as categories load and quietly
+        // replace a custom title — which "Save changes" would then persist.
+        if (loaded.title.trim().length > 0) {
+          titleManuallyOverriddenRef.current = true;
+        }
 
         setFormData(loaded);
         setIsExistingRecordLoaded(true);
@@ -651,9 +667,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       // `isDraft: true` plus an older image list — landing last, it would
       // unpublish the listing or resurrect deleted photos. Waiting also lets a
       // pending draft-creation POST hand us its id below.
-      if (inFlightSaveRef.current) {
-        await inFlightSaveRef.current.catch(() => undefined);
-      }
+      await settleInFlightSaves();
 
       // Autosave may already have created a draft row for this listing. Publish
       // THAT row rather than POSTing a second product — otherwise the draft is
@@ -760,9 +774,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     try {
       // Same ordering concern as publishing: let an in-flight autosave settle
       // so this save is the last write, and so it can hand us the draft id.
-      if (inFlightSaveRef.current) {
-        await inFlightSaveRef.current.catch(() => undefined);
-      }
+      await settleInFlightSaves();
 
       const result = await persistDraft(formData);
       if (result !== "saved") {
