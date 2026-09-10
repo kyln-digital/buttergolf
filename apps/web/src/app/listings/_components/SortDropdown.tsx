@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import type { TamaguiElement } from "tamagui";
 import { Check, ChevronDown } from "@tamagui/lucide-icons";
 import {
   AdaptContents,
@@ -47,7 +48,8 @@ export function SortDropdown({
   options = DEFAULT_SORT_OPTIONS,
 }: Readonly<SortDropdownProps>) {
   const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLElement | null>(null);
+  // Tamagui refs resolve to the DOM node on web; narrow at the point of use.
+  const menuRef = useRef<TamaguiElement | null>(null);
   const selected = options.find((option) => option.value === value) ?? options[0];
 
   const choose = (next: string) => {
@@ -55,8 +57,10 @@ export function SortDropdown({
     setOpen(false);
   };
 
-  const getItems = (): HTMLElement[] =>
-    Array.from(menuRef.current?.querySelectorAll<HTMLElement>(MENU_ITEM_SELECTOR) ?? []);
+  const getItems = (): HTMLElement[] => {
+    const menu = menuRef.current as HTMLElement | null;
+    return Array.from(menu?.querySelectorAll<HTMLElement>(MENU_ITEM_SELECTOR) ?? []);
+  };
 
   // Move focus into the menu when it opens, landing on the current choice.
   useEffect(() => {
@@ -138,7 +142,7 @@ export function SortDropdown({
         zIndex={200000}
       >
         <Column
-          ref={menuRef as never}
+          ref={menuRef}
           role="menu"
           aria-label="Sort by"
           minWidth={220}

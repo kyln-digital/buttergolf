@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Column, Row, Heading, Text, Button, Card } from "@buttergolf/ui";
-import { brandColors } from "@buttergolf/config";
+import { useTheme } from "tamagui";
 import { Lock, Smartphone } from "@tamagui/lucide-icons";
 import PhoneInput, { isValidPhoneNumber, type Value } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
@@ -37,6 +37,7 @@ export function PhoneCollectionStep({
   onSkip,
   isSubmitting = false,
 }: PhoneCollectionStepProps) {
+  const theme = useTheme();
   const [phone, setPhone] = useState<Value | undefined>(initialPhone as Value | undefined);
   const [error, setError] = useState<string | null>(null);
 
@@ -85,9 +86,9 @@ export function PhoneCollectionStep({
               <div
                 className="phone-input-wrapper"
                 style={{
-                  border: `1px solid ${error ? brandColors.errorBase : brandColors.ironstone}`,
+                  border: `1px solid ${error ? theme.error.val : theme.fieldBorder.val}`,
                   borderRadius: 9999,
-                  backgroundColor: brandColors.pureWhite,
+                  backgroundColor: theme.background.val,
                   padding: "4px 12px",
                 }}
               >

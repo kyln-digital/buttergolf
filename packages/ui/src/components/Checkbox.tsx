@@ -117,47 +117,51 @@ export function Checkbox({
   };
 
   return (
-    <CheckboxBox
-      {...{ type: "button" }}
-      id={id}
-      role="checkbox"
-      checked={checked}
-      disabled={disabled}
-      size={size}
-      onPress={handleChange}
-      aria-checked={checked}
-      aria-disabled={disabled}
-      aria-label={ariaLabel}
-      aria-labelledby={ariaLabelledBy}
-    >
-      {/* Hidden input for native form submission only (the button is the control) */}
-      <input
-        type="checkbox"
+    <>
+      <CheckboxBox
+        {...{ type: "button" }}
+        id={id}
+        role="checkbox"
         checked={checked}
         disabled={disabled}
-        onChange={() => {}}
-        name={name}
-        value={value}
-        tabIndex={-1}
-        aria-hidden
-        style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
-      />
-      {checked && (
-        <svg
-          width={checkmarkSizes[size]}
-          height={checkmarkSizes[size]}
-          viewBox="0 0 12 12"
-          fill="none"
-          stroke="white"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{ pointerEvents: "none" }}
-        >
-          <polyline points="2,6 5,9 10,3" />
-        </svg>
-      )}
-    </CheckboxBox>
+        size={size}
+        onPress={handleChange}
+        aria-checked={checked}
+        aria-disabled={disabled}
+        aria-label={ariaLabel}
+        aria-labelledby={ariaLabelledBy}
+      >
+        {checked && (
+          <svg
+            width={checkmarkSizes[size]}
+            height={checkmarkSizes[size]}
+            viewBox="0 0 12 12"
+            fill="none"
+            stroke="white"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ pointerEvents: "none" }}
+          >
+            <polyline points="2,6 5,9 10,3" />
+          </svg>
+        )}
+      </CheckboxBox>
+      {/* Form participation only: a sibling (never inside the button) that submits with the form */}
+      {name ? (
+        <input
+          type="checkbox"
+          checked={checked}
+          disabled={disabled}
+          onChange={() => {}}
+          name={name}
+          value={value}
+          tabIndex={-1}
+          aria-hidden
+          style={{ display: "none" }}
+        />
+      ) : null}
+    </>
   );
 }
 
