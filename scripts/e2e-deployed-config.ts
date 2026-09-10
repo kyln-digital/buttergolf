@@ -18,7 +18,7 @@
  * DATABASE_URL must point at the database that deployment uses.
  */
 import { prisma } from "@buttergolf/db";
-import { cleanupQuietly } from "./e2e-cleanup";
+import { cleanupQuietly, E2E_RUN_TOKEN } from "./e2e-cleanup";
 import { getShippingOption, getParcelPreset } from "@buttergolf/constants";
 import { createMobileSessionToken } from "../apps/web/src/lib/mobile-session";
 
@@ -33,6 +33,10 @@ if (!BASE) {
  * whatever target they are given. Pointed at production with live keys that
  * is real money and real fixture data in front of customers, so refuse
  * anything that isn't clearly a test target unless explicitly overridden.
+ *
+ * Note the deployment buys labels with ITS OWN ShipEngine key, which this
+ * cannot see. Checking the local one catches the common case; the target
+ * check is what actually keeps this off production.
  */
 function assertSafeTarget(baseUrl: string): void {
   if (process.env.E2E_ALLOW_UNSAFE_TARGET === "true") return;
@@ -40,6 +44,13 @@ function assertSafeTarget(baseUrl: string): void {
   const stripeKey = process.env.STRIPE_SECRET_KEY ?? "";
   if (!stripeKey.startsWith("sk_test_")) {
     console.error("Refusing to run: STRIPE_SECRET_KEY is not a test key.");
+    console.error("Set E2E_ALLOW_UNSAFE_TARGET=true only if you really mean it.");
+    process.exit(1);
+  }
+
+  const shipEngineKey = process.env.SHIPENGINE_API_KEY ?? "";
+  if (shipEngineKey && !shipEngineKey.startsWith("TEST_")) {
+    console.error("Refusing to run: SHIPENGINE_API_KEY is not a sandbox key.");
     console.error("Set E2E_ALLOW_UNSAFE_TARGET=true only if you really mean it.");
     process.exit(1);
   }
@@ -68,7 +79,7 @@ async function main() {
 
   const seller = await prisma.user.create({
     data: {
-      clerkId: `e2e-cfg-s-${stamp}`,
+      clerkId: `${E2E_RUN_TOKEN}cfg-s-${stamp}`,
       email: `e2e-cfg-s-${stamp}@example.com`,
       firstName: "Cfg",
       lastName: "Seller",
@@ -89,7 +100,7 @@ async function main() {
   });
   const buyer = await prisma.user.create({
     data: {
-      clerkId: `e2e-cfg-b-${stamp}`,
+      clerkId: `${E2E_RUN_TOKEN}cfg-b-${stamp}`,
       email: `e2e-cfg-b-${stamp}@example.com`,
       firstName: "Cfg",
       lastName: "Buyer",

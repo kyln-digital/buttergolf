@@ -6,7 +6,7 @@
  * be posted — the failure mode where a buyer pays and the label then fails.
  */
 import { prisma } from "@buttergolf/db";
-import { cleanupQuietly } from "./e2e-cleanup";
+import { cleanupQuietly, E2E_RUN_TOKEN } from "./e2e-cleanup";
 import { createMobileSessionToken } from "../apps/web/src/lib/mobile-session";
 import { getParcelPreset, PARCEL_LIMITS } from "@buttergolf/constants";
 
@@ -46,7 +46,7 @@ async function publishDraft(token: string, productId: string, body: unknown) {
 
 async function main() {
   const stamp = Date.now();
-  const clerkId = `e2e-gate-${stamp}`;
+  const clerkId = `${E2E_RUN_TOKEN}gate-${stamp}`;
 
   const user = await prisma.user.create({
     data: { clerkId, email: `${clerkId}@example.com`, firstName: "Gate", lastName: "Tester" },
@@ -168,7 +168,7 @@ async function main() {
   // 6. Drafts skip both gates — a half-finished listing isn't going anywhere.
   const draftUser = await prisma.user.create({
     data: {
-      clerkId: `e2e-draft-${stamp}`,
+      clerkId: `${E2E_RUN_TOKEN}draft-${stamp}`,
       email: `e2e-draft-${stamp}@example.com`,
       firstName: "Draft",
       lastName: "Tester",

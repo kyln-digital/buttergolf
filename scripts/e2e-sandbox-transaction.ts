@@ -9,7 +9,7 @@
 import Stripe from "stripe";
 import crypto from "node:crypto";
 import { prisma } from "@buttergolf/db";
-import { cleanupQuietly } from "./e2e-cleanup";
+import { cleanupQuietly, E2E_RUN_TOKEN } from "./e2e-cleanup";
 import {
   calculateBuyerProtectionFeeInPence,
   getShippingOption,
@@ -35,7 +35,7 @@ async function main() {
   // ---------- fixtures ----------
   const seller = await prisma.user.create({
     data: {
-      clerkId: `e2e-seller-${stamp}`,
+      clerkId: `${E2E_RUN_TOKEN}seller-${stamp}`,
       email: `e2e-seller-${stamp}@example.com`,
       firstName: "Sandy",
       lastName: "Seller",
@@ -59,7 +59,7 @@ async function main() {
 
   const buyer = await prisma.user.create({
     data: {
-      clerkId: `e2e-buyer-${stamp}`,
+      clerkId: `${E2E_RUN_TOKEN}buyer-${stamp}`,
       email: `e2e-buyer-${stamp}@example.com`,
       firstName: "Barry",
       lastName: "Buyer",

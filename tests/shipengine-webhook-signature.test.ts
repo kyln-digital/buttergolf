@@ -29,6 +29,34 @@ function sign(body: string, timestamp: string, key = privateKey): string {
 
 beforeEach(() => __clearJwksCacheForTests());
 
+/**
+ * The shape ShipEngine's JWKS had when this was written, captured so the
+ * import path is covered without a network call. The live endpoint is
+ * checked separately, opt-in, at the bottom of this file.
+ */
+const SHIPENGINE_JWKS_FIXTURE = {
+  keys: [
+    { kid: "shipstation-api-2025-06-02", kty: "EC", alg: "ES256", use: "sig" },
+    { ...jwk, kid: "webhook-signing-key-1" },
+  ],
+};
+
+describe("JWKS shape", () => {
+  it("selects the RSA signing key from a ShipEngine-shaped key set", async () => {
+    // The real set also carries an EC key we must not try to verify with.
+    const result = await verifyShipEngineWebhook(
+      BODY,
+      {
+        keyId: "webhook-signing-key-1",
+        signature: sign(BODY, TIMESTAMP),
+        timestamp: TIMESTAMP,
+      },
+      { fetcher: async () => SHIPENGINE_JWKS_FIXTURE, now: NOW }
+    );
+    expect(result).toEqual({ status: "verified" });
+  });
+});
+
 describe("verifyShipEngineWebhook", () => {
   it("accepts a correctly signed webhook", async () => {
     const result = await verifyShipEngineWebhook(
@@ -184,9 +212,13 @@ describe("verifyShipEngineWebhook", () => {
   });
 });
 
-describe("ShipEngine's real JWKS", () => {
+// Hits the network, so it is opt-in: `pnpm test` must stay deterministic and
+// runnable offline. Run with E2E_CHECK_LIVE_JWKS=true (and in CI on a
+// schedule) to catch ShipEngine changing its key set under us.
+const describeLive = process.env.E2E_CHECK_LIVE_JWKS === "true" ? describe : describe.skip;
+
+describeLive("ShipEngine's real JWKS", () => {
   it("publishes an importable RSA signing key", async () => {
-    // Guards against the live key set changing shape under us.
     const res = await fetch("https://api.shipengine.com/jwks");
     expect(res.ok).toBe(true);
     const { keys } = (await res.json()) as { keys: Array<Record<string, unknown>> };

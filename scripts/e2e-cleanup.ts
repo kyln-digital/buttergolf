@@ -15,6 +15,15 @@ import { prisma } from "@buttergolf/db";
 
 export const E2E_CLERK_PREFIX = "e2e-";
 
+/**
+ * Unique to this process. Fixtures are created under it and cleanup only
+ * removes its own, so two runs in parallel — or a run alongside fixtures
+ * someone made by hand — cannot delete each other's data.
+ */
+export const E2E_RUN_TOKEN = `${E2E_CLERK_PREFIX}${Date.now().toString(36)}${Math.random()
+  .toString(36)
+  .slice(2, 8)}-`;
+
 export interface CleanupSummary {
   users: number;
   products: number;
@@ -23,10 +32,14 @@ export interface CleanupSummary {
 }
 
 export async function cleanupE2eFixtures(
-  options: { quiet?: boolean } = {}
+  options: { quiet?: boolean; prefix?: string } = {}
 ): Promise<CleanupSummary> {
+  // Default to this run's own token. Pass E2E_CLERK_PREFIX explicitly to
+  // sweep everything, which is what running this file directly does.
+  const prefix = options.prefix ?? E2E_RUN_TOKEN;
+
   const users = await prisma.user.findMany({
-    where: { clerkId: { startsWith: E2E_CLERK_PREFIX } },
+    where: { clerkId: { startsWith: prefix } },
     select: { id: true },
   });
 
@@ -45,7 +58,7 @@ export async function cleanupE2eFixtures(
   const products = await prisma.product.deleteMany({ where: { userId: { in: ids } } });
   const addresses = await prisma.address.deleteMany({ where: { userId: { in: ids } } });
   const deletedUsers = await prisma.user.deleteMany({
-    where: { clerkId: { startsWith: E2E_CLERK_PREFIX } },
+    where: { clerkId: { startsWith: prefix } },
   });
 
   const summary = {
@@ -78,7 +91,8 @@ export async function cleanupQuietly(): Promise<void> {
 
 // Direct invocation: `npx tsx scripts/e2e-cleanup.ts`
 if (process.argv[1]?.endsWith("e2e-cleanup.ts")) {
-  cleanupE2eFixtures()
+  // Direct invocation sweeps every e2e fixture, not just this process's.
+  cleanupE2eFixtures({ prefix: E2E_CLERK_PREFIX })
     .catch((e) => {
       console.error(e);
       process.exitCode = 1;

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Keyboard } from "react-native";
 import { Column, Row, Text, View, Input, ScrollView } from "@buttergolf/ui";
 import {
   PARCEL_PRESETS,
@@ -103,8 +102,10 @@ export function PostageStep({ formData, onUpdate, direction }: Readonly<PostageS
       <ScrollView
         flex={1}
         contentContainerStyle={{ padding: 20 }}
+        // keyboardShouldPersistTaps alone, deliberately: pulling in
+        // react-native's Keyboard here would make this shared step depend on
+        // a native-only module for the web build.
         keyboardShouldPersistTaps="handled"
-        onScrollBeginDrag={() => Keyboard.dismiss()}
       >
         <Column gap="$sm" marginBottom="$xl">
           <Text fontFamily="$heading" size="$10" fontWeight="800" color="$text">

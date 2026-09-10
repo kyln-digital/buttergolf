@@ -341,13 +341,13 @@ async function handlePostOrderTasks(
                 Hi ${product.user.firstName || "there"},
               </p>
               <p style="color: #323232; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">
-                Great news! Someone just purchased your item. However, we cannot generate a shipping label because your shipping address is not set up.
+                Great news! Someone just purchased your item. We can't create the shipping label yet, because we don't have a postage address to send it from.
               </p>
               <p style="color: #323232; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
-                Please complete your Stripe Connect profile to add your address.
+                Add your address and we'll generate the label straight away.
               </p>
-              <a href="${getBaseUrl()}/sell" style="display: inline-block; background-color: #F45314; color: #FFFFFF; padding: 14px 28px; text-decoration: none; border-radius: 100px; font-weight: 600; font-size: 16px;">
-                Complete Your Profile
+              <a href="${getBaseUrl()}/account/addresses" style="display: inline-block; background-color: #F45314; color: #FFFFFF; padding: 14px 28px; text-decoration: none; border-radius: 100px; font-weight: 600; font-size: 16px;">
+                Add Your Postage Address
               </a>
               <p style="color: #545454; font-size: 14px; line-height: 1.6; margin-top: 24px;">
                 Order ID: <code style="background-color: #EDEDED; padding: 2px 6px; border-radius: 4px;">${orderId}</code>

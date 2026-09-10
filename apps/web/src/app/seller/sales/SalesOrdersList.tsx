@@ -199,7 +199,12 @@ function OrderCard({ order }: { order: Order }) {
   const [markingShipped, setMarkingShipped] = useState(false);
 
   const statusConfig = STATUS_CONFIG[status];
-  const needsAddressUpdate = order.fromAddress.street1 === "Address pending";
+  // Either the synthetic placeholder, or a real address that failed
+  // validation at label time. Both are fixed in the same place, so both need
+  // the same call to action — showing the reason without one is a dead end.
+  const needsAddressUpdate =
+    order.fromAddress.street1 === "Address pending" ||
+    (order.labelError ?? "").startsWith("SELLER_ADDRESS_INVALID");
   const paymentStatusConfig = order.paymentHoldStatus
     ? PAYMENT_STATUS_CONFIG[order.paymentHoldStatus]
     : null;
@@ -422,7 +427,7 @@ function OrderCard({ order }: { order: Order }) {
           {status === "PAYMENT_CONFIRMED" && (
             <>
               {needsAddressUpdate ? (
-                <Link href="/seller/settings" style={{ width: "100%" }}>
+                <Link href="/account/addresses" style={{ width: "100%" }}>
                   <Button size="$4" backgroundColor="$warning" color="$textInverse" width="100%">
                     <AlertCircle size={16} />
                     <Text color="$textInverse" marginLeft="$xs">
