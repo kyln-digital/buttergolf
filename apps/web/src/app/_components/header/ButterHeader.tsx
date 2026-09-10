@@ -17,11 +17,11 @@ import {
   Text,
   CategorySelector,
   ThemeSwitcher,
-  ThemeToggleButton,
   type Category,
   Button,
 } from "@buttergolf/ui";
 import { CATEGORIES } from "@buttergolf/constants";
+import { AnimatedThemeToggle } from "./AnimatedThemeToggle";
 import { HeaderSearch } from "./HeaderSearch";
 import { MenuIcon, CloseIcon } from "./icons";
 
@@ -251,7 +251,7 @@ export function ButterHeader() {
                 <LazyUserButton size="default" />
               </LazySignedIn>
 
-              <ThemeToggleButton />
+              <AnimatedThemeToggle />
             </Row>
 
             {/* Actions - mobile */}
