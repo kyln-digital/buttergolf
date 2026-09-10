@@ -186,6 +186,20 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     // produce a live listing with no photo or no category.
     const isPublishing = existingProduct.isDraft && updateData.isDraft === false;
 
+    // Publishing is one-way from this endpoint. The client serialises its own
+    // writes, but that only orders what the *browser* sends: a request it timed
+    // out on, or one already in flight when the seller hit publish, can still
+    // reach us afterwards — and the sell form's autosave payload always carries
+    // `isDraft: true`. Without this, a late autosave would quietly unpublish a
+    // listing the seller had just made live.
+    //
+    // Nothing legitimately un-publishes through here; relisting a sold item
+    // goes through `isSold`. Ignoring the field rather than erroring keeps the
+    // stale autosave's other changes (which are harmless) from failing.
+    if (!existingProduct.isDraft && updateData.isDraft === true) {
+      delete updateData.isDraft;
+    }
+
     if (isPublishing) {
       // Count what the product will actually be left with once the transaction
       // has run — not what the request happens to mention.
