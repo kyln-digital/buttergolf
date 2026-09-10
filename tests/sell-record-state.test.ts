@@ -6,6 +6,8 @@ import {
   saveTarget,
   isHydrating,
   hasLoadFailed,
+  canApplyWrite,
+  canApplyLoad,
   type SellRecordEvent,
   type SellRecordState,
 } from "../apps/web/src/app/sell/_lib/sell-record-state";
@@ -149,6 +151,57 @@ describe("stale async results", () => {
     expect(after).toBe(state);
     expect(canSave(after)).toBe(true);
     expect(saveTarget(after)).toBe("B");
+  });
+});
+
+describe("data and target must come from the same generation", () => {
+  it("refuses a queued write whose data was captured before a record switch", () => {
+    // An autosave for A sits in the queue while B loads. Reading only the
+    // *current* target would PATCH B with A's fields and images.
+    const capturedGeneration = 0;
+    let state = run(
+      initialSellRecordState("A", "req-1"),
+      { type: "load-succeeded", generation: 0 },
+      routeChange("B")
+    );
+    state = sellRecordReducer(state, { type: "load-succeeded", generation: state.generation });
+
+    expect(canSave(state)).toBe(true); // B is perfectly saveable…
+    expect(saveTarget(state)).toBe("B");
+    expect(canApplyWrite(state, capturedGeneration)).toBe(false); // …but not with A's data
+  });
+
+  it("allows a queued write whose record never changed", () => {
+    const state = run(initialSellRecordState("A", "req-1"), {
+      type: "load-succeeded",
+      generation: 0,
+    });
+
+    expect(canApplyWrite(state, state.generation)).toBe(true);
+  });
+
+  it("refuses a write while the record is mid-load, even at the same generation", () => {
+    const state = initialSellRecordState("A", "req-1");
+    expect(canApplyWrite(state, state.generation)).toBe(false);
+  });
+
+  it("refuses to show data from a fetch the form has moved on from", () => {
+    // B's load resolving before an older A request must not let A's data reach
+    // the form: the reducer would drop A's event, leaving the form showing A
+    // while targeting B.
+    const state = run(initialSellRecordState("A", "req-1"), routeChange("B"));
+
+    expect(canApplyLoad(state, 0)).toBe(false);
+    expect(canApplyLoad(state, state.generation)).toBe(true);
+  });
+
+  it("lets a load apply its data before the record is saveable", () => {
+    // canApplyLoad is deliberately looser than canApplyWrite — the load is what
+    // *makes* the record saveable.
+    const state = initialSellRecordState("A", "req-1");
+
+    expect(canSave(state)).toBe(false);
+    expect(canApplyLoad(state, state.generation)).toBe(true);
   });
 });
 

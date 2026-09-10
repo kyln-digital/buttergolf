@@ -31,6 +31,8 @@ import {
   saveTarget,
   isHydrating,
   hasLoadFailed,
+  canApplyWrite,
+  canApplyLoad,
 } from "../_lib/sell-record-state";
 import { createSaveQueue, type SaveQueue } from "../_lib/save-queue";
 
@@ -307,7 +309,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
   // --- DB autosave via useAutoSave ---
   const persistDraft = useCallback(
-    async (data: FormData): Promise<AutoSaveResult> => {
+    async (data: FormData, dataGeneration: number): Promise<AutoSaveResult> => {
       if (!hasMeaningfulDraftContent(data)) {
         return "skipped";
       }
@@ -315,18 +317,17 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       const parsedPrice = Number.parseFloat(data.price);
       const safePrice = Number.isFinite(parsedPrice) ? parsedPrice : 0;
 
-      // Snapshot the record this write is for. Because saves are serialised,
-      // this is read at the moment the write actually starts — not when it was
-      // requested — so it reflects any navigation that happened while queued.
+      // Read the record at the moment this write actually starts, and require
+      // it to be the same one `data` was captured from. Reading only the
+      // current target would let a queued autosave for A write A.s fields into
+      // B once B had loaded.
       const snapshot = recordRef.current;
-      const generation = snapshot.generation;
-      const existingId = saveTarget(snapshot);
-
-      // The form moved to another record while this sat in the queue; its data
-      // belongs nowhere now.
-      if (!canSave(snapshot)) {
+      if (!canApplyWrite(snapshot, dataGeneration)) {
         return "skipped";
       }
+
+      const generation = snapshot.generation;
+      const existingId = saveTarget(snapshot);
 
       try {
         if (existingId) {
@@ -399,7 +400,10 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       if (isSubmittingRef.current) {
         return "skipped";
       }
-      return saveQueueRef.current!.enqueue(() => persistDraft(data));
+      // The generation `data` belongs to, captured now rather than when the
+      // queued task eventually runs.
+      const dataGeneration = recordRef.current.generation;
+      return saveQueueRef.current!.enqueue(() => persistDraft(data, dataGeneration));
     },
     [persistDraft]
   );
@@ -484,6 +488,12 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
           shaftCondition: product.shaftCondition ?? 7,
           images: product.images?.map((img: { url: string }) => img.url) || [],
         };
+
+        // The reducer would reject the event below, but `formData` lives
+        // outside it — so without this check an out-of-order response could
+        // still push its data onto the screen, leaving the form showing one
+        // record while targeting another.
+        if (!canApplyLoad(recordRef.current, recordGeneration)) return;
 
         // A stored title is the seller's, whether they typed it or accepted the
         // generated one. Without this the auto-title effect would regenerate
@@ -881,10 +891,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
     try {
       const result = await saveQueueRef.current!.enqueue(() => {
-        if (recordRef.current.generation !== capturedGeneration) {
-          return Promise.resolve<AutoSaveResult>("skipped");
-        }
-        return persistDraft(formData);
+        return persistDraft(formData, capturedGeneration);
       });
 
       if (result === "skipped") {

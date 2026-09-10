@@ -113,6 +113,32 @@ export function saveTarget(state: SellRecordState): string | null {
   return state.rowId;
 }
 
+/**
+ * Whether work carrying data captured in `dataGeneration` may still be applied.
+ *
+ * The generation has to travel *with the payload*, not just be read when the
+ * work runs. A queued autosave holds the form data it was given; if the record
+ * switched while it waited, reading the current target would write the old
+ * record's fields into the new one. Equally, a fetch that resolves out of order
+ * must not push its data into a form that has moved on — the reducer would
+ * reject its event, but the form would already be showing the wrong listing.
+ *
+ * Both cases are the same question: does this data still belong to the record
+ * we would be acting on?
+ */
+export function canApplyWrite(state: SellRecordState, dataGeneration: number): boolean {
+  return state.generation === dataGeneration && canSave(state);
+}
+
+/**
+ * Whether data fetched in `dataGeneration` may still be shown. Looser than
+ * {@link canApplyWrite}: a load applies its own data *before* the record
+ * reaches a saveable phase, so only the generation matters here.
+ */
+export function canApplyLoad(state: SellRecordState, dataGeneration: number): boolean {
+  return state.generation === dataGeneration;
+}
+
 /** The routed record is still being fetched. */
 export function isHydrating(state: SellRecordState): boolean {
   return state.phase === "loading";
