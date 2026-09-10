@@ -421,16 +421,18 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
           <Row gap="$xs" alignItems="center" hoverStyle={{ opacity: 0.7 }}>
             <ArrowLeft size={18} color="$primary" />
             <Text color="$primary" fontWeight="500">
-              Back to Orders
+              Back to orders
             </Text>
           </Row>
         </Link>
 
         {/* Order Header Card */}
-        <Card variant="elevated" padding="$lg">
+        <Card variant="outlined" padding="$lg" borderRadius="$lg">
           <Row justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap="$md">
             <Column gap="$xs">
-              <Heading level={2}>Order Details</Heading>
+              <Heading level={1} size="$8">
+                Order details
+              </Heading>
               <Text size="$4" color="$textSecondary">
                 Order #{order.id}
               </Text>
@@ -445,11 +447,13 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
         </Card>
 
         {/* Product Info Card */}
-        <Card variant="elevated" padding="$lg">
+        <Card variant="outlined" padding="$lg" borderRadius="$lg">
           <Column gap="$md">
             <Row gap="$xs" alignItems="center">
               <Package size={20} color="$text" />
-              <Heading level={3}>Product</Heading>
+              <Heading level={2} size="$5">
+                Product
+              </Heading>
             </Row>
 
             <Row gap="$lg" flexWrap="wrap">
@@ -477,7 +481,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                     justifyContent="center"
                     backgroundColor="$border"
                   >
-                    <Text color="$textMuted" size="$4">
+                    <Text color="$textSecondary" size="$4">
                       No image
                     </Text>
                   </View>
@@ -539,11 +543,13 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
         </Card>
 
         {/* Shipping Information Card */}
-        <Card variant="elevated" padding="$lg">
+        <Card variant="outlined" padding="$lg" borderRadius="$lg">
           <Column gap="$md">
             <Row gap="$xs" alignItems="center">
               <Truck size={20} color="$text" />
-              <Heading level={3}>Shipping Information</Heading>
+              <Heading level={2} size="$5">
+                Shipping
+              </Heading>
             </Row>
 
             {/* Carrier/Tracking Info Box */}
@@ -592,17 +598,14 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                       Auto-refreshing every 15 seconds
                     </Text>
                     <Button
+                      butterVariant="ghost"
                       size="$3"
-                      variant="outlined"
                       onPress={fetchTrackingEvents}
                       disabled={isLoadingTracking}
                       icon={
-                        <span
-                          className={isLoadingTracking ? "spin" : undefined}
-                          style={{ display: "inline-flex" }}
-                        >
-                          <RefreshCw size={14} color="$primary" />
-                        </span>
+                        <View className={isLoadingTracking ? "spin" : undefined}>
+                          <RefreshCw size={14} color="$text" />
+                        </View>
                       }
                     >
                       Refresh
@@ -647,9 +650,11 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
         </Card>
 
         {/* Order Summary Card */}
-        <Card variant="elevated" padding="$lg">
+        <Card variant="outlined" padding="$lg" borderRadius="$lg">
           <Column gap="$md">
-            <Heading level={3}>Order Summary</Heading>
+            <Heading level={2} size="$5">
+              Order summary
+            </Heading>
 
             <Column gap="$sm">
               <Row justifyContent="space-between">
@@ -712,16 +717,8 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                   rel="noopener noreferrer"
                   style={{ textDecoration: "none" }}
                 >
-                  <Button
-                    size="$5"
-                    backgroundColor="$success"
-                    color="$textInverse"
-                    width="100%"
-                    paddingVertical="$md"
-                    borderRadius="$md"
-                    icon={<Download size={18} color="white" />}
-                  >
-                    Download PDF Label
+                  <Button butterVariant="primary" size="$5" width="100%" icon={Download}>
+                    Download PDF label
                   </Button>
                 </a>
                 {/* ZPL download for thermal printers */}
@@ -732,17 +729,8 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                     rel="noopener noreferrer"
                     style={{ textDecoration: "none" }}
                   >
-                    <Button
-                      size="$5"
-                      borderWidth={1}
-                      borderColor="$border"
-                      backgroundColor="transparent"
-                      width="100%"
-                      paddingVertical="$md"
-                      borderRadius="$md"
-                      icon={<Download size={18} />}
-                    >
-                      ZPL (Thermal Printer)
+                    <Button butterVariant="secondary" size="$5" width="100%" icon={Download}>
+                      ZPL (thermal printer)
                     </Button>
                   </a>
                 )}
@@ -767,7 +755,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                   width="100%"
                   icon={<ExternalLink size={18} color="white" />}
                 >
-                  Track Package
+                  Track package
                 </Button>
               </a>
             )}
@@ -775,11 +763,13 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
         </Card>
 
         {/* Payment Status Card */}
-        <Card variant="elevated" padding="$lg">
+        <Card variant="outlined" padding="$lg" borderRadius="$lg">
           <Column gap="$md">
             <Row gap="$xs" alignItems="center">
               <DollarSign size={20} color="$text" />
-              <Heading level={3}>Payment Status</Heading>
+              <Heading level={2} size="$5">
+                Payment status
+              </Heading>
             </Row>
 
             {/* Payment Hold Status Badge */}
@@ -834,7 +824,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                     {order.autoReleaseAt && (
                       <Row gap="$xs" alignItems="center">
                         <Clock size={14} color="$textSecondary" />
-                        <Text size="$3" color="$textMuted">
+                        <Text size="$3" color="$textSecondary">
                           Auto-releases in {getDaysUntilAutoRelease()} days (
                           {new Date(order.autoReleaseAt).toLocaleDateString("en-GB", {
                             day: "numeric",
@@ -889,7 +879,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                       </Button>
                     )}
 
-                    <Text size="$3" color="$textMuted" textAlign="center">
+                    <Text size="$3" color="$textSecondary" textAlign="center">
                       Only confirm once you&apos;ve received and inspected your item.
                     </Text>
                   </Column>
@@ -967,7 +957,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                       {order.autoReleaseAt && (
                         <Row gap="$xs" alignItems="center">
                           <Clock size={14} color="$textSecondary" />
-                          <Text size="$3" color="$textMuted">
+                          <Text size="$3" color="$textSecondary">
                             Auto-releases:{" "}
                             {new Date(order.autoReleaseAt).toLocaleDateString("en-GB", {
                               day: "numeric",
@@ -1010,7 +1000,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                         size="$4"
                         onPress={() => (window.location.href = "/sell")}
                       >
-                        Complete Verification
+                        Complete verification
                       </Button>
                     </Column>
                   </View>
@@ -1037,7 +1027,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                         </Text>
                       )}
                       {order.buyerConfirmedAt && (
-                        <Text size="$3" color="$textMuted">
+                        <Text size="$3" color="$textSecondary">
                           Buyer confirmed receipt on {formatDateTime(order.buyerConfirmedAt)}
                         </Text>
                       )}
@@ -1050,9 +1040,11 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
         </Card>
 
         {/* Participants Card */}
-        <Card variant="elevated" padding="$lg">
+        <Card variant="outlined" padding="$lg" borderRadius="$lg">
           <Column gap="$md">
-            <Heading level={3}>Order Participants</Heading>
+            <Heading level={2} size="$5">
+              Participants
+            </Heading>
             <Row gap="$lg" flexWrap="wrap">
               <ParticipantCard title="Seller" user={order.seller} />
               <ParticipantCard title="Buyer" user={order.buyer} />
