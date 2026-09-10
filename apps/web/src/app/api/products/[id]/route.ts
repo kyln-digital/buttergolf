@@ -2,34 +2,35 @@ import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
 import { resolveImageUrl } from "@/lib/product-images";
+import { recordProductView } from "@/lib/product-views";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Next.js 16: params is now a Promise
     const { id } = await params;
 
-    // Public must not retrieve unpublished drafts by ID. Authenticated owners
-    // may load their own drafts (SellFormClient draft resume).
+    // The signed-in viewer, if any. Public callers must not retrieve
+    // unpublished drafts by ID; owners may load their own (draft resume).
     const clerkId = await getUserIdFromRequest(request);
-    let ownerUserId: string | null = null;
+    let viewerUserId: string | null = null;
     if (clerkId) {
       const owner = await prisma.user.findUnique({
         where: { clerkId },
         select: { id: true },
       });
-      ownerUserId = owner?.id ?? null;
+      viewerUserId = owner?.id ?? null;
     }
 
     const product = await prisma.product.findFirst({
       where: {
         id,
-        ...(ownerUserId
+        ...(viewerUserId
           ? {
               // Public published listings stay draft/deleted-seller blocked;
               // owner may still load own drafts for SellFormClient resume.
               OR: [
                 { isDraft: false, user: { is: { isDeleted: false } } },
-                { isDraft: true, userId: ownerUserId },
+                { isDraft: true, userId: viewerUserId },
               ],
             }
           : { isDraft: false, user: { is: { isDeleted: false } } }),
@@ -57,15 +58,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    // Only count public listing views — draft resume must not inflate metrics.
-    if (!product.isDraft) {
-      prisma.product
-        .update({
-          where: { id },
-          data: { views: { increment: 1 } },
-        })
-        .catch((err) => console.error("Failed to increment views:", err));
-    }
+    // Shared with the server-rendered product page so the two can't disagree
+    // about what counts as a buyer view.
+    recordProductView(id, {
+      isDraft: product.isDraft,
+      ownerUserId: product.userId,
+      viewerUserId,
+    });
 
     // `url` stays raw so the sell form can save it back untouched; `displayUrl`
     // carries the brand treatment for the cover so clients (mobile detail

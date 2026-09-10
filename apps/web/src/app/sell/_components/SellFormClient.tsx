@@ -20,6 +20,7 @@ import {
   RadioIndicator,
   Checkbox,
   Slider,
+  Spinner,
 } from "@buttergolf/ui";
 import { ImageUpload } from "@/components/ImageUpload";
 import { PhotoTipsCard } from "./PhotoTipsCard";
@@ -145,6 +146,14 @@ const HelperText = ({ children }: { children: React.ReactNode }) => (
 
 const SELL_DRAFT_STORAGE_KEY = "buttergolf-sell-draft-v1";
 
+/** Shown when a save is attempted before the record being edited has loaded. */
+const RECORD_NOT_READY_MESSAGE =
+  "Still loading this listing. Give it a moment and try again — or reload the page if this persists.";
+
+/** Shown when the page moved to a different listing mid-save. */
+const RECORD_CHANGED_MESSAGE =
+  "You moved to a different listing before this finished saving, so nothing was written. Go back and try again.";
+
 const EMPTY_FORM_DATA: FormData = {
   title: "",
   description: "",
@@ -256,7 +265,9 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   // the first autosave. A ref rather than state because submit needs the id the
   // moment an autosave assigns it — a state update would not be visible to the
   // closure that is already running.
-  const savedDraftIdRef = useRef<string | null>(loadProductId ?? null);
+  // Starts null even when an id was passed in: the record's data isn't on
+  // screen yet, so there is nothing safe to write to until the load lands.
+  const savedDraftIdRef = useRef<string | null>(null);
   // Every autosave still in flight. A set rather than a single promise because
   // useAutoSave can start a second save while the first is still pending —
   // tracking only the newest would let an older PATCH land after the submit,
@@ -270,9 +281,29 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       await Promise.allSettled([...inFlightSavesRef.current]);
     }
   }, []);
-  // Gates autosave until an existing draft/listing has been fetched. A fresh
-  // listing has nothing to load, so it starts ready.
-  const [isExistingRecordLoaded, setIsExistingRecordLoaded] = useState(!loadProductId);
+  /**
+   * The record whose data is currently in `formData` — null for a blank form.
+   * Deliberately the id rather than a boolean: on a client navigation from edit
+   * A to edit B, `loadProductId` changes during render while the effect that
+   * reloads is passive and runs later. Comparing the two makes the form
+   * un-ready in that same render, closing the window where a click could save
+   * A's data against B.
+   */
+  const [loadedRecordId, setLoadedRecordId] = useState<string | null>(null);
+  const [recordLoadFailed, setRecordLoadFailed] = useState(false);
+  /**
+   * Bumped every time the form switches records. In-flight work captures it and
+   * re-checks before mutating record-scoped state, so a response that lands
+   * after the form has moved on is discarded rather than applied to the wrong
+   * listing.
+   */
+  const recordGenerationRef = useRef(0);
+  /** Lets the load effect tell a record switch from the first mount. */
+  const hasRunLoadEffectRef = useRef(false);
+  /** True when the data on screen belongs to the record we'd be writing to. */
+  const isRecordReadyToSave = (loadProductId ?? null) === loadedRecordId;
+  /** An existing record is being fetched and its data isn't on screen yet. */
+  const isLoadingRecord = Boolean(loadProductId) && !isRecordReadyToSave && !recordLoadFailed;
   // Stable requestId for first-create idempotency until we get a real draft ID.
   const draftRequestIdRef = useRef<string>(uuidv4());
 
@@ -283,7 +314,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
   // --- DB autosave via useAutoSave ---
   const persistDraft = useCallback(
-    async (data: FormData): Promise<AutoSaveResult> => {
+    async (data: FormData, targetId?: string | null): Promise<AutoSaveResult> => {
       if (!hasMeaningfulDraftContent(data)) {
         return "skipped";
       }
@@ -291,9 +322,16 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       const parsedPrice = Number.parseFloat(data.price);
       const safePrice = Number.isFinite(parsedPrice) ? parsedPrice : 0;
 
-      // Read the ref, not state: a POST that resolved moments ago may have set
-      // the id without React having re-rendered this closure yet.
-      const existingId = savedDraftIdRef.current;
+      // Which record this save is for. Compared again before adopting a
+      // created row below, so a response that lands after the form has moved on
+      // can't retarget it.
+      const generation = recordGenerationRef.current;
+
+      // Callers that awaited something first pass the target they captured
+      // before that await, so a navigation mid-wait can't redirect the write.
+      // Otherwise read the ref, not state: a POST that resolved moments ago may
+      // have set the id without React having re-rendered this closure yet.
+      const existingId = targetId !== undefined ? targetId : savedDraftIdRef.current;
 
       try {
         if (existingId) {
@@ -346,7 +384,15 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
         if (response.ok) {
           const product = await response.json();
-          savedDraftIdRef.current = product.id;
+
+          // Only adopt the newly created row if the form is still on the record
+          // this save started for. A POST from a fresh /sell form can resolve
+          // after the user has navigated to ?draftId=B; assigning here
+          // unconditionally would point the ref back at the old row, and B's
+          // next save would PATCH it with B's data.
+          if (recordGenerationRef.current === generation) {
+            savedDraftIdRef.current = product.id;
+          }
           return "saved";
         }
         return "error";
@@ -384,21 +430,72 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     // When we're loading an existing draft or listing, autosave must wait until
     // that load has landed. Saving the blank initial form over the top would
     // otherwise wipe the record's photos and fields.
-    enabled: isHydrated && !loading && isExistingRecordLoaded,
+    enabled: isHydrated && !loading && isRecordReadyToSave,
   });
 
   // --- Load an existing draft or listing from the DB when an id is provided ---
   useEffect(() => {
-    if (!loadProductId) return;
+    // Switching records invalidates anything already in flight for the old one.
+    recordGenerationRef.current += 1;
+    // Title provenance and the user's manual additions belong to the record
+    // that was on screen, not the one arriving.
+    titleManuallyOverriddenRef.current = false;
+    setUserAddedText("");
 
-    savedDraftIdRef.current = loadProductId;
+    // Whether this run is a genuine record switch rather than the first mount.
+    // The effect only re-runs when loadProductId actually changes, so any run
+    // after the first is a switch.
+    const isRecordSwitch = hasRunLoadEffectRef.current;
+    hasRunLoadEffectRef.current = true;
+
+    if (!loadProductId) {
+      // Navigated from a draft/edit route back to a blank form (e.g.
+      // /sell?draftId=… → /sell). Both record-scoped refs have to be dropped:
+      // savedDraftIdRef would PATCH the listing we just left, and reusing the
+      // old requestId would make the create call idempotently return that same
+      // draft instead of making a new one.
+      savedDraftIdRef.current = null;
+      draftRequestIdRef.current = uuidv4();
+
+      // useLocalStorageState only replaces in-memory state when the new key has
+      // something stored, so without this the previous listing's fields and
+      // photos stay on screen — and the form is save-ready with no target, so
+      // autosave would create a fresh draft that duplicates it. Only on a real
+      // switch: on first mount this state is either empty or a recovery draft
+      // the seller should keep.
+      if (isRecordSwitch) {
+        setFormData(EMPTY_FORM_DATA);
+      }
+
+      setLoadedRecordId(null);
+      setRecordLoadFailed(false);
+      return;
+    }
+
+    // Next's router reuses this component between /sell/[id]/edit routes, so
+    // the id can change under a mounted form. Until the new record has landed,
+    // the form still shows the *previous* listing's data — so there is no safe
+    // write target: pointing the ref at the new id would let a save put the old
+    // listing's data into the new one. Clear the target and close the gate, and
+    // only adopt the new id once its data is actually on screen.
+    let cancelled = false;
+
+    savedDraftIdRef.current = null;
+    setRecordLoadFailed(false);
 
     const loadDraft = async () => {
       try {
         const response = await fetch(`/api/products/${loadProductId}`);
-        if (!response.ok) return;
+        // A response for an id we've since navigated away from must not be
+        // applied over the newer one.
+        if (cancelled) return;
+        if (!response.ok) {
+          setRecordLoadFailed(true);
+          return;
+        }
 
         const product = await response.json();
+        if (cancelled) return;
 
         const loaded: FormData = {
           title: product.title || "",
@@ -427,14 +524,21 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
         }
 
         setFormData(loaded);
-        setIsExistingRecordLoaded(true);
+        // Adopt the write target only now that this record's data is on screen.
+        savedDraftIdRef.current = loadProductId;
+        setLoadedRecordId(loadProductId);
       } catch {
-        // If load fails, start with whatever localStorage has. Autosave stays
-        // disabled so a failed fetch can't overwrite the record with blanks.
+        // Surface the failure rather than leaving a spinner up forever. Saving
+        // stays blocked, so a failed fetch can never overwrite the record.
+        if (!cancelled) setRecordLoadFailed(true);
       }
     };
 
     void loadDraft();
+
+    return () => {
+      cancelled = true;
+    };
   }, [loadProductId, setFormData]);
 
   // Helper function to singularize category names
@@ -620,6 +724,15 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       console.info("[SellForm] Duplicate submission blocked by ref guard");
       return;
     }
+
+    // Refuse to write while the record being edited is still loading (or failed
+    // to load): the form is showing either a blank form or the previous
+    // listing's data, so there is no correct target for this save.
+    if (!isRecordReadyToSave) {
+      setError(RECORD_NOT_READY_MESSAGE);
+      return;
+    }
+
     isSubmittingRef.current = true;
 
     // Generate unique request ID for server-side idempotency
@@ -661,6 +774,11 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       return;
     }
 
+    // The record this submit is for, captured before any await. Navigating to
+    // another listing mid-wait must not redirect the write to that one.
+    const capturedTarget = savedDraftIdRef.current;
+    const capturedGeneration = recordGenerationRef.current;
+
     try {
       // Let any autosave already in flight finish first. Two writes racing here
       // would be ordered by the server, and the autosave's payload carries
@@ -669,12 +787,22 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       // pending draft-creation POST hand us its id below.
       await settleInFlightSaves();
 
+      // If the form moved to a different record while we waited, this data no
+      // longer belongs anywhere: writing it would either publish the wrong
+      // listing or duplicate it. Abandon rather than guess.
+      if (recordGenerationRef.current !== capturedGeneration) {
+        setError(RECORD_CHANGED_MESSAGE);
+        setLoading(false);
+        isSubmittingRef.current = false;
+        return;
+      }
+
       // Autosave may already have created a draft row for this listing. Publish
       // THAT row rather than POSTing a second product — otherwise the draft is
       // orphaned and sits in the seller's listings as an untitled £0.00 card.
-      // Read the ref: the id may have been assigned by the await above, after
-      // this closure was created.
-      const draftToPublish = savedDraftIdRef.current;
+      // The ref is safe to consult now the generation check above has confirmed
+      // it still refers to this same record; the wait may have just created it.
+      const draftToPublish = capturedTarget ?? savedDraftIdRef.current;
 
       const response = draftToPublish
         ? await fetch(`/api/seller/products/${draftToPublish}`, {
@@ -756,6 +884,14 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       console.info("[SellForm] Duplicate draft save blocked by ref guard");
       return;
     }
+
+    // Same reasoning as handleSubmit: no safe write target until the record
+    // being edited is on screen.
+    if (!isRecordReadyToSave) {
+      setError(RECORD_NOT_READY_MESSAGE);
+      return;
+    }
+
     isSubmittingRef.current = true;
 
     // Generate unique request ID for server-side idempotency
@@ -771,12 +907,25 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       return;
     }
 
+    // Captured before the await for the same reason as in handleSubmit.
+    const capturedTarget = savedDraftIdRef.current;
+    const capturedGeneration = recordGenerationRef.current;
+
     try {
       // Same ordering concern as publishing: let an in-flight autosave settle
       // so this save is the last write, and so it can hand us the draft id.
       await settleInFlightSaves();
 
-      const result = await persistDraft(formData);
+      // Abandon rather than write this form's data against whatever record the
+      // page has moved on to.
+      if (recordGenerationRef.current !== capturedGeneration) {
+        setError(RECORD_CHANGED_MESSAGE);
+        setLoading(false);
+        isSubmittingRef.current = false;
+        return;
+      }
+
+      const result = await persistDraft(formData, capturedTarget ?? savedDraftIdRef.current);
       if (result !== "saved") {
         throw new Error("Failed to save draft");
       }
@@ -831,6 +980,40 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
             </Row>
           </Column>
 
+          {/* While an existing record is loading, the fields below still hold
+              the previous listing's data (or nothing) and would be replaced
+              wholesale when the response lands — so anything typed here would
+              be silently discarded. Show the load instead of a form that eats
+              input. */}
+          {isLoadingRecord && (
+            <Column gap="$md" alignItems="center" paddingVertical="$10">
+              <Spinner size="lg" color="$primary" />
+              <Text size="$4" color="$textSecondary">
+                Loading your listing…
+              </Text>
+            </Column>
+          )}
+
+          {recordLoadFailed && (
+            <Card variant="outlined" padding="$lg">
+              <Column gap="$md" alignItems="center">
+                <Text size="$5" fontWeight="600" color="$text">
+                  We couldn&apos;t load this listing
+                </Text>
+                <Text size="$3" color="$textSecondary" textAlign="center">
+                  Nothing has been changed. Reload the page to try again.
+                </Text>
+                <Button
+                  butterVariant="primary"
+                  size="$4"
+                  onPress={() => router.push("/seller/listings")}
+                >
+                  Back to my listings
+                </Button>
+              </Column>
+            </Card>
+          )}
+
           {/* Draft recovery banner */}
           {hasLocalDraft && (
             <Card variant="outlined" padding="$md" backgroundColor="$primaryLight">
@@ -875,575 +1058,593 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
             overflow="hidden"
             width="100%"
           >
-            <form onSubmit={handleSubmit} style={{ width: "100%" }}>
-              <Column gap="$0" width="100%" alignItems="stretch">
-                {/* Photo Upload Section - Prominent at top */}
-                <Column
-                  gap="$lg"
-                  padding="$6"
-                  backgroundColor="$background"
-                  borderBottomWidth={1}
-                  borderBottomColor="$border"
-                  width="100%"
-                >
-                  <Row gap="$lg" flexWrap="wrap" $gtMd={{ flexWrap: "nowrap" }} width="100%">
-                    {/* Left: Image Upload (2/3 width on desktop) */}
-                    <Column flex={2} minWidth={300} width="100%">
-                      <ImageUpload
-                        onUploadComplete={handleImageUpload}
-                        onRemoveImage={handleRemoveImage}
-                        onReorderImages={handleReorderImages}
-                        currentImages={formData.images}
-                        maxImages={5}
-                      />
+            {!isLoadingRecord && !recordLoadFailed && (
+              <form onSubmit={handleSubmit} style={{ width: "100%" }}>
+                <Column gap="$0" width="100%" alignItems="stretch">
+                  {/* Photo Upload Section - Prominent at top */}
+                  <Column
+                    gap="$lg"
+                    padding="$6"
+                    backgroundColor="$background"
+                    borderBottomWidth={1}
+                    borderBottomColor="$border"
+                    width="100%"
+                  >
+                    <Row gap="$lg" flexWrap="wrap" $gtMd={{ flexWrap: "nowrap" }} width="100%">
+                      {/* Left: Image Upload (2/3 width on desktop) */}
+                      <Column flex={2} minWidth={300} width="100%">
+                        <ImageUpload
+                          onUploadComplete={handleImageUpload}
+                          onRemoveImage={handleRemoveImage}
+                          onReorderImages={handleReorderImages}
+                          currentImages={formData.images}
+                          maxImages={5}
+                        />
+                      </Column>
+
+                      {/* Right: Photo Tips Card (1/3 width on desktop) */}
+                      <Column flex={1} minWidth={280} width="100%">
+                        <PhotoTipsCard />
+                      </Column>
+                    </Row>
+                  </Column>
+
+                  {/* Form Fields Section */}
+                  <Column gap="$md" padding="$6" width="100%">
+                    {/* Title */}
+                    <Column gap="$xs" width="100%">
+                      <FormLabel required>Title</FormLabel>
+                      {isEditingTitle ? (
+                        <Column gap="$xs" width="100%">
+                          <Input
+                            value={formData.title}
+                            onChangeText={(value) => {
+                              const autoGenerated = generateTitle();
+                              // Extract any text the user added beyond the auto-generated part
+                              if (value.startsWith(autoGenerated)) {
+                                const userText = value.substring(autoGenerated.length).trim();
+                                setUserAddedText(userText);
+                                titleManuallyOverriddenRef.current = false;
+                              } else {
+                                // User completely replaced the auto-generated prefix
+                                titleManuallyOverriddenRef.current = true;
+                                setFormData({ ...formData, title: value });
+                              }
+                            }}
+                            placeholder="e.g. Titleist a 2023 Driver"
+                            size="$4"
+                            width="100%"
+                            required
+                          />
+                          <Text size="$2" color="$textSecondary">
+                            Title auto-updates as you fill in brand, model, category, and condition
+                          </Text>
+                        </Column>
+                      ) : (
+                        <Column gap="$xs" width="100%">
+                          <Row
+                            gap="$sm"
+                            alignItems="center"
+                            padding="$3"
+                            backgroundColor="$backgroundHover"
+                            borderRadius="$full"
+                            borderWidth={1}
+                            borderColor="$border"
+                            width="100%"
+                          >
+                            <Text
+                              flex={1}
+                              size="$5"
+                              color={formData.title ? "$text" : "$textMuted"}
+                            >
+                              {formData.title || "Auto-generated from fields below"}
+                            </Text>
+                            <Button size="$3" onPress={() => setIsEditingTitle(true)}>
+                              Edit
+                            </Button>
+                          </Row>
+                          <Text size="$2" color="$textSecondary">
+                            Auto-generated - Click Edit to add custom text
+                          </Text>
+                        </Column>
+                      )}
                     </Column>
 
-                    {/* Right: Photo Tips Card (1/3 width on desktop) */}
-                    <Column flex={1} minWidth={280} width="100%">
-                      <PhotoTipsCard />
+                    {/* Category */}
+                    <Column gap="$xs" width="100%">
+                      <FormLabel required>Category</FormLabel>
+                      {/* eslint-disable-next-line react/forbid-elements -- TODO: replace with design-system Select */}
+                      <select
+                        value={formData.categoryId}
+                        onChange={(e) => handleCategoryChange(e.target.value)}
+                        required
+                        style={{
+                          padding: "12px 18px",
+                          fontSize: "15px",
+                          borderRadius: "24px",
+                          border: "1px solid #323232",
+                          backgroundColor: "white",
+                          width: "100%",
+                          cursor: "pointer",
+                          outline: "none",
+                          appearance: "none",
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23F45314' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                          backgroundPosition: "right 18px center",
+                          backgroundRepeat: "no-repeat",
+                          backgroundSize: "20px",
+                          paddingRight: "48px",
+                          transition: "border-color 0.2s",
+                        }}
+                        onFocus={(e) => {
+                          e.currentTarget.style.borderColor = "#F45314";
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.style.borderColor = "#323232";
+                        }}
+                      >
+                        <option value="">Select a category</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </select>
                     </Column>
-                  </Row>
-                </Column>
 
-                {/* Form Fields Section */}
-                <Column gap="$md" padding="$6" width="100%">
-                  {/* Title */}
-                  <Column gap="$xs" width="100%">
-                    <FormLabel required>Title</FormLabel>
-                    {isEditingTitle ? (
+                    {/* Woods Sub-category - Conditional (Woods only) */}
+                    {shouldShowWoodsSubcategory() && (
                       <Column gap="$xs" width="100%">
-                        <Input
-                          value={formData.title}
-                          onChangeText={(value) => {
-                            const autoGenerated = generateTitle();
-                            // Extract any text the user added beyond the auto-generated part
-                            if (value.startsWith(autoGenerated)) {
-                              const userText = value.substring(autoGenerated.length).trim();
-                              setUserAddedText(userText);
-                              titleManuallyOverriddenRef.current = false;
-                            } else {
-                              // User completely replaced the auto-generated prefix
-                              titleManuallyOverriddenRef.current = true;
-                              setFormData({ ...formData, title: value });
-                            }
+                        <FormLabel>Type</FormLabel>
+                        <RadioGroup
+                          value={formData.woodsSubcategory}
+                          onValueChange={(value) =>
+                            setFormData({ ...formData, woodsSubcategory: value })
+                          }
+                          orientation="horizontal"
+                        >
+                          {WOODS_SUBCATEGORIES.map((sub) => (
+                            <Row key={sub.value} gap="$xs" alignItems="center">
+                              <Radio value={sub.value}>
+                                <RadioIndicator />
+                              </Radio>
+                              <Text
+                                size="$4"
+                                color="$text"
+                                onPress={() =>
+                                  setFormData({
+                                    ...formData,
+                                    woodsSubcategory: sub.value,
+                                  })
+                                }
+                                cursor="pointer"
+                              >
+                                {sub.label}
+                              </Text>
+                            </Row>
+                          ))}
+                        </RadioGroup>
+                        <HelperText>Select the type of wood</HelperText>
+                      </Column>
+                    )}
+
+                    {/* Brand & Model Row */}
+                    <Row gap="$md" flexWrap="wrap">
+                      <Column gap="$xs" flex={1} minWidth={200}>
+                        <FormLabel required>Brand</FormLabel>
+                        <Autocomplete
+                          value={formData.brandName}
+                          onValueChange={(value) => setFormData({ ...formData, brandName: value })}
+                          onSelectSuggestion={(suggestion) => {
+                            setFormData({
+                              ...formData,
+                              brandId: suggestion.id || "",
+                              brandName: suggestion.name,
+                              // Clear model when brand changes
+                              model: "",
+                            });
+                            // Reset manual editing when brand changes
+                            setUserAddedText("");
+                            setIsEditingTitle(false);
+                            titleManuallyOverriddenRef.current = false;
                           }}
-                          placeholder="e.g. Titleist a 2023 Driver"
+                          fetchSuggestions={async (query) => {
+                            const res = await fetch(
+                              `/api/brands?query=${encodeURIComponent(query)}`
+                            );
+                            const brands: Brand[] = await res.json();
+                            return brands.map((b) => ({
+                              id: b.id,
+                              name: b.name,
+                              metadata: { slug: b.slug, logoUrl: b.logoUrl },
+                            }));
+                          }}
+                          placeholder="Select or search brands"
+                          size="$4"
+                          width="100%"
+                          minChars={0}
+                          allowCustom={false}
+                        />
+                        <HelperText>Click to see all brands or start typing to search</HelperText>
+                      </Column>
+
+                      <Column gap="$xs" flex={1} minWidth={200}>
+                        <FormLabel>Model</FormLabel>
+                        <Autocomplete
+                          value={formData.model}
+                          onValueChange={(value) => setFormData({ ...formData, model: value })}
+                          onSelectSuggestion={(suggestion) => {
+                            setFormData({
+                              ...formData,
+                              model: suggestion.name,
+                            });
+                          }}
+                          fetchSuggestions={async (query) => {
+                            if (!formData.brandId) return [];
+                            const res = await fetch(
+                              `/api/models?brandId=${formData.brandId}&query=${encodeURIComponent(query)}`
+                            );
+                            const models: Model[] = await res.json();
+                            return models.map((m) => ({
+                              id: m.id,
+                              name: m.name,
+                              metadata: {
+                                isVerified: m.isVerified,
+                                usageCount: m.usageCount,
+                              },
+                            }));
+                          }}
+                          placeholder={
+                            formData.brandId ? "Select or search models" : "Select a brand first"
+                          }
+                          size="$4"
+                          width="100%"
+                          minChars={0}
+                          allowCustom={true}
+                          disabled={!formData.brandId}
+                        />
+                        <HelperText>Click to see models or type your own</HelperText>
+                      </Column>
+                    </Row>
+
+                    {/* Head Cover Included - Conditional (Woods & Putters) */}
+                    {shouldShowHeadCover() && (
+                      <Column gap="$xs" width="100%">
+                        <Row gap="$sm" alignItems="center">
+                          <Checkbox
+                            checked={formData.headCoverIncluded}
+                            onChange={(checked) =>
+                              setFormData({
+                                ...formData,
+                                headCoverIncluded: checked,
+                              })
+                            }
+                            size="md"
+                          />
+                          <Text
+                            size="$4"
+                            color="$text"
+                            onPress={() =>
+                              setFormData({
+                                ...formData,
+                                headCoverIncluded: !formData.headCoverIncluded,
+                              })
+                            }
+                            cursor="pointer"
+                          >
+                            Head cover included?
+                          </Text>
+                        </Row>
+                      </Column>
+                    )}
+
+                    {/* Condition Sliders - Always Visible (Replaces Dropdown) */}
+                    <Column gap="$lg" width="100%">
+                      <FormLabel required>Condition Rating</FormLabel>
+                      <Text size="$3" color="$textSecondary" marginBottom="$sm">
+                        Rate each component from 1 (Poor) to 10 (Like New)
+                      </Text>
+
+                      {/* Grip Condition */}
+                      <Column gap="$xs" width="100%">
+                        <Row justifyContent="space-between" alignItems="center">
+                          <Text size="$4" fontWeight="500" color="$text">
+                            Grip
+                          </Text>
+                          <Text size="$4" color="$primary" fontWeight="600">
+                            {formData.gripCondition} - {getConditionLabel(formData.gripCondition)}
+                          </Text>
+                        </Row>
+                        <Slider
+                          min={1}
+                          max={10}
+                          step={1}
+                          value={[formData.gripCondition]}
+                          onValueChange={(values) =>
+                            setFormData({ ...formData, gripCondition: values[0] })
+                          }
+                        >
+                          <Slider.Track>
+                            <Slider.TrackActive />
+                          </Slider.Track>
+                          <Slider.Thumb index={0} />
+                        </Slider>
+                      </Column>
+
+                      {/* Head Condition */}
+                      <Column gap="$xs" width="100%">
+                        <Row justifyContent="space-between" alignItems="center">
+                          <Text size="$4" fontWeight="500" color="$text">
+                            Head
+                          </Text>
+                          <Text size="$4" color="$primary" fontWeight="600">
+                            {formData.headCondition} - {getConditionLabel(formData.headCondition)}
+                          </Text>
+                        </Row>
+                        <Slider
+                          min={1}
+                          max={10}
+                          step={1}
+                          value={[formData.headCondition]}
+                          onValueChange={(values) =>
+                            setFormData({ ...formData, headCondition: values[0] })
+                          }
+                        >
+                          <Slider.Track>
+                            <Slider.TrackActive />
+                          </Slider.Track>
+                          <Slider.Thumb index={0} />
+                        </Slider>
+                      </Column>
+
+                      {/* Shaft Condition */}
+                      <Column gap="$xs" width="100%">
+                        <Row justifyContent="space-between" alignItems="center">
+                          <Text size="$4" fontWeight="500" color="$text">
+                            Shaft
+                          </Text>
+                          <Text size="$4" color="$primary" fontWeight="600">
+                            {formData.shaftCondition} - {getConditionLabel(formData.shaftCondition)}
+                          </Text>
+                        </Row>
+                        <Slider
+                          min={1}
+                          max={10}
+                          step={1}
+                          value={[formData.shaftCondition]}
+                          onValueChange={(values) =>
+                            setFormData({
+                              ...formData,
+                              shaftCondition: values[0],
+                            })
+                          }
+                        >
+                          <Slider.Track>
+                            <Slider.TrackActive />
+                          </Slider.Track>
+                          <Slider.Thumb index={0} />
+                        </Slider>
+                      </Column>
+                    </Column>
+
+                    {/* Description */}
+                    <Column gap="$xs" width="100%">
+                      <FormLabel required>Describe your item</FormLabel>
+                      {/* eslint-disable-next-line react/forbid-elements -- TODO: replace with design-system TextArea */}
+                      <textarea
+                        value={formData.description}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            description: e.target.value,
+                          })
+                        }
+                        placeholder="e.g. only used for one season, minor scratches on the shaft..."
+                        required
+                        rows={3}
+                        style={{
+                          padding: "12px 18px",
+                          fontSize: "15px",
+                          lineHeight: "22px",
+                          borderRadius: "24px",
+                          border: "1px solid #323232",
+                          backgroundColor: "white",
+                          width: "100%",
+                          boxSizing: "border-box",
+                          fontFamily: "inherit",
+                          resize: "none",
+                          outline: "none",
+                          transition: "border-color 0.2s",
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = "#F45314";
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = "#323232";
+                        }}
+                      />
+                      <HelperText>
+                        Be honest and detailed. Mention any wear, included accessories, and why
+                        you&apos;re selling.
+                      </HelperText>
+                    </Column>
+
+                    {/* Flex - Conditional (Woods & Irons) */}
+                    {shouldShowFlex() && (
+                      <Column gap="$xs" width="100%">
+                        <FormLabel>Shaft Flex</FormLabel>
+                        {/* eslint-disable-next-line react/forbid-elements -- TODO: replace with design-system Select */}
+                        <select
+                          value={formData.flex}
+                          onChange={(e) => setFormData({ ...formData, flex: e.target.value })}
+                          style={{
+                            padding: "12px 18px",
+                            fontSize: "15px",
+                            borderRadius: "24px",
+                            border: "1px solid #323232",
+                            backgroundColor: "white",
+                            width: "100%",
+                            cursor: "pointer",
+                            outline: "none",
+                            appearance: "none",
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23F45314' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                            backgroundPosition: "right 18px center",
+                            backgroundRepeat: "no-repeat",
+                            backgroundSize: "20px",
+                            paddingRight: "48px",
+                            transition: "border-color 0.2s",
+                          }}
+                          onFocus={(e) => {
+                            e.currentTarget.style.borderColor = "#F45314";
+                          }}
+                          onBlur={(e) => {
+                            e.currentTarget.style.borderColor = "#323232";
+                          }}
+                        >
+                          {FLEX_OPTIONS.map((flex) => (
+                            <option key={flex.value} value={flex.value}>
+                              {flex.label}
+                            </option>
+                          ))}
+                        </select>
+                        <HelperText>Select the shaft flex rating</HelperText>
+                      </Column>
+                    )}
+
+                    {/* Loft - Conditional (Woods & Wedges) */}
+                    {shouldShowLoft() && (
+                      <Column gap="$xs" width="100%">
+                        <FormLabel>Loft</FormLabel>
+                        {/* eslint-disable-next-line react/forbid-elements -- TODO: replace with design-system Select */}
+                        <select
+                          value={formData.loft}
+                          onChange={(e) => setFormData({ ...formData, loft: e.target.value })}
+                          style={{
+                            padding: "12px 18px",
+                            fontSize: "15px",
+                            borderRadius: "24px",
+                            border: "1px solid #323232",
+                            backgroundColor: "white",
+                            width: "100%",
+                            cursor: "pointer",
+                            outline: "none",
+                            appearance: "none",
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23F45314' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                            backgroundPosition: "right 18px center",
+                            backgroundRepeat: "no-repeat",
+                            backgroundSize: "20px",
+                            paddingRight: "48px",
+                            transition: "border-color 0.2s",
+                          }}
+                          onFocus={(e) => {
+                            e.currentTarget.style.borderColor = "#F45314";
+                          }}
+                          onBlur={(e) => {
+                            e.currentTarget.style.borderColor = "#323232";
+                          }}
+                        >
+                          {getLoftOptions().map((loft) => (
+                            <option key={loft.value} value={loft.value}>
+                              {loft.label}
+                            </option>
+                          ))}
+                        </select>
+                        <HelperText>Select the loft angle</HelperText>
+                      </Column>
+                    )}
+
+                    {/* Price */}
+                    <Column gap="$xs" width="100%">
+                      <FormLabel required>Price</FormLabel>
+                      <Row gap="$sm" alignItems="center">
+                        <Text size="$6" fontWeight="600">
+                          £
+                        </Text>
+                        <Input
+                          value={formData.price}
+                          onChangeText={(value) => setFormData({ ...formData, price: value })}
+                          placeholder="0.00"
                           size="$4"
                           width="100%"
                           required
+                          inputMode="decimal"
+                          min={LISTING_PRICE_LIMITS.MIN}
+                          max={LISTING_PRICE_LIMITS.MAX}
                         />
-                        <Text size="$2" color="$textSecondary">
-                          Title auto-updates as you fill in brand, model, category, and condition
-                        </Text>
-                      </Column>
-                    ) : (
-                      <Column gap="$xs" width="100%">
-                        <Row
-                          gap="$sm"
-                          alignItems="center"
-                          padding="$3"
-                          backgroundColor="$backgroundHover"
-                          borderRadius="$full"
-                          borderWidth={1}
-                          borderColor="$border"
-                          width="100%"
-                        >
-                          <Text flex={1} size="$5" color={formData.title ? "$text" : "$textMuted"}>
-                            {formData.title || "Auto-generated from fields below"}
-                          </Text>
-                          <Button size="$3" onPress={() => setIsEditingTitle(true)}>
-                            Edit
-                          </Button>
-                        </Row>
-                        <Text size="$2" color="$textSecondary">
-                          Auto-generated - Click Edit to add custom text
-                        </Text>
-                      </Column>
+                      </Row>
+                      <HelperText>
+                        Enter your asking price in GBP ({LISTING_PRICE_LIMITS.MIN} -{" "}
+                        {LISTING_PRICE_LIMITS.MAX})
+                      </HelperText>
+                    </Column>
+
+                    {/* Error Message */}
+                    {error && (
+                      <Card
+                        variant="filled"
+                        padding="$md"
+                        backgroundColor="$errorLight"
+                        borderRadius="$md"
+                      >
+                        <Text color="$error">{error}</Text>
+                      </Card>
                     )}
                   </Column>
 
-                  {/* Category */}
-                  <Column gap="$xs" width="100%">
-                    <FormLabel required>Category</FormLabel>
-                    {/* eslint-disable-next-line react/forbid-elements -- TODO: replace with design-system Select */}
-                    <select
-                      value={formData.categoryId}
-                      onChange={(e) => handleCategoryChange(e.target.value)}
-                      required
-                      style={{
-                        padding: "12px 18px",
-                        fontSize: "15px",
-                        borderRadius: "24px",
-                        border: "1px solid #323232",
-                        backgroundColor: "white",
-                        width: "100%",
-                        cursor: "pointer",
-                        outline: "none",
-                        appearance: "none",
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23F45314' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                        backgroundPosition: "right 18px center",
-                        backgroundRepeat: "no-repeat",
-                        backgroundSize: "20px",
-                        paddingRight: "48px",
-                        transition: "border-color 0.2s",
-                      }}
-                      onFocus={(e) => {
-                        e.currentTarget.style.borderColor = "#F45314";
-                      }}
-                      onBlur={(e) => {
-                        e.currentTarget.style.borderColor = "#323232";
-                      }}
-                    >
-                      <option value="">Select a category</option>
-                      {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </option>
-                      ))}
-                    </select>
-                  </Column>
-
-                  {/* Woods Sub-category - Conditional (Woods only) */}
-                  {shouldShowWoodsSubcategory() && (
-                    <Column gap="$xs" width="100%">
-                      <FormLabel>Type</FormLabel>
-                      <RadioGroup
-                        value={formData.woodsSubcategory}
-                        onValueChange={(value) =>
-                          setFormData({ ...formData, woodsSubcategory: value })
-                        }
-                        orientation="horizontal"
-                      >
-                        {WOODS_SUBCATEGORIES.map((sub) => (
-                          <Row key={sub.value} gap="$xs" alignItems="center">
-                            <Radio value={sub.value}>
-                              <RadioIndicator />
-                            </Radio>
-                            <Text
-                              size="$4"
-                              color="$text"
-                              onPress={() =>
-                                setFormData({
-                                  ...formData,
-                                  woodsSubcategory: sub.value,
-                                })
-                              }
-                              cursor="pointer"
-                            >
-                              {sub.label}
-                            </Text>
-                          </Row>
-                        ))}
-                      </RadioGroup>
-                      <HelperText>Select the type of wood</HelperText>
-                    </Column>
-                  )}
-
-                  {/* Brand & Model Row */}
-                  <Row gap="$md" flexWrap="wrap">
-                    <Column gap="$xs" flex={1} minWidth={200}>
-                      <FormLabel required>Brand</FormLabel>
-                      <Autocomplete
-                        value={formData.brandName}
-                        onValueChange={(value) => setFormData({ ...formData, brandName: value })}
-                        onSelectSuggestion={(suggestion) => {
-                          setFormData({
-                            ...formData,
-                            brandId: suggestion.id || "",
-                            brandName: suggestion.name,
-                            // Clear model when brand changes
-                            model: "",
-                          });
-                          // Reset manual editing when brand changes
-                          setUserAddedText("");
-                          setIsEditingTitle(false);
-                          titleManuallyOverriddenRef.current = false;
-                        }}
-                        fetchSuggestions={async (query) => {
-                          const res = await fetch(`/api/brands?query=${encodeURIComponent(query)}`);
-                          const brands: Brand[] = await res.json();
-                          return brands.map((b) => ({
-                            id: b.id,
-                            name: b.name,
-                            metadata: { slug: b.slug, logoUrl: b.logoUrl },
-                          }));
-                        }}
-                        placeholder="Select or search brands"
-                        size="$4"
-                        width="100%"
-                        minChars={0}
-                        allowCustom={false}
-                      />
-                      <HelperText>Click to see all brands or start typing to search</HelperText>
-                    </Column>
-
-                    <Column gap="$xs" flex={1} minWidth={200}>
-                      <FormLabel>Model</FormLabel>
-                      <Autocomplete
-                        value={formData.model}
-                        onValueChange={(value) => setFormData({ ...formData, model: value })}
-                        onSelectSuggestion={(suggestion) => {
-                          setFormData({
-                            ...formData,
-                            model: suggestion.name,
-                          });
-                        }}
-                        fetchSuggestions={async (query) => {
-                          if (!formData.brandId) return [];
-                          const res = await fetch(
-                            `/api/models?brandId=${formData.brandId}&query=${encodeURIComponent(query)}`
-                          );
-                          const models: Model[] = await res.json();
-                          return models.map((m) => ({
-                            id: m.id,
-                            name: m.name,
-                            metadata: {
-                              isVerified: m.isVerified,
-                              usageCount: m.usageCount,
-                            },
-                          }));
-                        }}
-                        placeholder={
-                          formData.brandId ? "Select or search models" : "Select a brand first"
-                        }
-                        size="$4"
-                        width="100%"
-                        minChars={0}
-                        allowCustom={true}
-                        disabled={!formData.brandId}
-                      />
-                      <HelperText>Click to see models or type your own</HelperText>
-                    </Column>
-                  </Row>
-
-                  {/* Head Cover Included - Conditional (Woods & Putters) */}
-                  {shouldShowHeadCover() && (
-                    <Column gap="$xs" width="100%">
-                      <Row gap="$sm" alignItems="center">
-                        <Checkbox
-                          checked={formData.headCoverIncluded}
-                          onChange={(checked) =>
-                            setFormData({
-                              ...formData,
-                              headCoverIncluded: checked,
-                            })
-                          }
-                          size="md"
-                        />
-                        <Text
-                          size="$4"
-                          color="$text"
-                          onPress={() =>
-                            setFormData({
-                              ...formData,
-                              headCoverIncluded: !formData.headCoverIncluded,
-                            })
-                          }
-                          cursor="pointer"
+                  {/* Action Buttons - Sticky footer style */}
+                  <Column
+                    gap="$sm"
+                    padding="$5"
+                    backgroundColor="$background"
+                    borderTopWidth={1}
+                    borderTopColor="$border"
+                    width="100%"
+                  >
+                    <Row gap="$sm" justifyContent="space-between" width="100%">
+                      {isEditingListing ? (
+                        <Button
+                          size="$5"
+                          onPress={() => router.push("/seller/listings")}
+                          disabled={loading}
+                          flex={1}
                         >
-                          Head cover included?
-                        </Text>
-                      </Row>
-                    </Column>
-                  )}
-
-                  {/* Condition Sliders - Always Visible (Replaces Dropdown) */}
-                  <Column gap="$lg" width="100%">
-                    <FormLabel required>Condition Rating</FormLabel>
-                    <Text size="$3" color="$textSecondary" marginBottom="$sm">
-                      Rate each component from 1 (Poor) to 10 (Like New)
-                    </Text>
-
-                    {/* Grip Condition */}
-                    <Column gap="$xs" width="100%">
-                      <Row justifyContent="space-between" alignItems="center">
-                        <Text size="$4" fontWeight="500" color="$text">
-                          Grip
-                        </Text>
-                        <Text size="$4" color="$primary" fontWeight="600">
-                          {formData.gripCondition} - {getConditionLabel(formData.gripCondition)}
-                        </Text>
-                      </Row>
-                      <Slider
-                        min={1}
-                        max={10}
-                        step={1}
-                        value={[formData.gripCondition]}
-                        onValueChange={(values) =>
-                          setFormData({ ...formData, gripCondition: values[0] })
-                        }
-                      >
-                        <Slider.Track>
-                          <Slider.TrackActive />
-                        </Slider.Track>
-                        <Slider.Thumb index={0} />
-                      </Slider>
-                    </Column>
-
-                    {/* Head Condition */}
-                    <Column gap="$xs" width="100%">
-                      <Row justifyContent="space-between" alignItems="center">
-                        <Text size="$4" fontWeight="500" color="$text">
-                          Head
-                        </Text>
-                        <Text size="$4" color="$primary" fontWeight="600">
-                          {formData.headCondition} - {getConditionLabel(formData.headCondition)}
-                        </Text>
-                      </Row>
-                      <Slider
-                        min={1}
-                        max={10}
-                        step={1}
-                        value={[formData.headCondition]}
-                        onValueChange={(values) =>
-                          setFormData({ ...formData, headCondition: values[0] })
-                        }
-                      >
-                        <Slider.Track>
-                          <Slider.TrackActive />
-                        </Slider.Track>
-                        <Slider.Thumb index={0} />
-                      </Slider>
-                    </Column>
-
-                    {/* Shaft Condition */}
-                    <Column gap="$xs" width="100%">
-                      <Row justifyContent="space-between" alignItems="center">
-                        <Text size="$4" fontWeight="500" color="$text">
-                          Shaft
-                        </Text>
-                        <Text size="$4" color="$primary" fontWeight="600">
-                          {formData.shaftCondition} - {getConditionLabel(formData.shaftCondition)}
-                        </Text>
-                      </Row>
-                      <Slider
-                        min={1}
-                        max={10}
-                        step={1}
-                        value={[formData.shaftCondition]}
-                        onValueChange={(values) =>
-                          setFormData({
-                            ...formData,
-                            shaftCondition: values[0],
-                          })
-                        }
-                      >
-                        <Slider.Track>
-                          <Slider.TrackActive />
-                        </Slider.Track>
-                        <Slider.Thumb index={0} />
-                      </Slider>
-                    </Column>
-                  </Column>
-
-                  {/* Description */}
-                  <Column gap="$xs" width="100%">
-                    <FormLabel required>Describe your item</FormLabel>
-                    {/* eslint-disable-next-line react/forbid-elements -- TODO: replace with design-system TextArea */}
-                    <textarea
-                      value={formData.description}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          description: e.target.value,
-                        })
-                      }
-                      placeholder="e.g. only used for one season, minor scratches on the shaft..."
-                      required
-                      rows={3}
-                      style={{
-                        padding: "12px 18px",
-                        fontSize: "15px",
-                        lineHeight: "22px",
-                        borderRadius: "24px",
-                        border: "1px solid #323232",
-                        backgroundColor: "white",
-                        width: "100%",
-                        boxSizing: "border-box",
-                        fontFamily: "inherit",
-                        resize: "none",
-                        outline: "none",
-                        transition: "border-color 0.2s",
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = "#F45314";
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = "#323232";
-                      }}
-                    />
-                    <HelperText>
-                      Be honest and detailed. Mention any wear, included accessories, and why
-                      you&apos;re selling.
-                    </HelperText>
-                  </Column>
-
-                  {/* Flex - Conditional (Woods & Irons) */}
-                  {shouldShowFlex() && (
-                    <Column gap="$xs" width="100%">
-                      <FormLabel>Shaft Flex</FormLabel>
-                      {/* eslint-disable-next-line react/forbid-elements -- TODO: replace with design-system Select */}
-                      <select
-                        value={formData.flex}
-                        onChange={(e) => setFormData({ ...formData, flex: e.target.value })}
-                        style={{
-                          padding: "12px 18px",
-                          fontSize: "15px",
-                          borderRadius: "24px",
-                          border: "1px solid #323232",
-                          backgroundColor: "white",
-                          width: "100%",
-                          cursor: "pointer",
-                          outline: "none",
-                          appearance: "none",
-                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23F45314' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                          backgroundPosition: "right 18px center",
-                          backgroundRepeat: "no-repeat",
-                          backgroundSize: "20px",
-                          paddingRight: "48px",
-                          transition: "border-color 0.2s",
-                        }}
-                        onFocus={(e) => {
-                          e.currentTarget.style.borderColor = "#F45314";
-                        }}
-                        onBlur={(e) => {
-                          e.currentTarget.style.borderColor = "#323232";
-                        }}
-                      >
-                        {FLEX_OPTIONS.map((flex) => (
-                          <option key={flex.value} value={flex.value}>
-                            {flex.label}
-                          </option>
-                        ))}
-                      </select>
-                      <HelperText>Select the shaft flex rating</HelperText>
-                    </Column>
-                  )}
-
-                  {/* Loft - Conditional (Woods & Wedges) */}
-                  {shouldShowLoft() && (
-                    <Column gap="$xs" width="100%">
-                      <FormLabel>Loft</FormLabel>
-                      {/* eslint-disable-next-line react/forbid-elements -- TODO: replace with design-system Select */}
-                      <select
-                        value={formData.loft}
-                        onChange={(e) => setFormData({ ...formData, loft: e.target.value })}
-                        style={{
-                          padding: "12px 18px",
-                          fontSize: "15px",
-                          borderRadius: "24px",
-                          border: "1px solid #323232",
-                          backgroundColor: "white",
-                          width: "100%",
-                          cursor: "pointer",
-                          outline: "none",
-                          appearance: "none",
-                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23F45314' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                          backgroundPosition: "right 18px center",
-                          backgroundRepeat: "no-repeat",
-                          backgroundSize: "20px",
-                          paddingRight: "48px",
-                          transition: "border-color 0.2s",
-                        }}
-                        onFocus={(e) => {
-                          e.currentTarget.style.borderColor = "#F45314";
-                        }}
-                        onBlur={(e) => {
-                          e.currentTarget.style.borderColor = "#323232";
-                        }}
-                      >
-                        {getLoftOptions().map((loft) => (
-                          <option key={loft.value} value={loft.value}>
-                            {loft.label}
-                          </option>
-                        ))}
-                      </select>
-                      <HelperText>Select the loft angle</HelperText>
-                    </Column>
-                  )}
-
-                  {/* Price */}
-                  <Column gap="$xs" width="100%">
-                    <FormLabel required>Price</FormLabel>
-                    <Row gap="$sm" alignItems="center">
-                      <Text size="$6" fontWeight="600">
-                        £
-                      </Text>
-                      <Input
-                        value={formData.price}
-                        onChangeText={(value) => setFormData({ ...formData, price: value })}
-                        placeholder="0.00"
-                        size="$4"
-                        width="100%"
-                        required
-                        inputMode="decimal"
-                        min={LISTING_PRICE_LIMITS.MIN}
-                        max={LISTING_PRICE_LIMITS.MAX}
-                      />
-                    </Row>
-                    <HelperText>
-                      Enter your asking price in GBP ({LISTING_PRICE_LIMITS.MIN} -{" "}
-                      {LISTING_PRICE_LIMITS.MAX})
-                    </HelperText>
-                  </Column>
-
-                  {/* Error Message */}
-                  {error && (
-                    <Card
-                      variant="filled"
-                      padding="$md"
-                      backgroundColor="$errorLight"
-                      borderRadius="$md"
-                    >
-                      <Text color="$error">{error}</Text>
-                    </Card>
-                  )}
-                </Column>
-
-                {/* Action Buttons - Sticky footer style */}
-                <Column
-                  gap="$sm"
-                  padding="$5"
-                  backgroundColor="$background"
-                  borderTopWidth={1}
-                  borderTopColor="$border"
-                  width="100%"
-                >
-                  <Row gap="$sm" justifyContent="space-between" width="100%">
-                    {isEditingListing ? (
+                          Cancel
+                        </Button>
+                      ) : (
+                        <Button
+                          size="$5"
+                          onPress={handleSaveDraft}
+                          disabled={loading || !isRecordReadyToSave}
+                          flex={1}
+                        >
+                          {loading ? "Saving..." : "Save draft"}
+                        </Button>
+                      )}
+                      {/* Use type="submit" for native form submission only - no onPress to prevent dual submission */}
                       <Button
                         size="$5"
-                        onPress={() => router.push("/seller/listings")}
-                        disabled={loading}
+                        disabled={loading || !isRecordReadyToSave}
+                        type="submit"
                         flex={1}
                       >
-                        Cancel
+                        {isEditingListing
+                          ? loading
+                            ? "Saving..."
+                            : "Save changes"
+                          : loading
+                            ? "Publishing..."
+                            : "List item"}
                       </Button>
-                    ) : (
-                      <Button size="$5" onPress={handleSaveDraft} disabled={loading} flex={1}>
-                        {loading ? "Saving..." : "Save draft"}
-                      </Button>
-                    )}
-                    {/* Use type="submit" for native form submission only - no onPress to prevent dual submission */}
-                    <Button size="$5" disabled={loading} type="submit" flex={1}>
-                      {isEditingListing
-                        ? loading
-                          ? "Saving..."
-                          : "Save changes"
-                        : loading
-                          ? "Publishing..."
-                          : "List item"}
-                    </Button>
-                  </Row>
-                  <Text size="$2" color="$helperText" textAlign="center">
-                    What do you think of our upload process?{" "}
-                    <Text size="$2" color="$primary" cursor="pointer">
-                      Give feedback
+                    </Row>
+                    <Text size="$2" color="$helperText" textAlign="center">
+                      What do you think of our upload process?{" "}
+                      <Text size="$2" color="$primary" cursor="pointer">
+                        Give feedback
+                      </Text>
                     </Text>
-                  </Text>
+                  </Column>
                 </Column>
-              </Column>
-            </form>
+              </form>
+            )}
           </Card>
         </Column>
       </Column>

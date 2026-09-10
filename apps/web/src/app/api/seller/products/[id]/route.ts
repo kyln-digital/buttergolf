@@ -5,6 +5,21 @@ import { getUserIdFromRequest } from "@/lib/auth";
 import { cloudinary, extractPublicId, isValidCloudinaryUrl } from "@/lib/cloudinary";
 import { mapSlidersToConditionEnum } from "@/lib/product-condition";
 
+/** Safety cap on how many image rows one request may touch. */
+const MAX_IMAGE_IDS = 20;
+
+/**
+ * Thrown inside the update transaction when publishing would leave the listing
+ * with no images, to roll it back. Distinguished from a genuine failure so the
+ * caller still gets a 400 rather than a 500.
+ */
+class PublishWithoutImagesError extends Error {
+  constructor() {
+    super("At least one image is required");
+    this.name = "PublishWithoutImagesError";
+  }
+}
+
 const SLIDER_LABELS = {
   gripCondition: "Grip",
   headCondition: "Head",
@@ -148,19 +163,42 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       updateData.price = price;
     }
 
+    // The image ids this request asks to delete, capped the same way the
+    // transaction caps them. Derived here so the publish guard below and the
+    // transaction agree on what is going away.
+    const requestedRemovalIds: string[] = Array.isArray(body.removedImageIds)
+      ? body.removedImageIds.slice(0, MAX_IMAGE_IDS).filter((id: unknown) => typeof id === "string")
+      : [];
+
     // Publishing a draft (isDraft true → false) must satisfy the same minimums
     // as creating a listing outright, so the sell form's publish path can't
     // produce a live listing with no photo or no category.
     const isPublishing = existingProduct.isDraft && updateData.isDraft === false;
 
     if (isPublishing) {
+      // Count what the product will actually be left with once the transaction
+      // has run — not what the request happens to mention.
+      //
+      // When `images` is present it is the complete desired list, so count the
+      // slice that will be persisted; counting the whole array would let a
+      // request whose sole valid image sits past the cap publish with nothing
+      // stored. When it's absent, count the stored rows minus the ones this
+      // request is about to remove, or removing the last photo and publishing
+      // in one call would slip through.
       const submittedImageCount = Array.isArray(body.images)
-        ? body.images.filter(
-            (img: unknown) =>
-              typeof (img as { url?: unknown })?.url === "string" &&
-              isValidCloudinaryUrl((img as { url: string }).url)
-          ).length
-        : await prisma.productImage.count({ where: { productId } });
+        ? body.images
+            .slice(0, MAX_IMAGE_IDS)
+            .filter(
+              (img: unknown) =>
+                typeof (img as { url?: unknown })?.url === "string" &&
+                isValidCloudinaryUrl((img as { url: string }).url)
+            ).length
+        : await prisma.productImage.count({
+            where: {
+              productId,
+              ...(requestedRemovalIds.length > 0 && { id: { notIn: requestedRemovalIds } }),
+            },
+          });
 
       if (submittedImageCount === 0) {
         return NextResponse.json({ error: "At least one image is required" }, { status: 400 });
@@ -193,12 +231,19 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     // images and removedImageIds are processed separately from allowedFields
     // because they require multi-step logic (delete, create, reorder) rather
     // than a direct Prisma data assignment.
-    const MAX_IMAGE_IDS = 20; // safety cap
 
     // Collected inside the transaction, acted on only after it commits — see below.
     const urlsToCleanup: string[] = [];
 
     const updatedProduct = await prisma.$transaction(async (tx) => {
+      // Take a row lock on the product before touching its images. Anything
+      // else that mutates this product's images (this route concurrently, or
+      // DELETE /api/images/[id]) takes the same lock, so image removal and
+      // publication can't interleave. Without it, the zero-image check below is
+      // just a read: a concurrent delete could commit between the count and the
+      // update and leave a published listing with no photos.
+      await tx.$queryRaw`SELECT id FROM products WHERE id = ${productId} FOR UPDATE`;
+
       if (body.images || body.removedImageIds) {
         const existingImages = await tx.productImage.findMany({
           where: { productId },
@@ -266,6 +311,19 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         }
       }
 
+      // Re-assert the "published listings have a photo" rule inside the
+      // transaction. The pre-flight check above gives the caller a clean 400,
+      // but it reads before this transaction opens — a concurrent PATCH
+      // removing the last image between the two would otherwise let this one
+      // commit a published product with none. Throwing here rolls the whole
+      // thing back.
+      if (isPublishing) {
+        const remainingImages = await tx.productImage.count({ where: { productId } });
+        if (remainingImages === 0) {
+          throw new PublishWithoutImagesError();
+        }
+      }
+
       return tx.product.update({
         where: { id: productId },
         data: updateData,
@@ -292,6 +350,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     return NextResponse.json(updatedProduct);
   } catch (error) {
+    // Lost the race with a concurrent image removal — the transaction rolled
+    // back, so the listing is untouched. Report it as the validation failure it
+    // is rather than a server error.
+    if (error instanceof PublishWithoutImagesError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
     console.error("Error updating product:", error);
     return NextResponse.json({ error: "Failed to update product" }, { status: 500 });
   }
