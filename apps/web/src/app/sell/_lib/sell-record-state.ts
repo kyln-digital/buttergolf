@@ -114,6 +114,20 @@ export function saveTarget(state: SellRecordState): string | null {
 }
 
 /**
+ * Whether `state` still describes the route currently rendered.
+ *
+ * Props change during render while the route-change effect that updates the
+ * reducer is passive and runs afterwards, so for one render the state can
+ * describe the record just left. That matters beyond staleness: `isEditingListing`
+ * is derived straight from props, so a save in that window could send an
+ * edit-mode payload against the *previous* row — dropping `isDraft: true` from
+ * an autosave and unpublishing a live listing.
+ */
+export function matchesRoute(state: SellRecordState, currentRouteId: string | null): boolean {
+  return state.routeId === currentRouteId;
+}
+
+/**
  * Whether work carrying data captured in `dataGeneration` may still be applied.
  *
  * The generation has to travel *with the payload*, not just be read when the

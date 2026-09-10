@@ -33,9 +33,11 @@ import {
   hasLoadFailed,
   canApplyWrite,
   canApplyLoad,
+  matchesRoute,
   type SellRecordEvent,
 } from "../_lib/sell-record-state";
 import { createSaveQueue, type SaveQueue } from "../_lib/save-queue";
+import { fetchWithTimeout } from "../_lib/fetch-with-timeout";
 
 interface Category {
   id: string;
@@ -290,6 +292,11 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   // goes through applyRecordEvent, so the ref and the state stay derived from
   // one rule and cannot diverge.
   const recordRef = useRef(record);
+  // The route as of this render. Async guards compare against it so a prop
+  // change closes the write window immediately, without waiting for the
+  // passive route-change effect.
+  const routeIdRef = useRef<string | null>(loadProductId ?? null);
+  routeIdRef.current = loadProductId ?? null;
 
   const applyRecordEvent = useCallback((event: SellRecordEvent) => {
     recordRef.current = sellRecordReducer(recordRef.current, event);
@@ -336,7 +343,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       // current target would let a queued autosave for A write A.s fields into
       // B once B had loaded.
       const snapshot = recordRef.current;
-      if (!canApplyWrite(snapshot, dataGeneration)) {
+      if (!matchesRoute(snapshot, routeIdRef.current) || !canApplyWrite(snapshot, dataGeneration)) {
         return "skipped";
       }
 
@@ -371,7 +378,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
           }
 
           // Update existing draft
-          const response = await fetch(`/api/seller/products/${existingId}`, {
+          const response = await fetchWithTimeout(`/api/seller/products/${existingId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(updatePayload),
@@ -380,7 +387,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
         }
 
         // Create new draft
-        const response = await fetch("/api/products", {
+        const response = await fetchWithTimeout("/api/products", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -777,7 +784,10 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
         // different record while queued, this data belongs nowhere — writing it
         // would publish the wrong listing or duplicate it.
         const snapshot = recordRef.current;
-        if (snapshot.generation !== capturedGeneration || !canSave(snapshot)) {
+        if (
+          !matchesRoute(snapshot, routeIdRef.current) ||
+          !canApplyWrite(snapshot, capturedGeneration)
+        ) {
           return null;
         }
 
@@ -788,7 +798,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
         const draftToPublish = saveTarget(snapshot);
 
         return draftToPublish
-          ? await fetch(`/api/seller/products/${draftToPublish}`, {
+          ? await fetchWithTimeout(`/api/seller/products/${draftToPublish}`, {
               method: "PATCH",
               headers: {
                 "Content-Type": "application/json",
@@ -814,7 +824,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                 ...(isEditingListing ? {} : { isDraft: false }),
               }),
             })
-          : await fetch("/api/products", {
+          : await fetchWithTimeout("/api/products", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",

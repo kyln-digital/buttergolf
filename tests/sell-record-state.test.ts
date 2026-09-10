@@ -8,6 +8,7 @@ import {
   hasLoadFailed,
   canApplyWrite,
   canApplyLoad,
+  matchesRoute,
   type SellRecordEvent,
   type SellRecordState,
 } from "../apps/web/src/app/sell/_lib/sell-record-state";
@@ -202,6 +203,29 @@ describe("data and target must come from the same generation", () => {
 
     expect(canSave(state)).toBe(false);
     expect(canApplyLoad(state, state.generation)).toBe(true);
+  });
+});
+
+describe("matching the rendered route", () => {
+  it("rejects a record that describes the route just left", () => {
+    // Props change during render; the effect that updates the reducer is
+    // passive. In that window `isEditingListing` already reflects the new route
+    // while the record still points at the old row — so an autosave could send
+    // an edit-mode payload (no `isDraft: true`) against the previous listing.
+    const state = run(initialSellRecordState("A", "req-1"), {
+      type: "load-succeeded",
+      generation: 0,
+    });
+
+    expect(matchesRoute(state, "A")).toBe(true);
+    expect(matchesRoute(state, "B")).toBe(false);
+    expect(matchesRoute(state, null)).toBe(false);
+  });
+
+  it("matches a blank form against a blank route", () => {
+    const state = initialSellRecordState(null, "req-1");
+    expect(matchesRoute(state, null)).toBe(true);
+    expect(matchesRoute(state, "A")).toBe(false);
   });
 });
 
