@@ -115,7 +115,6 @@ export const ButtonContext = createStyledContext<{
 const ButtonFrame = styled(ThemeableStack, {
   name: "Button",
   tag: "button",
-  role: "button",
   focusable: true,
   context: ButtonContext,
 
@@ -370,12 +369,32 @@ const ButtonComponent = ButtonFrame.styleable<ButtonExtraProps>((propsIn, ref) =
   } = buttonProps as Record<string, unknown>;
   void _disableClassName;
 
+  // Real <button> / <a> elements carry their own semantics; anything else (a
+  // nested <span>, or native) needs an explicit button role. A web <button>
+  // defaults to type="submit", so pin it to "button" unless told otherwise.
+  const {
+    tag: resolvedTag,
+    role: roleProp,
+    type: typeProp,
+  } = frameProps as {
+    tag?: string;
+    role?: string;
+    type?: string;
+  };
+  const rendersNativeControl = isWeb && (resolvedTag === "button" || resolvedTag === "a");
+  type FrameProps = GetProps<typeof ButtonFrame>;
+  const semanticProps: Pick<FrameProps, "role"> & { type?: string } = {
+    role: (roleProp ?? (rendersNativeControl ? undefined : "button")) as FrameProps["role"],
+    ...(isWeb && resolvedTag === "button" ? { type: typeProp ?? "button" } : {}),
+  };
+
   return (
     <ButtonFrame
       ref={ref}
       butterVariant={butterVariant}
       {...(unstyled ? {} : { size: sizeProp as SizeTokens | number })}
       {...(frameProps as GetProps<typeof ButtonFrame>)}
+      {...semanticProps}
       chromeless={chromeless}
       unstyled={unstyled}
       style={webTransition ? [webTransition, style] : style}

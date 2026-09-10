@@ -21,6 +21,7 @@ import {
   Button,
 } from "@buttergolf/ui";
 import { CATEGORIES } from "@buttergolf/constants";
+import { useLinkPress } from "@/hooks/useLinkPress";
 import { AnimatedThemeToggle } from "./AnimatedThemeToggle";
 import { HeaderSearch } from "./HeaderSearch";
 import { MenuIcon, CloseIcon } from "./icons";
@@ -72,6 +73,7 @@ function UnreadBadge({ count }: Readonly<{ count: number }>) {
 export function ButterHeader() {
   const pathname = usePathname();
   const router = useRouter();
+  const linkPress = useLinkPress();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -139,10 +141,7 @@ export function ButterHeader() {
     return pathname?.startsWith(path);
   };
 
-  const navigate = (href: string) => {
-    setMobileMenuOpen(false);
-    router.push(href);
-  };
+  const closeMobileMenu = () => setMobileMenuOpen(false);
 
   return (
     <>
@@ -203,13 +202,21 @@ export function ButterHeader() {
             >
               <AuthButtonsSection>
                 <LazySignedOut>
-                  <Button butterVariant="ghost" size="$4" onPress={() => router.push("/sign-in")}>
+                  <Button
+                    butterVariant="ghost"
+                    size="$4"
+                    tag="a"
+                    href="/sign-in"
+                    onPress={linkPress("/sign-in")}
+                  >
                     Log in
                   </Button>
                   <Button
                     butterVariant="secondary"
                     size="$4"
-                    onPress={() => router.push("/sign-up")}
+                    tag="a"
+                    href="/sign-up"
+                    onPress={linkPress("/sign-up")}
                   >
                     Sign up
                   </Button>
@@ -219,18 +226,22 @@ export function ButterHeader() {
                   <Button
                     butterVariant="ghost"
                     circular
-                    size="$4.5"
+                    size={44}
                     aria-label="Wishlist"
-                    onPress={() => router.push("/favourites")}
+                    tag="a"
+                    href="/favourites"
+                    onPress={linkPress("/favourites")}
                   >
                     <Heart size={20} color="$text" />
                   </Button>
                   <Button
                     butterVariant="ghost"
                     circular
-                    size="$4.5"
+                    size={44}
                     aria-label={unreadCount > 0 ? `Messages, ${unreadCount} unread` : "Messages"}
-                    onPress={() => router.push("/messages")}
+                    tag="a"
+                    href="/messages"
+                    onPress={linkPress("/messages")}
                   >
                     <MessageCircle size={20} color="$text" />
                     <UnreadBadge count={unreadCount} />
@@ -242,7 +253,9 @@ export function ButterHeader() {
                 butterVariant="primary"
                 size="$4"
                 icon={Plus}
-                onPress={() => router.push("/sell")}
+                tag="a"
+                href="/sell"
+                onPress={linkPress("/sell")}
               >
                 Sell now
               </Button>
@@ -260,7 +273,7 @@ export function ButterHeader() {
               <Button
                 butterVariant="ghost"
                 circular
-                size="$4.5"
+                size={44}
                 aria-label="Search"
                 onPress={() => setMobileMenuOpen(true)}
               >
@@ -269,7 +282,7 @@ export function ButterHeader() {
               <Button
                 butterVariant="ghost"
                 circular
-                size="$4.5"
+                size={44}
                 aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
                 aria-expanded={mobileMenuOpen}
                 onPress={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -318,7 +331,14 @@ export function ButterHeader() {
         >
           <HeaderSearch autoFocus onNavigate={() => setMobileMenuOpen(false)} />
 
-          <Button butterVariant="primary" size="$5" icon={Plus} onPress={() => navigate("/sell")}>
+          <Button
+            butterVariant="primary"
+            size="$5"
+            icon={Plus}
+            tag="a"
+            href="/sell"
+            onPress={linkPress("/sell", closeMobileMenu)}
+          >
             Sell now
           </Button>
 
@@ -415,10 +435,22 @@ export function ButterHeader() {
           >
             <LazySignedOut>
               <Column gap="$sm" width="100%">
-                <Button butterVariant="secondary" size="$5" onPress={() => navigate("/sign-in")}>
+                <Button
+                  butterVariant="secondary"
+                  size="$5"
+                  tag="a"
+                  href="/sign-in"
+                  onPress={linkPress("/sign-in", closeMobileMenu)}
+                >
                   Log in
                 </Button>
-                <Button butterVariant="ghost" size="$5" onPress={() => navigate("/sign-up")}>
+                <Button
+                  butterVariant="ghost"
+                  size="$5"
+                  tag="a"
+                  href="/sign-up"
+                  onPress={linkPress("/sign-up", closeMobileMenu)}
+                >
                   Create an account
                 </Button>
               </Column>
