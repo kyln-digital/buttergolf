@@ -46,7 +46,11 @@ export function ListingStep({ formData, onUpdate, direction }: Readonly<ListingS
     if (formData.modelName) {
       parts.push(formData.modelName);
     }
-    if (formData.categoryName) {
+    // For Woods, the chosen sub-type (Driver / Fairway Wood / Hybrid) is what a
+    // buyer searches for, so prefer it over the generic parent category.
+    if (formData.woodsSubcategory) {
+      parts.push(formData.woodsSubcategory);
+    } else if (formData.categoryName) {
       parts.push(singularize(formData.categoryName));
     }
 
@@ -67,6 +71,7 @@ export function ListingStep({ formData, onUpdate, direction }: Readonly<ListingS
     formData.brandName,
     formData.modelName,
     formData.categoryName,
+    formData.woodsSubcategory,
     formData.gripCondition,
     formData.headCondition,
     formData.shaftCondition,

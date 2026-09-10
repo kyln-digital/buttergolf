@@ -183,15 +183,25 @@ function hasMeaningfulDraftContent(data: FormData): boolean {
 }
 
 // Save status indicator
-const SaveStatusIndicator = ({ status }: { status: AutoSaveStatus }) => {
+const SaveStatusIndicator = ({
+  status,
+  isEditingListing,
+}: {
+  status: AutoSaveStatus;
+  isEditingListing: boolean;
+}) => {
   if (status === "idle") return null;
 
+  // A live listing being edited is never a draft, so don't call it one.
+  const noun = isEditingListing ? "changes" : "draft";
   const label =
     status === "saving"
-      ? "Saving draft…"
+      ? `Saving ${noun}…`
       : status === "saved"
-        ? "Draft saved"
-        : "Failed to save draft";
+        ? isEditingListing
+          ? "Changes saved"
+          : "Draft saved"
+        : `Failed to save ${noun}`;
   const colour = status === "error" ? "$error" : "$textSecondary";
 
   return (
@@ -204,9 +214,18 @@ const SaveStatusIndicator = ({ status }: { status: AutoSaveStatus }) => {
 interface SellFormClientProps {
   /** If provided, loads an existing draft from the database instead of starting fresh */
   draftId?: string;
+  /**
+   * If provided, edits an already-published listing. The form keeps the listing
+   * live throughout — autosave never flips it back to a draft — and the primary
+   * action saves changes rather than publishing.
+   */
+  editProductId?: string;
 }
 
-export function SellFormClient({ draftId }: SellFormClientProps) {
+export function SellFormClient({ draftId, editProductId }: SellFormClientProps) {
+  const isEditingListing = Boolean(editProductId);
+  // Both modes load an existing product by id; they differ in how it's saved.
+  const loadProductId = editProductId ?? draftId;
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -222,20 +241,45 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
   const titleManuallyOverriddenRef = useRef(false);
 
   // --- Persisted form state (localStorage) ---
+  // Editing a live listing gets its own key so it can't clobber (or be
+  // pre-filled from) an unrelated new-listing draft the seller has on the go.
+  const storageKey = isEditingListing
+    ? `${SELL_DRAFT_STORAGE_KEY}-edit-${editProductId}`
+    : SELL_DRAFT_STORAGE_KEY;
+
   const [formData, setFormData, { isHydrated, clear: clearLocalDraft }] =
-    useLocalStorageState<FormData>(SELL_DRAFT_STORAGE_KEY, EMPTY_FORM_DATA, { debounceMs: 1000 });
+    useLocalStorageState<FormData>(storageKey, EMPTY_FORM_DATA, { debounceMs: 1000 });
 
   // Track whether the user has dismissed the recovery prompt
   const [recoveryDismissed, setRecoveryDismissed] = useState(false);
-  // The draftId of the DB-saved draft (set after first autosave, or passed in as prop)
-  const [savedDraftId, setSavedDraftId] = useState<string | null>(draftId ?? null);
+  // The id of the DB row backing this listing: passed in as a prop, or set by
+  // the first autosave. A ref rather than state because submit needs the id the
+  // moment an autosave assigns it — a state update would not be visible to the
+  // closure that is already running.
+  const savedDraftIdRef = useRef<string | null>(loadProductId ?? null);
+  // Every autosave still in flight. A set rather than a single promise because
+  // useAutoSave can start a second save while the first is still pending —
+  // tracking only the newest would let an older PATCH land after the submit,
+  // carrying `isDraft: true` and a stale image list.
+  const inFlightSavesRef = useRef<Set<Promise<AutoSaveResult>>>(new Set());
+
+  /** Waits for every outstanding autosave so this write lands last. */
+  const settleInFlightSaves = useCallback(async () => {
+    while (inFlightSavesRef.current.size > 0) {
+      // Re-read after each pass: settling one save can start another.
+      await Promise.allSettled([...inFlightSavesRef.current]);
+    }
+  }, []);
+  // Gates autosave until an existing draft/listing has been fetched. A fresh
+  // listing has nothing to load, so it starts ready.
+  const [isExistingRecordLoaded, setIsExistingRecordLoaded] = useState(!loadProductId);
   // Stable requestId for first-create idempotency until we get a real draft ID.
   const draftRequestIdRef = useRef<string>(uuidv4());
 
   // Show the recovery banner when localStorage has meaningful data and
   // we're NOT loading a specific draft from the DB
   const hasLocalDraft =
-    isHydrated && !draftId && !recoveryDismissed && hasMeaningfulDraftContent(formData);
+    isHydrated && !loadProductId && !recoveryDismissed && hasMeaningfulDraftContent(formData);
 
   // --- DB autosave via useAutoSave ---
   const persistDraft = useCallback(
@@ -247,15 +291,21 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
       const parsedPrice = Number.parseFloat(data.price);
       const safePrice = Number.isFinite(parsedPrice) ? parsedPrice : 0;
 
+      // Read the ref, not state: a POST that resolved moments ago may have set
+      // the id without React having re-rendered this closure yet.
+      const existingId = savedDraftIdRef.current;
+
       try {
-        if (savedDraftId) {
+        if (existingId) {
           const updatePayload: Record<string, unknown> = {
             title: data.title,
             description: data.description,
             price: safePrice,
             brandId: data.brandId || null,
             model: data.model || null,
-            isDraft: true,
+            // Only new listings autosave as drafts. Editing a live listing must
+            // never unpublish it part-way through the seller's changes.
+            ...(isEditingListing ? {} : { isDraft: true }),
             flex: data.flex || null,
             loft: data.loft || null,
             woodsSubcategory: data.woodsSubcategory || null,
@@ -263,6 +313,9 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
             gripCondition: data.gripCondition,
             headCondition: data.headCondition,
             shaftCondition: data.shaftCondition,
+            // Drafts carry their photos too, so the seller hub can render a
+            // thumbnail instead of a broken image.
+            images: data.images.map((url, index) => ({ url, sortOrder: index })),
           };
 
           if (data.categoryId.trim().length > 0) {
@@ -270,7 +323,7 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
           }
 
           // Update existing draft
-          const response = await fetch(`/api/seller/products/${savedDraftId}`, {
+          const response = await fetch(`/api/seller/products/${existingId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(updatePayload),
@@ -293,7 +346,7 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
 
         if (response.ok) {
           const product = await response.json();
-          setSavedDraftId(product.id);
+          savedDraftIdRef.current = product.id;
           return "saved";
         }
         return "error";
@@ -301,11 +354,26 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
         return "error";
       }
     },
-    [savedDraftId]
+    [isEditingListing]
   );
 
   const handleAutoSave = useCallback(
-    async (data: FormData): Promise<AutoSaveResult> => persistDraft(data),
+    async (data: FormData): Promise<AutoSaveResult> => {
+      // Once a submit or explicit draft-save is under way, a background save
+      // would only race it — and the autosave payload carries `isDraft: true`,
+      // so landing last it would unpublish what was just published.
+      if (isSubmittingRef.current) {
+        return "skipped";
+      }
+
+      const pending = persistDraft(data);
+      inFlightSavesRef.current.add(pending);
+      try {
+        return await pending;
+      } finally {
+        inFlightSavesRef.current.delete(pending);
+      }
+    },
     [persistDraft]
   );
 
@@ -313,16 +381,21 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
     data: formData,
     onSave: handleAutoSave,
     debounceMs: 10_000,
-    enabled: isHydrated && !loading,
+    // When we're loading an existing draft or listing, autosave must wait until
+    // that load has landed. Saving the blank initial form over the top would
+    // otherwise wipe the record's photos and fields.
+    enabled: isHydrated && !loading && isExistingRecordLoaded,
   });
 
-  // --- Load draft from DB when draftId prop is provided ---
+  // --- Load an existing draft or listing from the DB when an id is provided ---
   useEffect(() => {
-    if (!draftId) return;
+    if (!loadProductId) return;
+
+    savedDraftIdRef.current = loadProductId;
 
     const loadDraft = async () => {
       try {
-        const response = await fetch(`/api/products/${draftId}`);
+        const response = await fetch(`/api/products/${loadProductId}`);
         if (!response.ok) return;
 
         const product = await response.json();
@@ -345,14 +418,24 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
           images: product.images?.map((img: { url: string }) => img.url) || [],
         };
 
+        // A stored title is the seller's, whether they typed it or accepted the
+        // generated one. Without this the auto-title effect would regenerate
+        // from brand/model/category as soon as categories load and quietly
+        // replace a custom title — which "Save changes" would then persist.
+        if (loaded.title.trim().length > 0) {
+          titleManuallyOverriddenRef.current = true;
+        }
+
         setFormData(loaded);
+        setIsExistingRecordLoaded(true);
       } catch {
-        // If load fails, start with whatever localStorage has
+        // If load fails, start with whatever localStorage has. Autosave stays
+        // disabled so a failed fetch can't overwrite the record with blanks.
       }
     };
 
     void loadDraft();
-  }, [draftId, setFormData]);
+  }, [loadProductId, setFormData]);
 
   // Helper function to singularize category names
   const singularize = (word: string): string => {
@@ -399,16 +482,26 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
       parts.push(formData.model.trim());
     }
 
-    // Add category name (look up from categoryId and singularize)
+    // Add the club type. For Woods the chosen sub-type (Driver / Fairway Wood /
+    // Hybrid) is what a buyer actually searches for, so it replaces the generic
+    // parent category — "TaylorMade Qi10 Driver", not "TaylorMade Qi10 Wood".
     if (formData.categoryId) {
       const category = categories.find((c) => c.id === formData.categoryId);
       if (category) {
-        parts.push(singularize(category.name));
+        const subcategory = formData.woodsSubcategory.trim();
+        const useSubcategory = category.slug === "woods" && subcategory.length > 0;
+        parts.push(useSubcategory ? subcategory : singularize(category.name));
       }
     }
 
     return parts.join(" ");
-  }, [formData.brandName, formData.model, formData.categoryId, categories]);
+  }, [
+    formData.brandName,
+    formData.model,
+    formData.categoryId,
+    formData.woodsSubcategory,
+    categories,
+  ]);
 
   // Auto-generate title when relevant fields change
   useEffect(() => {
@@ -490,6 +583,24 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
     return category?.slug === "woods";
   };
 
+  /**
+   * Switching category clears the fields that only apply to the category being
+   * left, so a putter can't keep "Driver" as its type (which would then leak
+   * into the auto-generated title).
+   */
+  const handleCategoryChange = (categoryId: string) => {
+    const category = categories.find((c) => c.id === categoryId);
+
+    setFormData({
+      ...formData,
+      categoryId,
+      ...(category?.slug === "woods" ? {} : { woodsSubcategory: "" }),
+      ...(category?.slug === "woods" || category?.slug === "putters"
+        ? {}
+        : { headCoverIncluded: false }),
+    });
+  };
+
   const shouldShowHeadCover = (): boolean => {
     if (!formData.categoryId) return false;
     const category = categories.find((c) => c.id === formData.categoryId);
@@ -551,20 +662,61 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
     }
 
     try {
-      const response = await fetch("/api/products", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...formData,
-          price: parsedPrice,
-          // Don't send brandName (display only)
-          brandName: undefined,
-          // Request ID for server-side idempotency
-          requestId: requestIdRef.current,
-        }),
-      });
+      // Let any autosave already in flight finish first. Two writes racing here
+      // would be ordered by the server, and the autosave's payload carries
+      // `isDraft: true` plus an older image list — landing last, it would
+      // unpublish the listing or resurrect deleted photos. Waiting also lets a
+      // pending draft-creation POST hand us its id below.
+      await settleInFlightSaves();
+
+      // Autosave may already have created a draft row for this listing. Publish
+      // THAT row rather than POSTing a second product — otherwise the draft is
+      // orphaned and sits in the seller's listings as an untitled £0.00 card.
+      // Read the ref: the id may have been assigned by the await above, after
+      // this closure was created.
+      const draftToPublish = savedDraftIdRef.current;
+
+      const response = draftToPublish
+        ? await fetch(`/api/seller/products/${draftToPublish}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              title: formData.title,
+              description: formData.description,
+              price: parsedPrice,
+              // `condition` is derived server-side from the three sliders below.
+              brandId: formData.brandId,
+              model: formData.model || null,
+              categoryId: formData.categoryId,
+              flex: formData.flex || null,
+              loft: formData.loft || null,
+              woodsSubcategory: formData.woodsSubcategory || null,
+              headCoverIncluded: formData.headCoverIncluded,
+              gripCondition: formData.gripCondition,
+              headCondition: formData.headCondition,
+              shaftCondition: formData.shaftCondition,
+              images: formData.images.map((url, index) => ({ url, sortOrder: index })),
+              // Editing a live listing leaves isDraft alone; publishing a draft
+              // flips it.
+              ...(isEditingListing ? {} : { isDraft: false }),
+            }),
+          })
+        : await fetch("/api/products", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              ...formData,
+              price: parsedPrice,
+              // Don't send brandName (display only)
+              brandName: undefined,
+              // Request ID for server-side idempotency
+              requestId: requestIdRef.current,
+            }),
+          });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -573,6 +725,12 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
 
       const product = await response.json();
       clearLocalDraft();
+
+      if (isEditingListing) {
+        router.push("/seller/listings?updated=1");
+        return;
+      }
+
       const successParams = new URLSearchParams({
         listed: "1",
         title: product.title || formData.title,
@@ -580,7 +738,13 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
       router.push(`/seller/listings?${successParams.toString()}`);
       // Note: Don't reset isSubmittingRef here - we're navigating away
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create listing");
+      setError(
+        err instanceof Error
+          ? err.message
+          : isEditingListing
+            ? "Failed to save changes"
+            : "Failed to create listing"
+      );
       setLoading(false);
       isSubmittingRef.current = false;
     }
@@ -608,6 +772,10 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
     }
 
     try {
+      // Same ordering concern as publishing: let an in-flight autosave settle
+      // so this save is the last write, and so it can hand us the draft id.
+      await settleInFlightSaves();
+
       const result = await persistDraft(formData);
       if (result !== "saved") {
         throw new Error("Failed to save draft");
@@ -658,8 +826,8 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
           {/* Header */}
           <Column gap="$sm" alignItems="center">
             <Row gap="$md" alignItems="center">
-              <Heading level={2}>Sell an item</Heading>
-              <SaveStatusIndicator status={autoSaveStatus} />
+              <Heading level={2}>{isEditingListing ? "Edit listing" : "Sell an item"}</Heading>
+              <SaveStatusIndicator status={autoSaveStatus} isEditingListing={isEditingListing} />
             </Row>
           </Column>
 
@@ -800,7 +968,7 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
                     {/* eslint-disable-next-line react/forbid-elements -- TODO: replace with design-system Select */}
                     <select
                       value={formData.categoryId}
-                      onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                      onChange={(e) => handleCategoryChange(e.target.value)}
                       required
                       style={{
                         padding: "12px 18px",
@@ -1242,12 +1410,29 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
                   width="100%"
                 >
                   <Row gap="$sm" justifyContent="space-between" width="100%">
-                    <Button size="$5" onPress={handleSaveDraft} disabled={loading} flex={1}>
-                      {loading ? "Saving..." : "Save draft"}
-                    </Button>
+                    {isEditingListing ? (
+                      <Button
+                        size="$5"
+                        onPress={() => router.push("/seller/listings")}
+                        disabled={loading}
+                        flex={1}
+                      >
+                        Cancel
+                      </Button>
+                    ) : (
+                      <Button size="$5" onPress={handleSaveDraft} disabled={loading} flex={1}>
+                        {loading ? "Saving..." : "Save draft"}
+                      </Button>
+                    )}
                     {/* Use type="submit" for native form submission only - no onPress to prevent dual submission */}
                     <Button size="$5" disabled={loading} type="submit" flex={1}>
-                      {loading ? "Publishing..." : "List item"}
+                      {isEditingListing
+                        ? loading
+                          ? "Saving..."
+                          : "Save changes"
+                        : loading
+                          ? "Publishing..."
+                          : "List item"}
                     </Button>
                   </Row>
                   <Text size="$2" color="$helperText" textAlign="center">

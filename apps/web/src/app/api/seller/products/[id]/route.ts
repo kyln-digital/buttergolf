@@ -3,6 +3,13 @@ import { prisma, ProductCondition } from "@buttergolf/db";
 import { LISTING_PRICE_LIMITS, getListingPriceBoundsMessage } from "@buttergolf/constants";
 import { getUserIdFromRequest } from "@/lib/auth";
 import { cloudinary, extractPublicId, isValidCloudinaryUrl } from "@/lib/cloudinary";
+import { mapSlidersToConditionEnum } from "@/lib/product-condition";
+
+const SLIDER_LABELS = {
+  gripCondition: "Grip",
+  headCondition: "Head",
+  shaftCondition: "Shaft",
+} as const;
 
 /**
  * PATCH /api/seller/products/[id]
@@ -92,6 +99,42 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }
     }
 
+    // Validate the component sliders before anything derives from them.
+    // Matches the range POST enforces; without it `gripCondition: 99` (or a
+    // string) would persist and skew the derived condition.
+    for (const field of ["gripCondition", "headCondition", "shaftCondition"] as const) {
+      if (updateData[field] === undefined) continue;
+
+      const value = updateData[field];
+      if (typeof value !== "number" || !Number.isFinite(value) || value < 1 || value > 10) {
+        return NextResponse.json(
+          { error: `${SLIDER_LABELS[field]} condition must be a number between 1 and 10` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Keep the legacy `condition` enum in step with the component sliders. The
+    // sell form only sends sliders, so without this an edited listing would
+    // keep whatever condition it was first created with.
+    if (updateData.condition === undefined) {
+      const grip =
+        (updateData.gripCondition as number | undefined) ?? existingProduct.gripCondition;
+      const head =
+        (updateData.headCondition as number | undefined) ?? existingProduct.headCondition;
+      const shaft =
+        (updateData.shaftCondition as number | undefined) ?? existingProduct.shaftCondition;
+
+      const slidersChanged =
+        updateData.gripCondition !== undefined ||
+        updateData.headCondition !== undefined ||
+        updateData.shaftCondition !== undefined;
+
+      if (slidersChanged && grip != null && head != null && shaft != null) {
+        updateData.condition = mapSlidersToConditionEnum(grip, head, shaft);
+      }
+    }
+
     // Validate price if provided
     if (updateData.price !== undefined) {
       const price = Number(updateData.price);
@@ -105,11 +148,55 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       updateData.price = price;
     }
 
+    // Publishing a draft (isDraft true → false) must satisfy the same minimums
+    // as creating a listing outright, so the sell form's publish path can't
+    // produce a live listing with no photo or no category.
+    const isPublishing = existingProduct.isDraft && updateData.isDraft === false;
+
+    if (isPublishing) {
+      const submittedImageCount = Array.isArray(body.images)
+        ? body.images.filter(
+            (img: unknown) =>
+              typeof (img as { url?: unknown })?.url === "string" &&
+              isValidCloudinaryUrl((img as { url: string }).url)
+          ).length
+        : await prisma.productImage.count({ where: { productId } });
+
+      if (submittedImageCount === 0) {
+        return NextResponse.json({ error: "At least one image is required" }, { status: 400 });
+      }
+
+      // Drafts are saved from any partial state, so publishing has to enforce
+      // the same minimums POST does — against the effective row (this request
+      // merged over what's already stored), not just the fields being sent.
+      const effective = { ...existingProduct, ...updateData };
+
+      const missing = (["title", "description", "categoryId"] as const).filter(
+        (field) => typeof effective[field] !== "string" || effective[field].trim().length === 0
+      );
+
+      if (missing.length > 0) {
+        return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      }
+
+      const effectivePrice = Number(effective.price);
+      if (
+        !Number.isFinite(effectivePrice) ||
+        effectivePrice < LISTING_PRICE_LIMITS.MIN ||
+        effectivePrice > LISTING_PRICE_LIMITS.MAX
+      ) {
+        return NextResponse.json({ error: getListingPriceBoundsMessage() }, { status: 400 });
+      }
+    }
+
     // Handle image mutations + product update in a single transaction.
     // images and removedImageIds are processed separately from allowedFields
     // because they require multi-step logic (delete, create, reorder) rather
     // than a direct Prisma data assignment.
     const MAX_IMAGE_IDS = 20; // safety cap
+
+    // Collected inside the transaction, acted on only after it commits — see below.
+    const urlsToCleanup: string[] = [];
 
     const updatedProduct = await prisma.$transaction(async (tx) => {
       if (body.images || body.removedImageIds) {
@@ -127,8 +214,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
               .filter((id: unknown) => typeof id === "string" && existingIdSet.has(id as string))
           : [];
 
-        const urlsToCleanup: string[] = [];
-
         if (removedIds.length > 0) {
           const toDelete = existingImages.filter((img) => removedIds.includes(img.id));
           urlsToCleanup.push(...toDelete.map((img) => img.url));
@@ -139,10 +224,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
         // Sync images: create new ones and update sort order
         if (Array.isArray(body.images)) {
+          const submittedUrls = new Set<string>();
+
           for (let i = 0; i < Math.min(body.images.length, MAX_IMAGE_IDS); i++) {
             const img = body.images[i];
             if (!img?.url || typeof img.url !== "string") continue;
             if (!isValidCloudinaryUrl(img.url)) continue;
+
+            submittedUrls.add(img.url);
 
             if (existingUrlSet.has(img.url)) {
               const existing = existingImages.find((e) => e.url === img.url);
@@ -158,15 +247,20 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
               });
             }
           }
-        }
 
-        // Best-effort Cloudinary cleanup after DB ops succeed (fire-and-forget)
-        for (const cdnUrl of urlsToCleanup) {
-          const publicId = extractPublicId(cdnUrl);
-          if (publicId) {
-            cloudinary.uploader.destroy(publicId).catch((err) => {
-              // Orphaned CDN asset - log for later reconciliation, don't fail the request.
-              console.error("Failed to delete Cloudinary asset:", { publicId, err });
+          // `images` is the complete desired list, so anything still in the DB
+          // that wasn't submitted has been removed. The edit modal reports these
+          // via removedImageIds, but the autosaved sell form has no image IDs to
+          // report with — without this, deleting a photo mid-draft would leave
+          // the row behind and it would reappear on publish.
+          const stale = existingImages.filter(
+            (img) => !submittedUrls.has(img.url) && !removedIds.includes(img.id)
+          );
+
+          if (stale.length > 0) {
+            urlsToCleanup.push(...stale.map((img) => img.url));
+            await tx.productImage.deleteMany({
+              where: { id: { in: stale.map((img) => img.id) }, productId },
             });
           }
         }
@@ -182,6 +276,19 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         },
       });
     });
+
+    // Cloudinary cleanup runs only once the transaction has committed. Doing it
+    // inside would destroy assets that a later rollback leaves the DB still
+    // pointing at, turning a failed edit into permanently broken images.
+    // Best-effort: an orphaned asset is logged, never fails the request.
+    for (const cdnUrl of urlsToCleanup) {
+      const publicId = extractPublicId(cdnUrl);
+      if (publicId) {
+        cloudinary.uploader.destroy(publicId).catch((err) => {
+          console.error("Failed to delete Cloudinary asset:", { publicId, err });
+        });
+      }
+    }
 
     return NextResponse.json(updatedProduct);
   } catch (error) {

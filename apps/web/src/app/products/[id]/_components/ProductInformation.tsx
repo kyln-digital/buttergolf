@@ -3,12 +3,28 @@
 import { useState } from "react";
 import { Column, Row, Text, Button, Heading, Popover, Input } from "@buttergolf/ui";
 import { Heart, Info } from "@tamagui/lucide-icons";
+import { getConditionLabel, calculateAverageCondition } from "@buttergolf/app";
 import type { Product } from "../ProductDetailClient";
 
 interface ProductInformationProps {
   product: Product;
   onBuyNow: () => void;
   onSubmitOffer: (amount: number) => Promise<void>;
+}
+
+/** Sellers grade each component from 1 (Poor) to 10 (Like New). */
+const MAX_CONDITION_RATING = 10;
+
+/**
+ * Theme token for a component rating's progress bar, keyed off the same
+ * boundaries as the shared `CONDITION_LABELS` scale so the colour can't say
+ * "excellent" while the label next to it says "good".
+ */
+function getConditionColor(rating: number) {
+  if (rating >= 10) return "$success" as const;
+  if (rating >= 8) return "$secondary" as const;
+  if (rating >= 5) return "$warning" as const;
+  return "$error" as const;
 }
 
 export function ProductInformation({ product, onBuyNow, onSubmitOffer }: ProductInformationProps) {
@@ -49,6 +65,44 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
 
   const averageRating = product.user.averageRating || 0;
   const ratingCount = product.user.ratingCount || 0;
+
+  // Specs are built as a list so optional rows (Type, Shaft Flex, Loft, Head
+  // Cover) stay aligned with their labels in the two-column layout below.
+  const specs: { label: string; value: string }[] = [
+    { label: "Category", value: product.category.name },
+    // A Woods listing is really a Driver, Fairway Wood or Hybrid — show which,
+    // rather than leaving the buyer with the generic parent category.
+    ...(product.woodsSubcategory ? [{ label: "Type", value: product.woodsSubcategory }] : []),
+    { label: "Brand", value: product.brand || "N/A" },
+    { label: "Model", value: product.model || "N/A" },
+    { label: "Condition", value: formatCondition(product.condition) },
+    ...(product.flex ? [{ label: "Shaft Flex", value: product.flex }] : []),
+    ...(product.loft ? [{ label: "Loft", value: product.loft }] : []),
+    ...(product.headCoverIncluded === null
+      ? []
+      : [
+          {
+            label: "Head Cover",
+            value: product.headCoverIncluded ? "Included" : "Not included",
+          },
+        ]),
+  ];
+
+  const { gripCondition, headCondition, shaftCondition } = product;
+  const hasConditionRatings =
+    gripCondition !== null && headCondition !== null && shaftCondition !== null;
+
+  const conditionComponents = hasConditionRatings
+    ? [
+        { label: "Grip", value: gripCondition },
+        { label: "Head", value: headCondition },
+        { label: "Shaft", value: shaftCondition },
+      ]
+    : [];
+
+  const averageCondition = hasConditionRatings
+    ? calculateAverageCondition(gripCondition, headCondition, shaftCondition)
+    : null;
 
   return (
     <Column
@@ -148,37 +202,64 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
       {/* Product Specifications */}
       <Row gap="$md">
         <Column gap="$sm" flex={1}>
-          <Text size="$3" color="$text" fontWeight="700" lineHeight="$3">
-            Category
-          </Text>
-          <Text size="$3" color="$text" fontWeight="700" lineHeight="$3">
-            Brand
-          </Text>
-          <Text size="$3" color="$text" fontWeight="700" lineHeight="$3">
-            Model
-          </Text>
-          <Text size="$3" color="$text" fontWeight="700" lineHeight="$3">
-            Condition
-          </Text>
+          {specs.map((spec) => (
+            <Text key={spec.label} size="$3" color="$text" fontWeight="700" lineHeight="$3">
+              {spec.label}
+            </Text>
+          ))}
         </Column>
         <Column gap="$sm" flex={1}>
-          <Text size="$3" color="$text" lineHeight="$3">
-            {product.category.name}
-          </Text>
-          <Text size="$3" color="$text" lineHeight="$3">
-            {product.brand || "N/A"}
-          </Text>
-          <Text size="$3" color="$text" lineHeight="$3">
-            {product.model || "N/A"}
-          </Text>
-          <Text size="$3" color="$text" lineHeight="$3">
-            {formatCondition(product.condition)}
-          </Text>
+          {specs.map((spec) => (
+            <Text key={spec.label} size="$3" color="$text" lineHeight="$3">
+              {spec.value}
+            </Text>
+          ))}
         </Column>
       </Row>
 
       {/* Divider */}
       <Column height={1} backgroundColor="$border" width="100%" />
+
+      {/* Component condition ratings — sellers grade grip, head and shaft
+          individually when listing, so buyers get to see the same detail. */}
+      {hasConditionRatings && (
+        <>
+          <Column gap="$sm">
+            <Row alignItems="center" justifyContent="space-between">
+              <Text size="$3" color="$text" fontWeight="700">
+                Condition Rating
+              </Text>
+              {averageCondition !== null && (
+                <Text size="$3" color="$textSecondary">
+                  {getConditionLabel(averageCondition)} ({averageCondition}/10)
+                </Text>
+              )}
+            </Row>
+
+            {conditionComponents.map(({ label, value }) => (
+              <Row key={label} alignItems="center" gap="$sm">
+                <Text size="$3" color="$textSecondary" width={48}>
+                  {label}
+                </Text>
+                <Column flex={1} height={8} backgroundColor="$cloudMist" borderRadius="$full">
+                  <Column
+                    height={8}
+                    width={`${(value / MAX_CONDITION_RATING) * 100}%`}
+                    backgroundColor={getConditionColor(value)}
+                    borderRadius="$full"
+                  />
+                </Column>
+                <Text size="$3" color="$text" fontWeight="600" width={40} textAlign="right">
+                  {value}/{MAX_CONDITION_RATING}
+                </Text>
+              </Row>
+            ))}
+          </Column>
+
+          {/* Divider */}
+          <Column height={1} backgroundColor="$border" width="100%" />
+        </>
+      )}
 
       {/* Product Description */}
       <Column gap="$md">

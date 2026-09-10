@@ -57,7 +57,9 @@ function CheckoutPageContent() {
           id: productData.id,
           title: productData.title,
           price: productData.price,
-          imageUrl: productData.images?.[0]?.url || null,
+          // displayUrl carries the brand treatment for the cover; url is the
+          // raw source kept for editors.
+          imageUrl: productData.images?.[0]?.displayUrl || productData.images?.[0]?.url || null,
           condition: productData.condition,
           brand: productData.brand?.name,
         });

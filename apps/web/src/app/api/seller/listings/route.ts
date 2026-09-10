@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma, Prisma } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
 import { getOrCreateUser } from "@/lib/auth-helpers";
+import { resolveCoverUrl } from "@/lib/product-images";
 
 /**
  * GET /api/seller/listings
@@ -146,7 +147,7 @@ export async function GET(request: NextRequest) {
         model: product.model,
         categoryId: product.categoryId,
         categoryName: product.category.name,
-        imageUrl: product.images[0]?.url || "/placeholder-product.jpg",
+        imageUrl: resolveCoverUrl(product.images),
         isSold: product.isSold,
         isDraft: product.isDraft,
         views: product.views,

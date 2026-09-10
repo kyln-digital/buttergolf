@@ -1,6 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import {
+  isAllowedUploadType,
+  MAX_UPLOAD_FILE_SIZE_BYTES,
+  MAX_UPLOAD_FILE_SIZE_LABEL,
+} from "@/lib/image-file";
 
 export interface UploadResult {
   url: string;
@@ -25,19 +30,19 @@ export function useImageUpload(): UseImageUploadReturn {
     setError(null);
     setProgress(0);
 
-    // Validate file size (max 10MB)
-    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-    if (file.size > MAX_FILE_SIZE) {
-      const errorMsg = "File size must be less than 10MB";
+    // Validate file size. ImageUpload also checks the picked file before
+    // decoding it; this catches the cropped result and non-UI callers.
+    if (file.size > MAX_UPLOAD_FILE_SIZE_BYTES) {
+      const errorMsg = `File size must be less than ${MAX_UPLOAD_FILE_SIZE_LABEL}`;
       setError(errorMsg);
       setUploading(false);
       throw new Error(errorMsg);
     }
 
-    // Validate file type
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
-    if (!allowedTypes.includes(file.type)) {
-      const errorMsg = "Only image files (JPEG, PNG, WebP, GIF) are allowed";
+    // Validate file type. HEIC is accepted here because mobile uploads post the
+    // original file; the web flow converts to JPEG before reaching this point.
+    if (!isAllowedUploadType(file.type)) {
+      const errorMsg = "Only image files (JPEG, PNG, WebP, GIF, HEIC) are allowed";
       setError(errorMsg);
       setUploading(false);
       throw new Error(errorMsg);
