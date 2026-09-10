@@ -236,6 +236,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const urlsToCleanup: string[] = [];
 
     const updatedProduct = await prisma.$transaction(async (tx) => {
+      // Take a row lock on the product before touching its images. Anything
+      // else that mutates this product's images (this route concurrently, or
+      // DELETE /api/images/[id]) takes the same lock, so image removal and
+      // publication can't interleave. Without it, the zero-image check below is
+      // just a read: a concurrent delete could commit between the count and the
+      // update and leave a published listing with no photos.
+      await tx.$queryRaw`SELECT id FROM products WHERE id = ${productId} FOR UPDATE`;
+
       if (body.images || body.removedImageIds) {
         const existingImages = await tx.productImage.findMany({
           where: { productId },

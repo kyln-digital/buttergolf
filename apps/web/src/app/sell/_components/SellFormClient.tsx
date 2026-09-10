@@ -150,6 +150,10 @@ const SELL_DRAFT_STORAGE_KEY = "buttergolf-sell-draft-v1";
 const RECORD_NOT_READY_MESSAGE =
   "Still loading this listing. Give it a moment and try again — or reload the page if this persists.";
 
+/** Shown when the page moved to a different listing mid-save. */
+const RECORD_CHANGED_MESSAGE =
+  "You moved to a different listing before this finished saving, so nothing was written. Go back and try again.";
+
 const EMPTY_FORM_DATA: FormData = {
   title: "",
   description: "",
@@ -294,6 +298,8 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
    * listing.
    */
   const recordGenerationRef = useRef(0);
+  /** Lets the load effect tell a record switch from the first mount. */
+  const hasRunLoadEffectRef = useRef(false);
   /** True when the data on screen belongs to the record we'd be writing to. */
   const isRecordReadyToSave = (loadProductId ?? null) === loadedRecordId;
   /** An existing record is being fetched and its data isn't on screen yet. */
@@ -436,6 +442,12 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     titleManuallyOverriddenRef.current = false;
     setUserAddedText("");
 
+    // Whether this run is a genuine record switch rather than the first mount.
+    // The effect only re-runs when loadProductId actually changes, so any run
+    // after the first is a switch.
+    const isRecordSwitch = hasRunLoadEffectRef.current;
+    hasRunLoadEffectRef.current = true;
+
     if (!loadProductId) {
       // Navigated from a draft/edit route back to a blank form (e.g.
       // /sell?draftId=… → /sell). Both record-scoped refs have to be dropped:
@@ -444,6 +456,17 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       // draft instead of making a new one.
       savedDraftIdRef.current = null;
       draftRequestIdRef.current = uuidv4();
+
+      // useLocalStorageState only replaces in-memory state when the new key has
+      // something stored, so without this the previous listing's fields and
+      // photos stay on screen — and the form is save-ready with no target, so
+      // autosave would create a fresh draft that duplicates it. Only on a real
+      // switch: on first mount this state is either empty or a recovery draft
+      // the seller should keep.
+      if (isRecordSwitch) {
+        setFormData(EMPTY_FORM_DATA);
+      }
+
       setLoadedRecordId(null);
       setRecordLoadFailed(false);
       return;
@@ -754,6 +777,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     // The record this submit is for, captured before any await. Navigating to
     // another listing mid-wait must not redirect the write to that one.
     const capturedTarget = savedDraftIdRef.current;
+    const capturedGeneration = recordGenerationRef.current;
 
     try {
       // Let any autosave already in flight finish first. Two writes racing here
@@ -763,11 +787,21 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       // pending draft-creation POST hand us its id below.
       await settleInFlightSaves();
 
+      // If the form moved to a different record while we waited, this data no
+      // longer belongs anywhere: writing it would either publish the wrong
+      // listing or duplicate it. Abandon rather than guess.
+      if (recordGenerationRef.current !== capturedGeneration) {
+        setError(RECORD_CHANGED_MESSAGE);
+        setLoading(false);
+        isSubmittingRef.current = false;
+        return;
+      }
+
       // Autosave may already have created a draft row for this listing. Publish
       // THAT row rather than POSTing a second product — otherwise the draft is
       // orphaned and sits in the seller's listings as an untitled £0.00 card.
-      // Prefer the id captured above; fall back to the ref only when we had
-      // none yet, since the await may have just created one.
+      // The ref is safe to consult now the generation check above has confirmed
+      // it still refers to this same record; the wait may have just created it.
       const draftToPublish = capturedTarget ?? savedDraftIdRef.current;
 
       const response = draftToPublish
@@ -875,11 +909,21 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
     // Captured before the await for the same reason as in handleSubmit.
     const capturedTarget = savedDraftIdRef.current;
+    const capturedGeneration = recordGenerationRef.current;
 
     try {
       // Same ordering concern as publishing: let an in-flight autosave settle
       // so this save is the last write, and so it can hand us the draft id.
       await settleInFlightSaves();
+
+      // Abandon rather than write this form's data against whatever record the
+      // page has moved on to.
+      if (recordGenerationRef.current !== capturedGeneration) {
+        setError(RECORD_CHANGED_MESSAGE);
+        setLoading(false);
+        isSubmittingRef.current = false;
+        return;
+      }
 
       const result = await persistDraft(formData, capturedTarget ?? savedDraftIdRef.current);
       if (result !== "saved") {
