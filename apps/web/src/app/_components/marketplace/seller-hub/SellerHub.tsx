@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Column, Row, Heading, Text, Button, Card, Spinner, Theme } from "@buttergolf/ui";
-import { useTheme } from "tamagui";
+import { Column, Row, Heading, Text, Button, Card, Spinner } from "@buttergolf/ui";
 import { Plus, Package, Eye, Heart, Tag } from "@tamagui/lucide-icons";
-import Link from "next/link";
+import { useLinkPress } from "@/hooks/useLinkPress";
+import { SortDropdown } from "@/app/listings/_components/SortDropdown";
 import { SellerProductCard, type SellerProduct } from "./SellerProductCard";
 
 interface SellerHubStats {
@@ -59,7 +59,7 @@ export function SellerHub() {
   const { isSignedIn, isLoaded } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const theme = useTheme();
+  const linkPress = useLinkPress();
 
   const [data, setData] = useState<SellerHubResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -276,21 +276,23 @@ export function SellerHub() {
             Listing your golf equipment is quick and easy — it takes under 60 seconds to get
             started.
           </Text>
-          <Link href="/sell" style={{ textDecoration: "none" }}>
-            <Button butterVariant="primary" size="$5">
-              <Row gap="$sm" alignItems="center">
-                <Plus size={20} />
-                <Text color="$textInverse">Create Your First Listing</Text>
-              </Row>
-            </Button>
-          </Link>
+          <Button
+            butterVariant="primary"
+            size="$5"
+            icon={Plus}
+            tag="a"
+            href="/sell"
+            onPress={linkPress("/sell")}
+          >
+            Create your first listing
+          </Button>
         </Column>
       </Column>
     );
   }
 
   return (
-    <Column width="100%" backgroundColor="$background" paddingVertical="$8">
+    <Column width="100%" backgroundColor="$background" paddingVertical="$lg">
       <Column
         maxWidth={1280}
         marginHorizontal="auto"
@@ -301,19 +303,23 @@ export function SellerHub() {
         {/* Header */}
         <Row alignItems="center" justifyContent="space-between" flexWrap="wrap" gap="$md">
           <Column gap="$xs">
-            <Heading level={2}>Seller Dashboard</Heading>
-            <Text color="$textSecondary">Manage your active listings and track performance</Text>
+            <Heading level={1} size="$8">
+              Listings
+            </Heading>
+            <Text size="$4" color="$textSecondary">
+              Manage your active listings and track performance
+            </Text>
           </Column>
-          <Link href="/sell" style={{ textDecoration: "none" }}>
-            <Button butterVariant="primary" size="$5">
-              <Row gap="$sm" alignItems="center">
-                <Plus size={20} color="white" />
-                <Text color="$textInverse" fontWeight="600">
-                  New Listing
-                </Text>
-              </Row>
-            </Button>
-          </Link>
+          <Button
+            butterVariant="primary"
+            size="$4"
+            icon={Plus}
+            tag="a"
+            href="/sell"
+            onPress={linkPress("/sell")}
+          >
+            New listing
+          </Button>
         </Row>
 
         {successMessage && (
@@ -323,11 +329,15 @@ export function SellerHub() {
                 {successMessage}
               </Text>
               <Row gap="$sm" alignItems="center">
-                <Link href="/listings" style={{ textDecoration: "none" }}>
-                  <Button butterVariant="secondary" size="$3">
-                    View Shop All
-                  </Button>
-                </Link>
+                <Button
+                  butterVariant="secondary"
+                  size="$3"
+                  tag="a"
+                  href="/listings"
+                  onPress={linkPress("/listings")}
+                >
+                  View in shop
+                </Button>
                 <Button size="$3" chromeless onPress={() => setSuccessMessage(null)}>
                   Dismiss
                 </Button>
@@ -409,65 +419,32 @@ export function SellerHub() {
               <Text fontWeight="500">Status:</Text>
               <Row gap="$xs">
                 {(["all", "active", "sold", "draft"] as const).map((status) => (
-                  <Theme key={status} name={statusFilter === status ? "active" : null}>
-                    <Button
-                      size="$3"
-                      backgroundColor={statusFilter === status ? "$primary" : "transparent"}
-                      color={statusFilter === status ? "$textInverse" : "$text"}
-                      borderWidth={1}
-                      borderColor={statusFilter === status ? "$primary" : "$border"}
-                      borderRadius="$full"
-                      paddingHorizontal="$md"
-                      paddingVertical="$sm"
-                      shadowColor="transparent"
-                      shadowOffset={{ width: 0, height: 0 }}
-                      shadowOpacity={0}
-                      shadowRadius={0}
-                      elevation={0}
-                      style={{ boxShadow: "none" }}
-                      onPress={() => setStatusFilter(status)}
-                    >
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </Button>
-                  </Theme>
+                  <Button
+                    key={status}
+                    butterVariant={statusFilter === status ? "secondary" : "ghost"}
+                    size="$3"
+                    aria-pressed={statusFilter === status}
+                    onPress={() => setStatusFilter(status)}
+                  >
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </Button>
                 ))}
               </Row>
             </Row>
 
             {/* Sort */}
             <Row gap="$sm" alignItems="center">
-              <Text fontWeight="500">Sort:</Text>
-              {/* eslint-disable-next-line react/forbid-elements */}
-              <select
+              <SortDropdown
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                style={{
-                  height: 40,
-                  paddingLeft: 16,
-                  paddingRight: 40,
-                  fontSize: 15,
-                  fontFamily: "inherit",
-                  fontWeight: 500,
-                  borderRadius: 24,
-                  border: `1px solid ${theme.fieldBorder.val}`,
-                  backgroundColor: theme.surface.val,
-                  color: theme.text.val,
-                  cursor: "pointer",
-                  minWidth: 180,
-                  outline: "none",
-                  appearance: "none",
-                  WebkitAppearance: "none",
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(theme.text.val)}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 16px center",
-                }}
-              >
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
-                <option value="price-desc">Price: High to Low</option>
-                <option value="price-asc">Price: Low to High</option>
-                <option value="views">Most Viewed</option>
-              </select>
+                onChange={(value) => setSortBy(value as typeof sortBy)}
+                options={[
+                  { value: "newest", label: "Newest first" },
+                  { value: "oldest", label: "Oldest first" },
+                  { value: "price-desc", label: "Price: high to low" },
+                  { value: "price-asc", label: "Price: low to high" },
+                  { value: "views", label: "Most viewed" },
+                ]}
+              />
             </Row>
           </Row>
         </Card>
