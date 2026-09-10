@@ -37,7 +37,7 @@ import {
   type SellRecordEvent,
 } from "../_lib/sell-record-state";
 import { createSaveQueue, type SaveQueue } from "../_lib/save-queue";
-import { fetchWithTimeout } from "../_lib/fetch-with-timeout";
+import { fetchJsonWithTimeout } from "../_lib/fetch-with-timeout";
 
 interface Category {
   id: string;
@@ -255,8 +255,6 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
   // Synchronous ref to prevent duplicate submissions (React state is async)
   const isSubmittingRef = useRef(false);
-  // Request ID for server-side idempotency
-  const requestIdRef = useRef<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [userAddedText, setUserAddedText] = useState<string>(""); // Track any manual additions
   const [isEditingTitle, setIsEditingTitle] = useState(false); // Track if user is manually editing
@@ -378,7 +376,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
           }
 
           // Update existing draft
-          const response = await fetchWithTimeout(`/api/seller/products/${existingId}`, {
+          const response = await fetchJsonWithTimeout(`/api/seller/products/${existingId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(updatePayload),
@@ -387,7 +385,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
         }
 
         // Create new draft
-        const response = await fetchWithTimeout("/api/products", {
+        const response = await fetchJsonWithTimeout("/api/products", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -400,7 +398,8 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
         });
 
         if (response.ok) {
-          const product = await response.json();
+          const product = response.data as { id?: string } | undefined;
+          if (!product?.id) return "error";
           // Stamped with the generation this write started in; the reducer
           // discards it if the form has since moved to another record.
           applyRecordEvent({ type: "row-created", generation, rowId: product.id });
@@ -734,9 +733,6 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
     isSubmittingRef.current = true;
 
-    // Generate unique request ID for server-side idempotency
-    requestIdRef.current = uuidv4();
-
     setLoading(true);
     setError(null);
 
@@ -798,7 +794,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
         const draftToPublish = saveTarget(snapshot);
 
         return draftToPublish
-          ? await fetchWithTimeout(`/api/seller/products/${draftToPublish}`, {
+          ? await fetchJsonWithTimeout(`/api/seller/products/${draftToPublish}`, {
               method: "PATCH",
               headers: {
                 "Content-Type": "application/json",
@@ -824,7 +820,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                 ...(isEditingListing ? {} : { isDraft: false }),
               }),
             })
-          : await fetchWithTimeout("/api/products", {
+          : await fetchJsonWithTimeout("/api/products", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -834,8 +830,12 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                 price: parsedPrice,
                 // Don't send brandName (display only)
                 brandName: undefined,
-                // Request ID for server-side idempotency
-                requestId: requestIdRef.current,
+                // The record.s stable create key, not a fresh one: if the
+                // autosave POST committed but its response was lost, rowId is
+                // still null and we land here. Reusing the key makes the
+                // server return that same draft instead of creating a second
+                // product beside it.
+                requestId: snapshot.createRequestId,
               }),
             });
       });
@@ -849,11 +849,23 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       }
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to create listing");
+        const errorData = response.data as { error?: string } | undefined;
+        throw new Error(errorData?.error || "Failed to create listing");
       }
 
-      const product = await response.json();
+      // Guard the side effects too, not just the request. If the seller moved
+      // to another listing while this was in flight, clearing the local draft
+      // and redirecting would act on the record they are on now.
+      if (
+        recordRef.current.generation !== capturedGeneration ||
+        !matchesRoute(recordRef.current, routeIdRef.current)
+      ) {
+        setLoading(false);
+        isSubmittingRef.current = false;
+        return;
+      }
+
+      const product = (response.data ?? {}) as { title?: string };
       clearLocalDraft();
 
       if (isEditingListing) {
@@ -896,9 +908,6 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
     isSubmittingRef.current = true;
 
-    // Generate unique request ID for server-side idempotency
-    requestIdRef.current = uuidv4();
-
     setLoading(true);
     setError(null);
 
@@ -926,6 +935,17 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       }
       if (result !== "saved") {
         throw new Error("Failed to save draft");
+      }
+
+      // Same reasoning as publish: don't clear the local draft or redirect if
+      // the seller has moved to a different listing while this was in flight.
+      if (
+        recordRef.current.generation !== capturedGeneration ||
+        !matchesRoute(recordRef.current, routeIdRef.current)
+      ) {
+        setLoading(false);
+        isSubmittingRef.current = false;
+        return;
       }
 
       // Navigate to seller listings page after saving draft
