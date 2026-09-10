@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useLinkPress } from "@/hooks/useLinkPress";
 import type { ProductCardData } from "@buttergolf/app";
 import { Button, Column, Row, Text, Heading } from "@buttergolf/ui";
 import { ProductCard } from "@/components/ProductCard";
@@ -12,6 +12,7 @@ interface RecentlyListedSectionClientProps {
 
 export function RecentlyListedSectionClient({ products }: RecentlyListedSectionClientProps) {
   const router = useRouter();
+  const linkPress = useLinkPress();
 
   return (
     <Column backgroundColor="$background" paddingVertical="$3xl" width="100%">
@@ -60,11 +61,15 @@ export function RecentlyListedSectionClient({ products }: RecentlyListedSectionC
 
         {/* View All Button - Centered Below Carousel */}
         <Row alignItems="center" justifyContent="center" width="100%" paddingTop="$sm">
-          <Link href="/listings" passHref style={{ textDecoration: "none" }}>
-            <Button butterVariant="primary" size="$5" width={320}>
-              View all listings
-            </Button>
-          </Link>
+          <Button
+            butterVariant="secondary"
+            size="$5"
+            tag="a"
+            href="/listings"
+            onPress={linkPress("/listings")}
+          >
+            View all listings
+          </Button>
         </Row>
       </Column>
     </Column>

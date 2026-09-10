@@ -57,6 +57,7 @@ export function ListingsClient({
 }: Readonly<ListingsClientProps>) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const searchQuery = searchParams.get("q");
 
   // Parse initial filters from URL
   const getInitialFilters = (): FilterState => {
@@ -166,6 +167,7 @@ export function ListingsClient({
   // Track previous filter values to detect actual changes
   const prevFiltersRef = useRef<FilterState>(filters);
   const prevSortRef = useRef<string>(sort);
+  const prevSearchRef = useRef(searchQuery);
 
   // Set mounted flag on initial mount
   useEffect(() => {
@@ -200,6 +202,7 @@ export function ListingsClient({
       if (newFilters.showFavouritesOnly) params.set("favourites", "true");
       if (newSort !== "newest") params.set("sort", newSort);
       if (newPage > 1) params.set("page", newPage.toString());
+      if (searchQuery) params.set("q", searchQuery);
 
       const queryString = params.toString();
 
@@ -213,7 +216,7 @@ export function ListingsClient({
       // No category = /listings
       return queryString ? `/listings?${queryString}` : "/listings";
     },
-    [initialFilters.priceRange]
+    [initialFilters.priceRange, searchQuery]
   );
 
   // Calculate total pages
@@ -243,6 +246,7 @@ export function ListingsClient({
           params.append("brand", b);
         }
         if (filters.showFavouritesOnly) params.set("favourites", "true");
+        if (searchQuery) params.set("q", searchQuery);
         params.set("sort", sort);
         params.set("page", newPage.toString());
         params.set("limit", "24");
@@ -276,7 +280,7 @@ export function ListingsClient({
         setIsPaginating(false);
       }
     },
-    [filters, sort, router, buildURL]
+    [filters, sort, router, buildURL, searchQuery]
   );
 
   // Debounced fetch on filter change
@@ -287,14 +291,16 @@ export function ListingsClient({
     // Check if filters or sort actually changed
     const filtersChanged = !areFiltersEqual(prevFiltersRef.current, filters);
     const sortChanged = prevSortRef.current !== sort;
+    const searchChanged = prevSearchRef.current !== searchQuery;
 
-    if (!filtersChanged && !sortChanged) {
+    if (!filtersChanged && !sortChanged && !searchChanged) {
       return;
     }
 
     // Update refs
     prevFiltersRef.current = filters;
     prevSortRef.current = sort;
+    prevSearchRef.current = searchQuery;
 
     // Reset pagination state immediately so UI/URL never stays on a stale page.
     if (page !== 1) {
@@ -307,7 +313,7 @@ export function ListingsClient({
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [filters, sort, isMounted, fetchProducts, page]);
+  }, [filters, sort, searchQuery, isMounted, fetchProducts, page]);
 
   // Redirect to last valid page if current page exceeds total pages
   useEffect(() => {

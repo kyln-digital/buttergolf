@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { ArrowRight, TrendingUp } from "@tamagui/lucide-icons";
 import { Column, Text, Spinner, ScrollView, Row } from "@buttergolf/ui";
 import type { ProductCardData } from "@buttergolf/app";
 import { SearchResultItem } from "./SearchResultItem";
@@ -16,6 +17,10 @@ interface SearchResponse {
   total: number;
   categories: string[];
 }
+
+const POPULAR_SEARCHES = ["Drivers", "Titleist", "Golf balls", "Irons", "Putters"];
+
+const linkReset = { textDecoration: "none" } as const;
 
 export function SearchDropdown({ query, onSelect }: SearchDropdownProps) {
   const [results, setResults] = useState<ProductCardData[]>([]);
@@ -68,29 +73,40 @@ export function SearchDropdown({ query, onSelect }: SearchDropdownProps) {
   // Empty state - waiting for input
   if (query.trim().length < 2) {
     return (
-      <Column padding="$4" gap="$3">
-        <Text size="$3" fontWeight="500" {...{ color: "$textMuted" }}>
-          Type to search for golf equipment...
-        </Text>
-        <Column gap="$2">
-          <Text size="$2" {...{ color: "$textTertiary" }}>
-            Popular searches:
+      <Column padding="$md" gap="$sm">
+        <Row alignItems="center" gap="$xs">
+          <TrendingUp size={14} color="$textSecondary" />
+          <Text size="$3" fontWeight="600" color="$textSecondary">
+            Popular searches
           </Text>
-          <Row gap="$2" flexWrap="wrap">
-            {["Drivers", "Titleist", "Golf Balls", "Irons", "Putters"].map((term) => (
-              <Link key={term} href={`/listings?q=${term}`} onClick={onSelect}>
-                <Text
-                  size="$2"
-                  {...{ color: "$primary" }}
-                  hoverStyle={{ textDecoration: "underline" }}
-                  cursor="pointer"
-                >
+        </Row>
+        <Row gap="$sm" flexWrap="wrap">
+          {POPULAR_SEARCHES.map((term) => (
+            <Link
+              key={term}
+              href={`/listings?q=${encodeURIComponent(term)}`}
+              onClick={onSelect}
+              style={linkReset}
+            >
+              <Row
+                height={32}
+                paddingHorizontal="$md"
+                alignItems="center"
+                borderRadius="$full"
+                borderWidth={1}
+                borderColor="$border"
+                backgroundColor="$surface"
+                cursor="pointer"
+                hoverStyle={{ borderColor: "$primary", backgroundColor: "$primaryLight" }}
+                pressStyle={{ backgroundColor: "$primaryLight" }}
+              >
+                <Text size="$3" fontWeight="500" color="$text">
                   {term}
                 </Text>
-              </Link>
-            ))}
-          </Row>
-        </Column>
+              </Row>
+            </Link>
+          ))}
+        </Row>
       </Column>
     );
   }
@@ -98,9 +114,9 @@ export function SearchDropdown({ query, onSelect }: SearchDropdownProps) {
   // Loading state
   if (loading) {
     return (
-      <Column padding="$6" alignItems="center" gap="$3">
+      <Column padding="$lg" alignItems="center" gap="$sm">
         <Spinner size="md" color="$primary" />
-        <Text {...{ color: "$textMuted" }} size="$3">
+        <Text color="$textSecondary" size="$3">
           Searching...
         </Text>
       </Column>
@@ -110,11 +126,11 @@ export function SearchDropdown({ query, onSelect }: SearchDropdownProps) {
   // Error state
   if (error) {
     return (
-      <Column padding="$6" alignItems="center" gap="$2">
-        <Text size="$4" fontWeight="600" {...{ color: "$error" }}>
-          Search Error
+      <Column padding="$lg" alignItems="center" gap="$xs">
+        <Text size="$4" fontWeight="600" color="$error">
+          Search error
         </Text>
-        <Text {...{ color: "$textMuted" }} size="$3">
+        <Text color="$textSecondary" size="$3">
           {error}
         </Text>
       </Column>
@@ -124,11 +140,11 @@ export function SearchDropdown({ query, onSelect }: SearchDropdownProps) {
   // No results
   if (results.length === 0) {
     return (
-      <Column padding="$6" alignItems="center" gap="$2">
+      <Column padding="$lg" alignItems="center" gap="$xs">
         <Text size="$4" fontWeight="600">
           No results found
         </Text>
-        <Text {...{ color: "$textMuted" }} size="$3" textAlign="center">
+        <Text color="$textSecondary" size="$3" textAlign="center">
           Try a different search term or browse our categories
         </Text>
       </Column>
@@ -148,25 +164,28 @@ export function SearchDropdown({ query, onSelect }: SearchDropdownProps) {
 
       {/* Footer with "View all results" link */}
       {total > results.length && (
-        <Column
-          borderTopWidth={1}
-          borderColor="$border"
-          padding="$3"
-          backgroundColor="$backgroundHover"
+        <Link
+          href={`/listings?q=${encodeURIComponent(query)}`}
+          onClick={onSelect}
+          style={linkReset}
         >
-          <Link href={`/listings?q=${encodeURIComponent(query)}`} onClick={onSelect}>
-            <Text
-              size="$3"
-              fontWeight="500"
-              {...{ color: "$primary" }}
-              textAlign="center"
-              hoverStyle={{ textDecoration: "underline" }}
-              cursor="pointer"
-            >
-              View all {total} results →
+          <Row
+            borderTopWidth={1}
+            borderColor="$border"
+            paddingVertical="$sm"
+            paddingHorizontal="$md"
+            alignItems="center"
+            justifyContent="center"
+            gap="$xs"
+            cursor="pointer"
+            hoverStyle={{ backgroundColor: "$buttonGhostBgHover" }}
+          >
+            <Text size="$3" fontWeight="600" color="$primary">
+              View all {total} results
             </Text>
-          </Link>
-        </Column>
+            <ArrowRight size={14} color="$primary" />
+          </Row>
+        </Link>
       )}
     </Column>
   );

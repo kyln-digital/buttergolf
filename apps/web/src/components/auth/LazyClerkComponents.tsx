@@ -23,27 +23,26 @@ function AuthButtonsPlaceholder() {
     <div
       style={{
         display: "flex",
-        gap: "12px",
+        gap: "8px",
         alignItems: "center",
       }}
       aria-label="Loading authentication"
     >
-      {/* Login button placeholder */}
+      {/* Log in / Sign up placeholders - match the ghost + secondary header buttons */}
       <div
         style={{
-          width: 80,
+          width: 72,
           height: 40,
           borderRadius: 9999,
-          backgroundColor: "rgba(244, 83, 20, 0.3)",
+          backgroundColor: "rgba(50, 50, 50, 0.05)",
         }}
       />
-      {/* Sign-up button placeholder */}
       <div
         style={{
-          width: 90,
+          width: 88,
           height: 40,
           borderRadius: 9999,
-          backgroundColor: "rgba(237, 237, 237, 0.5)",
+          backgroundColor: "rgba(50, 50, 50, 0.05)",
         }}
       />
     </div>

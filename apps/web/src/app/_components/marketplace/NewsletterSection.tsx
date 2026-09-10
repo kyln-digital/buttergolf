@@ -118,7 +118,7 @@ export function NewsletterSection() {
             />
             <Button
               butterVariant="primary"
-              size="$4.5"
+              size="$5"
               animation="medium"
               flexShrink={0}
               paddingHorizontal={status === "successTick" ? "$3" : "$6"}

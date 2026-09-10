@@ -11,7 +11,11 @@ interface SearchResultItemProps {
 
 export function SearchResultItem({ product, onSelect }: SearchResultItemProps) {
   return (
-    <Link href={`/products/${product.id}`} onClick={onSelect}>
+    <Link
+      href={`/products/${product.id}`}
+      onClick={onSelect}
+      style={{ textDecoration: "none", display: "block" }}
+    >
       <Row
         padding="$3"
         gap="$3"
@@ -36,7 +40,7 @@ export function SearchResultItem({ product, onSelect }: SearchResultItemProps) {
             {product.title}
           </Text>
           <Row gap="$2" alignItems="center" flexWrap="wrap">
-            <Text size="$2" {...{ color: "$textMuted" }}>
+            <Text size="$2" color="$textSecondary">
               {product.category}
             </Text>
             {product.condition && (

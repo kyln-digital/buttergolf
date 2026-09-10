@@ -1,153 +1,412 @@
 /**
  * Button Component
  *
- * Custom styled button with Figma-designed variants for consistent branding.
- * Supports cross-platform shadows with graceful degradation on mobile.
+ * ButterGolf's cross-platform button. Built directly on a styled stack (not on
+ * Tamagui's own `Button`) so that hover / press / focus styles compile to real
+ * CSS on web. Tamagui's `ButtonFrame` forces `disableClassName`, and wrapping it
+ * in another `styled()` silently dropped every interaction style - the buttons
+ * looked dead. This implementation keeps the familiar API (`icon`, `iconAfter`,
+ * `circular`, `chromeless`, `unstyled`, `size`, text props) via `useButton`.
  *
- * Variants (via butterVariant prop):
- * - primary: Spiced Clementine (#F45314) - Main CTA, vibrant orange
- * - secondary: Light grey (#EDEDED) - Secondary actions, "Shop now", "Cancel"
- * - icon: Neutral flat icon button - no shadow, grey border, orange on hover/active
+ * Variants (via `butterVariant`):
+ * - primary:   Spiced Clementine fill, white text. Main CTA.
+ * - secondary: Soft neutral tonal fill, no border. Paired actions, "Shop now", "Cancel".
+ * - ghost:     Text-only; hover takes the secondary's resting fill. Nav links, tertiary.
+ * - icon:      Outlined circular control for icon-only buttons (wishlist etc).
  *
- * Both primary and secondary variants share the same pill shape and drop shadow.
- * The icon variant is shadow-free and intended for circular icon-only buttons.
+ * All variants share one interaction model: same pill, same type, nothing moves;
+ * the fill shifts one tone on hover and one more on press.
  *
- * Note: Uses `butterVariant` prop instead of `variant` to avoid conflicts
- * with Tamagui's built-in Button variants.
+ * Sizes map to a compact geometric scale (height / text):
+ *   $1 28/12 · $2 32/13 · $3 36/14 · $4 40/15 · $4.5 44/15 · $5 48/16 · $6 56/18
  *
  * @example
  * ```tsx
- * <Button butterVariant="primary">Sell now</Button>
- * <Button butterVariant="secondary">Shop now</Button>
- * <Button butterVariant="icon" circular width={44} height={44} padding={0}>
- *   <Heart size={22} />
- * </Button>
+ * <Button butterVariant="primary" size="$5">Sell now</Button>
+ * <Button butterVariant="secondary" size="$5">Shop now</Button>
+ * <Button butterVariant="ghost" icon={Heart}>Wishlist</Button>
+ * <Button butterVariant="ghost" circular size="$4" aria-label="Menu"><MenuIcon /></Button>
  * ```
  */
 
-import { Button as TamaguiButton, styled, GetProps } from "tamagui";
+import type { ReactNode } from "react";
 import { Platform } from "react-native";
+import {
+  SizableText,
+  ThemeableStack,
+  createStyledContext,
+  styled,
+  useButton,
+  withStaticProperties,
+  type ButtonProps as TamaguiButtonProps,
+  type ColorTokens,
+  type GetProps,
+  type SizeTokens,
+} from "tamagui";
+
+export type ButterVariant = "primary" | "secondary" | "ghost" | "icon";
+
+interface ButtonMetrics {
+  height: number;
+  fontSize: number;
+  lineHeight: number;
+  paddingHorizontal: number;
+}
+
+const DEFAULT_SIZE = "$4";
+const DEFAULT_METRICS: ButtonMetrics = {
+  height: 40,
+  fontSize: 15,
+  lineHeight: 20,
+  paddingHorizontal: 18,
+};
+
+/** Geometric scale shared by the frame (height/padding) and the label (type). */
+const BUTTON_METRICS: Record<string, ButtonMetrics> = {
+  $1: { height: 28, fontSize: 12, lineHeight: 16, paddingHorizontal: 10 },
+  $2: { height: 32, fontSize: 13, lineHeight: 16, paddingHorizontal: 12 },
+  $3: { height: 36, fontSize: 14, lineHeight: 18, paddingHorizontal: 16 },
+  $4: DEFAULT_METRICS,
+  "$4.5": { height: 44, fontSize: 15, lineHeight: 20, paddingHorizontal: 20 },
+  $5: { height: 48, fontSize: 16, lineHeight: 22, paddingHorizontal: 24 },
+  $6: { height: 56, fontSize: 18, lineHeight: 24, paddingHorizontal: 28 },
+};
+
+function getButtonMetrics(size: unknown): ButtonMetrics {
+  if (typeof size === "number") {
+    const fontSize = Math.round(size * 0.38);
+    return {
+      height: size,
+      fontSize,
+      lineHeight: Math.round(fontSize * 1.35),
+      paddingHorizontal: Math.round(size * 0.45),
+    };
+  }
+  const key = String(size ?? DEFAULT_SIZE);
+  return BUTTON_METRICS[key] ?? DEFAULT_METRICS;
+}
+
+const isWeb = Platform.OS === "web";
+
+/** Buttons are flat; only `chromeless` / `unstyled` need to clear inherited shadows. */
+const noShadow = isWeb
+  ? { boxShadow: "none" }
+  : { shadowOpacity: 0 as const, elevation: 0 as const };
+
+const focusRing = {
+  outlineColor: "$primary",
+  outlineStyle: "solid",
+  outlineWidth: 2,
+  outlineOffset: 2,
+} as const;
 
 /**
- * Unified drop shadow applied to all button variants.
- * Web: CSS boxShadow. Mobile: RN shadow props + Android elevation.
+ * Styled context: the frame publishes `size` and `butterVariant` so the label
+ * picks up matching type metrics and colour without prop drilling.
  */
-const buttonShadow =
-  Platform.OS === "web"
-    ? {
-        shadowColor: "rgba(0, 0, 0, 0.2)" as const,
-        shadowOffset: { width: 0, height: 1 } as const,
-        shadowRadius: 4 as const,
-        elevation: 3 as const,
-        boxShadow: "0px 1px 4px rgba(0, 0, 0, 0.2)",
-      }
-    : {
-        shadowColor: "rgba(0, 0, 0, 0.2)" as const,
-        shadowOffset: { width: 0, height: 1 } as const,
-        shadowRadius: 4 as const,
-        elevation: 3 as const,
-      };
+export const ButtonContext = createStyledContext<{
+  size: SizeTokens | number;
+  butterVariant?: ButterVariant;
+}>({
+  size: DEFAULT_SIZE,
+  butterVariant: undefined,
+});
 
-const ButtonBase = styled(TamaguiButton, {
+const ButtonFrame = styled(ThemeableStack, {
   name: "Button",
+  tag: "button",
+  focusable: true,
+  context: ButtonContext,
 
-  // Base styles for all buttons
-  fontFamily: "$body",
-  fontWeight: "700",
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "center",
+  flexWrap: "nowrap",
+  flexShrink: 0,
   cursor: "pointer",
   borderRadius: "$full",
+  borderWidth: 0,
+  backgroundColor: "transparent",
+  // Every button keeps a visible keyboard focus ring, including chromeless /
+  // unstyled ones that opt out of the variant styles.
+  focusVisibleStyle: focusRing,
 
   variants: {
+    size: {
+      "...size": (value) => {
+        const metrics = getButtonMetrics(value);
+        return {
+          height: metrics.height,
+          minHeight: metrics.height,
+          paddingHorizontal: metrics.paddingHorizontal,
+        };
+      },
+      ":number": (value) => {
+        const metrics = getButtonMetrics(value);
+        return {
+          height: metrics.height,
+          minHeight: metrics.height,
+          paddingHorizontal: metrics.paddingHorizontal,
+        };
+      },
+    },
+
+    // One interaction language for every variant: nothing moves, the fill shifts
+    // one tone on hover and one more on press. Ghost hover == secondary rest.
     butterVariant: {
       primary: {
         backgroundColor: "$primary",
-        borderWidth: 1,
-        borderColor: "$primaryBorder",
-        color: "$white", // Always white on orange, regardless of theme
-        ...buttonShadow,
-
+        borderWidth: 0,
         hoverStyle: {
           backgroundColor: "$primaryHover",
-          borderColor: "$primaryBorder",
         },
-
         pressStyle: {
           backgroundColor: "$primaryPress",
-          borderColor: "$primaryBorder",
           scale: 0.98,
         },
-
-        focusStyle: {
-          borderColor: "$primaryFocus",
-          outlineColor: "$primaryFocus",
-          outlineWidth: 2,
-        },
+        focusVisibleStyle: focusRing,
       },
 
       secondary: {
-        // Light grey background - secondary actions, "Shop now", "Cancel"
-        backgroundColor: "$controlSecondaryBg",
-        borderWidth: 1,
-        borderColor: "$controlSecondaryBg",
-        color: "$controlSecondaryText",
-        ...buttonShadow,
-
+        backgroundColor: "$buttonSecondaryBg",
+        borderWidth: 0,
         hoverStyle: {
-          backgroundColor: "$controlSecondaryBgHover",
-          borderColor: "$controlSecondaryBgHover",
+          backgroundColor: "$buttonSecondaryBgHover",
         },
-
         pressStyle: {
-          backgroundColor: "$controlSecondaryBgPress",
-          borderColor: "$controlSecondaryBgPress",
+          backgroundColor: "$buttonSecondaryBgPress",
           scale: 0.98,
         },
+        focusVisibleStyle: focusRing,
+      },
 
-        focusStyle: {
-          borderColor: "$borderFocus",
-          outlineColor: "$borderFocus",
-          outlineWidth: 2,
+      ghost: {
+        backgroundColor: "transparent",
+        borderWidth: 0,
+        hoverStyle: {
+          backgroundColor: "$buttonGhostBgHover",
         },
+        pressStyle: {
+          backgroundColor: "$buttonGhostBgPress",
+          scale: 0.98,
+        },
+        focusVisibleStyle: focusRing,
       },
 
       icon: {
-        // Neutral flat icon button - no shadow, reveals brand colour on interaction
         backgroundColor: "transparent",
         borderWidth: 1.5,
-        borderColor: "$border",
-        color: "$textSecondary",
-        // No shadow - icon buttons are secondary controls, not elevated CTAs
-
+        borderColor: "$buttonSecondaryBorder",
         hoverStyle: {
-          borderColor: "$primary",
-          backgroundColor: "$primaryLight",
+          backgroundColor: "$buttonGhostBgHover",
         },
-
         pressStyle: {
-          scale: 0.95,
-          opacity: 0.85,
+          backgroundColor: "$buttonGhostBgPress",
+          scale: 0.98,
         },
+        focusVisibleStyle: focusRing,
+      },
+    },
 
-        focusStyle: {
-          borderColor: "$borderFocus",
-          outlineColor: "$borderFocus",
-          outlineWidth: 2,
-        },
+    circular: {
+      true: (_value, { props }) => {
+        const { height } = getButtonMetrics((props as { size?: unknown }).size);
+        return {
+          borderRadius: 100000,
+          padding: 0,
+          paddingHorizontal: 0,
+          width: height,
+          height,
+          minWidth: height,
+          minHeight: height,
+        };
+      },
+    },
+
+    chromeless: {
+      true: {
+        backgroundColor: "transparent",
+        borderColor: "transparent",
+        ...noShadow,
+      },
+    },
+
+    unstyled: {
+      true: {
+        backgroundColor: "transparent",
+        borderWidth: 0,
+        borderRadius: 0,
+        padding: 0,
+        flexDirection: "column",
+        alignItems: "stretch",
+        justifyContent: "flex-start",
+        ...noShadow,
+      },
+    },
+
+    disabled: {
+      true: {
+        pointerEvents: "none",
+        opacity: 0.5,
       },
     },
   } as const,
 });
 
-export type ButtonProps = GetProps<typeof ButtonBase>;
+export const ButtonText = styled(SizableText, {
+  name: "ButtonText",
+  context: ButtonContext,
 
-/**
- * When `chromeless` is passed without an explicit `butterVariant`,
- * skip the default primary variant so chromeless styling is not overridden.
- * Also skip the default for `unstyled` buttons so custom surface styles are respected.
- * Otherwise, default to `butterVariant="primary"` for backward compatibility.
- */
-export const Button = ButtonBase.styleable<ButtonProps>((props, ref) => {
-  const butterVariant =
-    props.butterVariant ?? (props.chromeless || props.unstyled ? undefined : "primary");
-  return <ButtonBase ref={ref} {...props} butterVariant={butterVariant} />;
+  fontFamily: "$body",
+  fontWeight: "600",
+  letterSpacing: 0,
+  textAlign: "center",
+  userSelect: "none",
+  cursor: "pointer",
+  flexGrow: 0,
+  flexShrink: 1,
+  color: "$text",
+
+  variants: {
+    size: {
+      "...size": (value) => {
+        const metrics = getButtonMetrics(value);
+        return { fontSize: metrics.fontSize, lineHeight: metrics.lineHeight };
+      },
+      ":number": (value) => {
+        const metrics = getButtonMetrics(value);
+        return { fontSize: metrics.fontSize, lineHeight: metrics.lineHeight };
+      },
+    },
+
+    butterVariant: {
+      primary: { color: "$white" },
+      secondary: { color: "$buttonSecondaryText" },
+      ghost: { color: "$text" },
+      icon: { color: "$textSecondary" },
+    },
+  } as const,
 });
+
+/** Default label / icon colour per variant (also drives `currentColor` SVG icons). */
+const VARIANT_COLOR: Record<ButterVariant, ColorTokens> = {
+  primary: "$white",
+  secondary: "$buttonSecondaryText",
+  ghost: "$text",
+  icon: "$textSecondary",
+};
+
+type TamaguiButtonExtras = Pick<
+  TamaguiButtonProps,
+  | "icon"
+  | "iconAfter"
+  | "scaleIcon"
+  | "scaleSpace"
+  | "space"
+  | "spaceFlex"
+  | "separator"
+  | "noTextWrap"
+  | "textProps"
+  | "color"
+  | "fontFamily"
+  | "fontSize"
+  | "fontWeight"
+  | "fontStyle"
+  | "letterSpacing"
+  | "textAlign"
+  | "ellipse"
+  | "maxFontSizeMultiplier"
+>;
+
+export interface ButtonExtraProps extends TamaguiButtonExtras {
+  children?: ReactNode;
+}
+
+const webTransition = isWeb
+  ? {
+      transition:
+        "background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease, opacity 150ms ease",
+    }
+  : undefined;
+
+const ButtonComponent = ButtonFrame.styleable<ButtonExtraProps>((propsIn, ref) => {
+  const {
+    butterVariant: variantProp,
+    chromeless: chromelessProp,
+    unstyled: unstyledProp,
+    style,
+    ...rest
+  } = propsIn;
+
+  // Variant prop types widen to token unions under the typed config; narrow them here.
+  const chromeless = chromelessProp as boolean | "all" | undefined;
+  const unstyled = unstyledProp as boolean | undefined;
+
+  // `chromeless` / `unstyled` buttons opt out of the default primary look
+  // unless a variant is requested explicitly.
+  const butterVariant: ButterVariant | undefined =
+    (variantProp as unknown as ButterVariant | undefined) ??
+    (chromeless || unstyled ? undefined : "primary");
+
+  const size = rest.size ?? DEFAULT_SIZE;
+  const color = rest.color ?? (butterVariant ? VARIANT_COLOR[butterVariant] : undefined);
+
+  const { props: buttonProps } = useButton(
+    {
+      ...rest,
+      size,
+      color,
+      scaleIcon: rest.scaleIcon ?? 1.2,
+      scaleSpace: rest.scaleSpace ?? 0.5,
+      textProps: { size, ...rest.textProps },
+    } as unknown as TamaguiButtonProps,
+    { Text: ButtonText }
+  );
+
+  // useButton forces inline styles so text colour can flow through context.
+  // We handle colour ourselves, so restore class-based styling.
+  const {
+    disableClassName: _disableClassName,
+    size: sizeProp,
+    ...frameProps
+  } = buttonProps as Record<string, unknown>;
+  void _disableClassName;
+
+  // Real <button> / <a> elements carry their own semantics; anything else (a
+  // nested <span>, or native) needs an explicit button role. A web <button>
+  // defaults to type="submit", so pin it to "button" unless told otherwise.
+  const {
+    tag: resolvedTag,
+    role: roleProp,
+    type: typeProp,
+  } = frameProps as {
+    tag?: string;
+    role?: string;
+    type?: string;
+  };
+  const rendersNativeControl = isWeb && (resolvedTag === "button" || resolvedTag === "a");
+  type FrameProps = GetProps<typeof ButtonFrame>;
+  const semanticProps: Pick<FrameProps, "role"> & { type?: string } = {
+    role: (roleProp ?? (rendersNativeControl ? undefined : "button")) as FrameProps["role"],
+    ...(isWeb && resolvedTag === "button" ? { type: typeProp ?? "button" } : {}),
+  };
+
+  return (
+    <ButtonFrame
+      ref={ref}
+      butterVariant={butterVariant}
+      {...(unstyled ? {} : { size: sizeProp as SizeTokens | number })}
+      {...(frameProps as GetProps<typeof ButtonFrame>)}
+      {...semanticProps}
+      chromeless={chromeless}
+      unstyled={unstyled}
+      style={webTransition ? [webTransition, style] : style}
+    />
+  );
+});
+
+export const Button = withStaticProperties(ButtonComponent, {
+  Text: ButtonText,
+});
+
+export type ButtonProps = GetProps<typeof ButtonComponent>;
