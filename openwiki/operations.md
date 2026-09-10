@@ -11,7 +11,7 @@ Canonical source: `AGENTS.md` (root). `CLAUDE.md` imports it via `@AGENTS.md`.
 
 ## Database (one database, previews included)
 
-`DATABASE_URL` is a **single Vercel variable scoped to `Production, Preview, Development`** — one value, one Neon database, behind production and behind every preview deploy. There is no staging copy, and no environment you can point a migration at without pointing it at production. (Verified 2026-09-10: `vercel env ls --project buttergolf-web` lists one `DATABASE_URL` across all three environments, and independent tables return identical CUIDs from `buttergolf.co.uk` and a preview URL.)
+`DATABASE_URL` is a **single Vercel variable scoped to `Production, Preview, Development`** — one value, one Neon database, behind production and behind every preview deploy. There is no staging copy: no *deployed* environment you can point a migration at without pointing it at production. (A local or throwaway database is a different matter — that is where a migration should be developed, and it is what the CI job below uses.) (Verified 2026-09-10: `vercel env ls --project buttergolf-web` lists one `DATABASE_URL` across all three environments, and independent tables return identical CUIDs from `buttergolf.co.uk` and a preview URL.)
 
 Local development is the exception, and only because it is configured separately: `packages/db/.env.example` ships with the Neon block commented out and a Docker URL active, so a fresh `cp .env.example .env` points at localhost. It points at production the moment anyone runs `vercel env pull` — and since the variable carries the same value in all three Vercel environments, `--environment=development` is production too.
 
@@ -27,7 +27,7 @@ Until previews get their own database, work with it rather than round it:
 - Check `packages/db/.env` before running anything that writes — `db:migrate:deploy`, `db:push`, `db:seed`, or `prisma migrate reset` (there is no `db:reset` script). A Docker URL there is local; anything pulled from Vercel is production, whichever environment it was pulled from.
 - The `migrations` CI job (below) runs against a throwaway container and proves the migrations are _internally_ consistent. It says nothing about whether they have been applied to the live database, and it never connects to it.
 
-**Removing the trap** is a dashboard change on Neon/Vercel, not a code change: enable database branching on the `buttergolf-db` integration so each preview deploy gets its own Neon branch, then narrow the committed `DATABASE_URL` to `Production` only. After that, previews become disposable, CI can apply migrations to a real preview branch, and schema changes stop being production releases.
+**Removing the trap** is a dashboard change on Neon/Vercel, not a code change: enable database branching on the `buttergolf-db` integration so each preview deploy gets its own Neon branch, then narrow the `DATABASE_URL` variable in Vercel to `Production` only. After that, previews become disposable, CI can apply migrations to a real preview branch, and schema changes stop being production releases.
 
 ## CI (`.github/workflows/ci.yml`)
 

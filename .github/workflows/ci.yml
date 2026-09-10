@@ -106,6 +106,7 @@ jobs:
               echo "Generate the missing migration against a THROWAWAY database:"
               echo "  docker run --rm -d --name bg-pg -e POSTGRES_PASSWORD=postgres \\"
               echo "    -e POSTGRES_DB=buttergolf -p 5432:5432 postgres:16"
+              echo "  until docker exec bg-pg pg_isready -U postgres >/dev/null 2>&1; do sleep 1; done"
               echo "  DATABASE_URL=postgresql://postgres:postgres@localhost:5432/buttergolf \\"
               echo "    pnpm db:migrate:dev"
               echo "Then commit the migration it writes."
