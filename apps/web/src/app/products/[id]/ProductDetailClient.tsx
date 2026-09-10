@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
 import { ChevronLeft, ChevronRight, X } from "@tamagui/lucide-icons";
-import { Column, Row, Text, Button, Card, Image } from "@buttergolf/ui";
+import { Column, Row, Text, Button, Card, Image, View } from "@buttergolf/ui";
 import { PRODUCT_IMAGE_ASPECT_RATIO } from "@buttergolf/constants";
 import { SECTION_MAX_WIDTH } from "@/app/_components/marketplace/Section";
 import { ProductInformation } from "./_components/ProductInformation";
@@ -125,8 +125,14 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
     }
   };
 
-  const showPrevious = () => setSelectedImageIndex((prev) => Math.max(0, prev - 1));
-  const showNext = () => setSelectedImageIndex((prev) => Math.min(imageCount - 1, prev + 1));
+  const showPrevious = useCallback(
+    () => setSelectedImageIndex((prev) => Math.max(0, prev - 1)),
+    []
+  );
+  const showNext = useCallback(
+    () => setSelectedImageIndex((prev) => Math.min(imageCount - 1, prev + 1)),
+    [imageCount]
+  );
 
   const handleKeyboardNav = useCallback(
     (e: KeyboardEvent) => {
@@ -140,8 +146,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
         setLightboxOpen(false);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- showPrevious/showNext are stable setters
-    [lightboxOpen]
+    [lightboxOpen, showPrevious, showNext]
   );
 
   useEffect(() => {
@@ -313,15 +318,14 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
           justifyContent="center"
           padding="$lg"
         >
-          <Button
-            chromeless
-            aria-label="Close image gallery"
-            onPress={() => setLightboxOpen(false)}
+          {/* Click-away backdrop: not a control (the Close button is), so it
+              takes no focus and has no name. */}
+          <View
+            aria-hidden
             position="absolute"
             inset={0}
-            backgroundColor="transparent"
             cursor="default"
-            padding={0}
+            onPress={() => setLightboxOpen(false)}
           />
 
           <Button

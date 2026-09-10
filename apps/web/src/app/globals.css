@@ -81,9 +81,19 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Anchors are navigation chrome by default (header, cards, footer, nav);
-   prose links opt back in to underlines locally. */
-a {
+/* Navigation anchors (header, nav, footer, anchors rendered by Tamagui
+   components such as Button tag="a" and card links) inherit colour and drop
+   the underline; any other anchor keeps the browser's link affordances so
+   prose links stay distinguishable. */
+header a,
+nav a,
+footer a,
+a.is_Button,
+a.is_Column,
+a.is_Row,
+a.is_View,
+a.category-card,
+a.footer-link {
   color: inherit;
   text-decoration: none;
 }

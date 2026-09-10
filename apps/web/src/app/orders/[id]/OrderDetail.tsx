@@ -711,28 +711,32 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                   </Column>
                 )}
                 {/* PDF download */}
-                <a
+                <Button
+                  butterVariant="primary"
+                  size="$5"
+                  width="100%"
+                  icon={Download}
+                  tag="a"
                   href={order.labelUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ textDecoration: "none" }}
                 >
-                  <Button butterVariant="primary" size="$5" width="100%" icon={Download}>
-                    Download PDF label
-                  </Button>
-                </a>
+                  Download PDF label
+                </Button>
                 {/* ZPL download for thermal printers */}
                 {order.labelZplUrl && (
-                  <a
+                  <Button
+                    butterVariant="secondary"
+                    size="$5"
+                    width="100%"
+                    icon={Download}
+                    tag="a"
                     href={order.labelZplUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ textDecoration: "none" }}
                   >
-                    <Button butterVariant="secondary" size="$5" width="100%" icon={Download}>
-                      ZPL (thermal printer)
-                    </Button>
-                  </a>
+                    ZPL (thermal printer)
+                  </Button>
                 )}
                 <Text size="$4" color="$textSecondary" textAlign="center">
                   Print this label and attach it to your package. Drop it off at any {order.carrier}{" "}
@@ -743,21 +747,19 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
 
             {/* Buyer Tracking */}
             {order.userRole === "buyer" && order.trackingCode && order.carrier && (
-              <a
+              <Button
+                butterVariant="primary"
+                size="$5"
+                width="100%"
+                marginTop="$md"
+                icon={ExternalLink}
+                tag="a"
                 href={buildTrackingUrl(order.carrier, order.trackingCode)}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ textDecoration: "none", marginTop: 16 }}
               >
-                <Button
-                  butterVariant="primary"
-                  size="$5"
-                  width="100%"
-                  icon={<ExternalLink size={18} color="white" />}
-                >
-                  Track package
-                </Button>
-              </a>
+                Track package
+              </Button>
             )}
           </Column>
         </Card>

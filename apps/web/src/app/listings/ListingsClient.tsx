@@ -408,6 +408,7 @@ export function ListingsClient({
     count += filters.conditions.length;
     count += filters.brands.length;
     if (isPriceFiltered(filters)) count++;
+    if (filters.showFavouritesOnly) count++;
     return count;
   }, [filters, isPriceFiltered]);
 
@@ -490,6 +491,12 @@ export function ListingsClient({
                 onRemove={() =>
                   handleFilterChange({ minPrice: priceBounds.min, maxPrice: priceBounds.max })
                 }
+              />
+            )}
+            {filters.showFavouritesOnly && (
+              <FilterChip
+                label="Favourites only"
+                onRemove={() => handleFilterChange({ showFavouritesOnly: false })}
               />
             )}
             <Button butterVariant="ghost" size="$2" onPress={handleClearAll}>

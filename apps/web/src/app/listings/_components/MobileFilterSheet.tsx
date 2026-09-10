@@ -74,7 +74,8 @@ export function MobileFilterSheet({
     (draft.category ? 1 : 0) +
     draft.conditions.length +
     draft.brands.length +
-    (draft.minPrice !== priceBounds.min || draft.maxPrice !== priceBounds.max ? 1 : 0);
+    (draft.minPrice !== priceBounds.min || draft.maxPrice !== priceBounds.max ? 1 : 0) +
+    (draft.showFavouritesOnly ? 1 : 0);
 
   const handleApply = () => {
     onApply(draft);
@@ -115,9 +116,11 @@ export function MobileFilterSheet({
         <SheetScrollView>
           <Column paddingHorizontal="$md" paddingBottom="$md">
             <FilterSection title="Category">
+              {/* Stays in the draft; the URL changes only when Apply commits it */}
               <CategoryFilter
                 selectedCategory={draft.category}
                 onChange={(category) => updateDraft({ category })}
+                navigateOnChange={false}
               />
             </FilterSection>
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useLinkPress } from "@/hooks/useLinkPress";
 import { Column, Row, Text, Heading, Button, Card, Spinner } from "@buttergolf/ui";
 import type { ColorTokens } from "tamagui";
 import {
@@ -187,6 +188,7 @@ function StatCard({
 }
 
 function OrderCard({ order }: { order: Order }) {
+  const linkPress = useLinkPress();
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [labelUrl, setLabelUrl] = useState(order.labelUrl);
@@ -427,14 +429,17 @@ function OrderCard({ order }: { order: Order }) {
           {status === "PAYMENT_CONFIRMED" && (
             <>
               {needsAddressUpdate ? (
-                <Link href="/account/addresses" style={{ width: "100%" }}>
-                  <Button butterVariant="primary" size="$4" width="100%">
-                    <AlertCircle size={16} />
-                    <Text color="$textInverse" marginLeft="$xs">
-                      Update address
-                    </Text>
-                  </Button>
-                </Link>
+                <Button
+                  butterVariant="primary"
+                  size="$4"
+                  width="100%"
+                  icon={AlertCircle}
+                  tag="a"
+                  href="/account/addresses"
+                  onPress={linkPress("/account/addresses")}
+                >
+                  Update address
+                </Button>
               ) : (
                 <Button
                   butterVariant="primary"
@@ -489,32 +494,32 @@ function OrderCard({ order }: { order: Order }) {
                 </Column>
               )}
               {/* PDF download */}
-              <a
+              <Button
+                butterVariant="primary"
+                size="$4"
+                width="100%"
+                icon={Download}
+                tag="a"
                 href={labelUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ width: "100%" }}
               >
-                <Button butterVariant="primary" size="$4" width="100%">
-                  <Download size={16} />
-                  <Text color="$textInverse" marginLeft="$xs">
-                    Download PDF label
-                  </Text>
-                </Button>
-              </a>
+                Download PDF label
+              </Button>
               {/* ZPL download for thermal printers */}
               {labelZplUrl && (
-                <a
+                <Button
+                  butterVariant="secondary"
+                  size="$4"
+                  width="100%"
+                  icon={Download}
+                  tag="a"
                   href={labelZplUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ width: "100%" }}
                 >
-                  <Button butterVariant="secondary" size="$4" width="100%">
-                    <Download size={16} />
-                    <Text marginLeft="$xs">ZPL (thermal printer)</Text>
-                  </Button>
-                </a>
+                  ZPL (thermal printer)
+                </Button>
               )}
             </Column>
           )}
@@ -539,24 +544,30 @@ function OrderCard({ order }: { order: Order }) {
           )}
 
           {trackingUrl && (
-            <a
+            <Button
+              butterVariant="secondary"
+              size="$4"
+              width="100%"
+              icon={ExternalLink}
+              tag="a"
               href={trackingUrl}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ width: "100%" }}
             >
-              <Button butterVariant="secondary" size="$4" width="100%">
-                <ExternalLink size={16} />
-                <Text marginLeft="$xs">Track: {trackingCode?.slice(0, 10)}...</Text>
-              </Button>
-            </a>
+              {`Track: ${trackingCode?.slice(0, 10)}...`}
+            </Button>
           )}
 
-          <Link href={`/orders/${order.id}`} style={{ width: "100%", textDecoration: "none" }}>
-            <Button butterVariant="ghost" size="$3" width="100%">
-              View Details →
-            </Button>
-          </Link>
+          <Button
+            butterVariant="ghost"
+            size="$3"
+            width="100%"
+            tag="a"
+            href={`/orders/${order.id}`}
+            onPress={linkPress(`/orders/${order.id}`)}
+          >
+            View details
+          </Button>
         </Column>
       </Row>
     </Card>

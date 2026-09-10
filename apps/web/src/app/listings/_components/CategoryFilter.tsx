@@ -8,6 +8,12 @@ import { CATEGORIES } from "@buttergolf/constants";
 interface CategoryFilterProps {
   selectedCategory: string | null;
   onChange: (category: string | null) => void;
+  /**
+   * Navigate to the clean category URL as soon as a radio is chosen (desktop
+   * sidebar). The mobile sheet passes false so the choice stays in its draft
+   * until Apply.
+   */
+  navigateOnChange?: boolean;
 }
 
 const OPTIONS = [
@@ -15,7 +21,11 @@ const OPTIONS = [
   ...CATEGORIES.map((category) => ({ slug: category.slug, name: category.name })),
 ];
 
-export function CategoryFilter({ selectedCategory, onChange }: Readonly<CategoryFilterProps>) {
+export function CategoryFilter({
+  selectedCategory,
+  onChange,
+  navigateOnChange = true,
+}: Readonly<CategoryFilterProps>) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const idPrefix = useId();
@@ -32,7 +42,9 @@ export function CategoryFilter({ selectedCategory, onChange }: Readonly<Category
 
   const handleCategoryChange = (value: string) => {
     const slug = value === "all" ? null : value;
-    router.push(buildCategoryUrl(slug));
+    if (navigateOnChange) {
+      router.push(buildCategoryUrl(slug));
+    }
     onChange(slug);
   };
 
