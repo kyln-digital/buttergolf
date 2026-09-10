@@ -44,7 +44,7 @@ Triggers: `pull_request` (all) and `push` to `main`, with per-ref concurrency ca
 Runs against a `postgres:16` **service container**, never a real database (see [the database note](#database-one-database-previews-included)):
 
 1. `pnpm db:migrate:deploy` — every migration still applies, in order, to an empty database
-2. `prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code` — the migrations produce exactly the schema the client is generated from (exit code 2 = drift, and the step prints how to fix it)
+2. `prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code` — the migrations produce exactly the schema the client is generated from (exit code 2 = drift; the step prints how to regenerate the migration against a throwaway database, and warns off `packages/db/.env` — `migrate dev` can reset whatever it is pointed at)
 
 The second check is the one that would have caught the `isBrandProcessed` incident on 2026-09-10: a model field shipped whose column the deployed database did not have, so every page reading `product_images` returned a 500. What it cannot check is whether the migrations have been _applied_ to the shared database — nothing automated can, while previews and production point at the same one.
 

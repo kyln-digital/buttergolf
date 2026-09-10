@@ -103,7 +103,14 @@ jobs:
             status=$?
             if [ "$status" -eq 2 ]; then
               echo "::error::prisma/schema.prisma does not match the migrations."
-              echo "Run 'pnpm db:migrate:dev' to generate the missing migration and commit it."
+              echo "Generate the missing migration against a THROWAWAY database:"
+              echo "  docker run --rm -d --name bg-pg -e POSTGRES_PASSWORD=postgres \\"
+              echo "    -e POSTGRES_DB=buttergolf -p 5432:5432 postgres:16"
+              echo "  DATABASE_URL=postgresql://postgres:postgres@localhost:5432/buttergolf \\"
+              echo "    pnpm db:migrate:dev"
+              echo "Then commit the migration it writes."
+              echo "Do NOT run migrate dev against packages/db/.env: if that was pulled from"
+              echo "Vercel it is the production database, and migrate dev can reset it."
             fi
             exit "$status"
           }
