@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useClerk, useUser } from "@clerk/nextjs";
-import { Column, Row, Text, Button, Badge, Container, ThemeSwitcher } from "@buttergolf/ui";
+import { Column, Row, Text, Heading, Button, Container, ThemeSwitcher } from "@buttergolf/ui";
 import { Avatar } from "tamagui";
 import {
   LogOut,
@@ -15,10 +15,10 @@ import {
   CreditCard,
   Bell,
   HelpCircle,
-  Edit3,
   MessageCircle,
 } from "@tamagui/lucide-icons";
 import { AccountMenuItem } from "@buttergolf/app";
+import { useLinkPress } from "@/hooks/useLinkPress";
 import { PayoutSetupWizard } from "./PayoutSetupWizard";
 
 interface AccountHubClientProps {
@@ -41,6 +41,19 @@ interface AccountHubClientProps {
   readonly activeListingsCount?: number;
 }
 
+type PayoutBadge = {
+  label: string;
+  variant: "success" | "warning" | "info" | "neutral";
+};
+
+function SectionLabel({ children }: Readonly<{ children: string }>) {
+  return (
+    <Text size="$2" color="$textSecondary" fontWeight="600" paddingLeft="$xs">
+      {children}
+    </Text>
+  );
+}
+
 /**
  * Account Hub Client Component
  * Main account management page mirroring mobile's AccountScreen design
@@ -52,7 +65,8 @@ export function AccountHubClient({
   activeListingsCount = 0,
 }: AccountHubClientProps) {
   const router = useRouter();
-  const { signOut } = useClerk();
+  const linkPress = useLinkPress();
+  const { signOut, openUserProfile } = useClerk();
   const { user: clerkUser } = useUser();
   const [showPayoutSetup, setShowPayoutSetup] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -79,41 +93,16 @@ export function AccountHubClient({
     user.hasConnectAccount && user.onboardingComplete && user.accountStatus === "active";
 
   // Determine payout status badge
-  const getPayoutStatusBadge = () => {
-    if (user.accountStatus === "active") {
-      return (
-        <Badge variant="success" size="sm">
-          Active
-        </Badge>
-      );
-    }
-    if (user.accountStatus === "restricted") {
-      return (
-        <Badge variant="warning" size="sm">
-          Action Required
-        </Badge>
-      );
-    }
-    if (user.hasConnectAccount && user.onboardingComplete) {
-      return (
-        <Badge variant="info" size="sm">
-          Pending
-        </Badge>
-      );
-    }
-    if (user.hasConnectAccount) {
-      return (
-        <Badge variant="warning" size="sm">
-          Incomplete
-        </Badge>
-      );
-    }
-    return (
-      <Badge variant="neutral" size="sm">
-        Setup
-      </Badge>
-    );
+  const getPayoutBadge = (): PayoutBadge => {
+    if (user.accountStatus === "active") return { label: "Active", variant: "success" };
+    if (user.accountStatus === "restricted")
+      return { label: "Action required", variant: "warning" };
+    if (user.hasConnectAccount && user.onboardingComplete)
+      return { label: "Pending", variant: "info" };
+    if (user.hasConnectAccount) return { label: "Incomplete", variant: "warning" };
+    return { label: "Set up", variant: "neutral" };
   };
+  const payoutBadge = getPayoutBadge();
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
@@ -151,71 +140,65 @@ export function AccountHubClient({
   }
 
   return (
-    <Container size="md" paddingHorizontal="$md" paddingVertical="$xl">
+    <Container size="md" paddingHorizontal="$md" paddingTop="$lg" paddingBottom="$3xl">
       <Column gap="$xl" width="100%">
-        {/* Profile Header Card */}
-        <Button
-          unstyled
+        <Heading level={1} size="$8" color="$text">
+          Account
+        </Heading>
+
+        {/* Profile */}
+        <Row
+          alignItems="center"
+          gap="$md"
           backgroundColor="$surface"
           borderRadius="$lg"
           borderWidth={1}
           borderColor="$border"
-          padding="$5"
-          pressStyle={{ backgroundColor: "$backgroundPress", scale: 0.99 }}
-          hoverStyle={{ backgroundColor: "$backgroundHover" }}
-          onPress={() => {
-            // Open Clerk user profile modal
-            if (clerkUser?.update) {
-              void router.push("/account/profile");
-            }
-          }}
+          padding="$md"
         >
-          <Row alignItems="center" gap="$4">
-            {/* Avatar */}
-            <Avatar circular size="$10">
-              {imageUrl ? (
-                <Avatar.Image accessibilityLabel={getDisplayName()} src={imageUrl} />
-              ) : (
-                <Avatar.Fallback
-                  backgroundColor="$primary"
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  <Text size="$7" color="$textInverse" fontWeight="600">
-                    {getInitials()}
-                  </Text>
-                </Avatar.Fallback>
-              )}
-            </Avatar>
+          <Avatar circular size="$7">
+            {imageUrl ? (
+              <Avatar.Image accessibilityLabel={getDisplayName()} src={imageUrl} />
+            ) : (
+              <Avatar.Fallback
+                backgroundColor="$primary"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Text size="$6" color="$textInverse" fontWeight="600">
+                  {getInitials()}
+                </Text>
+              </Avatar.Fallback>
+            )}
+          </Avatar>
 
-            {/* Name and Email */}
-            <Column flex={1} gap="$1">
-              <Text size="$6" fontWeight="600" color="$text">
-                {getDisplayName()}
-              </Text>
-              <Text size="$4" color="$textSecondary" numberOfLines={1}>
-                {user.email}
-              </Text>
-            </Column>
+          <Column flex={1} gap={2} minWidth={0}>
+            <Text size="$6" fontWeight="600" color="$text">
+              {getDisplayName()}
+            </Text>
+            <Text size="$4" color="$textSecondary" numberOfLines={1}>
+              {user.email}
+            </Text>
+          </Column>
 
-            {/* Edit indicator */}
-            <Edit3 size={20} color="$textSecondary" />
-          </Row>
-        </Button>
+          {/* Clerk's hosted profile modal owns name, email and avatar edits */}
+          <Button butterVariant="secondary" size="$3" onPress={() => openUserProfile()}>
+            Manage
+          </Button>
+        </Row>
 
-        {/* Shopping Section */}
-        <Column gap="$3">
-          <Text size="$3" color="$textSecondary" fontWeight="600" marginLeft="$2">
-            SHOPPING
-          </Text>
+        {/* Shopping */}
+        <Column gap="$sm">
+          <SectionLabel>SHOPPING</SectionLabel>
 
           <AccountMenuItem
             icon={<ShoppingBag size={22} color="$text" />}
-            label="My Orders"
+            label="Orders"
             description="View your purchase history"
             badge={pendingOrdersCount > 0 ? pendingOrdersCount : undefined}
             badgeVariant="primary"
-            onPress={() => router.push("/orders")}
+            href="/orders"
+            onPress={linkPress("/orders")}
           />
 
           <AccountMenuItem
@@ -223,107 +206,94 @@ export function AccountHubClient({
             label="Messages"
             description="Chat with buyers and sellers"
             badge={unreadMessagesCount > 0 ? unreadMessagesCount : undefined}
-            badgeVariant="info"
-            onPress={() => router.push("/messages")}
+            badgeVariant="primary"
+            href="/messages"
+            onPress={linkPress("/messages")}
           />
 
           <AccountMenuItem
             icon={<Heart size={22} color="$text" />}
             label="Favourites"
             description="Your saved items"
-            onPress={() => router.push("/favourites")}
+            href="/favourites"
+            onPress={linkPress("/favourites")}
           />
         </Column>
 
-        {/* Selling Section */}
-        <Column gap="$3">
-          <Text size="$3" color="$textSecondary" fontWeight="600" marginLeft="$2">
-            SELLING
-          </Text>
+        {/* Selling */}
+        <Column gap="$sm">
+          <SectionLabel>SELLING</SectionLabel>
 
           <AccountMenuItem
-            icon={<Store size={22} color={isSellerOnboarded ? "$success" : "$textSecondary"} />}
-            label="Seller Dashboard"
+            icon={<Store size={22} color="$text" />}
+            label="Seller dashboard"
             description={
               isSellerOnboarded ? "Manage your sales and listings" : "View your sales and listings"
             }
             badge={activeListingsCount > 0 ? activeListingsCount : undefined}
-            badgeVariant="success"
-            onPress={() => router.push("/seller")}
+            badgeVariant="neutral"
+            href="/seller"
+            onPress={linkPress("/seller")}
           />
 
-          {/* Payout Setup */}
-          <Button
-            unstyled
-            backgroundColor="$surface"
-            borderRadius="$lg"
-            borderWidth={1}
-            borderColor="$border"
-            padding="$4"
-            pressStyle={{ backgroundColor: "$backgroundPress", scale: 0.98 }}
-            hoverStyle={{ backgroundColor: "$backgroundHover" }}
-            onPress={() => {
-              if (isSellerOnboarded) {
-                router.push("/seller/settings");
-              } else {
-                setShowPayoutSetup(true);
-              }
-            }}
-          >
-            <Row alignItems="center" gap="$3" flex={1}>
-              <CreditCard size={22} color={isSellerOnboarded ? "$success" : "$warning"} />
-              <Column flex={1} gap="$1">
-                <Text size="$5" fontWeight="500" color="$text">
-                  Payout Setup
-                </Text>
-                <Text size="$3" color="$textSecondary" numberOfLines={1}>
-                  {isSellerOnboarded ? "Manage your payout settings" : "Set up to receive payments"}
-                </Text>
-              </Column>
-              {getPayoutStatusBadge()}
-            </Row>
-          </Button>
+          {isSellerOnboarded ? (
+            <AccountMenuItem
+              icon={<CreditCard size={22} color="$text" />}
+              label="Payout setup"
+              description="Manage your payout settings"
+              badge={payoutBadge.label}
+              badgeVariant={payoutBadge.variant}
+              href="/seller/settings"
+              onPress={linkPress("/seller/settings")}
+            />
+          ) : (
+            <AccountMenuItem
+              icon={<CreditCard size={22} color="$text" />}
+              label="Payout setup"
+              description="Set up to receive payments"
+              badge={payoutBadge.label}
+              badgeVariant={payoutBadge.variant}
+              onPress={() => setShowPayoutSetup(true)}
+            />
+          )}
         </Column>
 
-        {/* Account Section */}
-        <Column gap="$3">
-          <Text size="$3" color="$textSecondary" fontWeight="600" marginLeft="$2">
-            ACCOUNT
-          </Text>
+        {/* Account */}
+        <Column gap="$sm">
+          <SectionLabel>ACCOUNT</SectionLabel>
 
           <AccountMenuItem
             icon={<MapPin size={22} color="$text" />}
             label="Addresses"
             description="Manage shipping addresses"
-            onPress={() => router.push("/account/addresses")}
+            href="/account/addresses"
+            onPress={linkPress("/account/addresses")}
           />
 
           <AccountMenuItem
             icon={<CreditCard size={22} color="$text" />}
-            label="Payment Methods"
+            label="Payment methods"
             description="Manage payment options"
-            onPress={() => router.push("/account/payment-methods")}
+            href="/account/payment-methods"
+            onPress={linkPress("/account/payment-methods")}
           />
         </Column>
 
-        {/* Preferences Section */}
-        <Column gap="$3">
-          <Text size="$3" color="$textSecondary" fontWeight="600" marginLeft="$2">
-            PREFERENCES
-          </Text>
+        {/* Preferences */}
+        <Column gap="$sm">
+          <SectionLabel>PREFERENCES</SectionLabel>
 
-          {/* Theme Switcher - inline */}
           <Column
             backgroundColor="$surface"
             borderRadius="$lg"
             borderWidth={1}
             borderColor="$border"
-            padding="$4"
-            gap="$3"
+            padding="$md"
+            gap="$sm"
           >
-            <Row alignItems="center" gap="$2">
+            <Row alignItems="center" gap="$sm">
               <Palette size={22} color="$text" />
-              <Text size="$5" fontWeight="500" color="$text">
+              <Text size="$5" fontWeight="600" color="$text">
                 Appearance
               </Text>
             </Row>
@@ -334,46 +304,41 @@ export function AccountHubClient({
             icon={<Bell size={22} color="$text" />}
             label="Notifications"
             description="Manage notification preferences"
-            onPress={() => router.push("/account/notifications")}
+            href="/account/notifications"
+            onPress={linkPress("/account/notifications")}
           />
         </Column>
 
-        {/* Support Section */}
-        <Column gap="$3">
-          <Text size="$3" color="$textSecondary" fontWeight="600" marginLeft="$2">
-            SUPPORT
-          </Text>
+        {/* Support */}
+        <Column gap="$sm">
+          <SectionLabel>SUPPORT</SectionLabel>
 
           <AccountMenuItem
             icon={<HelpCircle size={22} color="$text" />}
-            label="Help & Support"
+            label="Help & support"
             description="FAQ and contact us"
-            onPress={() => router.push("/help-centre")}
+            href="/help-centre"
+            onPress={linkPress("/help-centre")}
           />
         </Column>
 
-        {/* Sign Out Button */}
-        <Column paddingTop="$4" gap="$4">
+        {/* Sign out */}
+        <Column paddingTop="$sm" gap="$md">
           <Button
+            butterVariant="secondary"
             size="$5"
-            backgroundColor="$surface"
-            borderWidth={1}
-            borderColor="$error"
+            color="$error"
+            icon={LogOut}
             onPress={handleSignOut}
             disabled={isSigningOut}
             width="100%"
           >
-            <Row alignItems="center" gap="$2">
-              <LogOut size={20} color="$textInverse" />
-              <Text color="$textInverse" fontWeight="500">
-                {isSigningOut ? "Signing out..." : "Sign Out"}
-              </Text>
-            </Row>
+            {isSigningOut ? "Signing out..." : "Sign out"}
           </Button>
         </Column>
 
         {/* Version info */}
-        <Text size="$2" color="$textSecondary" textAlign="center" marginTop="$4">
+        <Text size="$2" color="$textSecondary" textAlign="center">
           ButterGolf v1.0.0
         </Text>
       </Column>
