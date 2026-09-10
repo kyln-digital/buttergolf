@@ -1,77 +1,42 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useLinkPress } from "@/hooks/useLinkPress";
 import type { ProductCardData } from "@buttergolf/app";
-import { Button, Column, Row, Text, Heading } from "@buttergolf/ui";
+import { Button, Row } from "@buttergolf/ui";
 import { ProductCard } from "@/components/ProductCard";
+import { CardGrid, Section, SectionHeader } from "./Section";
 
 interface RecentlyListedSectionClientProps {
   readonly products: ProductCardData[];
 }
 
 export function RecentlyListedSectionClient({ products }: RecentlyListedSectionClientProps) {
-  const router = useRouter();
   const linkPress = useLinkPress();
 
   return (
-    <Column backgroundColor="$background" paddingVertical="$3xl" width="100%">
-      <Column
-        maxWidth={1440}
-        marginHorizontal="auto"
-        paddingHorizontal="$xl"
-        width="100%"
-        gap="$3xl"
-      >
-        {/* Header - Centered */}
-        <Column alignItems="center" gap="$md" width="100%">
-          <Heading level={2} size="$9" $gtMd={{ size: "$10" }} color="$text" textAlign="center">
-            Recently listed
-          </Heading>
-          <Text size="$6" $gtMd={{ size: "$7" }} color="$textSecondary" textAlign="center">
-            Latest drops, hottest deals - upgrade your game today.
-          </Text>
-        </Column>
+    <Section label="Recently listed">
+      <SectionHeader
+        title="Recently listed"
+        subtitle="Latest drops, hottest deals - upgrade your game today."
+      />
 
-        {/* 5-column Grid - Responsive breakpoints */}
-        <Column
-          width="100%"
-          style={{ display: "grid" }}
-          gridTemplateColumns="repeat(2, 1fr)"
-          gap="$md"
-          $gtSm={{
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "$lg",
-          }}
-          $gtMd={{
-            gridTemplateColumns: "repeat(4, 1fr)",
-          }}
-          $gtLg={{
-            gridTemplateColumns: "repeat(5, 1fr)",
-          }}
+      <CardGrid maxColumns={5}>
+        {products.slice(0, 5).map((product) => (
+          <ProductCard key={product.id} product={product} />
+        ))}
+      </CardGrid>
+
+      <Row justifyContent="center" width="100%">
+        <Button
+          butterVariant="secondary"
+          size="$5"
+          tag="a"
+          href="/listings"
+          onPress={linkPress("/listings")}
         >
-          {products.slice(0, 5).map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onPress={() => router.push(`/products/${product.id}`)}
-            />
-          ))}
-        </Column>
-
-        {/* View All Button - Centered Below Carousel */}
-        <Row alignItems="center" justifyContent="center" width="100%" paddingTop="$sm">
-          <Button
-            butterVariant="secondary"
-            size="$5"
-            tag="a"
-            href="/listings"
-            onPress={linkPress("/listings")}
-          >
-            View all listings
-          </Button>
-        </Row>
-      </Column>
-    </Column>
+          View all listings
+        </Button>
+      </Row>
+    </Section>
   );
 }

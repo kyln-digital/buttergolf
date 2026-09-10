@@ -391,10 +391,7 @@ export function FavouritesClient() {
                     transition: "opacity 250ms ease-out, transform 250ms ease-out",
                   }}
                 >
-                  <ProductCard
-                    product={product}
-                    onPress={() => router.push(`/products/${product.id}`)}
-                  />
+                  <ProductCard product={product} />
                 </View>
               ))}
             </Column>

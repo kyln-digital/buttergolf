@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
-import { useRouter } from "next/navigation";
 import { Column, Row } from "@buttergolf/ui";
 import { useTheme } from "tamagui";
 import { ProductCard } from "@/components/ProductCard";
@@ -20,7 +19,6 @@ export function ProductCarousel({
   autoplay = true,
   autoplayDelay = 5000,
 }: ProductCarouselProps) {
-  const router = useRouter();
   const theme = useTheme();
   const [isDesktop, setIsDesktop] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -96,10 +94,7 @@ export function ProductCarousel({
                 width: "315px",
               }}
             >
-              <ProductCard
-                product={product}
-                onPress={() => router.push(`/products/${product.id}`)}
-              />
+              <ProductCard product={product} />
             </div>
           ))}
         </div>

@@ -30,8 +30,8 @@ html {
   /* White */
   --foreground: #1e1e1e;
   /* Charcoal */
-  --primary: #e25f2f;
-  /* Butter Orange */
+  --primary: #f45314;
+  /* Spiced Clementine */
   --primary-foreground: #ffffff;
   --border: #d1d5db;
   --muted: #6b7280;
@@ -79,6 +79,13 @@ body {
   padding: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Anchors are navigation chrome by default (header, cards, footer, nav);
+   prose links opt back in to underlines locally. */
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
 /* Smooth transitions for interactive elements only */

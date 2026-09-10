@@ -5,7 +5,6 @@ import { Column, View, Text } from "@buttergolf/ui";
 import { ProductCard } from "@/components/ProductCard";
 import { DotPagination } from "@/components/DotPagination";
 import type { ProductCardData } from "@buttergolf/app";
-import { useRouter } from "next/navigation";
 
 interface ProductsGridProps {
   readonly products: ProductCardData[];
@@ -44,7 +43,6 @@ function AnimatedGridContent({
   isPaginating: boolean;
   currentPage: number;
 }>) {
-  const router = useRouter();
   const [displayProducts, setDisplayProducts] = useState(products);
   const prevPageRef = useRef(currentPage);
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
@@ -106,7 +104,7 @@ function AnimatedGridContent({
             transitionDelay: `${Math.min(index * 8, 150)}ms`,
           }}
         >
-          <ProductCard product={product} onPress={() => router.push(`/products/${product.id}`)} />
+          <ProductCard product={product} />
         </View>
       ))}
     </>

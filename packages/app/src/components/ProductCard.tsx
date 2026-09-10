@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { Platform } from "react-native";
+import type { GestureResponderEvent } from "react-native";
 import {
   Card,
   GlassmorphismCard,
@@ -11,18 +11,32 @@ import {
   Text,
   Image,
   View,
-  Button,
 } from "@buttergolf/ui";
 import { Heart } from "@tamagui/lucide-icons";
 import type { ProductCardData } from "../types/product";
 
 export interface ProductCardProps {
   product: ProductCardData;
-  onPress?: () => void;
+  /**
+   * Web only: when set the card renders as a real anchor so open-in-new-tab,
+   * copy-link and keyboard navigation work. Pair with a press handler that
+   * calls `preventDefault` for plain clicks (see `useLinkPress` on web).
+   */
+  href?: string;
+  onPress?: (event: GestureResponderEvent) => void;
   onFavourite?: (productId: string) => void;
   isFavourited?: boolean;
-  onQuickView?: (productId: string) => void;
 }
+
+/** Two lines of the `$5` body size (22px line-height each). */
+const TITLE_HEIGHT = 44;
+
+const focusRing = {
+  outlineColor: "$primary",
+  outlineStyle: "solid",
+  outlineWidth: 2,
+  outlineOffset: 2,
+} as const;
 
 /**
  * Heart icon component (cross-platform via Tamagui Lucide).
@@ -34,8 +48,7 @@ export interface ProductCardProps {
  * "Type 'string' is not assignable to type GetThemeValueForKey<'color'>".
  *
  * Keep colour values as theme tokens (for example "$primary", "$textInverse")
- * and use opacity for subtle unfilled-state styling. This preserves the visual
- * appearance and prevents repeated type-regression fixes.
+ * and use opacity for subtle unfilled-state styling.
  */
 function HeartIcon({ filled }: Readonly<{ filled: boolean }>) {
   return (
@@ -50,57 +63,48 @@ function HeartIcon({ filled }: Readonly<{ filled: boolean }>) {
 }
 
 /**
- * ProductCard - Shopify/Airbnb style layout
+ * ProductCard
  *
- * Layout: Image on top (4:3 aspect ratio), content area below (96px)
- * Only overlays on image: favourite heart (top-right), optional condition badge (top-left)
- * Desktop hover: reveals quick action buttons at bottom of image
+ * Flat, outlined card: image on top (4:3), title, price, seller. The whole card
+ * is the link; the only other control is the favourite heart. Nothing moves on
+ * hover - the border shifts one tone, matching the Button family.
  */
 export function ProductCard({
   product,
+  href,
   onPress,
   onFavourite,
   isFavourited = false,
-  onQuickView,
 }: Readonly<ProductCardProps>) {
-  const [isHovered, setIsHovered] = useState(false);
+  const isWeb = Platform.OS === "web";
+  const sellerName = product.seller?.firstName || "Seller";
+  const sellerRatingCount = product.seller?.ratingCount ?? 0;
+  const sellerRating = product.seller?.averageRating;
+  const anchorProps = isWeb && href ? { tag: "a" as const, href } : {};
 
-  const handleFavouriteClick = () => {
+  const handleFavouritePress = (event?: GestureResponderEvent) => {
+    // The heart sits inside the card anchor: stop the card press and the
+    // anchor's own navigation.
+    event?.stopPropagation?.();
+    (event as unknown as { preventDefault?: () => void } | undefined)?.preventDefault?.();
     onFavourite?.(product.id);
   };
 
-  const isWeb = Platform.OS === "web";
-  const sellerName = product.seller?.firstName || "Seller";
-  const isNewSeller = product.seller?.ratingCount === 0;
-  const sellerRatingCount = product.seller?.ratingCount ?? 0;
-
   return (
     <Card
-      variant="elevated"
+      variant="outlined"
+      interactive
       padding={0}
-      backgroundColor="$card"
-      borderColor="$border"
-      borderWidth={1}
-      borderRadius={16}
-      cursor="pointer"
-      onPress={onPress}
       width="100%"
+      backgroundColor="$card"
+      borderRadius="$lg"
       overflow="hidden"
-      onMouseEnter={isWeb ? () => setIsHovered(true) : undefined}
-      onMouseLeave={isWeb ? () => setIsHovered(false) : undefined}
-      style={
-        isWeb
-          ? {
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06)",
-              transition: "box-shadow 0.2s ease, transform 0.2s ease",
-            }
-          : undefined
-      }
-      hoverStyle={{
-        borderColor: "$borderHover",
-      }}
+      onPress={onPress}
+      focusable
+      focusVisibleStyle={focusRing}
+      {...anchorProps}
     >
-      {/* Image Area - 4:3 aspect ratio */}
+      {/* Image - 4:3 */}
       <Column position="relative" width="100%" aspectRatio={4 / 3} overflow="hidden">
         <Image
           source={{ uri: product.imageUrl }}
@@ -108,37 +112,32 @@ export function ProductCard({
           width="100%"
           height="100%"
           objectFit="cover"
-          borderTopLeftRadius={16}
-          borderTopRightRadius={16}
         />
 
-        {/* Promotion Badge - Top Left */}
+        {/* Promotion badge - top left */}
         {product.activePromotion && (
           <View
             position="absolute"
-            top={10}
-            left={10}
+            top="$sm"
+            left="$sm"
             backgroundColor={product.activePromotion.type === "BUMP" ? "$primary" : "$success"}
-            paddingHorizontal={10}
-            paddingVertical={4}
-            borderRadius={12}
+            paddingHorizontal="$sm"
+            paddingVertical="$xs"
+            borderRadius="$full"
             zIndex={2}
           >
-            <Row alignItems="center" gap={4}>
-              <Text size="$2" fontWeight="700" color="$textInverse">
-                {product.activePromotion.type === "BUMP" ? "BOOSTED" : "PRO SHOP"}
-              </Text>
-            </Row>
+            <Text size="$1" fontWeight="700" color="$textInverse">
+              {product.activePromotion.type === "BUMP" ? "BOOSTED" : "PRO SHOP"}
+            </Text>
           </View>
         )}
 
-        {/* Favourite Heart Button - Top Right with Glassmorphism */}
+        {/* Favourite - top right */}
         <GlassmorphismCard
           intensity="medium"
-          blur="medium"
           position="absolute"
-          top={10}
-          right={10}
+          top="$sm"
+          right="$sm"
           width={36}
           height={36}
           borderRadius="$full"
@@ -146,78 +145,27 @@ export function ProductCard({
           justifyContent="center"
           zIndex={2}
           cursor="pointer"
-          onPress={(e) => {
-            e?.stopPropagation?.();
-            handleFavouriteClick();
-          }}
-          hoverStyle={{ transform: "scale(1.1)" }}
-          pressStyle={{ transform: "scale(0.9)", opacity: 0.8 }}
-          animation="quick"
           role="button"
+          focusable
           aria-label={isFavourited ? "Remove from favourites" : "Add to favourites"}
-          style={
-            isWeb
-              ? {
-                  ...getGlassmorphismStyles("medium"),
-                  transition: "transform 0.15s ease-out, opacity 0.15s ease-out",
-                }
-              : undefined
-          }
+          aria-pressed={isFavourited}
+          onPress={handleFavouritePress}
+          pressStyle={{ scale: 0.92, opacity: 0.85 }}
+          focusVisibleStyle={focusRing}
+          style={isWeb ? getGlassmorphismStyles("medium") : undefined}
         >
           <HeartIcon filled={isFavourited} />
         </GlassmorphismCard>
-
-        {/* Hover Actions Overlay - Desktop only */}
-        {isWeb && onQuickView && (
-          <View
-            position="absolute"
-            bottom={0}
-            left={0}
-            right={0}
-            paddingHorizontal={12}
-            paddingVertical={12}
-            zIndex={3}
-            style={{
-              background: "linear-gradient(transparent, rgba(0,0,0,0.5))",
-              opacity: isHovered ? 1 : 0,
-              transform: isHovered ? "translateY(0)" : "translateY(8px)",
-              transition: "opacity 0.2s ease, transform 0.2s ease",
-              pointerEvents: isHovered ? "auto" : "none",
-            }}
-          >
-            <Row justifyContent="center">
-              <Button
-                butterVariant="primary"
-                size="$4"
-                borderRadius="$full"
-                paddingHorizontal="$6"
-                onPress={(e) => {
-                  e?.stopPropagation?.();
-                  onQuickView(product.id);
-                }}
-              >
-                View
-              </Button>
-            </Row>
-          </View>
-        )}
       </Column>
 
-      {/* Content Area - Fixed height for consistent grid alignment */}
-      <Column
-        paddingHorizontal={16}
-        paddingVertical={14}
-        gap={6}
-        minHeight={96}
-        justifyContent="flex-start"
-      >
-        {/* Title - 2 lines max with line-clamp */}
+      {/* Content */}
+      <Column paddingHorizontal="$md" paddingTop="$sm" paddingBottom="$md" gap="$xs">
         <Text
           size="$5"
           fontWeight="600"
           color="$text"
           numberOfLines={2}
-          height={40}
+          height={TITLE_HEIGHT}
           style={
             isWeb
               ? {
@@ -232,37 +180,35 @@ export function ProductCard({
           {product.title}
         </Text>
 
-        {/* Price Row */}
         <Text size="$6" fontWeight="700" color="$text">
           £{product.price.toFixed(2)}
         </Text>
 
-        {/* Seller + Rating Row */}
-        <Row alignItems="center" gap={6} flexWrap="wrap">
+        <Row alignItems="center" gap="$sm" flexWrap="wrap">
           <Text size="$4" color="$textSecondary" numberOfLines={1} flexShrink={1}>
             {sellerName}
           </Text>
           {sellerRatingCount > 0 ? (
-            <Row alignItems="center" gap={3}>
+            <Row alignItems="center" gap="$xs">
               <Text color="$primary" size="$4">
                 ★
               </Text>
               <Text size="$4" fontWeight="500" color="$textSecondary">
-                {product.seller?.averageRating?.toFixed(1)}
+                {sellerRating?.toFixed(1)}
               </Text>
             </Row>
-          ) : isNewSeller ? (
+          ) : (
             <View
-              backgroundColor="$primary"
-              paddingHorizontal={8}
+              backgroundColor="$buttonSecondaryBg"
+              paddingHorizontal="$sm"
               paddingVertical={2}
-              borderRadius={10}
+              borderRadius="$full"
             >
-              <Text size="$2" fontWeight="600" color="$textInverse">
+              <Text size="$1" fontWeight="600" color="$textSecondary">
                 NEW SELLER
               </Text>
             </View>
-          ) : null}
+          )}
         </Row>
       </Column>
     </Card>
