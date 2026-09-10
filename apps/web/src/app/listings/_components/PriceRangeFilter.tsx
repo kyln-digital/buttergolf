@@ -77,16 +77,34 @@ export function PriceRangeFilter({
     return Number.isFinite(parsed) ? parsed : null;
   };
 
+  // While typing, a value is only committed when it needs no rounding or
+  // clamping, so the field never shows something other than the applied
+  // filter. Anything else (a partial number, a min above the max, an
+  // out-of-range value) commits on blur, where the fields snap to the result.
   const handleMinInputChange = (value: string) => {
     setMinText(value);
     const parsed = parse(value);
-    if (parsed !== null) commit(parsed, localMax);
+    if (
+      parsed !== null &&
+      Number.isInteger(parsed) &&
+      parsed >= normalisedMinPrice &&
+      parsed <= localMax
+    ) {
+      commit(parsed, localMax);
+    }
   };
 
   const handleMaxInputChange = (value: string) => {
     setMaxText(value);
     const parsed = parse(value);
-    if (parsed !== null) commit(localMin, parsed);
+    if (
+      parsed !== null &&
+      Number.isInteger(parsed) &&
+      parsed >= localMin &&
+      parsed <= normalisedMaxPrice
+    ) {
+      commit(localMin, parsed);
+    }
   };
 
   // On blur an empty or invalid field falls back to the catalogue bound and

@@ -68,8 +68,10 @@ export function AccountMenuItem({
   onPress,
 }: Readonly<AccountMenuItemProps>) {
   const isWeb = Platform.OS === "web";
+  // A disabled row is never an anchor: an <a href> would still navigate on
+  // click or Enter no matter what the press handler does.
   const linkProps =
-    isWeb && href
+    isWeb && href && !disabled
       ? { tag: "a" as const, href, style: { textDecoration: "none" } }
       : { role: "button" as const };
 
