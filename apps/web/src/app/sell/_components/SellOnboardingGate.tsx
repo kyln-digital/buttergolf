@@ -239,10 +239,12 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
         justifyContent="center"
         padding="$xl"
       >
-        <Card variant="elevated" padding="$xl" maxWidth={600}>
+        <Card variant="outlined" padding="$xl" maxWidth={600} borderRadius="$lg">
           <Column gap="$lg" alignItems="center">
             <Spinner size="lg" color="$primary" />
-            <Heading level={3}>Setting up your seller account...</Heading>
+            <Heading level={2} size="$6">
+              Setting up your seller account...
+            </Heading>
             <Text color="$textSecondary" textAlign="center">
               This only takes a moment. You&apos;ll be able to list your first item shortly.
             </Text>
@@ -262,24 +264,18 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
         justifyContent="center"
         padding="$xl"
       >
-        <Card variant="elevated" padding="$xl" maxWidth={600}>
+        <Card variant="outlined" padding="$xl" maxWidth={600} borderRadius="$lg">
           <Column gap="$lg">
-            <Heading level={3} color="$error">
+            <Heading level={2} size="$6" color="$text">
               Something went wrong
             </Heading>
             <Text color="$textSecondary">{error}</Text>
             <Row gap="$md">
               <Button butterVariant="primary" size="$4" onPress={() => initializeOnboarding()}>
-                Try Again
+                Try again
               </Button>
-              <Button
-                size="$4"
-                backgroundColor="transparent"
-                borderWidth={1}
-                borderColor="$border"
-                onPress={() => router.push("/")}
-              >
-                Go Home
+              <Button butterVariant="ghost" size="$4" onPress={() => router.push("/")}>
+                Go home
               </Button>
             </Row>
           </Column>
@@ -298,7 +294,7 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
         justifyContent="center"
         padding="$xl"
       >
-        <Card variant="elevated" padding="$xl" maxWidth={600}>
+        <Card variant="outlined" padding="$xl" maxWidth={600} borderRadius="$lg">
           <Column gap="$md" alignItems="center">
             <Spinner size="lg" color="$primary" />
             <Text color="$textSecondary">Loading onboarding...</Text>
@@ -310,10 +306,10 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
 
   return (
     <Column backgroundColor="$background" minHeight="100vh" alignItems="center" width="100%">
-      <Column maxWidth={960} paddingHorizontal="$6" paddingVertical="$8" width="100%" gap="$lg">
+      <Column maxWidth={960} paddingHorizontal="$md" paddingVertical="$xl" width="100%" gap="$lg">
         {/* Header */}
         <Column gap="$xl" alignItems="center">
-          <Heading level={2} textAlign="center">
+          <Heading level={1} size="$8" textAlign="center">
             Almost there! Let's get you set up
           </Heading>
           <Text color="$textSecondary" textAlign="center" size="$5">
@@ -348,9 +344,10 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
 
         {/* Embedded Stripe Onboarding */}
         <Card
-          variant="elevated"
+          variant="outlined"
           padding="$lg"
           backgroundColor="$surface"
+          borderRadius="$lg"
           overflow="hidden"
           width="100%"
         >
@@ -377,9 +374,9 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
         </Card>
 
         {/* Help text */}
-        <Text size="$3" color="$textTertiary" textAlign="center">
+        <Text size="$3" color="$textSecondary" textAlign="center">
           Having trouble?{" "}
-          <Text size="$3" color="$primary" cursor="pointer">
+          <Text size="$3" color="$primary" tag="a" {...{ href: "/help-centre" }}>
             Contact support
           </Text>
         </Text>
