@@ -21,7 +21,17 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useImageUpload } from "../hooks/useImageUpload";
 import { ImageCropModal } from "./ImageCropModal";
-import { isHeicFile, normaliseImageFile } from "@/lib/image-file";
+import {
+  isHeicFile,
+  normaliseImageFile,
+  MAX_UPLOAD_FILE_SIZE_BYTES,
+  MAX_UPLOAD_FILE_SIZE_LABEL,
+} from "@/lib/image-file";
+
+/** Renders a byte count as MB for error messages, e.g. "14.2MB". */
+function formatFileSize(bytes: number): string {
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
 
 export interface ImageUploadProps {
   onUploadComplete: (url: string) => void;
@@ -234,6 +244,16 @@ export function ImageUpload({
     async (file: File) => {
       setConvertError(null);
 
+      // Size is checked here, before the file is decoded or handed to the
+      // cropper. Deferring it to the upload step would mean loading an
+      // oversized HEIC into libheif first, which can hang the tab.
+      if (file.size > MAX_UPLOAD_FILE_SIZE_BYTES) {
+        setConvertError(
+          `That photo is ${formatFileSize(file.size)}. Please choose one under ${MAX_UPLOAD_FILE_SIZE_LABEL}.`
+        );
+        return;
+      }
+
       if (!isHeicFile(file)) {
         setFileToCrop(file);
         setCropModalOpen(true);
@@ -390,7 +410,7 @@ export function ImageUpload({
                 </Text>
               </Column>
               <Text size="$2" color="$primary" textAlign="center">
-                0/{maxImages} photos • Max 10MB each
+                0/{maxImages} photos • Max {MAX_UPLOAD_FILE_SIZE_LABEL} each
               </Text>
             </Column>
           ) : currentImages.length < maxImages ? (

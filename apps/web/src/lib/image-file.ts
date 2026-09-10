@@ -12,6 +12,16 @@
 const HEIC_JPEG_QUALITY = 0.92;
 
 /**
+ * Largest file the upload pipeline accepts, matching the limit shown on the
+ * upload area. Checked against the *picked* file before any decoding, so a
+ * huge HEIC can't be handed to libheif and freeze the seller's tab.
+ */
+export const MAX_UPLOAD_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+
+/** Human-readable form of {@link MAX_UPLOAD_FILE_SIZE_BYTES}. */
+export const MAX_UPLOAD_FILE_SIZE_LABEL = "10MB";
+
+/**
  * MIME types accepted by the upload pipeline, shared by the client-side hook
  * and the `/api/upload` route so the two can't drift apart.
  *

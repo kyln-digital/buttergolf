@@ -252,8 +252,14 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
   // Track whether the user has dismissed the recovery prompt
   const [recoveryDismissed, setRecoveryDismissed] = useState(false);
-  // The draftId of the DB-saved draft (set after first autosave, or passed in as prop)
-  const [savedDraftId, setSavedDraftId] = useState<string | null>(loadProductId ?? null);
+  // The id of the DB row backing this listing: passed in as a prop, or set by
+  // the first autosave. A ref rather than state because submit needs the id the
+  // moment an autosave assigns it — a state update would not be visible to the
+  // closure that is already running.
+  const savedDraftIdRef = useRef<string | null>(loadProductId ?? null);
+  // The autosave request currently in flight, if any. Submit awaits it so the
+  // two writes can't land out of order.
+  const inFlightSaveRef = useRef<Promise<AutoSaveResult> | null>(null);
   // Gates autosave until an existing draft/listing has been fetched. A fresh
   // listing has nothing to load, so it starts ready.
   const [isExistingRecordLoaded, setIsExistingRecordLoaded] = useState(!loadProductId);
@@ -275,8 +281,12 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       const parsedPrice = Number.parseFloat(data.price);
       const safePrice = Number.isFinite(parsedPrice) ? parsedPrice : 0;
 
+      // Read the ref, not state: a POST that resolved moments ago may have set
+      // the id without React having re-rendered this closure yet.
+      const existingId = savedDraftIdRef.current;
+
       try {
-        if (savedDraftId) {
+        if (existingId) {
           const updatePayload: Record<string, unknown> = {
             title: data.title,
             description: data.description,
@@ -303,7 +313,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
           }
 
           // Update existing draft
-          const response = await fetch(`/api/seller/products/${savedDraftId}`, {
+          const response = await fetch(`/api/seller/products/${existingId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(updatePayload),
@@ -326,7 +336,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
         if (response.ok) {
           const product = await response.json();
-          setSavedDraftId(product.id);
+          savedDraftIdRef.current = product.id;
           return "saved";
         }
         return "error";
@@ -334,11 +344,28 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
         return "error";
       }
     },
-    [savedDraftId, isEditingListing]
+    [isEditingListing]
   );
 
   const handleAutoSave = useCallback(
-    async (data: FormData): Promise<AutoSaveResult> => persistDraft(data),
+    async (data: FormData): Promise<AutoSaveResult> => {
+      // Once a submit or explicit draft-save is under way, a background save
+      // would only race it — and the autosave payload carries `isDraft: true`,
+      // so landing last it would unpublish what was just published.
+      if (isSubmittingRef.current) {
+        return "skipped";
+      }
+
+      const pending = persistDraft(data);
+      inFlightSaveRef.current = pending;
+      try {
+        return await pending;
+      } finally {
+        if (inFlightSaveRef.current === pending) {
+          inFlightSaveRef.current = null;
+        }
+      }
+    },
     [persistDraft]
   );
 
@@ -355,6 +382,8 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   // --- Load an existing draft or listing from the DB when an id is provided ---
   useEffect(() => {
     if (!loadProductId) return;
+
+    savedDraftIdRef.current = loadProductId;
 
     const loadDraft = async () => {
       try {
@@ -617,11 +646,24 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     }
 
     try {
+      // Let any autosave already in flight finish first. Two writes racing here
+      // would be ordered by the server, and the autosave's payload carries
+      // `isDraft: true` plus an older image list — landing last, it would
+      // unpublish the listing or resurrect deleted photos. Waiting also lets a
+      // pending draft-creation POST hand us its id below.
+      if (inFlightSaveRef.current) {
+        await inFlightSaveRef.current.catch(() => undefined);
+      }
+
       // Autosave may already have created a draft row for this listing. Publish
       // THAT row rather than POSTing a second product — otherwise the draft is
       // orphaned and sits in the seller's listings as an untitled £0.00 card.
-      const response = savedDraftId
-        ? await fetch(`/api/seller/products/${savedDraftId}`, {
+      // Read the ref: the id may have been assigned by the await above, after
+      // this closure was created.
+      const draftToPublish = savedDraftIdRef.current;
+
+      const response = draftToPublish
+        ? await fetch(`/api/seller/products/${draftToPublish}`, {
             method: "PATCH",
             headers: {
               "Content-Type": "application/json",
@@ -716,6 +758,12 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     }
 
     try {
+      // Same ordering concern as publishing: let an in-flight autosave settle
+      // so this save is the last write, and so it can hand us the draft id.
+      if (inFlightSaveRef.current) {
+        await inFlightSaveRef.current.catch(() => undefined);
+      }
+
       const result = await persistDraft(formData);
       if (result !== "saved") {
         throw new Error("Failed to save draft");
