@@ -612,8 +612,13 @@ pnpm db:seed
 There is no `db:reset` script. Use Prisma's own command, from `packages/db`:
 
 ```bash
-# Drop the database, recreate it, apply migrations, run the seed
+# Drop the database, recreate it, apply migrations
 pnpm exec prisma migrate reset
+
+# Seeding is a separate step: nothing here configures a Prisma seed hook
+# (no `prisma.seed` in package.json, none in prisma.config.ts), so the
+# reset leaves the database empty.
+pnpm db:seed
 
 # WARNING: Deletes all data! Check DATABASE_URL in .env first —
 # anything pulled from Vercel is production.
