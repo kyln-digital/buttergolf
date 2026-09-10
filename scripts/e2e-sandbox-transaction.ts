@@ -9,6 +9,7 @@
 import Stripe from "stripe";
 import crypto from "node:crypto";
 import { prisma } from "@buttergolf/db";
+import { cleanupQuietly } from "./e2e-cleanup";
 import {
   calculateBuyerProtectionFeeInPence,
   getShippingOption,
@@ -258,4 +259,7 @@ main()
     console.error("E2E crashed:", e);
     process.exitCode = 1;
   })
-  .finally(() => prisma.$disconnect());
+  .finally(async () => {
+    await cleanupQuietly();
+    await prisma.$disconnect();
+  });

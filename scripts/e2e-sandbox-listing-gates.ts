@@ -6,6 +6,7 @@
  * be posted — the failure mode where a buyer pays and the label then fails.
  */
 import { prisma } from "@buttergolf/db";
+import { cleanupQuietly } from "./e2e-cleanup";
 import { createMobileSessionToken } from "../apps/web/src/lib/mobile-session";
 import { getParcelPreset, PARCEL_LIMITS } from "@buttergolf/constants";
 
@@ -21,6 +22,19 @@ function check(label: string, ok: boolean, detail = "") {
 async function post(token: string, body: unknown) {
   const res = await fetch(`${BASE}/api/products`, {
     method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  });
+  return {
+    status: res.status,
+    json: (await res.json().catch(() => ({}))) as Record<string, unknown>,
+  };
+}
+
+/** Publishing an autosaved draft — the sell form's other publish path. */
+async function publishDraft(token: string, productId: string, body: unknown) {
+  const res = await fetch(`${BASE}/api/seller/products/${productId}`, {
+    method: "PATCH",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify(body),
   });
@@ -173,6 +187,52 @@ async function main() {
     `HTTP ${r.status}`
   );
 
+  // 7. The other publish path. The sell form PATCHes an autosaved draft
+  //    rather than POSTing, so the same gates have to hold there or a
+  //    listing goes live unpostable.
+  const draft = await prisma.product.create({
+    data: {
+      title: "Draft to publish",
+      description: "Publish-path fixture",
+      price: 120,
+      condition: "GOOD",
+      userId: user.id,
+      categoryId: category.id,
+      isDraft: true,
+      images: { create: [{ url: "https://res.cloudinary.com/demo/image/upload/v1/a.jpg" }] },
+    },
+  });
+
+  const publishBody = {
+    title: "Draft to publish",
+    description: "Publish-path fixture",
+    price: 120,
+    categoryId: category.id,
+    isDraft: false,
+  };
+
+  r = await publishDraft(token, draft.id, publishBody);
+  check(
+    "publishing a draft is blocked when it has no parcel",
+    r.status === 400 && r.json.code === "PARCEL_INVALID",
+    `HTTP ${r.status} ${String(r.json.error ?? "")}`
+  );
+
+  r = await publishDraft(token, draft.id, { ...publishBody, parcelPresetId: club.id });
+  check(
+    "publishing a draft succeeds once a parcel is set",
+    r.status === 200 || r.status === 201,
+    `HTTP ${r.status} ${String(r.json.error ?? "")}`
+  );
+
+  const published = await prisma.product.findUnique({ where: { id: draft.id } });
+  check("published draft is live", published?.isDraft === false, `isDraft=${published?.isDraft}`);
+  check(
+    "published draft carries the parcel preset",
+    published?.parcelPresetId === club.id,
+    published?.parcelPresetId ?? "none"
+  );
+
   console.log(`\n${"=".repeat(60)}`);
   console.log(`PASSED ${pass.length}   FAILED ${fail.length}`);
   if (fail.length) fail.forEach((f) => console.log("  - " + f));
@@ -185,4 +245,7 @@ main()
     console.error("crashed:", e);
     process.exitCode = 1;
   })
-  .finally(() => prisma.$disconnect());
+  .finally(async () => {
+    await cleanupQuietly();
+    await prisma.$disconnect();
+  });

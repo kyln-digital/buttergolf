@@ -18,6 +18,7 @@
  */
 import Stripe from "stripe";
 import { prisma } from "@buttergolf/db";
+import { cleanupQuietly } from "./e2e-cleanup";
 import { getShippingOption, getParcelPreset } from "@buttergolf/constants";
 import { createMobileSessionToken } from "../apps/web/src/lib/mobile-session";
 
@@ -213,4 +214,7 @@ main()
     console.error("crashed:", e);
     process.exitCode = 1;
   })
-  .finally(() => prisma.$disconnect());
+  .finally(async () => {
+    await cleanupQuietly();
+    await prisma.$disconnect();
+  });
