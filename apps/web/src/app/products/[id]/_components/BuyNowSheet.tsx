@@ -3,7 +3,7 @@
 import { useState, useCallback, memo } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Column, Heading, Image, Row, Sheet, Text } from "@buttergolf/ui";
-import { Lock, Package, CheckCircle } from "@tamagui/lucide-icons";
+import { Lock, Package, CheckCircle, X } from "@tamagui/lucide-icons";
 import { StripePaymentForm } from "@/app/checkout/_components/StripePaymentForm";
 import type { Product } from "../ProductDetailClient";
 
@@ -68,14 +68,12 @@ export function BuyNowSheet({ product, isOpen, onOpenChange }: BuyNowSheetProps)
         exitStyle={{ opacity: 0 }}
         backgroundColor="$overlayDark50"
       />
-      <Sheet.Handle />
+      <Sheet.Handle backgroundColor="$border" />
       <Sheet.Frame
-        backgroundColor="$surface"
-        borderTopLeftRadius="$xl"
-        borderTopRightRadius="$xl"
+        backgroundColor="$background"
+        borderTopLeftRadius="$2xl"
+        borderTopRightRadius="$2xl"
         paddingBottom="$xl"
-        elevation={10}
-        style={{ boxShadow: "0 -8px 32px rgba(0,0,0,0.18)" }}
       >
         <SheetContents
           product={product}
@@ -129,15 +127,9 @@ const SheetContents = memo(function SheetContents({
           <Heading level={4} color="$text">
             Checkout
           </Heading>
-          <Text
-            size="$4"
-            color="$textSecondary"
-            onPress={onClose}
-            cursor="pointer"
-            hoverStyle={{ color: "$text" }}
-          >
-            ✕ Close
-          </Text>
+          <Button butterVariant="ghost" size="$3" iconAfter={X} onPress={onClose}>
+            Close
+          </Button>
         </Row>
 
         {/* Order Summary */}
@@ -169,7 +161,7 @@ const SheetContents = memo(function SheetContents({
 
           <Row justifyContent="space-between" alignItems="center">
             <Text color="$textSecondary">Total</Text>
-            <Text fontWeight="bold" size="$7" color="$primary">
+            <Text fontWeight="700" size="$7" color="$text">
               £{product.price.toFixed(2)}
             </Text>
           </Row>
@@ -215,14 +207,14 @@ const SheetContents = memo(function SheetContents({
             </Column>
             <Column gap="$sm" alignItems="center">
               <Heading level={5} textAlign="center">
-                Unable to Complete Payment
+                Unable to complete payment
               </Heading>
               <Text color="$textSecondary" textAlign="center">
                 {error}
               </Text>
             </Column>
             <Button butterVariant="primary" size="$4" onPress={onRetry}>
-              Try Again
+              Try again
             </Button>
           </Column>
         ) : (

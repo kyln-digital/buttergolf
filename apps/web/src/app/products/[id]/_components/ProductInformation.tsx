@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import { Column, Row, Text, Button, Heading, Popover, Input } from "@buttergolf/ui";
-import { Heart, Info } from "@tamagui/lucide-icons";
+import { Heart } from "@tamagui/lucide-icons";
 import { getConditionLabel, calculateAverageCondition } from "@buttergolf/app";
+import { useFavouriteToggle } from "@/hooks/useFavouriteToggle";
 import type { Product } from "../ProductDetailClient";
 
 interface ProductInformationProps {
@@ -27,11 +30,31 @@ function getConditionColor(rating: number) {
   return "$error" as const;
 }
 
+/** "LIKE_NEW" → "Like new". */
+function formatCondition(condition: string) {
+  const words = condition.toLowerCase().replace(/_/g, " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+function Divider() {
+  return <Column height={1} backgroundColor="$border" width="100%" />;
+}
+
 export function ProductInformation({ product, onBuyNow, onSubmitOffer }: ProductInformationProps) {
-  const [isFavourite, setIsFavourite] = useState(false);
+  const router = useRouter();
+  const { isSignedIn } = useAuth();
+  const { isFavourited, toggleFavourite } = useFavouriteToggle(product.id);
   const [offerAmount, setOfferAmount] = useState("");
   const [offerError, setOfferError] = useState("");
   const [submittingOffer, setSubmittingOffer] = useState(false);
+
+  const handleFavourite = () => {
+    if (!isSignedIn) {
+      router.push(`/sign-in?redirect_url=${encodeURIComponent(`/products/${product.id}`)}`);
+      return;
+    }
+    void toggleFavourite();
+  };
 
   const handleSubmitOffer = async () => {
     const amount = Number.parseFloat(offerAmount);
@@ -59,10 +82,7 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
     }
   };
 
-  const formatCondition = (condition: string) => {
-    return condition.replace(/_/g, " ");
-  };
-
+  const sellerName = `${product.user.firstName ?? ""} ${product.user.lastName ?? ""}`.trim();
   const averageRating = product.user.averageRating || 0;
   const ratingCount = product.user.ratingCount || 0;
 
@@ -76,13 +96,13 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
     { label: "Brand", value: product.brand || "N/A" },
     { label: "Model", value: product.model || "N/A" },
     { label: "Condition", value: formatCondition(product.condition) },
-    ...(product.flex ? [{ label: "Shaft Flex", value: product.flex }] : []),
+    ...(product.flex ? [{ label: "Shaft flex", value: product.flex }] : []),
     ...(product.loft ? [{ label: "Loft", value: product.loft }] : []),
     ...(product.headCoverIncluded === null
       ? []
       : [
           {
-            label: "Head Cover",
+            label: "Head cover",
             value: product.headCoverIncluded ? "Included" : "Not included",
           },
         ]),
@@ -106,195 +126,58 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
 
   return (
     <Column
-      backgroundColor="$surface"
-      borderRadius="$xl"
-      padding="$lg"
-      gap="$md"
+      gap="$lg"
       width="100%"
       $gtMd={{
         width: 420,
         flexShrink: 0,
       }}
     >
-      {/* Header: Title, Price, Favourite */}
-      <Row justifyContent="space-between" alignItems="flex-start" gap="$sm">
-        <Column gap="$xs" flex={1}>
-          <Heading level={2} size="$7" color="$text">
+      {/* Title, price, favourite */}
+      <Row justifyContent="space-between" alignItems="flex-start" gap="$md">
+        <Column gap="$xs" flex={1} minWidth={0}>
+          <Heading level={1} size="$7" color="$text">
             {product.title}
           </Heading>
-          <Row alignItems="baseline" gap="$sm">
-            <Text size="$7" fontWeight="700" color="$primary">
-              £{product.price.toFixed(2)}
-            </Text>
-            <Column
-              width={16}
-              height={16}
-              borderRadius="$full"
-              borderWidth={2}
-              borderColor="$textSecondary"
-              alignItems="center"
-              justifyContent="center"
-              cursor="pointer"
-              title="Price information"
-            >
-              <Info size={10} color="$textSecondary" />
-            </Column>
-          </Row>
+          <Text size="$9" fontWeight="700" color="$text">
+            £{product.price.toFixed(2)}
+          </Text>
         </Column>
         <Button
           butterVariant="icon"
           circular
-          width={44}
-          height={44}
-          padding={0}
-          borderColor={isFavourite ? "$primary" : "$border"}
-          backgroundColor={isFavourite ? "$primaryLight" : "transparent"}
-          onPress={() => setIsFavourite(!isFavourite)}
-          animation="quick"
-          aria-label={isFavourite ? "Remove from favourites" : "Add to favourites"}
+          size={44}
+          onPress={handleFavourite}
+          aria-label={isFavourited ? "Remove from favourites" : "Add to favourites"}
+          aria-pressed={isFavourited}
         >
           <Heart
-            size={22}
-            fill={isFavourite ? "currentColor" : "transparent"}
-            color={isFavourite ? "$primary" : "$textSecondary"}
-            opacity={isFavourite ? 1 : 0.9}
-            strokeWidth={1.5}
+            size={20}
+            fill={isFavourited ? "currentColor" : "transparent"}
+            color={isFavourited ? "$primary" : "$text"}
+            strokeWidth={2}
           />
         </Button>
       </Row>
 
-      {/* Divider */}
-      <Column height={1} backgroundColor="$border" width="100%" />
-
-      {/* Seller Info */}
-      <Column gap="$sm">
-        <Row justifyContent="space-between" alignItems="center">
-          <Column gap="$xs" flex={1}>
-            <Text size="$3" color="$textSecondary" fontWeight="700">
-              Posted by {`${product.user.firstName} ${product.user.lastName}`.trim() || "Unknown"}
-            </Text>
-            <Text size="$2" color="$textSecondary">
-              Member for 3 years
-            </Text>
-            {ratingCount > 0 && (
-              <Row gap="$xs" alignItems="center">
-                <Text size="$3" color="$primary">
-                  ★
-                </Text>
-                <Text size="$3" color="$text" fontWeight="600">
-                  {averageRating.toFixed(1)}
-                </Text>
-                <Text size="$2" color="$textSecondary">
-                  ({ratingCount})
-                </Text>
-              </Row>
-            )}
-          </Column>
-          <Button butterVariant="primary" size="$4" borderRadius="$full" paddingHorizontal="$5">
-            View profile
-          </Button>
-        </Row>
-      </Column>
-
-      {/* Divider */}
-      <Column height={1} backgroundColor="$border" width="100%" />
-
-      {/* Product Specifications */}
-      <Row gap="$md">
-        <Column gap="$sm" flex={1}>
-          {specs.map((spec) => (
-            <Text key={spec.label} size="$3" color="$text" fontWeight="700" lineHeight="$3">
-              {spec.label}
-            </Text>
-          ))}
-        </Column>
-        <Column gap="$sm" flex={1}>
-          {specs.map((spec) => (
-            <Text key={spec.label} size="$3" color="$text" lineHeight="$3">
-              {spec.value}
-            </Text>
-          ))}
-        </Column>
-      </Row>
-
-      {/* Divider */}
-      <Column height={1} backgroundColor="$border" width="100%" />
-
-      {/* Component condition ratings — sellers grade grip, head and shaft
-          individually when listing, so buyers get to see the same detail. */}
-      {hasConditionRatings && (
-        <>
-          <Column gap="$sm">
-            <Row alignItems="center" justifyContent="space-between">
-              <Text size="$3" color="$text" fontWeight="700">
-                Condition Rating
-              </Text>
-              {averageCondition !== null && (
-                <Text size="$3" color="$textSecondary">
-                  {getConditionLabel(averageCondition)} ({averageCondition}/10)
-                </Text>
-              )}
-            </Row>
-
-            {conditionComponents.map(({ label, value }) => (
-              <Row key={label} alignItems="center" gap="$sm">
-                <Text size="$3" color="$textSecondary" width={48}>
-                  {label}
-                </Text>
-                <Column flex={1} height={8} backgroundColor="$cloudMist" borderRadius="$full">
-                  <Column
-                    height={8}
-                    width={`${(value / MAX_CONDITION_RATING) * 100}%`}
-                    backgroundColor={getConditionColor(value)}
-                    borderRadius="$full"
-                  />
-                </Column>
-                <Text size="$3" color="$text" fontWeight="600" width={40} textAlign="right">
-                  {value}/{MAX_CONDITION_RATING}
-                </Text>
-              </Row>
-            ))}
-          </Column>
-
-          {/* Divider */}
-          <Column height={1} backgroundColor="$border" width="100%" />
-        </>
-      )}
-
-      {/* Product Description */}
-      <Column gap="$md">
-        <Text size="$3" color="$text" fontWeight="700">
-          Product Description
-        </Text>
-        <Text size="$3" color="$text">
-          {product.description}
-        </Text>
-      </Column>
-
-      {/* Divider */}
-      <Column height={1} backgroundColor="$border" width="100%" />
-
-      {/* CTA Buttons */}
-      <Column gap="$md" width="100%">
+      {/* Primary actions */}
+      <Column gap="$sm" width="100%">
         <Button
           butterVariant="primary"
-          size="$5"
+          size="$6"
           width="100%"
-          borderRadius="$full"
-          height={56}
           disabled={product.isSold}
           onPress={onBuyNow}
         >
-          {product.isSold ? "Sold Out" : "Buy now"}
+          {product.isSold ? "Sold out" : "Buy now"}
         </Button>
 
-        {/* Make an Offer Popover */}
         <Popover
           size="$5"
           placement="bottom"
           allowFlip
           stayInFrame
-          offset={14}
+          offset={12}
           resize
           onOpenChange={(open) => {
             if (!open) {
@@ -304,36 +187,19 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
           }}
         >
           <Popover.Trigger asChild>
-            <Button
-              size="$5"
-              width="100%"
-              height={56}
-              backgroundColor="$cloudMist"
-              borderWidth={1}
-              borderColor="$border"
-              color="$text"
-              borderRadius="$full"
-              fontFamily="$body"
-              fontWeight="700"
-              cursor="pointer"
-              boxShadow="0px 1px 4px rgba(0, 0, 0, 0.2)"
-              disabled={product.isSold}
-              hoverStyle={{ backgroundColor: "$cloudMistHover", borderColor: "$borderHover" }}
-              pressStyle={{ backgroundColor: "$cloudMistPress", scale: 0.98 }}
-            >
+            <Button butterVariant="secondary" size="$6" width="100%" disabled={product.isSold}>
               Make an offer
             </Button>
           </Popover.Trigger>
 
           <Popover.Content
             className="offer-popover-content"
-            backgroundColor="$surface"
+            backgroundColor="$background"
             borderRadius="$lg"
-            padding="$4"
+            padding="$md"
             borderWidth={1}
             borderColor="$border"
             elevate
-            boxShadow="0px 12px 30px rgba(0, 0, 0, 0.16)"
             style={{
               animationName: "offerPopoverEnter",
               animationDuration: "420ms",
@@ -347,35 +213,31 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
               offset={10}
               borderWidth={1}
               borderColor="$border"
-              backgroundColor="$surface"
+              backgroundColor="$background"
             />
-            <Column gap="$3" width={280} animation="medium">
-              <Text size="$5" fontWeight="600" color="$text">
+            <Column gap="$sm" width={280}>
+              <Heading level={2} size="$5" color="$text">
                 Make an offer
-              </Text>
+              </Heading>
 
-              {/* Price Input */}
               <Row
                 alignItems="center"
                 borderWidth={1}
-                borderColor={offerError ? "$error" : "$border"}
-                borderRadius="$md"
-                backgroundColor="$surface"
+                borderColor={offerError ? "$error" : "$fieldBorder"}
+                borderRadius="$full"
+                backgroundColor="$background"
                 overflow="hidden"
-                focusWithinStyle={{ borderColor: "$primary", borderWidth: 2 }}
+                paddingLeft="$md"
+                focusWithinStyle={{ borderColor: "$primary" }}
               >
-                <Text
-                  paddingLeft="$sm"
-                  paddingRight="$xs"
-                  color="$text"
-                  fontWeight="500"
-                  userSelect="none"
-                >
+                <Text color="$text" fontWeight="500" userSelect="none">
                   £
                 </Text>
                 <Input
                   keyboardType="decimal-pad"
+                  inputMode="decimal"
                   placeholder="Your offer"
+                  aria-label="Offer amount in pounds"
                   value={offerAmount}
                   onChangeText={(text) => {
                     const sanitised = text.replace(/[^0-9.]/g, "").replace(/(\..*?)\./g, "$1");
@@ -385,28 +247,24 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
                   disabled={submittingOffer}
                   autoFocus
                   flex={1}
+                  size="lg"
                   borderWidth={0}
                   backgroundColor="transparent"
                   focusStyle={{ borderWidth: 0, outlineWidth: 0 }}
+                  hoverStyle={{ borderWidth: 0 }}
                   onSubmitEditing={!submittingOffer ? handleSubmitOffer : undefined}
                 />
               </Row>
 
               {offerError ? (
-                <Text size="$2" color="$error">
+                <Text size="$3" color="$error" role="alert">
                   {offerError}
                 </Text>
               ) : null}
 
-              <Row gap="$2" justifyContent="flex-end">
+              <Row gap="$sm" justifyContent="flex-end">
                 <Popover.Close asChild>
-                  <Button
-                    size="$3"
-                    backgroundColor="transparent"
-                    color="$textSecondary"
-                    borderRadius="$full"
-                    paddingHorizontal="$3"
-                  >
+                  <Button butterVariant="ghost" size="$3">
                     Cancel
                   </Button>
                 </Popover.Close>
@@ -416,12 +274,129 @@ export function ProductInformation({ product, onBuyNow, onSubmitOffer }: Product
                   onPress={handleSubmitOffer}
                   disabled={submittingOffer || !offerAmount}
                 >
-                  {submittingOffer ? "Submitting..." : "Submit"}
+                  {submittingOffer ? "Submitting..." : "Submit offer"}
                 </Button>
               </Row>
             </Column>
           </Popover.Content>
         </Popover>
+      </Column>
+
+      <Divider />
+
+      {/* Seller */}
+      <Row alignItems="center" gap="$md">
+        <Column gap={2} flex={1} minWidth={0}>
+          <Text size="$3" color="$textSecondary">
+            Sold by
+          </Text>
+          <Text size="$5" fontWeight="600" color="$text" numberOfLines={1}>
+            {sellerName || "ButterGolf seller"}
+          </Text>
+        </Column>
+        {ratingCount > 0 ? (
+          <Row gap="$xs" alignItems="center" flexShrink={0}>
+            <Text size="$4" color="$primary">
+              ★
+            </Text>
+            <Text size="$4" color="$text" fontWeight="600">
+              {averageRating.toFixed(1)}
+            </Text>
+            <Text size="$3" color="$textSecondary">
+              ({ratingCount})
+            </Text>
+          </Row>
+        ) : (
+          <Column
+            backgroundColor="$buttonSecondaryBg"
+            paddingHorizontal="$sm"
+            paddingVertical={2}
+            borderRadius="$full"
+            flexShrink={0}
+          >
+            <Text size="$1" fontWeight="600" color="$textSecondary">
+              NEW SELLER
+            </Text>
+          </Column>
+        )}
+      </Row>
+
+      <Divider />
+
+      {/* Specifications */}
+      <Column gap="$sm">
+        <Heading level={2} size="$4" color="$text">
+          Details
+        </Heading>
+        <Column gap="$xs">
+          {specs.map((spec) => (
+            <Row key={spec.label} gap="$md" alignItems="baseline">
+              <Text size="$4" color="$textSecondary" width={120} flexShrink={0}>
+                {spec.label}
+              </Text>
+              <Text size="$4" color="$text" flex={1}>
+                {spec.value}
+              </Text>
+            </Row>
+          ))}
+        </Column>
+      </Column>
+
+      {/* Component condition ratings — sellers grade grip, head and shaft
+          individually when listing, so buyers get to see the same detail. */}
+      {hasConditionRatings && (
+        <>
+          <Divider />
+          <Column gap="$sm">
+            <Row alignItems="center" justifyContent="space-between">
+              <Heading level={2} size="$4" color="$text">
+                Condition rating
+              </Heading>
+              {averageCondition !== null && (
+                <Text size="$4" color="$textSecondary">
+                  {getConditionLabel(averageCondition)} ({averageCondition}/10)
+                </Text>
+              )}
+            </Row>
+
+            {conditionComponents.map(({ label, value }) => (
+              <Row key={label} alignItems="center" gap="$sm">
+                <Text size="$4" color="$textSecondary" width={48}>
+                  {label}
+                </Text>
+                <Column
+                  flex={1}
+                  height={8}
+                  backgroundColor="$backgroundHover"
+                  borderRadius="$full"
+                  overflow="hidden"
+                >
+                  <Column
+                    height={8}
+                    width={`${(value / MAX_CONDITION_RATING) * 100}%`}
+                    backgroundColor={getConditionColor(value)}
+                    borderRadius="$full"
+                  />
+                </Column>
+                <Text size="$4" color="$text" fontWeight="600" width={40} textAlign="right">
+                  {value}/{MAX_CONDITION_RATING}
+                </Text>
+              </Row>
+            ))}
+          </Column>
+        </>
+      )}
+
+      <Divider />
+
+      {/* Description */}
+      <Column gap="$sm">
+        <Heading level={2} size="$4" color="$text">
+          Description
+        </Heading>
+        <Text size="$4" color="$text">
+          {product.description}
+        </Text>
       </Column>
     </Column>
   );
