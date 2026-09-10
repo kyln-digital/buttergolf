@@ -124,8 +124,8 @@ export function NewsletterSection() {
           >
             {status === "submitting" ? (
               <Row alignItems="center" justifyContent="center" gap="$sm">
-                <Spinner size="sm" color="$white" />
-                <Text size="$6" color="$white" fontWeight="600">
+                <Spinner size="sm" color="$textInverse" />
+                <Text size="$6" color="$textInverse" fontWeight="600">
                   Subscribing...
                 </Text>
               </Row>
@@ -138,9 +138,9 @@ export function NewsletterSection() {
                   width={showTick ? 18 : 0}
                   overflow="hidden"
                 >
-                  <Check size={18} color="$white" />
+                  <Check size={18} color="$textInverse" />
                 </View>
-                <Text size="$6" color="$white" fontWeight="600">
+                <Text size="$6" color="$textInverse" fontWeight="600">
                   {status === "success" ? "Subscribed" : "Subscribe"}
                 </Text>
               </Row>

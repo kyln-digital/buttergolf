@@ -116,7 +116,7 @@ export function CategoriesSection() {
                   left="$md"
                   size="$7"
                   fontWeight="600"
-                  color="$vanillaCream"
+                  color="$cream"
                 >
                   {category.name}
                 </Text>

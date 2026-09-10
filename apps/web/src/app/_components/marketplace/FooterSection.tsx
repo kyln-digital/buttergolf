@@ -25,7 +25,7 @@ function FooterLink({ label, href }: Readonly<{ label: string; href: string }>) 
       <Text
         size="$4"
         fontWeight="500"
-        color="$vanillaCream"
+        color="$cream"
         paddingVertical="$xs"
         hoverStyle={{ opacity: 0.8 }}
       >
@@ -122,7 +122,7 @@ export function FooterSection() {
           borderTopWidth={1}
           borderTopColor="$overlayLight40"
         >
-          <Text color="$vanillaCream" size="$3" opacity={0.85}>
+          <Text color="$cream" size="$3" opacity={0.85}>
             © {new Date().getFullYear()} Butter Golf. All rights reserved.
           </Text>
 
