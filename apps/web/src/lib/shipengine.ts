@@ -1,4 +1,5 @@
 import { prisma } from "@buttergolf/db";
+import { getShippingOption, resolveParcel, selectRateForOption } from "@buttergolf/constants";
 import { SHIPENGINE_CARRIER_CODES } from "./constants";
 import { buildTrackingUrl } from "./utils/format";
 import { sendLabelGeneratedEmail } from "./email";
@@ -14,6 +15,61 @@ import {
 // ShipEngine API client for UK shipping
 const SHIPENGINE_API_KEY = process.env.SHIPENGINE_API_KEY;
 const SHIPENGINE_BASE_URL = "https://api.shipengine.com";
+
+/**
+ * Carrier accounts to request rates from, as ShipEngine carrier IDs
+ * (`se-xxxxxx`), comma-separated in SHIPENGINE_CARRIER_IDS.
+ *
+ * This has to be environment config, not a constant: the sandbox and
+ * production carrier sets are entirely different accounts with different IDs,
+ * and sandbox has no UK carriers at all. `rate_options.carrier_ids` is
+ * required by ShipEngine — sending an empty array (as this file did) returns
+ * no usable rates, which the fallback path then quietly papered over.
+ */
+const SHIPENGINE_CARRIER_IDS = (process.env.SHIPENGINE_CARRIER_IDS ?? "")
+  .split(",")
+  .map((id) => id.trim())
+  .filter(Boolean);
+
+/** cm -> inches, at the precision ShipEngine actually uses. */
+function cmToInches(cm: number): number {
+  return Math.round((cm / 2.54) * 100) / 100;
+}
+
+/**
+ * How long one label attempt holds its claim on an order. Long enough to
+ * cover a ShipEngine round trip including retries, short enough that a
+ * genuine retry after a failure is never blocked in practice.
+ */
+const LABEL_CLAIM_LEASE_MS = 60_000;
+
+/** grams -> ounces, at the precision ShipEngine actually uses. */
+function gramsToOunces(grams: number): number {
+  return Math.round((grams / 28.3495) * 100) / 100;
+}
+
+/**
+ * Thrown when a label cannot be purchased. Carries a stable `code` so callers
+ * can tell "you need to fix your address" from "we are out of ShipEngine
+ * credit" — the two need very different messages and very different owners.
+ */
+export class LabelGenerationError extends Error {
+  constructor(
+    message: string,
+    readonly code:
+      | "NOT_CONFIGURED"
+      | "NO_CARRIERS_CONFIGURED"
+      | "ORDER_NOT_FOUND"
+      | "ALREADY_GENERATED"
+      | "SELLER_ADDRESS_INVALID"
+      | "NO_RATES_AVAILABLE"
+      | "NO_RATE_MEETS_SERVICE"
+      | "PURCHASE_FAILED"
+  ) {
+    super(message);
+    this.name = "LabelGenerationError";
+  }
+}
 
 export interface ShippingCalculationRequest {
   productId: string;
@@ -224,6 +280,7 @@ export async function calculateShippingRates(
   const product = await prisma.product.findUnique({
     where: { id: productId },
     include: {
+      category: { select: { slug: true } },
       user: {
         include: {
           addresses: {
@@ -262,16 +319,34 @@ export async function calculateShippingRates(
     throw error;
   }
 
-  // Get shipping dimensions (use defaults if not provided)
-  const dimensions = {
-    length: product.length || 30, // cm
-    width: product.width || 20, // cm
-    height: product.height || 10, // cm
-    weight: product.weight || 500, // grams
-  };
+  // Resolve the parcel from what the seller declared, falling back to the
+  // category preset. The old code defaulted every listing to 30x20x10cm @ 500g,
+  // which is wrong for a 118cm driver and wrong by 6kg for an iron set.
+  const { parcel: dimensions, source: parcelSource } = resolveParcel(product);
+  if (parcelSource !== "declared") {
+    console.warn("Rating against non-declared parcel dimensions", {
+      productId,
+      parcelSource,
+      dimensions,
+    });
+  }
 
   // Build cache key for rate lookup (uses dimensions for better cache reuse)
   const cacheKey = buildRateCacheKey(fromAddress.zip, toAddress.zip, dimensions);
+
+  // Misconfiguration must not masquerade as a working quote. Falling back to
+  // the hardcoded prices here is what hid the empty carrier_ids for months:
+  // the endpoint answered 200 with plausible rates and nothing looked wrong.
+  if (SHIPENGINE_API_KEY && SHIPENGINE_CARRIER_IDS.length === 0) {
+    console.error(
+      "SHIPENGINE_CARRIER_IDS is empty — cannot request rates. Set it to the carrier accounts for this environment."
+    );
+    const error: ShippingValidationError = {
+      code: "NO_RATES_AVAILABLE",
+      message: "Shipping rates are temporarily unavailable",
+    };
+    throw error;
+  }
 
   // Try to get cached or fresh shipping rates from ShipEngine
   if (SHIPENGINE_API_KEY) {
@@ -326,16 +401,14 @@ async function fetchShipEngineRates(
 ): Promise<ShippingCalculationResult | null> {
   try {
     // ShipEngine expects dimensions in inches and weight in ounces/pounds
-    // Convert from cm to inches and grams to ounces
-    const lengthInches = dimensions.length / 2.54;
-    const widthInches = dimensions.width / 2.54;
-    const heightInches = dimensions.height / 2.54;
-    const weightOunces = dimensions.weight / 28.3495;
+    const lengthInches = cmToInches(dimensions.length);
+    const widthInches = cmToInches(dimensions.width);
+    const heightInches = cmToInches(dimensions.height);
+    const weightOunces = gramsToOunces(dimensions.weight);
 
     const rateRequest = {
       rate_options: {
-        carrier_ids: [], // Will use all connected carriers
-        service_codes: [],
+        carrier_ids: SHIPENGINE_CARRIER_IDS,
         calculate_tax_amount: false,
       },
       shipment: {
@@ -589,14 +662,21 @@ export async function generateShippingLabel(params: {
   const { orderId } = params;
 
   if (!SHIPENGINE_API_KEY) {
-    throw new Error("ShipEngine API key not configured");
+    throw new LabelGenerationError("ShipEngine API key not configured", "NOT_CONFIGURED");
+  }
+
+  if (SHIPENGINE_CARRIER_IDS.length === 0) {
+    throw new LabelGenerationError(
+      "No ShipEngine carrier IDs configured. Set SHIPENGINE_CARRIER_IDS to the carrier accounts for this environment.",
+      "NO_CARRIERS_CONFIGURED"
+    );
   }
 
   // Get order with all required data
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
-      product: true,
+      product: { include: { category: { select: { slug: true } } } },
       fromAddress: true,
       toAddress: true,
       seller: true,
@@ -605,11 +685,40 @@ export async function generateShippingLabel(params: {
   });
 
   if (!order) {
-    throw new Error("Order not found");
+    throw new LabelGenerationError("Order not found", "ORDER_NOT_FOUND");
   }
 
   if (order.labelUrl) {
-    throw new Error("Label already generated for this order");
+    throw new LabelGenerationError("Label already generated for this order", "ALREADY_GENERATED");
+  }
+
+  // Claim the order before spending money at the carrier.
+  //
+  // Automatic generation after payment and the seller's manual retry can both
+  // pass the read above, buy two labels, and race to overwrite tracking —
+  // leaving a paid-for label nobody can see. This conditional update is
+  // atomic in the database, so exactly one caller wins.
+  //
+  // The claim is a short lease rather than a permanent flag: an attempt that
+  // dies mid-flight (lambda timeout, deploy) must not lock the order out of
+  // ever getting a label. LABEL_CLAIM_LEASE_MS comfortably exceeds a
+  // ShipEngine round trip while staying well under the time it takes a seller
+  // to fix an address and click retry.
+  const claimedAfter = new Date(Date.now() - LABEL_CLAIM_LEASE_MS);
+  const claim = await prisma.order.updateMany({
+    where: {
+      id: orderId,
+      labelUrl: null,
+      OR: [{ labelAttemptedAt: null }, { labelAttemptedAt: { lt: claimedAfter } }],
+    },
+    data: { labelAttemptedAt: new Date() },
+  });
+
+  if (claim.count === 0) {
+    throw new LabelGenerationError(
+      "Label generation is already in progress for this order",
+      "ALREADY_GENERATED"
+    );
   }
 
   // Validate seller address using comprehensive validation
@@ -628,31 +737,27 @@ export async function generateShippingLabel(params: {
 
   if (!sellerAddressValidation.isValid) {
     const firstError = sellerAddressValidation.errors[0];
-    throw new Error(
+    throw new LabelGenerationError(
       firstError.code === AddressErrorCode.SELLER_ADDRESS_INCOMPLETE
         ? "Seller must update their shipping address before generating a label"
-        : `Invalid seller address: ${firstError.message}`
+        : `Invalid seller address: ${firstError.message}`,
+      "SELLER_ADDRESS_INVALID"
     );
   }
 
-  // Prepare dimensions
-  const dimensions = {
-    length: order.product.length || 30,
-    width: order.product.width || 20,
-    height: order.product.height || 10,
-    weight: order.product.weight || 500,
-  };
+  // Resolve the parcel the same way the quote did, so the label is bought for
+  // the box the buyer was actually charged to ship.
+  const { parcel: dimensions } = resolveParcel(order.product);
 
-  // Convert to imperial (ShipEngine prefers inches/ounces)
-  const lengthInches = dimensions.length / 2.54;
-  const widthInches = dimensions.width / 2.54;
-  const heightInches = dimensions.height / 2.54;
-  const weightOunces = dimensions.weight / 28.3495;
+  const lengthInches = cmToInches(dimensions.length);
+  const widthInches = cmToInches(dimensions.width);
+  const heightInches = cmToInches(dimensions.height);
+  const weightOunces = gramsToOunces(dimensions.weight);
 
   // Get rates to find the best matching rate for the shipping cost
   const rateRequest = {
     rate_options: {
-      carrier_ids: [],
+      carrier_ids: SHIPENGINE_CARRIER_IDS,
     },
     shipment: {
       ship_from: {
@@ -699,41 +804,68 @@ export async function generateShippingLabel(params: {
     rateRequest
   );
 
-  // Find a rate that fits within the shipping budget
-  const availableRates = ratesResponse.rate_response.rates
-    .filter((rate) => rate.shipping_amount.amount > 0)
-    .sort((a, b) => a.shipping_amount.amount - b.shipping_amount.amount);
+  const availableRates = ratesResponse.rate_response.rates.filter(
+    (rate) => rate.shipping_amount.amount > 0
+  );
 
   if (availableRates.length === 0) {
-    throw new Error("No shipping rates available for this route");
-  }
-
-  // Select the best rate within budget, or the cheapest if all are over budget
-  const budgetInCurrency = order.shippingCost;
-  let selectedRate = availableRates.find((rate) => rate.shipping_amount.amount <= budgetInCurrency);
-
-  if (!selectedRate) {
-    // Use cheapest if nothing within budget (platform absorbs the difference)
-    selectedRate = availableRates[0];
-    console.warn(
-      `No rate within budget (£${budgetInCurrency}), using cheapest: £${selectedRate.shipping_amount.amount}`
+    throw new LabelGenerationError(
+      "No shipping rates available for this route",
+      "NO_RATES_AVAILABLE"
     );
   }
 
-  // Create the label using the selected rate.
-  // ShipEngine always returns PDF, PNG, and ZPL URLs in label_download regardless
-  // of label_format. label_format only controls which URL label_download.href points to.
-  const labelRequest = {
-    rate_id: selectedRate.rate_id,
-    label_format: "pdf",
-    label_layout: "4x6",
-    label_download_type: "url",
-  };
+  // Buy the service the buyer actually paid for. Orders placed before
+  // shippingOptionId existed fall back to the cheapest rate.
+  const paidOption = getShippingOption(order.shippingOptionId ?? "");
+  const selectedRate = selectRateForOption(availableRates, paidOption);
 
+  if (!selectedRate) {
+    throw new LabelGenerationError(
+      `No available rate meets the ${paidOption?.name ?? "selected"} delivery window the buyer paid for ` +
+        `(max ${paidOption?.maxDeliveryDays} day(s)). Quoted: ` +
+        availableRates
+          .map((r) => `${r.carrier_friendly_name} ${r.service_type} @ ${r.delivery_days}d`)
+          .join(", "),
+      "NO_RATE_MEETS_SERVICE"
+    );
+  }
+
+  // The buyer's shipping payment funds this label. Overspend is the platform's
+  // loss, so it needs to be visible rather than silently absorbed.
+  // The buyer's shipping payment funds this label, so overspend is the
+  // platform's loss and needs to be visible. Only compare when the carrier
+  // actually quoted in GBP — the sandbox dummy carrier quotes EUR/USD, and a
+  // cross-currency comparison would be noise rather than a signal.
+  const quotedCurrency = selectedRate.shipping_amount.currency?.toLowerCase();
+  if (quotedCurrency === "gbp" && selectedRate.shipping_amount.amount > order.shippingCost) {
+    console.error("Label costs more than the buyer paid for shipping", {
+      orderId,
+      paidGBP: order.shippingCost,
+      labelGBP: selectedRate.shipping_amount.amount,
+      carrier: selectedRate.carrier_friendly_name,
+      service: selectedRate.service_type,
+    });
+  }
+
+  // Buy the label from the rate we selected.
+  //
+  // This MUST be POST /v1/labels/rates/{rate_id}. Posting `{ rate_id }` to
+  // /v1/labels (as this did) is rejected with "shipment is required" — that
+  // endpoint takes a full shipment body, not a rate reference. Every label
+  // purchase failed on this before it ever reached a carrier.
+  //
+  // ShipEngine always returns PDF, PNG and ZPL URLs in label_download
+  // regardless of label_format; label_format only decides which one
+  // label_download.href points at.
   const labelResponse = await shipEngineRequest<ShipEngineLabelResponse>(
-    "/v1/labels",
+    `/v1/labels/rates/${encodeURIComponent(selectedRate.rate_id)}`,
     "POST",
-    labelRequest
+    {
+      label_format: "pdf",
+      label_layout: "4x6",
+      label_download_type: "url",
+    }
   );
 
   // Build carrier-specific tracking URL
@@ -755,8 +887,11 @@ export async function generateShippingLabel(params: {
       trackingCode: labelResponse.tracking_number,
       trackingUrl: trackingUrl,
       carrier: selectedRate.carrier_friendly_name,
+      carrierCode: labelResponse.carrier_code,
       service: selectedRate.service_type,
       labelGeneratedAt: new Date(),
+      labelAttemptedAt: new Date(),
+      labelError: null,
       status: "LABEL_GENERATED",
       shipmentStatus: "PRE_TRANSIT",
       estimatedDelivery: selectedRate.estimated_delivery_date
@@ -777,7 +912,10 @@ export async function generateShippingLabel(params: {
 
     if (buyer && product) {
       const buyerName = `${buyer.firstName || ""} ${buyer.lastName || ""}`.trim() || buyer.email;
-      await sendLabelGeneratedEmail({
+      // These senders return { success, error } rather than throwing, so the
+      // surrounding catch never fires on a provider rejection — logging
+      // success unconditionally reported delivery for emails that bounced.
+      const emailResult = await sendLabelGeneratedEmail({
         buyerEmail: buyer.email,
         buyerName,
         orderId: order.id,
@@ -785,7 +923,11 @@ export async function generateShippingLabel(params: {
         estimatedDelivery: selectedRate.estimated_delivery_date,
         carrier: selectedRate.carrier_friendly_name,
       });
-      console.info("Sent label generated email to buyer");
+      if (emailResult.success) {
+        console.info("Sent label generated email to buyer");
+      } else {
+        console.error("Failed to send label generated email:", emailResult.error);
+      }
     }
   } catch (emailError) {
     // Don't fail label generation if email fails
@@ -804,6 +946,51 @@ export async function generateShippingLabel(params: {
     service: selectedRate.service_type,
     estimatedDelivery: selectedRate.estimated_delivery_date,
   };
+}
+
+// String discriminant, matching CreateOrderResult. apps/web compiles with
+// `strict: false`, where boolean-literal discriminants don't narrow.
+export type LabelAttemptResult =
+  | { status: "ok"; label: LabelGenerationResult }
+  | { status: "failed"; code: string; message: string };
+
+/**
+ * Generate a label, recording any failure on the order.
+ *
+ * Label purchase runs fire-and-forget after payment, so a thrown error used to
+ * be a `console.warn` in a lambda log that nobody reads — the seller saw no
+ * label and no reason, and the buyer's order silently stalled. Persisting the
+ * failure lets the seller's sales page say what went wrong and lets ops find
+ * every stuck order with one query.
+ */
+export async function generateShippingLabelRecordingFailure(
+  orderId: string
+): Promise<LabelAttemptResult> {
+  try {
+    const label = await generateShippingLabel({ orderId });
+    return { status: "ok", label };
+  } catch (error) {
+    const code = error instanceof LabelGenerationError ? error.code : "PURCHASE_FAILED";
+    const message = error instanceof Error ? error.message : "Unknown error";
+
+    // ALREADY_GENERATED isn't a failure — a retry raced a successful purchase.
+    if (code === "ALREADY_GENERATED") {
+      return { status: "failed", code, message };
+    }
+
+    console.error("[shipengine] Label generation failed", { orderId, code, message });
+
+    try {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { labelError: `${code}: ${message}`.slice(0, 1000), labelAttemptedAt: new Date() },
+      });
+    } catch (persistError) {
+      console.error("[shipengine] Could not record label failure", { orderId, persistError });
+    }
+
+    return { status: "failed", code, message };
+  }
 }
 
 /**
@@ -829,8 +1016,19 @@ export async function getOrderTracking(orderId: string): Promise<{
   }
 
   try {
-    // Map carrier name to ShipEngine carrier code
-    const carrierCode = SHIPENGINE_CARRIER_CODES[order.carrier] || "stamps_com";
+    // Prefer the carrier_code ShipEngine gave us when the label was bought.
+    // The name-to-code map is a legacy fallback for orders predating that, and
+    // its old default of "stamps_com" made the tracking API 400 on every UK
+    // carrier it didn't know about.
+    const carrierCode = order.carrierCode || SHIPENGINE_CARRIER_CODES[order.carrier];
+
+    if (!carrierCode) {
+      console.warn("No ShipEngine carrier code for order; cannot fetch tracking", {
+        orderId,
+        carrier: order.carrier,
+      });
+      return null;
+    }
 
     const response = await shipEngineRequest<{
       tracking_number: string;

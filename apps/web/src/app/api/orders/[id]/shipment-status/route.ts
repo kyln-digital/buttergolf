@@ -1,21 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma, ShipmentStatus } from "@buttergolf/db";
-import { calculateAutoReleaseDate } from "@/lib/pricing";
-import { sendPaymentOnHoldEmail } from "@/lib/email";
+import { prisma, ShipmentStatus, OrderStatus } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
+
+/**
+ * What a seller may set by hand.
+ *
+ * Deliberately excludes DELIVERED and the terminal states. Marking an order
+ * delivered starts the 14-day auto-release clock, so allowing a seller to
+ * declare it lets them be paid for a parcel they never sent. Delivery is
+ * asserted by the carrier webhook or confirmed by the buyer — never by the
+ * person receiving the money.
+ */
+const SELLER_SETTABLE_STATUSES: ShipmentStatus[] = ["PRE_TRANSIT", "IN_TRANSIT"];
+
+/**
+ * Keep Order.status in step with the shipment. Mirrors the mapping the
+ * ShipEngine webhook uses, so a manual update and a carrier event leave the
+ * order in the same place.
+ */
+function mapShipmentToOrderStatus(shipmentStatus: ShipmentStatus): OrderStatus {
+  switch (shipmentStatus) {
+    case "DELIVERED":
+      return "DELIVERED";
+    case "PRE_TRANSIT":
+    case "IN_TRANSIT":
+    case "OUT_FOR_DELIVERY":
+      return "SHIPPED";
+    default:
+      // FAILED / RETURNED / CANCELLED / PENDING stay put until resolved.
+      return "LABEL_GENERATED";
+  }
+}
 
 /**
  * PATCH /api/orders/[id]/shipment-status
  *
- * Update shipment status for an order.
+ * Lets a seller record that they have posted an order.
  *
- * Critical: When status changes to DELIVERED, we set autoReleaseAt to 14 days from now.
- * This starts the buyer's confirmation window - they can confirm receipt to release
- * payment immediately, or payment auto-releases after 14 days.
- *
- * This endpoint can be called by:
- * - Seller manually updating status
- * - Shipping carrier webhook (future implementation)
+ * Only PRE_TRANSIT and IN_TRANSIT are accepted — see
+ * SELLER_SETTABLE_STATUSES. Delivery, and the auto-release clock it starts,
+ * are handled by the ShipEngine webhook (carrier-verified) and by the buyer
+ * confirming receipt.
  */
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -30,20 +55,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const body = await request.json();
     const { status } = body as { status: ShipmentStatus };
 
-    // Validate status
-    const validStatuses: ShipmentStatus[] = [
-      "PENDING",
-      "PRE_TRANSIT",
-      "IN_TRANSIT",
-      "OUT_FOR_DELIVERY",
-      "DELIVERED",
-      "RETURNED",
-      "FAILED",
-      "CANCELLED",
-    ];
-
-    if (!status || !validStatuses.includes(status)) {
-      return NextResponse.json({ error: "Valid shipment status is required" }, { status: 400 });
+    if (!status || !SELLER_SETTABLE_STATUSES.includes(status)) {
+      return NextResponse.json(
+        {
+          error: `Sellers can only set: ${SELLER_SETTABLE_STATUSES.join(", ")}. Delivery is confirmed by the carrier or the buyer.`,
+        },
+        { status: 400 }
+      );
     }
 
     // Get user
@@ -76,35 +94,21 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       );
     }
 
-    // Build update data
+    // Build update data. Order.status has to move with the shipment, or the
+    // seller's card shows "Shipped" until the page reloads and the row still
+    // says LABEL_GENERATED.
     const updateData: {
       shipmentStatus: ShipmentStatus;
+      status?: OrderStatus;
       shippedAt?: Date;
-      deliveredAt?: Date;
-      actualDelivery?: Date;
-      autoReleaseAt?: Date;
     } = {
       shipmentStatus: status,
+      status: mapShipmentToOrderStatus(status),
     };
 
     // Set timestamps based on status
     if (status === "IN_TRANSIT" && !order.shippedAt) {
       updateData.shippedAt = new Date();
-    }
-
-    // CRITICAL: When delivered, set autoReleaseAt to 14 days from now
-    // This is when the buyer's confirmation window starts
-    if (status === "DELIVERED") {
-      const now = new Date();
-      updateData.deliveredAt = now;
-      updateData.actualDelivery = now;
-      updateData.autoReleaseAt = calculateAutoReleaseDate(now);
-
-      console.info("Setting auto-release date for delivered order:", {
-        orderId,
-        deliveredAt: now,
-        autoReleaseAt: updateData.autoReleaseAt,
-      });
     }
 
     // Update order
@@ -117,33 +121,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       orderId,
       oldStatus: order.shipmentStatus,
       newStatus: status,
-      autoReleaseAt: updatedOrder.autoReleaseAt,
     });
-
-    // If delivered, send payment on-hold email to buyer
-    // This explains their 14-day window to confirm receipt
-    if (status === "DELIVERED" && updatedOrder.autoReleaseAt) {
-      try {
-        await sendPaymentOnHoldEmail({
-          buyerEmail: order.buyer.email,
-          buyerName: order.buyer.firstName || "Customer",
-          orderId,
-          productTitle: order.product.title,
-          autoReleaseDate: updatedOrder.autoReleaseAt,
-        });
-        console.info("Payment on-hold email sent to buyer:", order.buyer.email);
-      } catch (emailError) {
-        // Log but don't fail the request
-        console.error("Failed to send payment on-hold email:", emailError);
-      }
-    }
 
     return NextResponse.json({
       success: true,
       orderId,
+      status: updatedOrder.status,
       shipmentStatus: updatedOrder.shipmentStatus,
-      autoReleaseAt: updatedOrder.autoReleaseAt,
-      deliveredAt: updatedOrder.deliveredAt,
     });
   } catch (error) {
     console.error("Error updating shipment status:", error);

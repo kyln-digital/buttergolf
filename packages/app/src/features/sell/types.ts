@@ -4,6 +4,7 @@
 
 export type { ProductCondition } from "../../types/product";
 import type { ProductCondition } from "../../types/product";
+import { resolveParcelFromInputs, type ParcelDimensions } from "@buttergolf/constants";
 
 export interface SellFormData {
   // Step 1: Photos
@@ -33,6 +34,20 @@ export interface SellFormData {
   title: string;
   description: string;
   price: string;
+
+  // Step 4: Postage
+  /** Preset the seller picked. Supplies dimensions unless they override below. */
+  parcelPresetId: string;
+  /** Seller overrides, as entered. Empty string means "use the preset". */
+  parcelLength: string;
+  parcelWidth: string;
+  parcelHeight: string;
+  parcelWeight: string;
+}
+
+/** Resolve the parcel this form describes. See resolveParcelFromInputs. */
+export function resolveFormParcel(formData: SellFormData): ParcelDimensions {
+  return resolveParcelFromInputs(formData);
 }
 
 export interface ImageData {
@@ -164,7 +179,7 @@ export interface Model {
   brandId: string;
 }
 
-export type SellStep = 1 | 2 | 3 | 4;
+export type SellStep = 1 | 2 | 3 | 4 | 5;
 
 export const SELL_STEPS = [
   { step: 1 as const, title: "Photos", description: "Add up to 5 photos" },
@@ -178,5 +193,6 @@ export const SELL_STEPS = [
     title: "Listing",
     description: "Title, description & price",
   },
-  { step: 4 as const, title: "Review", description: "Review and submit" },
+  { step: 4 as const, title: "Postage", description: "Parcel size & weight" },
+  { step: 5 as const, title: "Review", description: "Review and submit" },
 ];

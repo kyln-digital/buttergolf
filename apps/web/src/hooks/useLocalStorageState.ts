@@ -72,7 +72,7 @@ export function useLocalStorageState<T>(
     } catch {
       // Corrupt data — discard, and don't leave the previous key's value up.
       localStorage.removeItem(key);
-       
+
       setState(defaultValueRef.current);
     }
 

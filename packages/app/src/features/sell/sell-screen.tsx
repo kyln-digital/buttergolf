@@ -2,15 +2,16 @@
 
 import React, { useState, useCallback } from "react";
 import { Column, Row, Text, Button, View } from "@buttergolf/ui";
-import { LISTING_PRICE_LIMITS } from "@buttergolf/constants";
+import { LISTING_PRICE_LIMITS, validateParcel } from "@buttergolf/constants";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, X } from "@tamagui/lucide-icons";
 
 import type { SellFormData, SellStep, Category, Brand, Model, ImageData } from "./types";
-import { SELL_STEPS } from "./types";
+import { SELL_STEPS, resolveFormParcel } from "./types";
 import { PhotoStep } from "./components/PhotoStep";
 import { DetailsStep } from "./components/DetailsStep";
 import { ListingStep } from "./components/ListingStep";
+import { PostageStep } from "./components/PostageStep";
 import { ReviewStep } from "./components/ReviewStep";
 import { StepIndicator } from "./components/StepIndicator";
 
@@ -39,6 +40,9 @@ export interface SellScreenProps {
   onSuccess?: (productId: string) => void;
 }
 
+/** Photos, Details, Listing, Postage, Review. */
+const TOTAL_STEPS = 5;
+
 const initialFormData: SellFormData = {
   images: [],
   categoryId: "",
@@ -61,6 +65,12 @@ const initialFormData: SellFormData = {
   title: "",
   description: "",
   price: "",
+  // Postage — preselected from the category on entering the postage step
+  parcelPresetId: "",
+  parcelLength: "",
+  parcelWidth: "",
+  parcelHeight: "",
+  parcelWeight: "",
 };
 
 export function SellScreen({
@@ -90,7 +100,7 @@ export function SellScreen({
 
   // Navigation handlers
   const goToNextStep = useCallback(() => {
-    if (currentStep < 4) {
+    if (currentStep < TOTAL_STEPS) {
       setDirection("forward");
       setCurrentStep((prev) => (prev + 1) as SellStep);
     }
@@ -150,14 +160,19 @@ export function SellScreen({
           price <= LISTING_PRICE_LIMITS.MAX
         );
       }
-      case 4:
+      case 4: {
+        // Can't publish a parcel no UK carrier will accept.
+        if (!formData.parcelPresetId) return false;
+        return validateParcel(resolveFormParcel(formData)).length === 0;
+      }
+      case 5:
         return true;
       default:
         return false;
     }
   }, [currentStep, formData]);
 
-  // SELL_STEPS always has 4 elements (steps 1-4), so this is safe
+  // SELL_STEPS has one entry per step, so this is safe
   const stepInfo = SELL_STEPS[currentStep - 1]!;
 
   return (
@@ -208,7 +223,7 @@ export function SellScreen({
       </Row>
 
       {/* Step Indicator - Progress bar */}
-      <StepIndicator currentStep={currentStep} totalSteps={4} />
+      <StepIndicator currentStep={currentStep} totalSteps={TOTAL_STEPS} />
 
       {/* Error Banner */}
       {error && (
@@ -261,6 +276,14 @@ export function SellScreen({
           />
         )}
         {currentStep === 4 && (
+          <PostageStep
+            key="postage"
+            formData={formData}
+            onUpdate={updateFormData}
+            direction={direction}
+          />
+        )}
+        {currentStep === 5 && (
           <ReviewStep
             key="review"
             formData={formData}
@@ -282,7 +305,7 @@ export function SellScreen({
         borderTopColor="$cloudMist"
         backgroundColor="$pureWhite"
       >
-        {currentStep < 4 ? (
+        {currentStep < TOTAL_STEPS ? (
           <Button
             size="$5"
             height={56}

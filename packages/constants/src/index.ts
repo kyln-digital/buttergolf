@@ -10,4 +10,5 @@ export * from "./checkout";
 export * from "./errorIds";
 export * from "./images";
 export * from "./logging";
+export * from "./parcels";
 export * from "./pricing";

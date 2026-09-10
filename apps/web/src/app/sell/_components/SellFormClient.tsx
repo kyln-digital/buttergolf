@@ -3,7 +3,15 @@
 import { useState, useEffect, useCallback, useRef, useReducer, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
-import { LISTING_PRICE_LIMITS, getListingPriceBoundsMessage } from "@buttergolf/constants";
+import {
+  LISTING_PRICE_LIMITS,
+  getListingPriceBoundsMessage,
+  PARCEL_PRESETS,
+  getParcelPreset,
+  getDefaultParcelPresetId,
+  validateParcel,
+  resolveParcelFromInputs,
+} from "@buttergolf/constants";
 import { useLocalStorageState } from "@/hooks/useLocalStorageState";
 import { useAutoSave, type AutoSaveStatus, type AutoSaveResult } from "@/hooks/useAutoSave";
 import {
@@ -77,6 +85,13 @@ interface FormData {
   headCondition: number; // Head condition rating 1-10
   shaftCondition: number; // Shaft condition rating 1-10
   images: string[];
+  // Postage. The preset supplies dimensions; the overrides are optional and
+  // held as entered so a partially typed value never becomes a real one.
+  parcelPresetId: string;
+  parcelLength: string;
+  parcelWidth: string;
+  parcelHeight: string;
+  parcelWeight: string;
 }
 
 const FLEX_OPTIONS = [
@@ -159,6 +174,14 @@ const HelperText = ({ children }: { children: React.ReactNode }) => (
   </Text>
 );
 
+/** Bump whenever FormData gains or loses a field. Stale drafts are discarded. */
+const SELL_DRAFT_SCHEMA_VERSION = 2;
+
+/** Resolve the parcel this form describes. See resolveParcelFromInputs. */
+function resolveParcelFromForm(data: FormData) {
+  return resolveParcelFromInputs(data);
+}
+
 /** Shown when a save is attempted before the record being edited has loaded. */
 const RECORD_NOT_READY_MESSAGE =
   "Still loading this listing. Give it a moment and try again — or reload the page if this persists.";
@@ -183,6 +206,11 @@ const EMPTY_FORM_DATA: FormData = {
   headCondition: 7,
   shaftCondition: 7,
   images: [],
+  parcelPresetId: "",
+  parcelLength: "",
+  parcelWidth: "",
+  parcelHeight: "",
+  parcelWeight: "",
 };
 
 function hasMeaningfulDraftContent(data: FormData): boolean {
@@ -200,6 +228,7 @@ function hasMeaningfulDraftContent(data: FormData): boolean {
     data.gripCondition !== 7 ||
     data.headCondition !== 7 ||
     data.shaftCondition !== 7 ||
+    (data.parcelPresetId ?? "").trim().length > 0 ||
     data.images.length > 0
   );
 }
@@ -261,6 +290,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   // Synchronous ref to prevent duplicate submissions (React state is async)
   const isSubmittingRef = useRef(false);
   const [categories, setCategories] = useState<Category[]>([]);
+
   const [userAddedText, setUserAddedText] = useState<string>(""); // Track any manual additions
   const [isEditingTitle, setIsEditingTitle] = useState(false); // Track if user is manually editing
   // When the user fully replaces the auto-generated title, stop overwriting it
@@ -284,7 +314,28 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       // whatever arrived would then be autosaved as if the seller had entered
       // it, against this tab's row.
       syncAcrossTabs: false,
+      // Bumped when the parcel fields were added. A draft saved before them
+      // hydrates without `parcelPresetId`, and reading it would throw while
+      // rendering — the seller could not open the sell form at all.
+      schemaVersion: SELL_DRAFT_SCHEMA_VERSION,
     });
+
+  // --- Postage ---
+  const selectedParcelPreset = getParcelPreset(formData.parcelPresetId);
+  const resolvedParcel = resolveParcelFromForm(formData);
+  const parcelErrors = selectedParcelPreset ? validateParcel(resolvedParcel) : [];
+
+  // Preselect a sensible parcel from the chosen category, so the seller is
+  // confirming a guess rather than starting from a blank list.
+  const selectedCategorySlug = categories.find((c) => c.id === formData.categoryId)?.slug;
+  useEffect(() => {
+    if (!formData.parcelPresetId && selectedCategorySlug) {
+      setFormData((prev) => ({
+        ...prev,
+        parcelPresetId: getDefaultParcelPresetId(selectedCategorySlug),
+      }));
+    }
+  }, [formData.parcelPresetId, selectedCategorySlug, setFormData]);
 
   // Track whether the user has dismissed the recovery prompt
   const [recoveryDismissed, setRecoveryDismissed] = useState(false);
@@ -388,6 +439,10 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
             shaftCondition: data.shaftCondition,
             // Drafts carry their photos too, so the seller hub can render a
             // thumbnail instead of a broken image.
+            // Postage has to autosave too. Without it, a seller who picks a
+            // parcel after the first autosave loses that choice on reload.
+            parcelPresetId: data.parcelPresetId || null,
+            ...(data.parcelPresetId ? resolveParcelFromForm(data) : {}),
             images: data.images.map((url, index) => ({ url, sortOrder: index })),
           };
 
@@ -412,6 +467,11 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
             ...data,
             price: safePrice,
             brandName: undefined,
+            ...(data.parcelPresetId ? resolveParcelFromForm(data) : {}),
+            parcelLength: undefined,
+            parcelWidth: undefined,
+            parcelHeight: undefined,
+            parcelWeight: undefined,
             requestId: snapshot.createRequestId,
             isDraft: true,
           }),
@@ -522,6 +582,13 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
         const product = await response.json();
 
         const loaded: FormData = {
+          parcelPresetId: product.parcelPresetId || "",
+          // Stored dimensions are the resolved values; surface them as
+          // overrides so the seller sees exactly what will be declared.
+          parcelLength: product.length ? String(product.length) : "",
+          parcelWidth: product.width ? String(product.width) : "",
+          parcelHeight: product.height ? String(product.height) : "",
+          parcelWeight: product.weight ? String(product.weight) : "",
           title: product.title || "",
           description: product.description || "",
           price: product.price ? String(product.price) : "",
@@ -800,6 +867,20 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       return;
     }
 
+    if (!formData.parcelPresetId) {
+      setError("Choose how you'll post this item");
+      setLoading(false);
+      isSubmittingRef.current = false;
+      return;
+    }
+
+    if (parcelErrors.length > 0) {
+      setError(parcelErrors[0].message);
+      setLoading(false);
+      isSubmittingRef.current = false;
+      return;
+    }
+
     // The record this submit is for. Queued behind any autosave already
     // running, so by the time it executes an in-flight draft creation has
     // finished and its row id is in the state machine.
@@ -845,6 +926,12 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                 gripCondition: formData.gripCondition,
                 headCondition: formData.headCondition,
                 shaftCondition: formData.shaftCondition,
+                // Resolved parcel, not the raw override strings.
+                parcelPresetId: formData.parcelPresetId,
+                length: resolvedParcel.length,
+                width: resolvedParcel.width,
+                height: resolvedParcel.height,
+                weight: resolvedParcel.weight,
                 images: formData.images.map((url, index) => ({ url, sortOrder: index })),
                 // Editing a live listing leaves isDraft alone; publishing a draft
                 // flips it.
@@ -861,6 +948,15 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                 price: parsedPrice,
                 // Don't send brandName (display only)
                 brandName: undefined,
+                // Resolved parcel, not the raw override strings.
+                length: resolvedParcel.length,
+                width: resolvedParcel.width,
+                height: resolvedParcel.height,
+                weight: resolvedParcel.weight,
+                parcelLength: undefined,
+                parcelWidth: undefined,
+                parcelHeight: undefined,
+                parcelWeight: undefined,
                 // The record.s stable create key, not a fresh one: if the
                 // autosave POST committed but its response was lost, rowId is
                 // still null and we land here. Reusing the key makes the
@@ -1624,6 +1720,105 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                         Enter your asking price in GBP ({LISTING_PRICE_LIMITS.MIN} -{" "}
                         {LISTING_PRICE_LIMITS.MAX})
                       </HelperText>
+                    </Column>
+
+                    {/* Postage — feeds the buyer's shipping quote and the label we
+                        buy on their behalf, so it has to be the packed box. */}
+                    <Column gap="$xs" width="100%">
+                      <FormLabel required>Postage</FormLabel>
+                      <RadioGroup
+                        value={formData.parcelPresetId}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, parcelPresetId: value })
+                        }
+                      >
+                        <Column gap="$xs" width="100%">
+                          {PARCEL_PRESETS.map((preset) => (
+                            <Row key={preset.id} gap="$sm" alignItems="center">
+                              <Radio value={preset.id}>
+                                <RadioIndicator />
+                              </Radio>
+                              <Text
+                                size="$4"
+                                color="$text"
+                                onPress={() =>
+                                  setFormData({ ...formData, parcelPresetId: preset.id })
+                                }
+                                cursor="pointer"
+                                flex={1}
+                              >
+                                {preset.label}{" "}
+                                <Text size="$3" color="$textSecondary">
+                                  ({preset.length}×{preset.width}×{preset.height}cm,{" "}
+                                  {preset.weight >= 1000
+                                    ? `${(preset.weight / 1000).toFixed(1)}kg`
+                                    : `${preset.weight}g`}
+                                  )
+                                </Text>
+                              </Text>
+                            </Row>
+                          ))}
+                        </Column>
+                      </RadioGroup>
+                      <HelperText>
+                        Pick the closest match to your packed parcel. This sets the buyer&apos;s
+                        shipping quote and the label.
+                      </HelperText>
+                    </Column>
+
+                    {/* Optional exact measurements */}
+                    <Column gap="$xs" width="100%">
+                      <FormLabel>Exact size and weight (optional)</FormLabel>
+                      <Row gap="$sm" width="100%" flexWrap="wrap">
+                        <Input
+                          value={formData.parcelLength}
+                          onChangeText={(value) =>
+                            setFormData({ ...formData, parcelLength: value })
+                          }
+                          placeholder={`Length ${selectedParcelPreset?.length ?? ""}cm`}
+                          size="$4"
+                          inputMode="decimal"
+                          flex={1}
+                        />
+                        <Input
+                          value={formData.parcelWidth}
+                          onChangeText={(value) => setFormData({ ...formData, parcelWidth: value })}
+                          placeholder={`Width ${selectedParcelPreset?.width ?? ""}cm`}
+                          size="$4"
+                          inputMode="decimal"
+                          flex={1}
+                        />
+                        <Input
+                          value={formData.parcelHeight}
+                          onChangeText={(value) =>
+                            setFormData({ ...formData, parcelHeight: value })
+                          }
+                          placeholder={`Height ${selectedParcelPreset?.height ?? ""}cm`}
+                          size="$4"
+                          inputMode="decimal"
+                          flex={1}
+                        />
+                        <Input
+                          value={formData.parcelWeight}
+                          onChangeText={(value) =>
+                            setFormData({ ...formData, parcelWeight: value })
+                          }
+                          placeholder={`Weight ${selectedParcelPreset?.weight ?? ""}g`}
+                          size="$4"
+                          inputMode="decimal"
+                          flex={1}
+                        />
+                      </Row>
+                      {parcelErrors.length > 0 ? (
+                        <Text size="$2" color="$error" marginTop="$xs">
+                          {parcelErrors[0].message}
+                        </Text>
+                      ) : (
+                        <HelperText>
+                          Leave blank to use the preset. Accurate measurements mean an accurate
+                          quote and no carrier surcharges.
+                        </HelperText>
+                      )}
                     </Column>
 
                     {/* Error Message */}
