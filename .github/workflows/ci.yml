@@ -109,6 +109,7 @@ jobs:
               echo "  until docker exec bg-pg pg_isready -U postgres >/dev/null 2>&1; do sleep 1; done"
               echo "  DATABASE_URL=postgresql://postgres:postgres@localhost:5432/buttergolf \\"
               echo "    pnpm db:migrate:dev"
+              echo "  docker rm -f bg-pg   # always: --rm does not fire on a detached container"
               echo "Then commit the migration it writes."
               echo "Do NOT run migrate dev against packages/db/.env: if that was pulled from"
               echo "Vercel it is the production database, and migrate dev can reset it."
