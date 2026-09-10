@@ -82,7 +82,17 @@ export function ProductCard({
   const sellerName = product.seller?.firstName || "Seller";
   const sellerRatingCount = product.seller?.ratingCount ?? 0;
   const sellerRating = product.seller?.averageRating;
-  const anchorProps = isWeb && href ? { tag: "a" as const, href } : {};
+  // On web the link is a real anchor; the inline reset keeps the browser's
+  // underline off it without relying on global CSS.
+  const anchorProps =
+    isWeb && href
+      ? {
+          tag: "a" as const,
+          href,
+          className: "product-card-link",
+          style: { textDecoration: "none" },
+        }
+      : {};
 
   const handleFavouritePress = (event?: GestureResponderEvent) => {
     event?.stopPropagation?.();

@@ -329,6 +329,9 @@ const webTransition = isWeb
     }
   : undefined;
 
+/** A button rendered as an anchor must not pick up the browser's link underline. */
+const webAnchorReset = isWeb ? { textDecoration: "none" } : undefined;
+
 const ButtonComponent = ButtonFrame.styleable<ButtonExtraProps>((propsIn, ref) => {
   const {
     butterVariant: variantProp,
@@ -400,7 +403,11 @@ const ButtonComponent = ButtonFrame.styleable<ButtonExtraProps>((propsIn, ref) =
       {...semanticProps}
       chromeless={chromeless}
       unstyled={unstyled}
-      style={webTransition ? [webTransition, style] : style}
+      style={
+        webTransition
+          ? [webTransition, resolvedTag === "a" ? webAnchorReset : undefined, style]
+          : style
+      }
     />
   );
 });

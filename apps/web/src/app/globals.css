@@ -81,19 +81,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Navigation anchors (header, nav, footer, anchors rendered by Tamagui
-   components such as Button tag="a" and card links) inherit colour and drop
-   the underline; any other anchor keeps the browser's link affordances so
-   prose links stay distinguishable. */
+/* Anchors inside navigation landmarks and the explicitly classed card links
+   inherit colour and drop the underline; any other anchor keeps the
+   browser's link affordances so prose links stay distinguishable. Buttons
+   rendered as anchors reset their own underline in the Button component. */
 header a,
 nav a,
 footer a,
-a.is_Button,
-a.is_Column,
-a.is_Row,
-a.is_View,
 a.category-card,
-a.footer-link {
+a.footer-link,
+a.product-card-link {
   color: inherit;
   text-decoration: none;
 }

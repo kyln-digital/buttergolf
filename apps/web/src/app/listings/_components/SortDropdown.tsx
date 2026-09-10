@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Check, ChevronDown } from "@tamagui/lucide-icons";
 import {
   AdaptContents,
@@ -32,10 +32,14 @@ const DEFAULT_SORT_OPTIONS: SortOption[] = [
   { value: "popular", label: "Most popular" },
 ];
 
+const MENU_ITEM_SELECTOR = '[role="menuitemradio"]';
+
 /**
- * Sort control: a tonal button that opens a small menu (a bottom sheet on
- * touch screens). Built on Popover rather than Select so the option list is
- * never laid out off-screen.
+ * Sort control: a tonal button that opens a menu of radio items (a bottom
+ * sheet on touch screens). Built on Popover rather than Select so the option
+ * list is never laid out off-screen. Follows the ARIA menu pattern: the
+ * current option takes focus on open, arrows move between items, Home/End
+ * jump, Enter/Space choose, Escape closes.
  */
 export function SortDropdown({
   value,
@@ -43,11 +47,51 @@ export function SortDropdown({
   options = DEFAULT_SORT_OPTIONS,
 }: Readonly<SortDropdownProps>) {
   const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLElement | null>(null);
   const selected = options.find((option) => option.value === value) ?? options[0];
 
   const choose = (next: string) => {
     onChange(next);
     setOpen(false);
+  };
+
+  const getItems = (): HTMLElement[] =>
+    Array.from(menuRef.current?.querySelectorAll<HTMLElement>(MENU_ITEM_SELECTOR) ?? []);
+
+  // Move focus into the menu when it opens, landing on the current choice.
+  useEffect(() => {
+    if (!open) return;
+    const frame = requestAnimationFrame(() => {
+      const items = getItems();
+      const current = items.find((item) => item.getAttribute("aria-checked") === "true");
+      (current ?? items[0])?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open]);
+
+  const handleMenuKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    const items = getItems();
+    if (items.length === 0) return;
+    const index = items.indexOf(document.activeElement as HTMLElement);
+    let next: number | null = null;
+    switch (event.key) {
+      case "ArrowDown":
+        next = index < 0 ? 0 : (index + 1) % items.length;
+        break;
+      case "ArrowUp":
+        next = index < 0 ? items.length - 1 : (index - 1 + items.length) % items.length;
+        break;
+      case "Home":
+        next = 0;
+        break;
+      case "End":
+        next = items.length - 1;
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    items[next]?.focus();
   };
 
   return (
@@ -57,7 +101,7 @@ export function SortDropdown({
           butterVariant="secondary"
           size="$4"
           iconAfter={ChevronDown}
-          aria-haspopup="listbox"
+          aria-haspopup="menu"
           aria-expanded={open}
         >
           {`Sort: ${selected?.label ?? "Newest first"}`}
@@ -93,7 +137,14 @@ export function SortDropdown({
         elevate
         zIndex={200000}
       >
-        <Column role="listbox" aria-label="Sort by" minWidth={220} gap={2}>
+        <Column
+          ref={menuRef as never}
+          role="menu"
+          aria-label="Sort by"
+          minWidth={220}
+          gap={2}
+          {...{ onKeyDown: handleMenuKeyDown }}
+        >
           {options.map((option) => {
             const isSelected = option.value === value;
             return (
@@ -104,8 +155,8 @@ export function SortDropdown({
                 width="100%"
                 justifyContent="space-between"
                 borderRadius="$md"
-                role="option"
-                aria-selected={isSelected}
+                role="menuitemradio"
+                aria-checked={isSelected}
                 iconAfter={isSelected ? Check : undefined}
                 onPress={() => choose(option.value)}
               >

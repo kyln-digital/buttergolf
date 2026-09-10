@@ -394,6 +394,15 @@ export function ListingsClient({
     }
   };
 
+  // Mobile sheet Apply: commit the draft as a whole. The filter-change effect
+  // above treats it like any other filter edit - page resets to 1 and one
+  // debounced fetch/URL update runs - and the explicit reset keeps the
+  // pagination state honest in the meantime.
+  const handleApplyFilters = (next: FilterState) => {
+    setFilters(next);
+    setPage(1);
+  };
+
   // Handle page change - uses pagination mode (no skeleton flash, no scroll)
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages && !isLoading && !isPaginating) {
@@ -537,7 +546,7 @@ export function ListingsClient({
         filters={filters}
         availableBrands={availableFilters?.availableBrands || []}
         priceRange={availableFilters?.priceRange || { min: 0, max: 10000 }}
-        onApply={setFilters}
+        onApply={handleApplyFilters}
       />
 
       <TrustSection />
