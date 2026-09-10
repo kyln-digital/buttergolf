@@ -393,6 +393,7 @@ function OrderCard({ order }: { order: Order }) {
 
           <Text size="$2" color="$textMuted">
             Ordered {new Date(order.createdAt).toLocaleDateString()}
+            {order.shippingServiceName ? ` · Buyer paid for ${order.shippingServiceName}` : ""}
           </Text>
         </Column>
 
