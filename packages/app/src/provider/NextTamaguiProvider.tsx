@@ -39,8 +39,11 @@ function TamaguiProviderInner({ children }: { children: ReactNode }) {
   // enter styles don't flash. Tamagui's own UnmountedClassName only toggles a
   // wrapper span, never the root, so without this the class stays forever and
   // every enterStyle (sheet overlays, empty states, popovers) is frozen at its
-  // entering state - invisible.
+  // entering state - invisible. The script is emitted on every streamed flush
+  // (useServerInsertedHTML), some of which arrive after hydration, so it is
+  // gated on the mounted marker set here rather than run unconditionally.
   useEffect(() => {
+    document.documentElement.dataset.tamaguiMounted = "true";
     document.documentElement.classList.remove("t_unmounted");
   }, []);
 
@@ -70,7 +73,7 @@ export function NextTamaguiProvider({ children }: Readonly<{ children: ReactNode
             in 852b3805). */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `document.documentElement.classList.add('t_unmounted')`,
+            __html: `if(!document.documentElement.dataset.tamaguiMounted){document.documentElement.classList.add('t_unmounted')}`,
           }}
         />
         <style dangerouslySetInnerHTML={{ __html: rnwStyle.textContent }} id={rnwStyle.id} />
