@@ -15,7 +15,7 @@
 
 import "@tamagui/polyfill-dev";
 
-import { type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { StyleSheet } from "react-native";
 import { useServerInsertedHTML } from "next/navigation";
 import { NextThemeProvider, useRootTheme } from "@tamagui/next-theme";
@@ -34,6 +34,15 @@ function TamaguiProviderInner({ children }: { children: ReactNode }) {
   // the theme context is fully initialized (especially on slow devices/networks).
   // We MUST provide a fallback to prevent "Missing theme" errors.
   const [theme] = useRootTheme();
+
+  // The inline script below adds `t_unmounted` to <html> before hydration so
+  // enter styles don't flash. Tamagui's own UnmountedClassName only toggles a
+  // wrapper span, never the root, so without this the class stays forever and
+  // every enterStyle (sheet overlays, empty states, popovers) is frozen at its
+  // entering state - invisible.
+  useEffect(() => {
+    document.documentElement.classList.remove("t_unmounted");
+  }, []);
 
   return (
     <TamaguiProvider
@@ -55,8 +64,8 @@ export function NextTamaguiProvider({ children }: Readonly<{ children: ReactNode
     return (
       <>
         {/* Gate Tamagui enterStyle CSS pre-hydration: `.t_unmounted` is Tamagui's
-            built-in selector (@tamagui/web pseudoDescriptors); TamaguiProvider's
-            UnmountedClassName removes the class after mount. Removing this script
+            built-in selector (@tamagui/web pseudoDescriptors). TamaguiProviderInner
+            removes the class from <html> once mounted. Removing this script
             reintroduces a flash of entering-state content (restored once before
             in 852b3805). */}
         <script

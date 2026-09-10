@@ -27,7 +27,7 @@ function SetupCallout() {
           Finish setting up your account to unlock payments, payouts, and more.
         </Text>
         <Button
-          butterVariant="primary"
+          butterVariant="secondary"
           size="$4"
           tag="a"
           href="/account"
