@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   sellStorageKey,
   newListingStorageKey,
@@ -29,6 +29,30 @@ function inTab<T>(fn: () => T): T {
 
   try {
     return fn();
+  } finally {
+    globals.window = previous;
+  }
+}
+
+/**
+ * Runs `fn` as if in a fresh browser tab whose sessionStorage throws — private
+ * browsing, or storage blocked by policy. The module is re-imported so its
+ * cached fallback id starts empty, the way it would in a second tab.
+ */
+async function inTabWithoutSessionStorage<T>(fn: (key: () => string) => T): Promise<T> {
+  const globals = globalThis as { window?: unknown };
+  const previous = globals.window;
+
+  globals.window = {
+    get sessionStorage(): never {
+      throw new Error("sessionStorage is not available");
+    },
+  };
+
+  try {
+    vi.resetModules();
+    const fresh = await import("../apps/web/src/app/sell/_lib/sell-storage-key");
+    return fn(fresh.newListingStorageKey);
   } finally {
     globals.window = previous;
   }
@@ -90,5 +114,23 @@ describe("sellStorageKey", () => {
     expect(sellStorageKey({ draftId: "A", editProductId: "B" })).toBe(
       sellStorageKey({ editProductId: "B" })
     );
+  });
+
+  it("still keeps two tabs apart when sessionStorage is unavailable", async () => {
+    // The regression: a shared "no-session" constant put every tab back on one
+    // key, which is the collision the per-tab id exists to prevent. Recovery is
+    // what's lost without sessionStorage, not isolation.
+    const first = await inTabWithoutSessionStorage((key) => key());
+    const second = await inTabWithoutSessionStorage((key) => key());
+
+    expect(first).not.toBe(second);
+  });
+
+  it("is stable within a tab that has no sessionStorage", async () => {
+    // Unstable would be worse than shared: the key is read during render, so a
+    // new value every call would re-run hydration and never persist anything.
+    await inTabWithoutSessionStorage((key) => {
+      expect(key()).toBe(key());
+    });
   });
 });

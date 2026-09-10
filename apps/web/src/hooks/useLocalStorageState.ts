@@ -173,6 +173,11 @@ export function useLocalStorageState<T>(
       clearTimeout(debounceTimer.current);
       debounceTimer.current = null;
     }
+    // Drop the queued write with the timer. Cancelling the timer alone leaves
+    // the flush callback armed, and the unmount flush would then write the
+    // value straight back — which is exactly the sequence after a successful
+    // publish: clear the draft, navigate away, draft resurrected.
+    flushPendingWrite.current = null;
 
     if (typeof window !== "undefined") {
       localStorage.removeItem(key);

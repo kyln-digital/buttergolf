@@ -22,6 +22,13 @@ export interface SellStorageKeyParams {
 
 const TAB_ID_SESSION_KEY = `${SELL_DRAFT_STORAGE_PREFIX}-tab-id`;
 
+function randomId(): string {
+  return Math.random().toString(36).slice(2, 10);
+}
+
+/** Set only when sessionStorage is unavailable; see `tabId`. */
+let fallbackTabId: string | null = null;
+
 /**
  * A stable id for this browser tab, from sessionStorage — which is per-tab and
  * survives reloads.
@@ -32,9 +39,12 @@ const TAB_ID_SESSION_KEY = `${SELL_DRAFT_STORAGE_PREFIX}-tab-id`;
  * wins and the other tab can hydrate those fields after a reload and autosave
  * them as its own row.
  *
- * Falls back to a per-call id when sessionStorage is unavailable (private
- * browsing, SSR): the draft simply isn't recoverable, which is the safe way to
- * fail.
+ * Falls back to an id cached for the life of this JavaScript context when
+ * sessionStorage is unavailable (private browsing, storage blocked). That is
+ * still one id per tab — the part that actually matters, since a shared
+ * constant would put every tab back on one key — it just doesn't survive a
+ * reload, so the draft isn't recoverable. Losing recovery is the safe way to
+ * fail; merging two listings is not.
  */
 function tabId(): string {
   if (typeof window === "undefined") return "server";
@@ -43,11 +53,12 @@ function tabId(): string {
     const existing = window.sessionStorage.getItem(TAB_ID_SESSION_KEY);
     if (existing) return existing;
 
-    const created = Math.random().toString(36).slice(2, 10);
+    const created = randomId();
     window.sessionStorage.setItem(TAB_ID_SESSION_KEY, created);
     return created;
   } catch {
-    return "no-session";
+    fallbackTabId ??= randomId();
+    return fallbackTabId;
   }
 }
 
