@@ -31,7 +31,7 @@ export async function DELETE(
     // Fetch image with its product to verify ownership
     const image = await prisma.productImage.findUnique({
       where: { id: imageId },
-      include: { product: { select: { userId: true } } },
+      include: { product: { select: { id: true, userId: true } } },
     });
 
     if (!image) {
@@ -58,8 +58,14 @@ export async function DELETE(
       }
     }
 
-    // Delete from database
-    await prisma.productImage.delete({ where: { id: imageId } });
+    // Delete from database under the product's row lock, so this can't
+    // interleave with a publish in PATCH /api/seller/products/[id] — that route
+    // checks the listing still has an image before flipping isDraft, and takes
+    // the same lock to make the check hold through its commit.
+    await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM products WHERE id = ${image.product.id} FOR UPDATE`;
+      await tx.productImage.delete({ where: { id: imageId } });
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

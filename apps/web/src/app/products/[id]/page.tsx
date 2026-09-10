@@ -11,6 +11,8 @@ import { FooterSection } from "@/app/_components/marketplace/FooterSection";
 import { SimilarItemsSection } from "./_components/SimilarItemsSection";
 import { SeoJsonLd } from "@/components/seo/SeoJsonLd";
 import { getBaseUrl } from "@/lib/base-url";
+import { resolveCoverUrl, resolveProductImages } from "@/lib/product-images";
+import { recordProductView } from "@/lib/product-views";
 import type { ProductCardData } from "@buttergolf/app";
 
 export const dynamic = "force-dynamic";
@@ -50,33 +52,33 @@ const getProduct = cache(async (id: string): Promise<Product | null> => {
       return null;
     }
 
+    // Resolve the viewer once: it decides both draft visibility below and
+    // whether this visit counts as a buyer view.
+    const { userId: clerkId } = await auth();
+    const viewer = clerkId
+      ? await prisma.user.findUnique({ where: { clerkId }, select: { id: true } })
+      : null;
+    const viewerUserId = viewer?.id ?? null;
+
     // Drafts are only visible to their owner (linked from the seller hub);
     // everyone else gets a 404.
-    if (product.isDraft) {
-      const { userId: clerkId } = await auth();
-      if (!clerkId) return null;
-      const owner = await prisma.user.findUnique({
-        where: { clerkId },
-        select: { id: true },
-      });
-      if (!owner || owner.id !== product.userId) {
-        return null;
-      }
+    if (product.isDraft && viewerUserId !== product.userId) {
+      return null;
     }
 
-    // Increment view count (fire and forget)
-    prisma.product
-      .update({
-        where: { id },
-        data: { views: { increment: 1 } },
-      })
-      .catch((err) => console.error("Failed to increment views:", err));
+    recordProductView(id, {
+      isDraft: product.isDraft,
+      ownerUserId: product.userId,
+      viewerUserId,
+    });
 
-    // Transform to match Product interface
+    // Transform to match Product interface. Images are ordered by sortOrder, so
+    // resolveProductImages brands the cover (index 0) and leaves the rest raw.
     return {
       ...product,
       createdAt: product.createdAt.toISOString(),
       brand: product.brand?.name || null,
+      images: resolveProductImages(product.images),
     } as Product;
   } catch (error) {
     // Rethrow so transient DB failures render the error boundary (500) instead
@@ -182,7 +184,7 @@ async function getSimilarProducts(
       title: prod.title,
       price: prod.price,
       condition: prod.condition,
-      imageUrl: prod.images[0]?.url || "/placeholder-product.jpg",
+      imageUrl: resolveCoverUrl(prod.images),
       category: prod.category.name,
       seller: {
         id: prod.user.id,

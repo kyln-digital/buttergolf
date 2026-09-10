@@ -1,13 +1,13 @@
 # Operations & CI/CD
 
-## Release Model (deploy ≠ merge)
+## Release Model (merge = deploy)
 
 Canonical source: `AGENTS.md` (root). `CLAUDE.md` imports it via `@AGENTS.md`.
 
-- `main` is the **integration branch**: merging a PR produces a **preview deploy only** — never production.
-- `production` is the **release branch**: the Vercel Production Branch points to it. Production deploys only when `main` is explicitly promoted (merge / fast-forward `main` → `production`).
-- Promotion is **human-gated**. Never push, merge, or open auto-merging PRs targeting `production`.
-- **Database migration safety is assessed at promote time, not merge time** — migrations merged to `main` aren't applied to production until promotion.
+- Vercel's Production Branch is `main`: merging a PR to `main` deploys **straight to production**. There is no separate `production` branch or promotion step (verified 2026-09-10 from the GitHub deployment records: merges to `main` create `Production` deployments; PR pushes create `Preview` deployments).
+- Every PR branch gets a Vercel **preview** deploy — verify changes there before merging.
+- Merging is the release decision: only when CI is green, the preview has been checked, and a human has asked for it.
+- **Migrations are not applied by the build.** `db:generate` is the only database-related prerequisite of `turbo run build` (its other dependency is `^build`, upstream package builds). Apply them with `pnpm db:migrate:deploy`, which reads `DATABASE_URL` from `packages/db/.env` (per `packages/db/prisma.config.ts`); pull the **production** value into that file first with `vercel env pull packages/db/.env --environment=production`, never trusting whatever is already there. **Migrate first, then merge**, so code deploying on merge never meets an un-migrated schema, and keep migrations backwards-compatible with the deployed code (expand, then contract).
 
 ## CI (`.github/workflows/ci.yml`)
 
@@ -78,7 +78,7 @@ Note: `SENTRY_AUTH_TOKEN` and `SUPABASE_SERVICE_ROLE_KEY` appear in `turbo.json`
 | `pnpm upload:images`        | Seed Cloudinary sample images                      |
 | `pnpm optimize:site-images` | Optimize site images (`--dry-run` variant)         |
 | `pnpm lighthouse`           | Local perf audits against `lighthouserc.js`        |
-| `pnpm db:migrate:deploy`    | Apply migrations — run at promote time             |
+| `pnpm db:migrate:deploy`    | Apply migrations to a database (not run by Vercel) |
 
 `scripts/` also contains one-off data-fix and debug scripts (some with **hardcoded user emails/product IDs** — read before running), plus design-system codemods (`migrate-layouts.sh` for XStack→Row, YStack→Column).
 

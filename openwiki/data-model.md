@@ -55,7 +55,7 @@ Only on `User`. Products use `isSold`/`isDraft` flags instead — all public rea
 
 Plus hot-path composite indexes: `products(categoryId, isSold)`, `orders(buyerId, status)`, `orders(sellerId, status)`, `messages(conversationId, createdAt)`.
 
-> The migration header warns the unique indexes fail if pre-existing rows violate them — data was reviewed on staging before production apply (migration safety is assessed at **promote** time, not merge time).
+> The migration header warns the unique indexes fail if pre-existing rows violate them — data was reviewed on staging before production apply (merging to `main` deploys to production, so migration safety is assessed **before merge** and the migration is applied deliberately alongside the release).
 
 ### No optimistic locking
 

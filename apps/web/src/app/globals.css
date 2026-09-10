@@ -120,3 +120,11 @@ a {
 .spin {
   animation: spin 1s linear infinite;
 }
+
+/* Theme toggle: the new theme is revealed by a clip-path sweep animated in
+   AnimatedThemeToggle, so disable the default cross-fade of the View Transition. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}

@@ -4,6 +4,11 @@ import { getUserIdFromRequest } from "@/lib/auth";
 import { checkRateLimit, rateLimitResponse } from "@/middleware/rate-limit";
 import { cloudinary } from "@/lib/cloudinary";
 import {
+  isAllowedUploadType,
+  MAX_UPLOAD_FILE_SIZE_BYTES,
+  MAX_UPLOAD_FILE_SIZE_LABEL,
+} from "@/lib/image-file";
+import {
   logError,
   UPLOAD_CLOUDINARY_CONFIG_MISSING,
   UPLOAD_FAILED,
@@ -118,6 +123,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   // Get the file from the request
   const { searchParams } = new URL(request.url);
   const filename = searchParams.get("filename");
+  // Retained for logging only — it no longer changes how the image is stored.
   const isFirstImage = searchParams.get("isFirstImage") === "true";
 
   if (!filename) {
@@ -128,13 +134,26 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   // Validate file type (images only)
-  const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
   const contentType = request.headers.get("content-type");
 
-  if (!contentType || !allowedTypes.includes(contentType)) {
+  if (!isAllowedUploadType(contentType)) {
     return NextResponse.json(
       { error: "Invalid file type. Only images are allowed." },
       { status: 400, headers: corsHeaders }
+    );
+  }
+
+  // Enforce the size limit before buffering. The browser checks it too, but
+  // mobile and any other authenticated client post here directly, and reading
+  // an unbounded body into memory (then base64-encoding it, ~1.33x) is a cheap
+  // way to exhaust the function. Content-Length is advisory, so the decoded
+  // buffer is re-checked below.
+  const declaredLength = Number(request.headers.get("content-length"));
+
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_UPLOAD_FILE_SIZE_BYTES) {
+    return NextResponse.json(
+      { error: `File size must be less than ${MAX_UPLOAD_FILE_SIZE_LABEL}` },
+      { status: 413, headers: corsHeaders }
     );
   }
 
@@ -147,6 +166,15 @@ export async function POST(request: Request): Promise<NextResponse> {
     try {
       arrayBuffer = await request.arrayBuffer();
       buffer = Buffer.from(arrayBuffer);
+
+      // Content-Length can be absent or wrong, so the real size decides.
+      if (buffer.length > MAX_UPLOAD_FILE_SIZE_BYTES) {
+        return NextResponse.json(
+          { error: `File size must be less than ${MAX_UPLOAD_FILE_SIZE_LABEL}` },
+          { status: 413, headers: corsHeaders }
+        );
+      }
+
       base64Image = `data:${contentType};base64,${buffer.toString("base64")}`;
     } catch (conversionError) {
       logError("Failed to convert request body to base64", conversionError, {
@@ -182,33 +210,13 @@ export async function POST(request: Request): Promise<NextResponse> {
       resource_type: "image",
     };
 
-    // Apply background removal transformation ONLY to first image
-    // This transformation is applied to the ALREADY CROPPED image blob from ImageCropModal
-    if (isFirstImage) {
-      uploadOptions.transformation = [
-        {
-          effect: "background_removal",
-        },
-        {
-          // Use the ButterGolf brand tiles background pattern
-          // Uploaded from: packages/assets/images/image-backgrounds/Butter Golf_Website brand tiles_BI81_V1_AW-01.jpg
-          underlay: "backgrounds:butter-pattern-tiles",
-          flags: "tiled",
-        },
-        {
-          flags: "layer_apply",
-        },
-        {
-          // Crop the composite (foreground + tiled background) back to the
-          // original cropped input dimensions. The image is already 4:3 from
-          // ImageCropModal, so we just need to trim to iw × ih.
-          crop: "crop",
-          width: "iw",
-          height: "ih",
-          gravity: "center",
-        },
-      ];
-    }
+    // NOTE: the ButterGolf brand treatment (background removal + tiled pattern)
+    // is deliberately NOT baked in here. It used to be applied to whichever
+    // image happened to be uploaded first, which meant a seller who later
+    // reordered their photos ended up with an unbranded cover and no way to fix
+    // it. The stored asset is now always the raw cropped photo, and the
+    // treatment is applied as a delivery-time transformation to whichever image
+    // is currently the cover. See lib/product-images.ts.
 
     // Debug: Log the image dimensions being uploaded
     console.info("📐 Uploading image data:", {

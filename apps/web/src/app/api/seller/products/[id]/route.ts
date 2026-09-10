@@ -1,8 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, ProductCondition } from "@buttergolf/db";
-import { LISTING_PRICE_LIMITS, getListingPriceBoundsMessage } from "@buttergolf/constants";
+import {
+  LISTING_PRICE_LIMITS,
+  getListingPriceBoundsMessage,
+  getParcelPreset,
+  validateParcel,
+} from "@buttergolf/constants";
 import { getUserIdFromRequest } from "@/lib/auth";
 import { cloudinary, extractPublicId, isValidCloudinaryUrl } from "@/lib/cloudinary";
+import { mapSlidersToConditionEnum } from "@/lib/product-condition";
+
+/** Safety cap on how many image rows one request may touch. */
+const MAX_IMAGE_IDS = 20;
+
+/**
+ * Thrown inside the update transaction when publishing would leave the listing
+ * with no images, to roll it back. Distinguished from a genuine failure so the
+ * caller still gets a 400 rather than a 500.
+ */
+class PublishWithoutImagesError extends Error {
+  constructor() {
+    super("At least one image is required");
+    this.name = "PublishWithoutImagesError";
+  }
+}
+
+const SLIDER_LABELS = {
+  gripCondition: "Grip",
+  headCondition: "Head",
+  shaftCondition: "Shaft",
+} as const;
 
 /**
  * PATCH /api/seller/products/[id]
@@ -67,6 +94,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       "gripCondition",
       "headCondition",
       "shaftCondition",
+      "parcelPresetId",
+      "length",
+      "width",
+      "height",
+      "weight",
     ];
 
     const updateData: Record<string, unknown> = {};
@@ -92,6 +124,42 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }
     }
 
+    // Validate the component sliders before anything derives from them.
+    // Matches the range POST enforces; without it `gripCondition: 99` (or a
+    // string) would persist and skew the derived condition.
+    for (const field of ["gripCondition", "headCondition", "shaftCondition"] as const) {
+      if (updateData[field] === undefined) continue;
+
+      const value = updateData[field];
+      if (typeof value !== "number" || !Number.isFinite(value) || value < 1 || value > 10) {
+        return NextResponse.json(
+          { error: `${SLIDER_LABELS[field]} condition must be a number between 1 and 10` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Keep the legacy `condition` enum in step with the component sliders. The
+    // sell form only sends sliders, so without this an edited listing would
+    // keep whatever condition it was first created with.
+    if (updateData.condition === undefined) {
+      const grip =
+        (updateData.gripCondition as number | undefined) ?? existingProduct.gripCondition;
+      const head =
+        (updateData.headCondition as number | undefined) ?? existingProduct.headCondition;
+      const shaft =
+        (updateData.shaftCondition as number | undefined) ?? existingProduct.shaftCondition;
+
+      const slidersChanged =
+        updateData.gripCondition !== undefined ||
+        updateData.headCondition !== undefined ||
+        updateData.shaftCondition !== undefined;
+
+      if (slidersChanged && grip != null && head != null && shaft != null) {
+        updateData.condition = mapSlidersToConditionEnum(grip, head, shaft);
+      }
+    }
+
     // Validate price if provided
     if (updateData.price !== undefined) {
       const price = Number(updateData.price);
@@ -105,13 +173,119 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       updateData.price = price;
     }
 
+    // The image ids this request asks to delete, capped the same way the
+    // transaction caps them. Derived here so the publish guard below and the
+    // transaction agree on what is going away.
+    const requestedRemovalIds: string[] = Array.isArray(body.removedImageIds)
+      ? body.removedImageIds.slice(0, MAX_IMAGE_IDS).filter((id: unknown) => typeof id === "string")
+      : [];
+
+    // Publishing a draft (isDraft true → false) must satisfy the same minimums
+    // as creating a listing outright, so the sell form's publish path can't
+    // produce a live listing with no photo or no category.
+    const isPublishing = existingProduct.isDraft && updateData.isDraft === false;
+
+    if (isPublishing) {
+      // Count what the product will actually be left with once the transaction
+      // has run — not what the request happens to mention.
+      //
+      // When `images` is present it is the complete desired list, so count the
+      // slice that will be persisted; counting the whole array would let a
+      // request whose sole valid image sits past the cap publish with nothing
+      // stored. When it's absent, count the stored rows minus the ones this
+      // request is about to remove, or removing the last photo and publishing
+      // in one call would slip through.
+      const submittedImageCount = Array.isArray(body.images)
+        ? body.images
+            .slice(0, MAX_IMAGE_IDS)
+            .filter(
+              (img: unknown) =>
+                typeof (img as { url?: unknown })?.url === "string" &&
+                isValidCloudinaryUrl((img as { url: string }).url)
+            ).length
+        : await prisma.productImage.count({
+            where: {
+              productId,
+              ...(requestedRemovalIds.length > 0 && { id: { notIn: requestedRemovalIds } }),
+            },
+          });
+
+      if (submittedImageCount === 0) {
+        return NextResponse.json({ error: "At least one image is required" }, { status: 400 });
+      }
+
+      // Drafts are saved from any partial state, so publishing has to enforce
+      // the same minimums POST does — against the effective row (this request
+      // merged over what's already stored), not just the fields being sent.
+      const effective = { ...existingProduct, ...updateData };
+
+      const missing = (["title", "description", "categoryId"] as const).filter(
+        (field) => typeof effective[field] !== "string" || effective[field].trim().length === 0
+      );
+
+      if (missing.length > 0) {
+        return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      }
+
+      const effectivePrice = Number(effective.price);
+      if (
+        !Number.isFinite(effectivePrice) ||
+        effectivePrice < LISTING_PRICE_LIMITS.MIN ||
+        effectivePrice > LISTING_PRICE_LIMITS.MAX
+      ) {
+        return NextResponse.json({ error: getListingPriceBoundsMessage() }, { status: 400 });
+      }
+
+      // Shipping readiness, same as POST /api/products. Without these a draft
+      // could be published with no postage address and no parcel — the buyer
+      // pays, then label generation fails.
+      const sellerAddress = await prisma.address.findFirst({
+        where: { userId: user.id, isDefault: true },
+      });
+
+      if (!sellerAddress || sellerAddress.street1 === "Address pending") {
+        return NextResponse.json(
+          {
+            error: "Add your postage address before publishing a listing",
+            code: "SELLER_ADDRESS_REQUIRED",
+          },
+          { status: 400 }
+        );
+      }
+
+      const preset = getParcelPreset(effective.parcelPresetId as string | null);
+      const parcelErrors = validateParcel({
+        length: Number(effective.length) || preset?.length || 0,
+        width: Number(effective.width) || preset?.width || 0,
+        height: Number(effective.height) || preset?.height || 0,
+        weight: Number(effective.weight) || preset?.weight || 0,
+      });
+
+      if (parcelErrors.length > 0) {
+        return NextResponse.json(
+          { error: parcelErrors[0].message, code: "PARCEL_INVALID", errors: parcelErrors },
+          { status: 400 }
+        );
+      }
+    }
+
     // Handle image mutations + product update in a single transaction.
     // images and removedImageIds are processed separately from allowedFields
     // because they require multi-step logic (delete, create, reorder) rather
     // than a direct Prisma data assignment.
-    const MAX_IMAGE_IDS = 20; // safety cap
+
+    // Collected inside the transaction, acted on only after it commits — see below.
+    const urlsToCleanup: string[] = [];
 
     const updatedProduct = await prisma.$transaction(async (tx) => {
+      // Take a row lock on the product before touching its images. Anything
+      // else that mutates this product's images (this route concurrently, or
+      // DELETE /api/images/[id]) takes the same lock, so image removal and
+      // publication can't interleave. Without it, the zero-image check below is
+      // just a read: a concurrent delete could commit between the count and the
+      // update and leave a published listing with no photos.
+      await tx.$queryRaw`SELECT id FROM products WHERE id = ${productId} FOR UPDATE`;
+
       if (body.images || body.removedImageIds) {
         const existingImages = await tx.productImage.findMany({
           where: { productId },
@@ -127,8 +301,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
               .filter((id: unknown) => typeof id === "string" && existingIdSet.has(id as string))
           : [];
 
-        const urlsToCleanup: string[] = [];
-
         if (removedIds.length > 0) {
           const toDelete = existingImages.filter((img) => removedIds.includes(img.id));
           urlsToCleanup.push(...toDelete.map((img) => img.url));
@@ -139,10 +311,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
         // Sync images: create new ones and update sort order
         if (Array.isArray(body.images)) {
+          const submittedUrls = new Set<string>();
+
           for (let i = 0; i < Math.min(body.images.length, MAX_IMAGE_IDS); i++) {
             const img = body.images[i];
             if (!img?.url || typeof img.url !== "string") continue;
             if (!isValidCloudinaryUrl(img.url)) continue;
+
+            submittedUrls.add(img.url);
 
             if (existingUrlSet.has(img.url)) {
               const existing = existingImages.find((e) => e.url === img.url);
@@ -158,17 +334,35 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
               });
             }
           }
-        }
 
-        // Best-effort Cloudinary cleanup after DB ops succeed (fire-and-forget)
-        for (const cdnUrl of urlsToCleanup) {
-          const publicId = extractPublicId(cdnUrl);
-          if (publicId) {
-            cloudinary.uploader.destroy(publicId).catch((err) => {
-              // Orphaned CDN asset - log for later reconciliation, don't fail the request.
-              console.error("Failed to delete Cloudinary asset:", { publicId, err });
+          // `images` is the complete desired list, so anything still in the DB
+          // that wasn't submitted has been removed. The edit modal reports these
+          // via removedImageIds, but the autosaved sell form has no image IDs to
+          // report with — without this, deleting a photo mid-draft would leave
+          // the row behind and it would reappear on publish.
+          const stale = existingImages.filter(
+            (img) => !submittedUrls.has(img.url) && !removedIds.includes(img.id)
+          );
+
+          if (stale.length > 0) {
+            urlsToCleanup.push(...stale.map((img) => img.url));
+            await tx.productImage.deleteMany({
+              where: { id: { in: stale.map((img) => img.id) }, productId },
             });
           }
+        }
+      }
+
+      // Re-assert the "published listings have a photo" rule inside the
+      // transaction. The pre-flight check above gives the caller a clean 400,
+      // but it reads before this transaction opens — a concurrent PATCH
+      // removing the last image between the two would otherwise let this one
+      // commit a published product with none. Throwing here rolls the whole
+      // thing back.
+      if (isPublishing) {
+        const remainingImages = await tx.productImage.count({ where: { productId } });
+        if (remainingImages === 0) {
+          throw new PublishWithoutImagesError();
         }
       }
 
@@ -183,8 +377,28 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       });
     });
 
+    // Cloudinary cleanup runs only once the transaction has committed. Doing it
+    // inside would destroy assets that a later rollback leaves the DB still
+    // pointing at, turning a failed edit into permanently broken images.
+    // Best-effort: an orphaned asset is logged, never fails the request.
+    for (const cdnUrl of urlsToCleanup) {
+      const publicId = extractPublicId(cdnUrl);
+      if (publicId) {
+        cloudinary.uploader.destroy(publicId).catch((err) => {
+          console.error("Failed to delete Cloudinary asset:", { publicId, err });
+        });
+      }
+    }
+
     return NextResponse.json(updatedProduct);
   } catch (error) {
+    // Lost the race with a concurrent image removal — the transaction rolled
+    // back, so the listing is untouched. Report it as the validation failure it
+    // is rather than a server error.
+    if (error instanceof PublishWithoutImagesError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
     console.error("Error updating product:", error);
     return NextResponse.json({ error: "Failed to update product" }, { status: 500 });
   }

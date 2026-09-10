@@ -127,40 +127,45 @@ $3xl; // 64px
 
 ### Button
 
-A versatile button component with brand-consistent variants via `butterVariant`.
+A flat, cross-platform button with brand variants via `butterVariant`. Every variant shares one interaction model: same pill, same type, nothing moves; the fill shifts one tone on hover and one more on press. Hover, press and focus states compile to CSS on web.
 
 ```tsx
 import { Button } from '@buttergolf/ui'
 
-// Primary CTA (Spiced Clementine with drop shadow)
+// Primary CTA (Spiced Clementine fill)
 <Button butterVariant="primary" size="$5">
   Sell now
 </Button>
 
-// Secondary action (light grey with drop shadow)
-<Button butterVariant="secondary" size="$4">
+// Secondary action (soft neutral tonal fill, no border)
+<Button butterVariant="secondary" size="$5">
   Shop now
 </Button>
 
-// Icon button (neutral flat, orange on hover/active, no shadow)
-<Button butterVariant="icon" circular width={44} height={44} padding={0}>
-  <Heart size={22} />
+// Ghost (text only; hover takes the secondary's resting fill)
+<Button butterVariant="ghost" size="$4">Log in</Button>
+
+// Icon-only (outlined circle)
+<Button butterVariant="icon" circular size={44} aria-label="Save to wishlist">
+  <Heart size={20} />
 </Button>
 
-// Ghost / chromeless
-<Button chromeless size="$4">Cancel</Button>
+// Real link: renders an <a>, keeps link semantics
+<Button tag="a" href="/sell" butterVariant="primary" icon={Plus}>Sell now</Button>
 
 // Full width
-<Button butterVariant="primary" size="$5" width="100%">Full Width</Button>
+<Button butterVariant="primary" size="$5" width="100%">Full width</Button>
 ```
 
 **Props**:
 
-- `butterVariant`: `'primary' | 'secondary' | 'icon'` - Button style (default: 'primary')
-- `size`: Numeric tokens `$1` – `$16` - Controls height and padding
-- `circular`: `boolean` - Makes button circular (useful with `icon` variant)
-- `chromeless`: Removes all visual styling for ghost buttons
-- All standard Tamagui Button props are supported
+- `butterVariant`: `'primary' | 'secondary' | 'ghost' | 'icon'` - Button style (default: `primary`; `chromeless` / `unstyled` buttons get no variant unless one is passed)
+- `size`: `$1` 28px · `$2` 32px · `$3` 36px · `$4` 40px (default) · `$5` 48px · `$6` 56px, or a number in px - Controls height, padding and label size
+- `circular`: `boolean` - Square, fully rounded, sized from `size`
+- `icon` / `iconAfter`: Icon component rendered before / after the label, coloured to match the variant
+- `chromeless`: Transparent, borderless; `unstyled`: no default styles at all (pressable cards)
+- `tag="a"` + `href`: renders a real anchor. On web a `<button>` defaults to `type="button"`; pass `type="submit"` for form submission
+- All standard Tamagui View props (`onPress`, `disabled`, style props, media queries) are supported
 
 ### Typography
 

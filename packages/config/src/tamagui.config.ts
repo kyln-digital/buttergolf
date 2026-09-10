@@ -408,6 +408,16 @@ const lightTheme = {
   controlSecondaryBgPress: brandColors.cloudMistPress,
   controlSecondaryText: brandColors.ironstone,
 
+  // Button surfaces - one tonal ladder shared by secondary (tonal) and ghost (text)
+  // variants: ghost hover == secondary rest, so the family reads as steps of one system.
+  buttonSecondaryBg: brandColors.cloudMist,
+  buttonSecondaryBgHover: brandColors.cloudMistHover,
+  buttonSecondaryBgPress: brandColors.cloudMistPress,
+  buttonSecondaryBorder: brandColors.cloudMistPress,
+  buttonSecondaryText: brandColors.ironstone,
+  buttonGhostBgHover: brandColors.cloudMist,
+  buttonGhostBgPress: brandColors.cloudMistHover,
+
   // Text semantic colors
   text: brandColors.ironstone,
   textSecondary: brandColors.slateSmoke,
@@ -503,6 +513,15 @@ const darkTheme = {
   controlSecondaryBgHover: brandColors.cloudMistHover,
   controlSecondaryBgPress: brandColors.cloudMistPress,
   controlSecondaryText: brandColors.ironstone,
+
+  // Button surfaces on dark - same tonal ladder using light overlays
+  buttonSecondaryBg: brandColors.overlayLight10,
+  buttonSecondaryBgHover: brandColors.overlayLight20,
+  buttonSecondaryBgPress: brandColors.overlayLight30,
+  buttonSecondaryBorder: brandColors.overlayLight30,
+  buttonSecondaryText: brandColors.pureWhite,
+  buttonGhostBgHover: brandColors.overlayLight10,
+  buttonGhostBgPress: brandColors.overlayLight20,
 
   // Text semantic colors - override for dark mode
   text: brandColors.pureWhite,

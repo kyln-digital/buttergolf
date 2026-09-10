@@ -18,6 +18,7 @@ interface SearchParams {
   brand?: string | string[];
   sort?: string;
   page?: string;
+  q?: string;
 }
 
 interface Props {
@@ -37,6 +38,7 @@ async function getListings(searchParams: SearchParams) {
     minPrice: searchParams.minPrice ? Number.parseFloat(searchParams.minPrice) : undefined,
     maxPrice: searchParams.maxPrice ? Number.parseFloat(searchParams.maxPrice) : undefined,
     brandIds: toParamArray(searchParams.brand),
+    query: searchParams.q,
   });
 
   const orderBy = getListingOrderBy(searchParams.sort);

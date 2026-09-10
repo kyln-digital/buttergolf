@@ -1,5 +1,6 @@
 import { Prisma, prisma, type ProductCondition } from "@buttergolf/db";
 import type { ProductCardData } from "@buttergolf/app";
+import { resolveCoverUrl } from "@/lib/product-images";
 
 /**
  * Shared listing-query building blocks used by /listings, /category/[slug]
@@ -15,6 +16,8 @@ export interface ListingFilterParams {
   maxPrice?: number;
   /** Brand *names* from the listings UI `brand` query param (not CUID ids). */
   brandIds?: string[];
+  /** Free-text search (title, description, model, brand name). */
+  query?: string;
 }
 
 /** Normalize a string-or-array query param to an array. */
@@ -48,6 +51,16 @@ export function buildListingWhere(filters: ListingFilterParams): Prisma.ProductW
   if (filters.brandIds && filters.brandIds.length > 0) {
     // UI / BrandFilter pass brand names; Brand.id is a CUID.
     where.brand = { name: { in: filters.brandIds } };
+  }
+  const searchTerm = filters.query?.trim();
+  if (searchTerm) {
+    where.OR = [
+      { title: { contains: searchTerm, mode: "insensitive" } },
+      { description: { contains: searchTerm, mode: "insensitive" } },
+      { model: { contains: searchTerm, mode: "insensitive" } },
+      { brand: { name: { contains: searchTerm, mode: "insensitive" } } },
+      { category: { name: { contains: searchTerm, mode: "insensitive" } } },
+    ];
   }
 
   return where;
@@ -106,7 +119,7 @@ export function toProductCardData(
     title: product.title,
     price: product.price,
     condition: product.condition,
-    imageUrl: product.images[0]?.url || "/placeholder-product.jpg",
+    imageUrl: resolveCoverUrl(product.images),
     category: product.category.name,
     seller: {
       id: product.user.id,
