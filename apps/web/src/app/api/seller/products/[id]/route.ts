@@ -5,6 +5,9 @@ import { getUserIdFromRequest } from "@/lib/auth";
 import { cloudinary, extractPublicId, isValidCloudinaryUrl } from "@/lib/cloudinary";
 import { mapSlidersToConditionEnum } from "@/lib/product-condition";
 
+/** Safety cap on how many image rows one request may touch. */
+const MAX_IMAGE_IDS = 20;
+
 const SLIDER_LABELS = {
   gripCondition: "Grip",
   headCondition: "Head",
@@ -154,12 +157,17 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const isPublishing = existingProduct.isDraft && updateData.isDraft === false;
 
     if (isPublishing) {
+      // Count only the slice the transaction below will actually persist.
+      // Counting the whole array would let a request whose sole valid image sits
+      // past the cap pass this check and then publish with nothing stored.
       const submittedImageCount = Array.isArray(body.images)
-        ? body.images.filter(
-            (img: unknown) =>
-              typeof (img as { url?: unknown })?.url === "string" &&
-              isValidCloudinaryUrl((img as { url: string }).url)
-          ).length
+        ? body.images
+            .slice(0, MAX_IMAGE_IDS)
+            .filter(
+              (img: unknown) =>
+                typeof (img as { url?: unknown })?.url === "string" &&
+                isValidCloudinaryUrl((img as { url: string }).url)
+            ).length
         : await prisma.productImage.count({ where: { productId } });
 
       if (submittedImageCount === 0) {
@@ -193,7 +201,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     // images and removedImageIds are processed separately from allowedFields
     // because they require multi-step logic (delete, create, reorder) rather
     // than a direct Prisma data assignment.
-    const MAX_IMAGE_IDS = 20; // safety cap
 
     // Collected inside the transaction, acted on only after it commits — see below.
     const urlsToCleanup: string[] = [];

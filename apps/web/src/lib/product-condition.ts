@@ -1,4 +1,10 @@
-import { ProductCondition } from "@buttergolf/db";
+// Imported from the specific module rather than the package barrel: this file
+// is used by API routes, and the barrel pulls in React Native components.
+import {
+  calculateAverageCondition,
+  mapConditionToEnum,
+} from "@buttergolf/app/src/features/sell/types";
+import type { ProductCondition } from "@buttergolf/db";
 
 /** Default rating used when a seller hasn't moved a condition slider. */
 export const DEFAULT_COMPONENT_CONDITION = 7;
@@ -8,19 +14,18 @@ export const DEFAULT_COMPONENT_CONDITION = 7;
  * single `ProductCondition` enum kept for backwards compatibility with older
  * listings and the browse-page filters.
  *
+ * Delegates to the shared seller-flow helpers so the stored enum can't disagree
+ * with what the sell form and product page show. Rounding matters: sliders of
+ * 4/5/5 average to 4.67, which classifying raw would store as FAIR while both
+ * UIs display the rounded 5 as GOOD.
+ *
  * Shared by the create (POST /api/products) and update
- * (PATCH /api/seller/products/[id]) paths so an edited listing can't end up
- * with a condition that contradicts its own sliders.
+ * (PATCH /api/seller/products/[id]) paths.
  */
 export function mapSlidersToConditionEnum(
   grip: number,
   head: number,
   shaft: number
 ): ProductCondition {
-  const avg = (grip + head + shaft) / 3;
-  if (avg >= 9.5) return ProductCondition.LIKE_NEW;
-  if (avg >= 8) return ProductCondition.EXCELLENT;
-  if (avg >= 6) return ProductCondition.GOOD;
-  if (avg >= 4) return ProductCondition.FAIR;
-  return ProductCondition.POOR;
+  return mapConditionToEnum(calculateAverageCondition(grip, head, shaft)) as ProductCondition;
 }

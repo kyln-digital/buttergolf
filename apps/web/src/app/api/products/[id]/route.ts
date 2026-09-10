@@ -57,8 +57,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    // Only count public listing views — draft resume must not inflate metrics.
-    if (!product.isDraft) {
+    // Only count public listing views — draft resume must not inflate metrics,
+    // and neither must the owner. The edit form (/sell/[id]/edit) hydrates
+    // through this endpoint, so without the owner check a seller opening or
+    // reloading their own edit page would inflate their buyer-view count.
+    const isOwner = ownerUserId !== null && ownerUserId === product.userId;
+
+    if (!product.isDraft && !isOwner) {
       prisma.product
         .update({
           where: { id },

@@ -391,14 +391,24 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   useEffect(() => {
     if (!loadProductId) return;
 
+    // Next's router reuses this component between /sell/[id]/edit routes, so
+    // the id can change under a mounted form. Close the autosave gate again
+    // until the new record has landed: the ref below already points at the new
+    // listing, and the old form data is still on screen, so an edit made during
+    // the fetch would otherwise autosave the previous listing into this one.
+    let cancelled = false;
+    setIsExistingRecordLoaded(false);
     savedDraftIdRef.current = loadProductId;
 
     const loadDraft = async () => {
       try {
         const response = await fetch(`/api/products/${loadProductId}`);
-        if (!response.ok) return;
+        // A response for an id we've since navigated away from must not be
+        // applied over the newer one.
+        if (cancelled || !response.ok) return;
 
         const product = await response.json();
+        if (cancelled) return;
 
         const loaded: FormData = {
           title: product.title || "",
@@ -435,6 +445,10 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     };
 
     void loadDraft();
+
+    return () => {
+      cancelled = true;
+    };
   }, [loadProductId, setFormData]);
 
   // Helper function to singularize category names
