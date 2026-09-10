@@ -145,6 +145,10 @@ const HelperText = ({ children }: { children: React.ReactNode }) => (
 
 const SELL_DRAFT_STORAGE_KEY = "buttergolf-sell-draft-v1";
 
+/** Shown when a save is attempted before the record being edited has loaded. */
+const RECORD_NOT_READY_MESSAGE =
+  "Still loading this listing. Give it a moment and try again — or reload the page if this persists.";
+
 const EMPTY_FORM_DATA: FormData = {
   title: "",
   description: "",
@@ -256,7 +260,9 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   // the first autosave. A ref rather than state because submit needs the id the
   // moment an autosave assigns it — a state update would not be visible to the
   // closure that is already running.
-  const savedDraftIdRef = useRef<string | null>(loadProductId ?? null);
+  // Starts null even when an id was passed in: the record's data isn't on
+  // screen yet, so there is nothing safe to write to until the load lands.
+  const savedDraftIdRef = useRef<string | null>(null);
   // Every autosave still in flight. A set rather than a single promise because
   // useAutoSave can start a second save while the first is still pending —
   // tracking only the newest would let an older PATCH land after the submit,
@@ -270,9 +276,11 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       await Promise.allSettled([...inFlightSavesRef.current]);
     }
   }, []);
-  // Gates autosave until an existing draft/listing has been fetched. A fresh
+  // Gates saving until an existing draft/listing has been fetched. A fresh
   // listing has nothing to load, so it starts ready.
   const [isExistingRecordLoaded, setIsExistingRecordLoaded] = useState(!loadProductId);
+  /** False while an existing record is still loading, or failed to load. */
+  const isRecordReadyToSave = !loadProductId || isExistingRecordLoaded;
   // Stable requestId for first-create idempotency until we get a real draft ID.
   const draftRequestIdRef = useRef<string>(uuidv4());
 
@@ -392,13 +400,14 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     if (!loadProductId) return;
 
     // Next's router reuses this component between /sell/[id]/edit routes, so
-    // the id can change under a mounted form. Close the autosave gate again
-    // until the new record has landed: the ref below already points at the new
-    // listing, and the old form data is still on screen, so an edit made during
-    // the fetch would otherwise autosave the previous listing into this one.
+    // the id can change under a mounted form. Until the new record has landed,
+    // the form still shows the *previous* listing's data — so there is no safe
+    // write target: pointing the ref at the new id would let a save put the old
+    // listing's data into the new one. Clear the target and close the gate, and
+    // only adopt the new id once its data is actually on screen.
     let cancelled = false;
     setIsExistingRecordLoaded(false);
-    savedDraftIdRef.current = loadProductId;
+    savedDraftIdRef.current = null;
 
     const loadDraft = async () => {
       try {
@@ -437,6 +446,8 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
         }
 
         setFormData(loaded);
+        // Adopt the write target only now that this record's data is on screen.
+        savedDraftIdRef.current = loadProductId;
         setIsExistingRecordLoaded(true);
       } catch {
         // If load fails, start with whatever localStorage has. Autosave stays
@@ -634,6 +645,15 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       console.info("[SellForm] Duplicate submission blocked by ref guard");
       return;
     }
+
+    // Refuse to write while the record being edited is still loading (or failed
+    // to load): the form is showing either a blank form or the previous
+    // listing's data, so there is no correct target for this save.
+    if (!isRecordReadyToSave) {
+      setError(RECORD_NOT_READY_MESSAGE);
+      return;
+    }
+
     isSubmittingRef.current = true;
 
     // Generate unique request ID for server-side idempotency
@@ -770,6 +790,14 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       console.info("[SellForm] Duplicate draft save blocked by ref guard");
       return;
     }
+
+    // Same reasoning as handleSubmit: no safe write target until the record
+    // being edited is on screen.
+    if (!isRecordReadyToSave) {
+      setError(RECORD_NOT_READY_MESSAGE);
+      return;
+    }
+
     isSubmittingRef.current = true;
 
     // Generate unique request ID for server-side idempotency
@@ -1434,12 +1462,22 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                         Cancel
                       </Button>
                     ) : (
-                      <Button size="$5" onPress={handleSaveDraft} disabled={loading} flex={1}>
+                      <Button
+                        size="$5"
+                        onPress={handleSaveDraft}
+                        disabled={loading || !isRecordReadyToSave}
+                        flex={1}
+                      >
                         {loading ? "Saving..." : "Save draft"}
                       </Button>
                     )}
                     {/* Use type="submit" for native form submission only - no onPress to prevent dual submission */}
-                    <Button size="$5" disabled={loading} type="submit" flex={1}>
+                    <Button
+                      size="$5"
+                      disabled={loading || !isRecordReadyToSave}
+                      type="submit"
+                      flex={1}
+                    >
                       {isEditingListing
                         ? loading
                           ? "Saving..."
