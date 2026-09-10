@@ -132,7 +132,14 @@ export function selectRateForOption<T extends SelectableRate>(
       const bCarrier = rankCarrierPreference(option, b.carrier_friendly_name ?? "");
       if (aCarrier !== bCarrier) return aCarrier - bCarrier;
 
-      return a.shipping_amount.amount - b.shipping_amount.amount;
+      if (a.shipping_amount.amount !== b.shipping_amount.amount) {
+        return a.shipping_amount.amount - b.shipping_amount.amount;
+      }
+
+      // Everything above tied. Order by service name so the same quote always
+      // buys the same label — an arbitrary pick makes label purchase
+      // non-reproducible and impossible to reason about after the fact.
+      return (a.service_type ?? "").localeCompare(b.service_type ?? "");
     })[0] ?? null
   );
 }

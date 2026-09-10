@@ -110,6 +110,23 @@ describe("selectRateForOption", () => {
 
     expect(selectRateForOption(rates, STANDARD)).not.toBeNull();
   });
+
+  it("is deterministic when every rate ties", () => {
+    // The ShipEngine sandbox dummy carrier returns identical price and speed
+    // for a dozen services. Without a final tiebreak the chosen label depends
+    // on API ordering, so the same quote could buy a different service twice.
+    const rates = [
+      rate("Dummy Module", "Standard", 21.37, 1),
+      rate("Dummy Module", "Dangerous Goods Service", 21.37, 1),
+      rate("Dummy Module", "Saturday", 21.37, 1),
+    ];
+
+    const first = selectRateForOption(rates, NEXT_DAY);
+    const reversed = selectRateForOption([...rates].reverse(), NEXT_DAY);
+
+    expect(first?.service_type).toBe(reversed?.service_type);
+    expect(first?.service_type).toBe("Dangerous Goods Service");
+  });
 });
 
 describe("rankCarrierPreference", () => {

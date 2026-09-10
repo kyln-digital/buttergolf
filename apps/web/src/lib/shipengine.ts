@@ -783,7 +783,12 @@ export async function generateShippingLabel(params: {
 
   // The buyer's shipping payment funds this label. Overspend is the platform's
   // loss, so it needs to be visible rather than silently absorbed.
-  if (selectedRate.shipping_amount.amount > order.shippingCost) {
+  // The buyer's shipping payment funds this label, so overspend is the
+  // platform's loss and needs to be visible. Only compare when the carrier
+  // actually quoted in GBP — the sandbox dummy carrier quotes EUR/USD, and a
+  // cross-currency comparison would be noise rather than a signal.
+  const quotedCurrency = selectedRate.shipping_amount.currency?.toLowerCase();
+  if (quotedCurrency === "gbp" && selectedRate.shipping_amount.amount > order.shippingCost) {
     console.error("Label costs more than the buyer paid for shipping", {
       orderId,
       paidGBP: order.shippingCost,
@@ -793,20 +798,24 @@ export async function generateShippingLabel(params: {
     });
   }
 
-  // Create the label using the selected rate.
-  // ShipEngine always returns PDF, PNG, and ZPL URLs in label_download regardless
-  // of label_format. label_format only controls which URL label_download.href points to.
-  const labelRequest = {
-    rate_id: selectedRate.rate_id,
-    label_format: "pdf",
-    label_layout: "4x6",
-    label_download_type: "url",
-  };
-
+  // Buy the label from the rate we selected.
+  //
+  // This MUST be POST /v1/labels/rates/{rate_id}. Posting `{ rate_id }` to
+  // /v1/labels (as this did) is rejected with "shipment is required" — that
+  // endpoint takes a full shipment body, not a rate reference. Every label
+  // purchase failed on this before it ever reached a carrier.
+  //
+  // ShipEngine always returns PDF, PNG and ZPL URLs in label_download
+  // regardless of label_format; label_format only decides which one
+  // label_download.href points at.
   const labelResponse = await shipEngineRequest<ShipEngineLabelResponse>(
-    "/v1/labels",
+    `/v1/labels/rates/${encodeURIComponent(selectedRate.rate_id)}`,
     "POST",
-    labelRequest
+    {
+      label_format: "pdf",
+      label_layout: "4x6",
+      label_download_type: "url",
+    }
   );
 
   // Build carrier-specific tracking URL
@@ -828,6 +837,7 @@ export async function generateShippingLabel(params: {
       trackingCode: labelResponse.tracking_number,
       trackingUrl: trackingUrl,
       carrier: selectedRate.carrier_friendly_name,
+      carrierCode: labelResponse.carrier_code,
       service: selectedRate.service_type,
       labelGeneratedAt: new Date(),
       labelAttemptedAt: new Date(),
@@ -949,8 +959,19 @@ export async function getOrderTracking(orderId: string): Promise<{
   }
 
   try {
-    // Map carrier name to ShipEngine carrier code
-    const carrierCode = SHIPENGINE_CARRIER_CODES[order.carrier] || "stamps_com";
+    // Prefer the carrier_code ShipEngine gave us when the label was bought.
+    // The name-to-code map is a legacy fallback for orders predating that, and
+    // its old default of "stamps_com" made the tracking API 400 on every UK
+    // carrier it didn't know about.
+    const carrierCode = order.carrierCode || SHIPENGINE_CARRIER_CODES[order.carrier];
+
+    if (!carrierCode) {
+      console.warn("No ShipEngine carrier code for order; cannot fetch tracking", {
+        orderId,
+        carrier: order.carrier,
+      });
+      return null;
+    }
 
     const response = await shipEngineRequest<{
       tracking_number: string;

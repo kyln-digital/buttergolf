@@ -15,3 +15,8 @@ ALTER TABLE "orders" ADD COLUMN "shippingOptionId" TEXT,
 -- payment, so a failure was previously only a console.warn in a lambda log.
 ALTER TABLE "orders" ADD COLUMN "labelError" TEXT,
                      ADD COLUMN "labelAttemptedAt" TIMESTAMP(3);
+
+-- AlterTable
+-- ShipEngine's carrier_code from the purchased label. The tracking API rejects
+-- a code derived from the carrier's display name (HTTP 400).
+ALTER TABLE "orders" ADD COLUMN "carrierCode" TEXT;
