@@ -103,7 +103,7 @@ These docs are still useful — OpenWiki summarizes and links to them rather tha
 - **Design tokens only** — use semantic tokens (`$primary`, `$text`, `$border`, `$4` for spacing). Never use raw hex values.
 - **Use `<Row>` / `<Column>`** from `@buttergolf/ui` (shims over XStack/YStack)
 - **Solito navigation, not Expo Router** — routes defined once in `packages/app/src/navigation/routes.ts`
-- **Release model**: `main` = integration (preview deploys only); `production` = release branch (Vercel Production). Promotion is explicit and human-gated.
+- **Release model**: Vercel deploys `main` straight to production; PR branches get preview deploys. Merging to `main` is the release decision, and migrations are applied separately from the build.
 
 ## Requirements
 
