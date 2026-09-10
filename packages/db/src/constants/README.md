@@ -69,7 +69,14 @@ export async function GET(request: Request) {
 3. The entry will automatically appear in all dropdowns and filters
 
 Both commands read `DATABASE_URL` from `packages/db/.env`, so point that at the intended
-environment first (`vercel env pull packages/db/.env --environment=production`).
+environment first:
+
+```bash
+vercel env pull packages/db/.env --environment=production
+```
+
+An exported `DATABASE_URL` takes precedence over that file, so check your shell if a seed
+lands somewhere unexpected.
 
 ## Category Properties
 
