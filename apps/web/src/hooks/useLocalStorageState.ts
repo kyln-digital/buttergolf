@@ -28,6 +28,10 @@ export function useLocalStorageState<T>(
 
   const [isHydrated, setIsHydrated] = useState(false);
   const [state, setState] = useState<T>(defaultValue);
+  // Captured once so the hydration effect can fall back to it without callers
+  // having to memoise an inline default. The default is a constant for every
+  // caller, so there is nothing to keep in sync.
+  const defaultValueRef = useRef(defaultValue);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Hydrate from localStorage on mount
@@ -36,7 +40,13 @@ export function useLocalStorageState<T>(
 
     try {
       const raw = localStorage.getItem(key);
-      if (raw) {
+      if (!raw) {
+        // The key can change while mounted (the sell form switches records).
+        // Without this the previous key's value would stay on screen and be
+        // saved under the new one.
+
+        setState(defaultValueRef.current);
+      } else {
         const envelope: { value: T; _updatedAt: number; _version?: number } = JSON.parse(raw);
 
         // Discard if schema version changed
@@ -45,7 +55,6 @@ export function useLocalStorageState<T>(
         } else if (Date.now() - envelope._updatedAt > maxAgeMs) {
           localStorage.removeItem(key);
         } else {
-          // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: hydrating from localStorage on mount
           setState(envelope.value);
         }
       }

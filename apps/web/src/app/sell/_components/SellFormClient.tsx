@@ -262,11 +262,19 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   const titleManuallyOverriddenRef = useRef(false);
 
   // --- Persisted form state (localStorage) ---
-  // Editing a live listing gets its own key so it can't clobber (or be
-  // pre-filled from) an unrelated new-listing draft the seller has on the go.
-  const storageKey = isEditingListing
+  // One key per record. Sharing a key across records is not just untidy: the
+  // hook syncs across tabs, so two tabs resuming *different* drafts would push
+  // each other's fields into one another and then autosave them to the wrong
+  // row. The generation machinery can't catch that — from each tab's point of
+  // view the record never changed — so the keys have to be distinct.
+  //
+  // The bare key stays reserved for a brand-new listing, which is what the
+  // recovery banner offers to restore.
+  const storageKey = editProductId
     ? `${SELL_DRAFT_STORAGE_KEY}-edit-${editProductId}`
-    : SELL_DRAFT_STORAGE_KEY;
+    : draftId
+      ? `${SELL_DRAFT_STORAGE_KEY}-draft-${draftId}`
+      : SELL_DRAFT_STORAGE_KEY;
 
   const [formData, setFormData, { isHydrated, clear: clearLocalDraft }] =
     useLocalStorageState<FormData>(storageKey, EMPTY_FORM_DATA, { debounceMs: 1000 });
@@ -465,19 +473,16 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     setUserAddedText("");
 
     if (!currentRouteId) {
-      // useLocalStorageState only replaces in-memory state when the new key has
-      // something stored, so without this the previous listing's fields and
-      // photos stay on screen — and a blank form is immediately saveable, so
-      // autosave would create a fresh draft duplicating it.
-      setFormData(EMPTY_FORM_DATA);
-      // The blank form belongs to the generation just created (applyRecordEvent
-      // updates the ref synchronously).
+      // The form is now the blank one for the generation just created
+      // (applyRecordEvent updates the ref synchronously). Clearing the fields
+      // themselves is useLocalStorageState's job: the key changed, so it either
+      // hydrates whatever the new key holds or resets to the default.
       formDataGenerationRef.current = recordRef.current.generation;
     }
     // For a routed record the form still holds the *previous* record's data
     // until the load lands, so formDataGenerationRef deliberately stays behind —
     // any autosave of it is skipped rather than written to the new row.
-  }, [loadProductId, setFormData, applyRecordEvent]);
+  }, [loadProductId, applyRecordEvent]);
 
   // --- Loading the routed record ---
   // Driven by the state machine rather than by the route directly: it runs
