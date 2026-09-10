@@ -9,6 +9,7 @@ import { ConnectAccountOnboarding, ConnectComponentsProvider } from "@stripe/rea
 import { loadConnectAndInitialize } from "@stripe/connect-js";
 import type { StepChange, StripeConnectInstance } from "@stripe/connect-js";
 import { PhoneCollectionStep } from "./PhoneCollectionStep";
+import { useLinkPress } from "@/hooks/useLinkPress";
 
 interface SellerStatus {
   hasAccount: boolean;
@@ -48,6 +49,7 @@ interface SellOnboardingGateProps {
  */
 export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGateProps) {
   const router = useRouter();
+  const linkPress = useLinkPress();
   const [status, setStatus] = useState<SellerStatus>(initialStatus);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -376,7 +378,13 @@ export function SellOnboardingGate({ initialStatus, children }: SellOnboardingGa
         {/* Help text */}
         <Text size="$3" color="$textSecondary" textAlign="center">
           Having trouble?{" "}
-          <Text size="$3" color="$primary" tag="a" {...{ href: "/help-centre" }}>
+          <Text
+            size="$3"
+            color="$primary"
+            tag="a"
+            {...{ href: "/help-centre" }}
+            onPress={linkPress("/help-centre")}
+          >
             Contact support
           </Text>
         </Text>
