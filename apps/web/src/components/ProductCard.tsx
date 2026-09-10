@@ -6,7 +6,7 @@ import { useFavouriteToggle } from "@/hooks/useFavouriteToggle";
 import { useLinkPress } from "@/hooks/useLinkPress";
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, Text, View } from "@buttergolf/ui";
 
 export interface ProductCardProps {
@@ -23,14 +23,24 @@ export function ProductCard({ product }: ProductCardProps) {
   const linkPress = useLinkPress();
   const { isFavourited, toggleFavourite } = useFavouriteToggle(product.id);
   const [showAuthMessage, setShowAuthMessage] = useState(false);
+  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const href = `/products/${product.id}`;
+
+  // Never let a pending sign-in redirect fire after the card has gone away.
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
+    };
+  }, []);
 
   const handleFavourite = async () => {
     // Require authentication
     if (!isSignedIn) {
       setShowAuthMessage(true);
-      // Redirect to sign-in after 1 second
-      setTimeout(() => {
+      // Redirect to sign-in after 1 second (one timer at a time)
+      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
+      redirectTimerRef.current = setTimeout(() => {
+        redirectTimerRef.current = null;
         router.push(`/sign-in?redirect_url=${encodeURIComponent(globalThis.location.pathname)}`);
       }, 1000);
       return;
