@@ -287,6 +287,13 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
    */
   const [loadedRecordId, setLoadedRecordId] = useState<string | null>(null);
   const [recordLoadFailed, setRecordLoadFailed] = useState(false);
+  /**
+   * Bumped every time the form switches records. In-flight work captures it and
+   * re-checks before mutating record-scoped state, so a response that lands
+   * after the form has moved on is discarded rather than applied to the wrong
+   * listing.
+   */
+  const recordGenerationRef = useRef(0);
   /** True when the data on screen belongs to the record we'd be writing to. */
   const isRecordReadyToSave = (loadProductId ?? null) === loadedRecordId;
   /** An existing record is being fetched and its data isn't on screen yet. */
@@ -308,6 +315,11 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
       const parsedPrice = Number.parseFloat(data.price);
       const safePrice = Number.isFinite(parsedPrice) ? parsedPrice : 0;
+
+      // Which record this save is for. Compared again before adopting a
+      // created row below, so a response that lands after the form has moved on
+      // can't retarget it.
+      const generation = recordGenerationRef.current;
 
       // Callers that awaited something first pass the target they captured
       // before that await, so a navigation mid-wait can't redirect the write.
@@ -366,7 +378,15 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
         if (response.ok) {
           const product = await response.json();
-          savedDraftIdRef.current = product.id;
+
+          // Only adopt the newly created row if the form is still on the record
+          // this save started for. A POST from a fresh /sell form can resolve
+          // after the user has navigated to ?draftId=B; assigning here
+          // unconditionally would point the ref back at the old row, and B's
+          // next save would PATCH it with B's data.
+          if (recordGenerationRef.current === generation) {
+            savedDraftIdRef.current = product.id;
+          }
           return "saved";
         }
         return "error";
@@ -409,6 +429,13 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
   // --- Load an existing draft or listing from the DB when an id is provided ---
   useEffect(() => {
+    // Switching records invalidates anything already in flight for the old one.
+    recordGenerationRef.current += 1;
+    // Title provenance and the user's manual additions belong to the record
+    // that was on screen, not the one arriving.
+    titleManuallyOverriddenRef.current = false;
+    setUserAddedText("");
+
     if (!loadProductId) {
       // Navigated from a draft/edit route back to a blank form (e.g.
       // /sell?draftId=… → /sell). Both record-scoped refs have to be dropped:

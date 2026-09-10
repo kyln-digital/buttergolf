@@ -8,6 +8,18 @@ import { mapSlidersToConditionEnum } from "@/lib/product-condition";
 /** Safety cap on how many image rows one request may touch. */
 const MAX_IMAGE_IDS = 20;
 
+/**
+ * Thrown inside the update transaction when publishing would leave the listing
+ * with no images, to roll it back. Distinguished from a genuine failure so the
+ * caller still gets a 400 rather than a 500.
+ */
+class PublishWithoutImagesError extends Error {
+  constructor() {
+    super("At least one image is required");
+    this.name = "PublishWithoutImagesError";
+  }
+}
+
 const SLIDER_LABELS = {
   gripCondition: "Grip",
   headCondition: "Head",
@@ -291,6 +303,19 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         }
       }
 
+      // Re-assert the "published listings have a photo" rule inside the
+      // transaction. The pre-flight check above gives the caller a clean 400,
+      // but it reads before this transaction opens — a concurrent PATCH
+      // removing the last image between the two would otherwise let this one
+      // commit a published product with none. Throwing here rolls the whole
+      // thing back.
+      if (isPublishing) {
+        const remainingImages = await tx.productImage.count({ where: { productId } });
+        if (remainingImages === 0) {
+          throw new PublishWithoutImagesError();
+        }
+      }
+
       return tx.product.update({
         where: { id: productId },
         data: updateData,
@@ -317,6 +342,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     return NextResponse.json(updatedProduct);
   } catch (error) {
+    // Lost the race with a concurrent image removal — the transaction rolled
+    // back, so the listing is untouched. Report it as the validation failure it
+    // is rather than a server error.
+    if (error instanceof PublishWithoutImagesError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
     console.error("Error updating product:", error);
     return NextResponse.json({ error: "Failed to update product" }, { status: 500 });
   }
