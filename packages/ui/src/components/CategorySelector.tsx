@@ -17,8 +17,11 @@ interface CategorySelectorProps {
   /** href of the active category ("" when none) */
   activeCategory: string;
   onCategoryChange?: (href: string) => void;
-  /** Optional custom renderer; receives active state */
-  renderItem?: (category: Category, isActive: boolean) => ReactNode;
+  /**
+   * Optional custom renderer. `isHovered` is kept for API compatibility but is
+   * always false: hover is now handled in CSS by the item itself.
+   */
+  renderItem?: (category: Category, isActive: boolean, isHovered: boolean) => ReactNode;
 }
 
 interface PressLikeEvent {
@@ -119,7 +122,7 @@ export function CategorySelector({
             style={anchorReset}
           >
             {renderItem ? (
-              renderItem(category, isActive)
+              renderItem(category, isActive, false)
             ) : (
               <Text
                 size="$4"
