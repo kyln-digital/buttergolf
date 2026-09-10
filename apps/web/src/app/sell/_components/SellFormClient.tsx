@@ -481,6 +481,12 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     let cancelled = false;
 
     savedDraftIdRef.current = null;
+    // Clear the loaded marker as well as the target. Leaving it set makes the
+    // readiness check pass again if the seller returns to a record before the
+    // fetch they left lands (A → B → A): the ids match, but the write target
+    // was cleared on the way through B, so a save would create a duplicate
+    // draft instead of updating A.
+    setLoadedRecordId(null);
     setRecordLoadFailed(false);
 
     const loadDraft = async () => {
