@@ -1,59 +1,57 @@
 import { describe, it, expect } from "vitest";
+import {
+  sellStorageKey,
+  NEW_LISTING_STORAGE_KEY,
+} from "../apps/web/src/app/sell/_lib/sell-storage-key";
 
 /**
- * The sell form persists its in-progress state to localStorage, and the hook
- * behind it syncs across tabs. Two records sharing a key therefore means two
- * tabs pushing each other's fields into one another — and then autosaving them
- * to the wrong row.
- *
- * The record-generation machinery cannot catch that: from each tab's point of
- * view the record never changed. Distinct keys are the only thing that
- * prevents it, so the derivation is pinned here.
+ * The sell form persists its in-progress state to localStorage. Two records
+ * sharing a key means one record's stored draft can be read back as another's,
+ * and the record-generation machinery cannot catch that — from the form's point
+ * of view the record never changed. So the derivation itself is the guarantee,
+ * and it is imported here rather than restated, or the test would pass while
+ * the component regressed.
  */
-const SELL_DRAFT_STORAGE_KEY = "buttergolf-sell-draft-v1";
-
-/** Mirrors the derivation in SellFormClient. */
-function storageKeyFor({
-  draftId,
-  editProductId,
-}: {
-  draftId?: string;
-  editProductId?: string;
-}): string {
-  return editProductId
-    ? `${SELL_DRAFT_STORAGE_KEY}-edit-${editProductId}`
-    : draftId
-      ? `${SELL_DRAFT_STORAGE_KEY}-draft-${draftId}`
-      : SELL_DRAFT_STORAGE_KEY;
-}
-
-describe("sell form storage key", () => {
+describe("sellStorageKey", () => {
   it("gives every record its own key", () => {
     const keys = [
-      storageKeyFor({}),
-      storageKeyFor({ draftId: "A" }),
-      storageKeyFor({ draftId: "B" }),
-      storageKeyFor({ editProductId: "A" }),
-      storageKeyFor({ editProductId: "B" }),
+      sellStorageKey({}),
+      sellStorageKey({ draftId: "A" }),
+      sellStorageKey({ draftId: "B" }),
+      sellStorageKey({ editProductId: "A" }),
+      sellStorageKey({ editProductId: "B" }),
     ];
 
     expect(new Set(keys).size).toBe(keys.length);
   });
 
-  it("does not let two drafts share the new-listing key", () => {
+  it("does not let a resumed draft share the new-listing key", () => {
     // The regression: only editProductId used to scope the key, so
     // /sell?draftId=A and /sell?draftId=B both landed on the bare key.
-    expect(storageKeyFor({ draftId: "A" })).not.toBe(SELL_DRAFT_STORAGE_KEY);
-    expect(storageKeyFor({ draftId: "A" })).not.toBe(storageKeyFor({ draftId: "B" }));
+    expect(sellStorageKey({ draftId: "A" })).not.toBe(NEW_LISTING_STORAGE_KEY);
+    expect(sellStorageKey({ draftId: "A" })).not.toBe(sellStorageKey({ draftId: "B" }));
   });
 
   it("reserves the bare key for a brand-new listing", () => {
-    // That is the one the recovery banner offers to restore, so it must not be
-    // written by a resumed draft.
-    expect(storageKeyFor({})).toBe(SELL_DRAFT_STORAGE_KEY);
+    // That is the one the recovery banner offers to restore, so a resumed draft
+    // must not write to it.
+    expect(sellStorageKey({})).toBe(NEW_LISTING_STORAGE_KEY);
   });
 
   it("keeps editing a listing separate from resuming a draft of the same id", () => {
-    expect(storageKeyFor({ editProductId: "A" })).not.toBe(storageKeyFor({ draftId: "A" }));
+    expect(sellStorageKey({ editProductId: "A" })).not.toBe(sellStorageKey({ draftId: "A" }));
+  });
+
+  it("is namespaced past v1, so legacy shared-key values are not adopted", () => {
+    // v1 put /sell and /sell?draftId=… on one key. Reading a leftover v1 value
+    // as a new listing would autosave a saved draft's contents as a second row.
+    expect(NEW_LISTING_STORAGE_KEY).not.toContain("-v1");
+    expect(NEW_LISTING_STORAGE_KEY).toContain("-v2");
+  });
+
+  it("prefers the edit key when both ids are somehow present", () => {
+    expect(sellStorageKey({ draftId: "A", editProductId: "B" })).toBe(
+      sellStorageKey({ editProductId: "B" })
+    );
   });
 });

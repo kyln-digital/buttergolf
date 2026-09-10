@@ -38,6 +38,7 @@ import {
 } from "../_lib/sell-record-state";
 import { createSaveQueue, type SaveQueue } from "../_lib/save-queue";
 import { fetchJsonWithTimeout } from "../_lib/fetch-with-timeout";
+import { sellStorageKey } from "../_lib/sell-storage-key";
 
 interface Category {
   id: string;
@@ -158,8 +159,6 @@ const HelperText = ({ children }: { children: React.ReactNode }) => (
   </Text>
 );
 
-const SELL_DRAFT_STORAGE_KEY = "buttergolf-sell-draft-v1";
-
 /** Shown when a save is attempted before the record being edited has loaded. */
 const RECORD_NOT_READY_MESSAGE =
   "Still loading this listing. Give it a moment and try again — or reload the page if this persists.";
@@ -276,14 +275,16 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   //
   // The bare key stays reserved for a brand-new listing, which is what the
   // recovery banner offers to restore.
-  const storageKey = editProductId
-    ? `${SELL_DRAFT_STORAGE_KEY}-edit-${editProductId}`
-    : draftId
-      ? `${SELL_DRAFT_STORAGE_KEY}-draft-${draftId}`
-      : SELL_DRAFT_STORAGE_KEY;
+  const storageKey = sellStorageKey({ draftId, editProductId });
 
   const [formData, setFormData, { isHydrated, clear: clearLocalDraft }] =
-    useLocalStorageState<FormData>(storageKey, EMPTY_FORM_DATA, { debounceMs: 1000 });
+    useLocalStorageState<FormData>(storageKey, EMPTY_FORM_DATA, {
+      debounceMs: 1000,
+      // Another tab's save must not replace the fields being typed here — and
+      // whatever arrived would then be autosaved as if the seller had entered
+      // it, against this tab's row.
+      syncAcrossTabs: false,
+    });
 
   // Track whether the user has dismissed the recovery prompt
   const [recoveryDismissed, setRecoveryDismissed] = useState(false);
