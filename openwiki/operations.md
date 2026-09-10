@@ -16,7 +16,7 @@ Canonical source: `AGENTS.md` (root). `CLAUDE.md` imports it via `@AGENTS.md`.
 Two consequences, and they are the reason schema work here is delicate:
 
 - **A migration is a production change the moment it is applied**, whatever branch you ran it from.
-- **A preview can only be exercised against a schema production already has.** A PR that adds a column has two states and both are wrong: apply the migration and production's schema runs ahead of the code deployed against it; don't, and the preview 500s on a column Prisma selects but the database doesn't have. That second one is exactly the `isBrandProcessed` incident on 2026-09-10 — every page reading `product_images` returned a 500 until the field was removed.
+- **A preview can only be exercised against a schema production already has**, so a schema-changing PR has to apply its migration before its preview means anything. That is safe when the migration is additive and backwards-compatible: production's schema simply runs ahead of its code for a while, which costs nothing. It is not safe when the migration drops or renames a column or tightens a constraint — that breaks the code currently deployed, the instant it lands. Nor is skipping the migration an escape: the preview then 500s on a column Prisma selects but the database doesn't have, which is exactly the `isBrandProcessed` incident on 2026-09-10, where every page reading `product_images` returned a 500 until the field was removed.
 
 Until previews get their own database, work with it rather than round it:
 
