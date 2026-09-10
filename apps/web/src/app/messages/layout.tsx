@@ -169,8 +169,8 @@ export default async function MessagesLayoutPage({ children }: { children: React
     };
   });
 
-  // TrustBar(40px) + ButterHeader(80px) + vertical padding(2×24px) = 168px
-  const HEADER_OFFSET_PX = 168;
+  // Sticky header (76px bar + 46px category row incl. hairlines = 122px) + vertical padding (2×24px)
+  const HEADER_OFFSET_PX = 170;
 
   return (
     <div

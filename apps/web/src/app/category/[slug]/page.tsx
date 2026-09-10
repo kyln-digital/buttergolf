@@ -23,6 +23,7 @@ interface Props {
     brand?: string | string[];
     sort?: string;
     page?: string;
+    q?: string;
   }>;
 }
 
@@ -48,6 +49,7 @@ async function getCategoryListings(
     minPrice: searchParams.minPrice ? parseFloat(searchParams.minPrice) : undefined,
     maxPrice: searchParams.maxPrice ? parseFloat(searchParams.maxPrice) : undefined,
     brandIds: toParamArray(searchParams.brand),
+    query: searchParams.q,
   });
 
   const orderBy = getListingOrderBy(searchParams.sort);

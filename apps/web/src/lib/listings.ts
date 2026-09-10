@@ -58,6 +58,7 @@ export function buildListingWhere(filters: ListingFilterParams): Prisma.ProductW
       { description: { contains: searchTerm, mode: "insensitive" } },
       { model: { contains: searchTerm, mode: "insensitive" } },
       { brand: { name: { contains: searchTerm, mode: "insensitive" } } },
+      { category: { name: { contains: searchTerm, mode: "insensitive" } } },
     ];
   }
 

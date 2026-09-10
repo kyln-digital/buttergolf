@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
         { description: { contains: searchTerm, mode: "insensitive" } },
         { model: { contains: searchTerm, mode: "insensitive" } },
         { brand: { name: { contains: searchTerm, mode: "insensitive" } } },
+        { category: { name: { contains: searchTerm, mode: "insensitive" } } },
       ],
     };
 

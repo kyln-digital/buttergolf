@@ -127,6 +127,9 @@ const ButtonFrame = styled(ThemeableStack, {
   borderRadius: "$full",
   borderWidth: 0,
   backgroundColor: "transparent",
+  // Every button keeps a visible keyboard focus ring, including chromeless /
+  // unstyled ones that opt out of the variant styles.
+  focusVisibleStyle: focusRing,
 
   variants: {
     size: {

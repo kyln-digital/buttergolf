@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import { Heart, MessageCircle, Plus, Search } from "@tamagui/lucide-icons";
 import {
   LazySignedIn,
@@ -44,6 +45,8 @@ const MOBILE_LINKS = [
 
 const HEADER_MAX_WIDTH = 1440;
 const MOBILE_HEADER_HEIGHT = 64;
+/** Matches the `$gtMd` media query (min-width: 1021px) from the Tamagui config. */
+const DESKTOP_MEDIA_QUERY = "(min-width: 1021px)";
 
 function UnreadBadge({ count }: Readonly<{ count: number }>) {
   if (count <= 0) return null;
@@ -74,12 +77,17 @@ export function ButterHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const linkPress = useLinkPress();
+  const { isSignedIn } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // Poll for unread message count
+  // Poll for unread message count (signed-in visitors only)
   useEffect(() => {
+    if (!isSignedIn) {
+      setUnreadCount(0); // eslint-disable-line react-hooks/set-state-in-effect -- reset when signed out
+      return;
+    }
     let active = true;
     const fetchUnread = async () => {
       try {
@@ -98,7 +106,7 @@ export function ButterHeader() {
       active = false;
       clearInterval(interval);
     };
-  }, [pathname]);
+  }, [pathname, isSignedIn]);
 
   // Elevate the header once the page scrolls beneath it
   useEffect(() => {
@@ -112,6 +120,17 @@ export function ButterHeader() {
   useEffect(() => {
     setMobileMenuOpen(false); // eslint-disable-line react-hooks/set-state-in-effect -- close overlay on route change
   }, [pathname]);
+
+  // The overlay is hidden by CSS above the desktop breakpoint; close it there so
+  // the body scroll lock cannot outlive a viewport resize.
+  useEffect(() => {
+    const media = window.matchMedia(DESKTOP_MEDIA_QUERY);
+    const handleChange = (event: MediaQueryListEvent) => {
+      if (event.matches) setMobileMenuOpen(false);
+    };
+    media.addEventListener("change", handleChange);
+    return () => media.removeEventListener("change", handleChange);
+  }, []);
 
   useEffect(() => {
     if (!mobileMenuOpen) return;

@@ -50,7 +50,7 @@ function useRotatingHint(active: boolean): number {
       else stop();
     };
 
-    start();
+    handleVisibility();
     document.addEventListener("visibilitychange", handleVisibility);
     return () => {
       stop();
