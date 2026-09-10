@@ -88,7 +88,7 @@ export function PhoneCollectionStep({
                 style={{
                   border: `1px solid ${error ? theme.error.val : theme.fieldBorder.val}`,
                   borderRadius: 9999,
-                  backgroundColor: theme.background.val,
+                  backgroundColor: theme.surface.val,
                   padding: "4px 12px",
                 }}
               >
