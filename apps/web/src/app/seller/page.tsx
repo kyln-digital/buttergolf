@@ -2,8 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { Column, Row, Heading, Text, Card, Spinner, Button } from "@buttergolf/ui";
-import { Package, Eye, Heart, DollarSign, TrendingUp, AlertCircle } from "@tamagui/lucide-icons";
+import {
+  Package,
+  Eye,
+  Heart,
+  DollarSign,
+  TrendingUp,
+  AlertCircle,
+  Plus,
+} from "@tamagui/lucide-icons";
 import Link from "next/link";
+import { useLinkPress } from "@/hooks/useLinkPress";
 
 interface SellerStats {
   totalListings: number;
@@ -32,6 +41,7 @@ const EMPTY_SELLER_STATS: SellerStats = {
  * - Recent activity summary
  */
 export default function SellerDashboardPage() {
+  const linkPress = useLinkPress();
   const [stats, setStats] = useState<SellerStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -96,11 +106,16 @@ export default function SellerDashboardPage() {
           </Heading>
           <Text color="$textSecondary">Manage your listings, payments, and payouts</Text>
         </Column>
-        <Link href="/sell">
-          <Button butterVariant="primary" size="$4">
-            + New Listing
-          </Button>
-        </Link>
+        <Button
+          butterVariant="primary"
+          size="$4"
+          icon={Plus}
+          tag="a"
+          href="/sell"
+          onPress={linkPress("/sell")}
+        >
+          New listing
+        </Button>
       </Row>
 
       {/* Stats Grid */}

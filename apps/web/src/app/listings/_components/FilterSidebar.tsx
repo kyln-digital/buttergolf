@@ -92,6 +92,7 @@ export function FilterSidebar({
 
       <FilterSection title="Favourites">
         <SwitchWithLabel
+          id="sidebar-show-favourites-only"
           label="Show favourites only"
           checked={filters.showFavouritesOnly}
           onCheckedChange={(checked) => onChange({ showFavouritesOnly: checked })}

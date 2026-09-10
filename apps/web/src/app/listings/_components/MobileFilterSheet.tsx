@@ -151,6 +151,7 @@ export function MobileFilterSheet({
 
             <FilterSection title="Favourites">
               <SwitchWithLabel
+                id="mobile-show-favourites-only"
                 label="Show favourites only"
                 checked={draft.showFavouritesOnly}
                 onCheckedChange={(checked) => updateDraft({ showFavouritesOnly: checked })}

@@ -62,7 +62,7 @@ export function CategoryFilter({
         const radioId = `${idPrefix}-${option.slug}`;
         return (
           <Row key={option.slug} alignItems="center" gap="$sm" minHeight={36}>
-            <Radio id={radioId} value={option.slug} size="$3">
+            <Radio id={radioId} value={option.slug} size="sm">
               <RadioIndicator />
             </Radio>
             {/* htmlFor points at the radio's id, so the label click selects it. */}

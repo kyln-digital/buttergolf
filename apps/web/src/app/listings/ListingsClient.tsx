@@ -210,6 +210,9 @@ export function ListingsClient({
   const prevFiltersRef = useRef<FilterState>(filters);
   const prevSortRef = useRef<string>(sort);
   const prevSearchRef = useRef(searchQuery);
+  // Monotonic id per fetch: a slow response for an older query must not
+  // overwrite the newer one's products, totals, filters or URL.
+  const requestSeqRef = useRef(0);
 
   // Set mounted flag on initial mount
   useEffect(() => {
@@ -274,6 +277,8 @@ export function ListingsClient({
   // isPaginationOnly: when true, don't show loading skeletons or scroll
   const fetchProducts = useCallback(
     async (newPage: number = 1, isPaginationOnly: boolean = false) => {
+      const requestId = ++requestSeqRef.current;
+      const isCurrent = () => requestId === requestSeqRef.current;
       // For pagination, use isPaginating (keeps products visible)
       // For filter changes, use isLoading (shows skeletons)
       if (isPaginationOnly) {
@@ -305,6 +310,9 @@ export function ListingsClient({
         }
         const data = await response.json();
 
+        // A newer request started while this one was in flight; let it win.
+        if (!isCurrent()) return;
+
         // Batch non-urgent data updates together using startTransition
         startTransition(() => {
           setProducts(data.products);
@@ -323,9 +331,11 @@ export function ListingsClient({
       } catch (error) {
         console.error("Failed to fetch products:", error);
       } finally {
-        // Reset loading states
-        setIsLoading(false);
-        setIsPaginating(false);
+        // Only the latest request owns the loading state
+        if (isCurrent()) {
+          setIsLoading(false);
+          setIsPaginating(false);
+        }
       }
     },
     [filters, sort, router, buildURL, searchQuery]

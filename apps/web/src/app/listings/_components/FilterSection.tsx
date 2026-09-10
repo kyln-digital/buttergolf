@@ -51,11 +51,10 @@ export function FilterSection({
           <ChevronDown size={16} color="$textSecondary" />
         </View>
       </Row>
-      {isExpanded && (
-        <Column id={panelId} paddingBottom="$sm">
-          {children}
-        </Column>
-      )}
+      {/* Kept mounted so aria-controls always resolves; hidden when collapsed */}
+      <Column id={panelId} paddingBottom="$sm" display={isExpanded ? "flex" : "none"}>
+        {children}
+      </Column>
     </Column>
   );
 }

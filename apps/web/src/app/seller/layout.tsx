@@ -6,7 +6,7 @@ import { useStripeConnect } from "@/hooks/useStripeConnect";
 import { usePathname } from "next/navigation";
 import { Column, Row, Text, Heading, Spinner, Button, Card } from "@buttergolf/ui";
 import { SellerDashboardNav } from "./_components/SellerDashboardNav";
-import Link from "next/link";
+import { useLinkPress } from "@/hooks/useLinkPress";
 
 const STRIPE_EMBEDDED_ROUTES = [
   "/seller/payments",
@@ -16,6 +16,7 @@ const STRIPE_EMBEDDED_ROUTES = [
 ];
 
 function SetupCallout() {
+  const linkPress = useLinkPress();
   return (
     <Card variant="outlined" padding="$md">
       <Column gap="$sm" alignItems="center">
@@ -25,11 +26,15 @@ function SetupCallout() {
         <Text color="$textSecondary" textAlign="center">
           Finish setting up your account to unlock payments, payouts, and more.
         </Text>
-        <Link href="/account" style={{ textDecoration: "none" }}>
-          <Button butterVariant="primary" size="$4">
-            Get started
-          </Button>
-        </Link>
+        <Button
+          butterVariant="primary"
+          size="$4"
+          tag="a"
+          href="/account"
+          onPress={linkPress("/account")}
+        >
+          Get started
+        </Button>
       </Column>
     </Card>
   );
@@ -49,6 +54,7 @@ function SetupCallout() {
  * - Has Account: Shows full dashboard with navigation
  */
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
+  const linkPress = useLinkPress();
   const pathname = usePathname();
   const { stripeConnectInstance, loading, error, hasAccount } = useStripeConnect();
   const isStripeEmbeddedRoute = STRIPE_EMBEDDED_ROUTES.some((r) => pathname?.startsWith(r));
@@ -75,11 +81,15 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
             <Text color="$textSecondary" textAlign="center">
               {error}
             </Text>
-            <Link href="/account" style={{ textDecoration: "none" }}>
-              <Button butterVariant="primary" size="$4">
-                Go to account settings
-              </Button>
-            </Link>
+            <Button
+              butterVariant="primary"
+              size="$4"
+              tag="a"
+              href="/account"
+              onPress={linkPress("/account")}
+            >
+              Go to account settings
+            </Button>
           </Column>
         </Card>
       </Column>
@@ -98,11 +108,15 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
             <Text color="$textSecondary" textAlign="center">
               Set up your seller account to access your dashboard and start listing golf equipment.
             </Text>
-            <Link href="/account" style={{ textDecoration: "none" }}>
-              <Button butterVariant="primary" size="$5">
-                Get started
-              </Button>
-            </Link>
+            <Button
+              butterVariant="primary"
+              size="$5"
+              tag="a"
+              href="/account"
+              onPress={linkPress("/account")}
+            >
+              Get started
+            </Button>
           </Column>
         </Card>
       </Column>
@@ -114,11 +128,15 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
     return (
       <Column fullWidth minHeight="60vh" alignItems="center" justifyContent="center" gap="$md">
         <Text color="$textSecondary">Unable to initialize seller dashboard. Please try again.</Text>
-        <Link href="/account" style={{ textDecoration: "none" }}>
-          <Button butterVariant="primary" size="$4">
-            Go to account settings
-          </Button>
-        </Link>
+        <Button
+          butterVariant="primary"
+          size="$4"
+          tag="a"
+          href="/account"
+          onPress={linkPress("/account")}
+        >
+          Go to account settings
+        </Button>
       </Column>
     );
   }

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback, type CSSProperties } from "react";
+import { useState, useEffect, useCallback, useRef, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
 import { ChevronLeft, ChevronRight, X } from "@tamagui/lucide-icons";
 import { Column, Row, Text, Button, Card, Image, View } from "@buttergolf/ui";
 import { PRODUCT_IMAGE_ASPECT_RATIO } from "@buttergolf/constants";
+import type { TamaguiElement } from "tamagui";
 import { SECTION_MAX_WIDTH } from "@/app/_components/marketplace/Section";
 import { ProductInformation } from "./_components/ProductInformation";
 import { BuyNowSheet } from "./_components/BuyNowSheet";
@@ -62,6 +63,7 @@ interface ProductDetailClientProps {
 }
 
 const THUMB_SIZE = 64;
+const FOCUSABLE_SELECTOR = 'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])';
 
 export default function ProductDetailClient({ product }: ProductDetailClientProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -69,6 +71,9 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
   const [showMobileBar, setShowMobileBar] = useState(false);
   const [buyNowSheetOpen, setBuyNowSheetOpen] = useState(false);
   const router = useRouter();
+  const lightboxRef = useRef<TamaguiElement | null>(null);
+  const closeButtonRef = useRef<TamaguiElement | null>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
 
   const selectedImage = product.images[selectedImageIndex];
   const imageCount = product.images.length;
@@ -144,10 +149,44 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
         showNext();
       } else if (e.key === "Escape") {
         setLightboxOpen(false);
+      } else if (e.key === "Tab") {
+        // Keep focus inside the dialog while it is open.
+        const root = lightboxRef.current as HTMLElement | null;
+        if (!root) return;
+        const focusable = Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        const active = document.activeElement as HTMLElement | null;
+        const inside = active ? root.contains(active) : false;
+        if (e.shiftKey && (!inside || active === first)) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && (!inside || active === last)) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     },
     [lightboxOpen, showPrevious, showNext]
   );
+
+  // Modal behaviour: move focus to Close on open, lock page scroll, and
+  // return focus to the element that opened the lightbox when it closes.
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    returnFocusRef.current = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const frame = requestAnimationFrame(() => {
+      (closeButtonRef.current as HTMLElement | null)?.focus();
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      document.body.style.overflow = previousOverflow;
+      returnFocusRef.current?.focus();
+    };
+  }, [lightboxOpen]);
 
   useEffect(() => {
     globalThis.addEventListener?.("keydown", handleKeyboardNav);
@@ -303,6 +342,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
       {/* Lightbox */}
       {lightboxOpen && (
         <Column
+          ref={lightboxRef}
           role="dialog"
           aria-modal
           aria-label="Image gallery"
@@ -328,6 +368,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
           />
 
           <Button
+            ref={closeButtonRef}
             butterVariant="secondary"
             circular
             size="$5"
