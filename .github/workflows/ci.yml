@@ -62,10 +62,11 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+    # The only variable the schema's datasource reads. Turbo filters the task
+    # environment, so `db:migrate:deploy` also has to declare it in turbo.json
+    # or it never reaches Prisma.
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/buttergolf_ci
-      POSTGRES_PRISMA_URL: postgresql://postgres:postgres@localhost:5432/buttergolf_ci
-      DATABASE_URL_UNPOOLED: postgresql://postgres:postgres@localhost:5432/buttergolf_ci
 
     steps:
       - uses: actions/checkout@v4
