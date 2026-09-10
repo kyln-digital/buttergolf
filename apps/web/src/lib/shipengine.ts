@@ -334,6 +334,20 @@ export async function calculateShippingRates(
   // Build cache key for rate lookup (uses dimensions for better cache reuse)
   const cacheKey = buildRateCacheKey(fromAddress.zip, toAddress.zip, dimensions);
 
+  // Misconfiguration must not masquerade as a working quote. Falling back to
+  // the hardcoded prices here is what hid the empty carrier_ids for months:
+  // the endpoint answered 200 with plausible rates and nothing looked wrong.
+  if (SHIPENGINE_API_KEY && SHIPENGINE_CARRIER_IDS.length === 0) {
+    console.error(
+      "SHIPENGINE_CARRIER_IDS is empty — cannot request rates. Set it to the carrier accounts for this environment."
+    );
+    const error: ShippingValidationError = {
+      code: "NO_RATES_AVAILABLE",
+      message: "Shipping rates are temporarily unavailable",
+    };
+    throw error;
+  }
+
   // Try to get cached or fresh shipping rates from ShipEngine
   if (SHIPENGINE_API_KEY) {
     try {

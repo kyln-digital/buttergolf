@@ -4,7 +4,7 @@
 
 export type { ProductCondition } from "../../types/product";
 import type { ProductCondition } from "../../types/product";
-import { getParcelPreset, type ParcelDimensions } from "@buttergolf/constants";
+import { resolveParcelFromInputs, type ParcelDimensions } from "@buttergolf/constants";
 
 export interface SellFormData {
   // Step 1: Photos
@@ -45,26 +45,9 @@ export interface SellFormData {
   parcelWeight: string;
 }
 
-/**
- * Resolve what will actually be declared to the carrier: the seller's
- * overrides where they typed one, the chosen preset everywhere else.
- *
- * Overrides are held as strings so a half-typed "1" never becomes a real 1cm
- * dimension — only a finite, positive number wins over the preset.
- */
+/** Resolve the parcel this form describes. See resolveParcelFromInputs. */
 export function resolveFormParcel(formData: SellFormData): ParcelDimensions {
-  const preset = getParcelPreset(formData.parcelPresetId);
-  const override = (value: string, fallback: number) => {
-    const parsed = Number.parseFloat(value);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-  };
-
-  return {
-    length: override(formData.parcelLength, preset?.length ?? 0),
-    width: override(formData.parcelWidth, preset?.width ?? 0),
-    height: override(formData.parcelHeight, preset?.height ?? 0),
-    weight: override(formData.parcelWeight, preset?.weight ?? 0),
-  };
+  return resolveParcelFromInputs(formData);
 }
 
 export interface ImageData {

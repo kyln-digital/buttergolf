@@ -195,6 +195,35 @@ export interface ParcelDimensions {
   weight: number;
 }
 
+/**
+ * Resolve a parcel from a form's raw string inputs.
+ *
+ * Overrides arrive as strings because they come straight from text fields.
+ * Only a finite, positive number beats the preset — anything else (empty,
+ * mid-edit ".", "abc", "0", a negative) falls back, so a partially typed
+ * value can never become a real dimension.
+ */
+export function resolveParcelFromInputs(input: {
+  parcelPresetId: string;
+  parcelLength: string;
+  parcelWidth: string;
+  parcelHeight: string;
+  parcelWeight: string;
+}): ParcelDimensions {
+  const preset = getParcelPreset(input.parcelPresetId);
+  const override = (value: string, fallback: number) => {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  };
+
+  return {
+    length: override(input.parcelLength, preset?.length ?? 0),
+    width: override(input.parcelWidth, preset?.width ?? 0),
+    height: override(input.parcelHeight, preset?.height ?? 0),
+    weight: override(input.parcelWeight, preset?.weight ?? 0),
+  };
+}
+
 export interface ParcelValidationError {
   field: "length" | "width" | "height" | "weight" | "girth";
   message: string;

@@ -10,6 +10,7 @@ import {
   getParcelPreset,
   getDefaultParcelPresetId,
   validateParcel,
+  resolveParcelFromInputs,
 } from "@buttergolf/constants";
 import { useLocalStorageState } from "@/hooks/useLocalStorageState";
 import { useAutoSave, type AutoSaveStatus, type AutoSaveResult } from "@/hooks/useAutoSave";
@@ -160,30 +161,6 @@ const HelperText = ({ children }: { children: React.ReactNode }) => (
 
 const SELL_DRAFT_STORAGE_KEY = "buttergolf-sell-draft-v1";
 
-/** Bump whenever FormData gains or loses a field. Stale drafts are discarded. */
-const SELL_DRAFT_SCHEMA_VERSION = 2;
-
-/**
- * What will actually be declared to the carrier: the seller's typed overrides
- * where they gave one, the chosen preset everywhere else.
- *
- * Overrides are held as strings so a half-typed "1" never becomes a real 1cm
- * dimension — only a finite, positive number beats the preset.
- */
-function resolveParcelFromForm(data: FormData) {
-  const preset = getParcelPreset(data.parcelPresetId);
-  const override = (value: string, fallback: number) => {
-    const parsed = Number.parseFloat(value);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-  };
-  return {
-    length: override(data.parcelLength, preset?.length ?? 0),
-    width: override(data.parcelWidth, preset?.width ?? 0),
-    height: override(data.parcelHeight, preset?.height ?? 0),
-    weight: override(data.parcelWeight, preset?.weight ?? 0),
-  };
-}
-
 /** Shown when a save is attempted before the record being edited has loaded. */
 const RECORD_NOT_READY_MESSAGE =
   "Still loading this listing. Give it a moment and try again — or reload the page if this persists.";
@@ -191,6 +168,14 @@ const RECORD_NOT_READY_MESSAGE =
 /** Shown when the page moved to a different listing mid-save. */
 const RECORD_CHANGED_MESSAGE =
   "You moved to a different listing before this finished saving, so nothing was written. Go back and try again.";
+
+/** Bump whenever FormData gains or loses a field. Stale drafts are discarded. */
+const SELL_DRAFT_SCHEMA_VERSION = 2;
+
+/** Resolve the parcel this form describes. See resolveParcelFromInputs. */
+function resolveParcelFromForm(data: FormData) {
+  return resolveParcelFromInputs(data);
+}
 
 const EMPTY_FORM_DATA: FormData = {
   title: "",
