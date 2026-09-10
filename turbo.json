@@ -66,20 +66,25 @@
       "cache": false
     },
     "db:push": {
-      "cache": false
+      "cache": false,
+      "env": ["DATABASE_URL"]
     },
     "db:migrate:dev": {
-      "cache": false
+      "cache": false,
+      "env": ["DATABASE_URL"]
     },
     "db:migrate:deploy": {
-      "cache": false
+      "cache": false,
+      "env": ["DATABASE_URL"]
     },
     "db:studio": {
       "cache": false,
+      "env": ["DATABASE_URL"],
       "persistent": true
     },
     "db:seed": {
-      "cache": false
+      "cache": false,
+      "env": ["DATABASE_URL"]
     },
     "lint": {
       "dependsOn": ["^lint"]

@@ -14,11 +14,11 @@ jobs:
     name: Lint, format & type-check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: pnpm
@@ -40,3 +40,79 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+  migrations:
+    name: Migrations apply & match the schema
+    runs-on: ubuntu-latest
+
+    # A throwaway database. Never point this at a real one: the whole value is
+    # that it can be destroyed and rebuilt from the migrations alone.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: buttergolf_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    # The only variable the schema's datasource reads. Turbo filters the task
+    # environment, so `db:migrate:deploy` also has to declare it in turbo.json
+    # or it never reaches Prisma.
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/buttergolf_ci
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Proves every migration still applies to an empty database, in order.
+      - name: Apply migrations
+        run: pnpm db:migrate:deploy
+
+      # Proves the migrations produce exactly the schema the code is generated
+      # from. Catches the case that broke the preview during #563: a schema
+      # change shipping without a migration to create it, so the deployed code
+      # queries a column the database doesn't have.
+      #
+      # Exit code 2 means "there is a difference".
+      - name: Check the schema matches the migrations
+        working-directory: packages/db
+        run: |
+          pnpm exec prisma migrate diff \
+            --from-url "$DATABASE_URL" \
+            --to-schema-datamodel prisma/schema.prisma \
+            --exit-code \
+          && echo "Schema matches the applied migrations." \
+          || {
+            status=$?
+            if [ "$status" -eq 2 ]; then
+              echo "::error::prisma/schema.prisma does not match the migrations."
+              echo "Generate the missing migration against a THROWAWAY database:"
+              echo "  docker run --rm -d --name bg-pg -e POSTGRES_PASSWORD=postgres \\"
+              echo "    -e POSTGRES_DB=buttergolf -p 5432:5432 postgres:16"
+              echo "  until docker exec bg-pg pg_isready -U postgres >/dev/null 2>&1; do sleep 1; done"
+              echo "  DATABASE_URL=postgresql://postgres:postgres@localhost:5432/buttergolf \\"
+              echo "    pnpm db:migrate:dev"
+              echo "  docker rm -f bg-pg   # --rm only fires on exit, and this server never exits on its own"
+              echo "Then commit the migration it writes."
+              echo "Do NOT run migrate dev against packages/db/.env: if that was pulled from"
+              echo "Vercel it is the production database, and migrate dev can reset it."
+            fi
+            exit "$status"
+          }
