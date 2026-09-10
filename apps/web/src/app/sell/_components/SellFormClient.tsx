@@ -397,7 +397,17 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
   // --- Load an existing draft or listing from the DB when an id is provided ---
   useEffect(() => {
-    if (!loadProductId) return;
+    if (!loadProductId) {
+      // Navigated from a draft/edit route back to a blank form (e.g.
+      // /sell?draftId=… → /sell). Both record-scoped refs have to be dropped:
+      // savedDraftIdRef would PATCH the listing we just left, and reusing the
+      // old requestId would make the create call idempotently return that same
+      // draft instead of making a new one.
+      savedDraftIdRef.current = null;
+      draftRequestIdRef.current = uuidv4();
+      setIsExistingRecordLoaded(true);
+      return;
+    }
 
     // Next's router reuses this component between /sell/[id]/edit routes, so
     // the id can change under a mounted form. Until the new record has landed,

@@ -151,15 +151,28 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       updateData.price = price;
     }
 
+    // The image ids this request asks to delete, capped the same way the
+    // transaction caps them. Derived here so the publish guard below and the
+    // transaction agree on what is going away.
+    const requestedRemovalIds: string[] = Array.isArray(body.removedImageIds)
+      ? body.removedImageIds.slice(0, MAX_IMAGE_IDS).filter((id: unknown) => typeof id === "string")
+      : [];
+
     // Publishing a draft (isDraft true → false) must satisfy the same minimums
     // as creating a listing outright, so the sell form's publish path can't
     // produce a live listing with no photo or no category.
     const isPublishing = existingProduct.isDraft && updateData.isDraft === false;
 
     if (isPublishing) {
-      // Count only the slice the transaction below will actually persist.
-      // Counting the whole array would let a request whose sole valid image sits
-      // past the cap pass this check and then publish with nothing stored.
+      // Count what the product will actually be left with once the transaction
+      // has run — not what the request happens to mention.
+      //
+      // When `images` is present it is the complete desired list, so count the
+      // slice that will be persisted; counting the whole array would let a
+      // request whose sole valid image sits past the cap publish with nothing
+      // stored. When it's absent, count the stored rows minus the ones this
+      // request is about to remove, or removing the last photo and publishing
+      // in one call would slip through.
       const submittedImageCount = Array.isArray(body.images)
         ? body.images
             .slice(0, MAX_IMAGE_IDS)
@@ -168,7 +181,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
                 typeof (img as { url?: unknown })?.url === "string" &&
                 isValidCloudinaryUrl((img as { url: string }).url)
             ).length
-        : await prisma.productImage.count({ where: { productId } });
+        : await prisma.productImage.count({
+            where: {
+              productId,
+              ...(requestedRemovalIds.length > 0 && { id: { notIn: requestedRemovalIds } }),
+            },
+          });
 
       if (submittedImageCount === 0) {
         return NextResponse.json({ error: "At least one image is required" }, { status: 400 });
