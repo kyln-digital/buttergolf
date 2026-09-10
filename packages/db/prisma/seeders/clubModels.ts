@@ -40,6 +40,10 @@ const categoryToClubKind: Record<keyof ClubModelsData, ClubKind> = {
  * This populates the ClubModel table with verified equipment models that users
  * can select when listing their products. Includes historic and current models
  * across all major brands and categories.
+ *
+ * usageCount is never written here beyond the initial zero: it is listing-derived
+ * (POST /api/products increments it) and ranks autocomplete suggestions, so
+ * seeding a value would present models nobody has listed as popular.
  */
 export async function seedClubModels(
   prisma: PrismaClient
@@ -96,8 +100,9 @@ export async function seedClubModels(
               name: modelName,
               kind: clubKind,
               isVerified: true,
-              // Seed ordering only, for models no one has listed yet.
-              usageCount: calculateUsageCount(modelName),
+              // Starts at zero: nobody has listed this model yet, and usageCount
+              // means exactly one thing — how many listings reference it.
+              usageCount: 0,
             },
           });
 
@@ -115,88 +120,4 @@ export async function seedClubModels(
   );
 
   return { seeded: totalCreated, skipped: totalSkipped };
-}
-
-/**
- * Calculate realistic usage count for autocomplete ranking
- *
- * Popular/current models get higher counts, older/discontinued models get lower counts.
- * This affects the order of suggestions in autocomplete dropdowns.
- */
-function calculateUsageCount(modelName: string): number {
-  const name = modelName.toLowerCase();
-
-  // Current generation models (high usage)
-  if (
-    name.includes("2024") ||
-    name.includes("2025") ||
-    name.includes("2026") ||
-    name.includes("qi10") ||
-    name.includes("gt") ||
-    name.includes("paradym") ||
-    name.includes("g430") ||
-    name.includes("ai smoke") ||
-    name.includes("darkspeed") ||
-    name.includes("sm10") ||
-    name.includes("sm9")
-  ) {
-    return Math.floor(Math.random() * 50) + 150; // 150-200 uses
-  }
-
-  // Recent generation (medium-high usage)
-  if (
-    name.includes("2023") ||
-    name.includes("stealth") ||
-    name.includes("tsr") ||
-    name.includes("g425") ||
-    name.includes("rogue st") ||
-    name.includes("ltdx") ||
-    name.includes("sm8") ||
-    name.includes("zx")
-  ) {
-    return Math.floor(Math.random() * 50) + 100; // 100-150 uses
-  }
-
-  // Previous generation (medium usage)
-  if (
-    name.includes("2022") ||
-    name.includes("2021") ||
-    name.includes("sim") ||
-    name.includes("tsi") ||
-    name.includes("epic") ||
-    name.includes("mavrik") ||
-    name.includes("g410") ||
-    name.includes("sm7") ||
-    name.includes("t100") ||
-    name.includes("t200")
-  ) {
-    return Math.floor(Math.random() * 40) + 60; // 60-100 uses
-  }
-
-  // Older but popular models (medium-low usage)
-  if (
-    name.includes("2020") ||
-    name.includes("2019") ||
-    name.includes("m") ||
-    name.includes("ts") ||
-    name.includes("917") ||
-    name.includes("g400") ||
-    name.includes("sm6") ||
-    name.includes("pro v1")
-  ) {
-    return Math.floor(Math.random() * 30) + 30; // 30-60 uses
-  }
-
-  // Legacy/discontinued (low usage)
-  if (
-    name.includes("2018") ||
-    name.includes("2017") ||
-    name.includes("2016") ||
-    name.includes("2015")
-  ) {
-    return Math.floor(Math.random() * 20) + 10; // 10-30 uses
-  }
-
-  // Historic models (very low usage)
-  return Math.floor(Math.random() * 10) + 1; // 1-10 uses
 }

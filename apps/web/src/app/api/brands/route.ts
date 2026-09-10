@@ -5,15 +5,18 @@ import { prisma } from "@buttergolf/db";
  * Reduce a search term to slug form so punctuation and spacing don't matter.
  *
  * Brand names carry punctuation their slugs drop, so a contiguous `contains`
- * against the name alone misses the spelling people actually type: "LAB Golf"
- * matches neither "L.A.B. Golf" nor "lab-golf". Slugifying the query lets it
- * match the slug instead ("lab golf" -> "lab-golf").
+ * against the name alone misses the spellings people actually type: "LAB Golf",
+ * "L.A.B Golf" and "L.A.B. Golf" must all reach "lab-golf". Dots and apostrophes
+ * are stripped rather than turned into separators, so an acronym collapses into
+ * one word ("l.a.b" -> "lab") instead of splitting ("l-a-b"); everything else
+ * becomes a single hyphen, matching how the slugs themselves are written.
  */
 function slugifyQuery(query: string): string {
   return query
-    .replace(/[^a-z0-9]+/gi, "-")
-    .replace(/^-+|-+$/g, "")
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/[.'\u2019]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 /**
