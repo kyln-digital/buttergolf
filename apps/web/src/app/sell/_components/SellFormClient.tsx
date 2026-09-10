@@ -293,6 +293,10 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   // The route as of this render. Async guards compare against it so a prop
   // change closes the write window immediately, without waiting for the
   // passive route-change effect.
+  // The generation whose data is currently in `formData`. Tracked where the
+  // form is assigned rather than read when a save fires, so a debounced payload
+  // can never be attributed to a record it did not come from.
+  const formDataGenerationRef = useRef(0);
   const routeIdRef = useRef<string | null>(loadProductId ?? null);
   routeIdRef.current = loadProductId ?? null;
 
@@ -306,7 +310,10 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   // record alone leaves a window where the previous listing still looks
   // saveable under the new URL.
   const isRecordReadyToSave = canSave(record) && record.routeId === (loadProductId ?? null);
-  const isLoadingRecord = isHydrating(record);
+  // A route mismatch counts as loading. Otherwise, for the render between the
+  // route changing and the passive effect, the previous listing stays editable
+  // and anything typed is silently discarded when the new record lands.
+  const isLoadingRecord = isHydrating(record) || !matchesRoute(record, loadProductId ?? null);
   const recordLoadFailed = hasLoadFailed(record);
 
   // --- Write ordering ---
@@ -316,10 +323,6 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   // publish with `isDraft: true`.
   const saveQueueRef = useRef<SaveQueue | null>(null);
   saveQueueRef.current ??= createSaveQueue();
-
-  // The reducer was initialised with the first route, so the effect below only
-  // dispatches for genuine switches.
-  const hasRunLoadEffectRef = useRef(false);
 
   // Show the recovery banner when localStorage has meaningful data and
   // we're NOT loading a specific draft from the DB
@@ -420,9 +423,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       if (isSubmittingRef.current) {
         return "skipped";
       }
-      // The generation `data` belongs to, captured now rather than when the
-      // queued task eventually runs.
-      const dataGeneration = recordRef.current.generation;
+      const dataGeneration = formDataGenerationRef.current;
       return saveQueueRef.current!.enqueue(() => persistDraft(data, dataGeneration));
     },
     [persistDraft]
@@ -443,15 +444,18 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   // phase, the idempotency key, and the generation that invalidates work
   // already in flight for the record being left.
   useEffect(() => {
-    if (!hasRunLoadEffectRef.current) {
-      // The reducer was initialised with this route already.
-      hasRunLoadEffectRef.current = true;
-      return;
-    }
+    const currentRouteId = loadProductId ?? null;
+
+    // Idempotent by comparing against the record itself rather than a
+    // "have I run before?" flag. Strict Mode mounts effects twice in
+    // development, and a flag would read the second mount as a record switch —
+    // wiping a recovered local draft on /sell, or discarding the first load and
+    // bumping the generation for a routed record.
+    if (recordRef.current.routeId === currentRouteId) return;
 
     applyRecordEvent({
       type: "route-changed",
-      routeId: loadProductId ?? null,
+      routeId: currentRouteId,
       createRequestId: uuidv4(),
     });
 
@@ -460,13 +464,19 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     titleManuallyOverriddenRef.current = false;
     setUserAddedText("");
 
-    if (!loadProductId) {
+    if (!currentRouteId) {
       // useLocalStorageState only replaces in-memory state when the new key has
       // something stored, so without this the previous listing's fields and
       // photos stay on screen — and a blank form is immediately saveable, so
       // autosave would create a fresh draft duplicating it.
       setFormData(EMPTY_FORM_DATA);
+      // The blank form belongs to the generation just created (applyRecordEvent
+      // updates the ref synchronously).
+      formDataGenerationRef.current = recordRef.current.generation;
     }
+    // For a routed record the form still holds the *previous* record's data
+    // until the load lands, so formDataGenerationRef deliberately stays behind —
+    // any autosave of it is skipped rather than written to the new row.
   }, [loadProductId, setFormData, applyRecordEvent]);
 
   // --- Loading the routed record ---
@@ -525,6 +535,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
         applied = true;
         setFormData(loaded);
+        formDataGenerationRef.current = recordGeneration;
         applyRecordEvent({ type: "load-succeeded", generation: recordGeneration });
       } catch {
         // Surface the failure rather than leaving a spinner up forever. Saving
