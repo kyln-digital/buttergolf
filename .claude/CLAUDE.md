@@ -478,7 +478,8 @@ pnpm db:generate      # Generate Prisma Client
 pnpm db:migrate:dev   # Create and apply migration
 pnpm db:push          # Push schema changes without a migration file
 pnpm db:studio        # Open Prisma Studio
-pnpm db:seed          # Seed database
+pnpm db:seed          # Seed database (fixture users + sample products; local only)
+pnpm db:seed:reference # Seed brands & club models only (safe against any environment)
 
 # Code Quality
 pnpm lint             # Lint all packages

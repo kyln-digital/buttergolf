@@ -39,7 +39,13 @@ async function main() {
 
   console.info(`Created/updated ${brands.length} brands`);
 
-  await seedClubModels(prisma);
+  const { skipped } = await seedClubModels(prisma);
+
+  // Exit non-zero on a partial seed so a failed run against production is not
+  // mistaken for a clean one; the per-model errors are logged above.
+  if (skipped > 0) {
+    throw new Error(`Reference seed incomplete: ${skipped} club model(s) could not be written`);
+  }
 }
 
 main()

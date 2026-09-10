@@ -41,7 +41,9 @@ const categoryToClubKind: Record<keyof ClubModelsData, ClubKind> = {
  * can select when listing their products. Includes historic and current models
  * across all major brands and categories.
  */
-export async function seedClubModels(prisma: PrismaClient) {
+export async function seedClubModels(
+  prisma: PrismaClient
+): Promise<{ seeded: number; skipped: number }> {
   console.info("Seeding club models...");
 
   // Load fixture data
@@ -66,15 +68,13 @@ export async function seedClubModels(prisma: PrismaClient) {
       const brand = brandMap.get(fixture.brand);
       if (!brand) {
         console.warn(`     Brand not found: ${fixture.brand}`);
+        totalSkipped += fixture.models.length;
         continue;
       }
 
       // Process each model for this brand
       for (const modelName of fixture.models) {
         try {
-          // Calculate usage count based on popularity heuristics
-          const usageCount = calculateUsageCount(modelName);
-
           await prisma.clubModel.upsert({
             where: {
               brandId_name_kind: {
@@ -83,16 +83,21 @@ export async function seedClubModels(prisma: PrismaClient) {
                 kind: clubKind,
               },
             },
+            // usageCount is deliberately absent here. It is live data: creating a
+            // listing increments it (see POST /api/products), and it both ranks
+            // autocomplete suggestions and auto-verifies a model at 3+ uses.
+            // Writing the seed heuristic on update would erase real counts every
+            // time this runs against an existing database.
             update: {
               isVerified: true,
-              usageCount,
             },
             create: {
               brandId: brand.id,
               name: modelName,
               kind: clubKind,
               isVerified: true,
-              usageCount,
+              // Seed ordering only, for models no one has listed yet.
+              usageCount: calculateUsageCount(modelName),
             },
           });
 
@@ -108,6 +113,8 @@ export async function seedClubModels(prisma: PrismaClient) {
   console.info(
     `\nClub models seeding complete: ${totalCreated} created/updated, ${totalSkipped} skipped`
   );
+
+  return { seeded: totalCreated, skipped: totalSkipped };
 }
 
 /**

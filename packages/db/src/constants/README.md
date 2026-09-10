@@ -58,11 +58,18 @@ export async function GET(request: Request) {
 }
 ```
 
-## Adding a New Category
+## Adding a New Category or Brand
 
-1. Edit `categories.ts` and add to the `CATEGORIES` array
-2. Run `pnpm db:seed` to sync with database
-3. The category will automatically appear in all dropdowns and filters
+1. Edit `categories.ts` (or `brands.ts`) and add to the `CATEGORIES` / `BRANDS` array
+2. Sync it to the database:
+   - **Fresh/local database:** `pnpm db:seed` — full seed, including fixture users and sample products
+   - **Any existing database, production included:** `pnpm db:seed:reference` — brands and club
+     models only. `db:seed` creates sample products with plain `create` calls, so running it
+     against a populated database injects junk inventory.
+3. The entry will automatically appear in all dropdowns and filters
+
+Both commands read `DATABASE_URL` from `packages/db/.env`, so point that at the intended
+environment first (`vercel env pull packages/db/.env --environment=production`).
 
 ## Category Properties
 

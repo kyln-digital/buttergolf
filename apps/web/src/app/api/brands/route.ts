@@ -2,6 +2,21 @@ import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
 
 /**
+ * Reduce a search term to slug form so punctuation and spacing don't matter.
+ *
+ * Brand names carry punctuation their slugs drop, so a contiguous `contains`
+ * against the name alone misses the spelling people actually type: "LAB Golf"
+ * matches neither "L.A.B. Golf" nor "lab-golf". Slugifying the query lets it
+ * match the slug instead ("lab golf" -> "lab-golf").
+ */
+function slugifyQuery(query: string): string {
+  return query
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase();
+}
+
+/**
  * GET /api/brands?query=cal
  *
  * Fuzzy search for golf brands with autocomplete support
@@ -27,11 +42,16 @@ export async function GET(request: Request) {
     }
 
     // Fuzzy search: match brands where name starts with query OR contains query
+    const slugQuery = slugifyQuery(query);
     const brands = await prisma.brand.findMany({
       where: {
         OR: [
           { name: { contains: query, mode: "insensitive" } },
           { slug: { contains: query, mode: "insensitive" } },
+          // Only worth a third clause when slugifying actually changed the term.
+          ...(slugQuery && slugQuery !== query
+            ? [{ slug: { contains: slugQuery, mode: "insensitive" as const } }]
+            : []),
         ],
       },
       orderBy: [
