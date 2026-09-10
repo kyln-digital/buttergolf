@@ -1,7 +1,10 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma, Prisma, ShipmentStatus, OrderStatus } from "@buttergolf/db";
-import crypto from "crypto";
+import {
+  verifyShipEngineWebhook,
+  SHIPENGINE_SIGNATURE_HEADERS,
+} from "@/lib/shipengine-webhook-signature";
 import { calculateAutoReleaseDate } from "@/lib/pricing";
 import {
   sendLabelGeneratedEmail,
@@ -81,6 +84,16 @@ function mapShipEngineStatus(statusCode: string): ShipmentStatus {
   }
 }
 
+/**
+ * The email senders return { success, error } rather than throwing, so a
+ * provider rejection never reaches a try/catch. Logging success
+ * unconditionally reported delivery for emails that had bounced.
+ */
+function logEmail(kind: string, result: { success: boolean; error?: string }): void {
+  if (result.success) console.info(`Sent ${kind} email`);
+  else console.error(`Failed to send ${kind} email:`, result.error);
+}
+
 // Map shipment status to order status
 function mapToOrderStatus(shipmentStatus: ShipmentStatus): OrderStatus {
   switch (shipmentStatus) {
@@ -99,46 +112,29 @@ function mapToOrderStatus(shipmentStatus: ShipmentStatus): OrderStatus {
   }
 }
 
-// Verify ShipEngine webhook signature
-function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
-  try {
-    const hmac = crypto.createHmac("sha256", secret);
-    hmac.update(payload);
-    const computedSignature = hmac.digest("base64");
-
-    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(computedSignature));
-  } catch (error) {
-    console.error("Error verifying ShipEngine webhook signature:", error);
-    return false;
-  }
-}
-
 export async function POST(req: Request) {
-  const WEBHOOK_SECRET = process.env.SHIPENGINE_WEBHOOK_SECRET;
-
-  // Fail closed: this webhook drives shipment state, which gates payment
-  // release. Without a configured secret we cannot trust the payload, so we
-  // refuse to process it rather than accepting unsigned requests.
-  if (!WEBHOOK_SECRET) {
-    console.error("SHIPENGINE_WEBHOOK_SECRET not configured - rejecting webhook");
-    return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
-  }
-
   try {
+    // Must be the raw bytes: the signature covers the body exactly as sent,
+    // so parsing and re-serialising would break verification.
     const body = await req.text();
     const headerPayload = await headers();
 
-    // ShipEngine sends signature in X-ShipEngine-Signature header
-    const signature = headerPayload.get("x-shipengine-signature");
+    // ShipEngine signs with RSA-SHA256 against a published JWKS. There is no
+    // shared secret; SHIPENGINE_WEBHOOK_SECRET is not part of the contract.
+    const verification = await verifyShipEngineWebhook(body, {
+      keyId: headerPayload.get(SHIPENGINE_SIGNATURE_HEADERS.keyId),
+      signature: headerPayload.get(SHIPENGINE_SIGNATURE_HEADERS.signature),
+      timestamp: headerPayload.get(SHIPENGINE_SIGNATURE_HEADERS.timestamp),
+    });
 
-    if (!signature) {
-      console.error("Missing ShipEngine webhook signature");
-      return NextResponse.json({ error: "Missing signature" }, { status: 401 });
-    }
-
-    if (!verifyWebhookSignature(body, signature, WEBHOOK_SECRET)) {
-      console.error("ShipEngine webhook signature verification failed");
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    if (verification.status === "rejected") {
+      // Fail closed. This webhook drives shipment state, which gates escrow
+      // release — an unverified payload could pay out a seller who never
+      // shipped. 503 on our own outage so ShipEngine retries; 401 when the
+      // request itself is untrustworthy, which it should not retry.
+      const isOurFault = verification.reason === "JWKS_UNAVAILABLE";
+      console.error("ShipEngine webhook rejected:", verification.reason);
+      return NextResponse.json({ error: verification.reason }, { status: isOurFault ? 503 : 401 });
     }
 
     const payload: ShipEngineTrackingWebhookPayload = JSON.parse(body);
@@ -257,7 +253,7 @@ export async function POST(req: Request) {
 
           // PRE_TRANSIT: Label generated (only if this is first time)
           if (shipmentStatus === "PRE_TRANSIT" && !order.labelGeneratedAt) {
-            await sendLabelGeneratedEmail({
+            const sent = await sendLabelGeneratedEmail({
               buyerEmail: buyer.email,
               buyerName,
               orderId: order.id,
@@ -265,7 +261,7 @@ export async function POST(req: Request) {
               estimatedDelivery: trackingData.estimated_delivery_date,
               carrier: order.carrier,
             });
-            console.info("Sent label generated email to buyer");
+            logEmail("label generated", sent);
           }
 
           // IN_TRANSIT: Package picked up and moving
@@ -275,7 +271,7 @@ export async function POST(req: Request) {
               ? `${latestEvent.city_locality}, ${latestEvent.state_province}`
               : undefined;
 
-            await sendInTransitEmail({
+            const sent = await sendInTransitEmail({
               buyerEmail: buyer.email,
               buyerName,
               orderId: order.id,
@@ -286,12 +282,12 @@ export async function POST(req: Request) {
               currentLocation,
               estimatedDelivery: trackingData.estimated_delivery_date,
             });
-            console.info("Sent in transit email to buyer");
+            logEmail("in transit", sent);
           }
 
           // OUT_FOR_DELIVERY: Package out for delivery today
           else if (shipmentStatus === "OUT_FOR_DELIVERY") {
-            await sendOutForDeliveryEmail({
+            const sent = await sendOutForDeliveryEmail({
               buyerEmail: buyer.email,
               buyerName,
               orderId: order.id,
@@ -299,20 +295,22 @@ export async function POST(req: Request) {
               trackingCode: order.trackingCode,
               trackingUrl: order.trackingUrl,
             });
-            console.info("Sent out for delivery email to buyer");
+            logEmail("out for delivery", sent);
           }
 
           // DELIVERED: Package delivered (send to both buyer and seller)
           else if (shipmentStatus === "DELIVERED") {
             // Send to buyer
-            await sendDeliveredEmail({
-              email: buyer.email,
-              name: buyerName,
-              orderId: order.id,
-              productTitle: product.title,
-              isBuyer: true,
-            });
-            console.info("Sent delivered email to buyer");
+            logEmail(
+              "delivered (buyer)",
+              await sendDeliveredEmail({
+                email: buyer.email,
+                name: buyerName,
+                orderId: order.id,
+                productTitle: product.title,
+                isBuyer: true,
+              })
+            );
 
             // Send to seller
             const seller = await prisma.user.findUnique({
@@ -321,14 +319,16 @@ export async function POST(req: Request) {
             if (seller) {
               const sellerName =
                 `${seller.firstName || ""} ${seller.lastName || ""}`.trim() || seller.email;
-              await sendDeliveredEmail({
-                email: seller.email,
-                name: sellerName,
-                orderId: order.id,
-                productTitle: product.title,
-                isBuyer: false,
-              });
-              console.info("Sent delivered email to seller");
+              logEmail(
+                "delivered (seller)",
+                await sendDeliveredEmail({
+                  email: seller.email,
+                  name: sellerName,
+                  orderId: order.id,
+                  productTitle: product.title,
+                  isBuyer: false,
+                })
+              );
             }
           }
         }

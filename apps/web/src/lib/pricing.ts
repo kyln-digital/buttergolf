@@ -6,8 +6,15 @@
  * - Plus £0.70 fixed fee
  * - Minimum £0.70 total
  *
- * Sellers receive 100% of product price + shipping (0% platform fee)
- * Platform revenue comes from buyer protection fees + optional promotions
+ * Sellers receive 100% of the product price (0% seller fee).
+ *
+ * Shipping is NOT part of the seller payout. The buyer pays a shipping fee,
+ * and that fee funds the label the platform buys on their behalf via
+ * ShipEngine. Paying it to the seller as well meant the platform bought the
+ * label AND handed over the money to cover it — a loss on every single order.
+ *
+ * Platform revenue = buyer protection fees + optional promotions, plus
+ * whatever is left of the shipping fee after the label is paid for.
  */
 
 // Canonical fee formula + shipping options live in @buttergolf/constants so
@@ -39,7 +46,9 @@ export interface PricingBreakdown {
   buyerProtectionFee: number;
   // Totals (in pounds)
   totalBuyerPays: number;
+  /** Product price only — shipping funds the label, not the payout. */
   sellerReceives: number;
+  /** Gross, before the cost of the label is deducted. */
   platformRevenue: number;
 }
 
@@ -76,8 +85,9 @@ export function calculatePricingBreakdown(
     shippingCost,
     buyerProtectionFee,
     totalBuyerPays: productPrice + shippingCost + buyerProtectionFee,
-    sellerReceives: productPrice + shippingCost, // 100% to seller
-    platformRevenue: buyerProtectionFee,
+    // 100% of the item price. Shipping is retained to buy the label.
+    sellerReceives: productPrice,
+    platformRevenue: buyerProtectionFee + shippingCost,
   };
 }
 
@@ -95,7 +105,8 @@ export function calculatePricingBreakdownInPence(
     shippingCostInPence,
     buyerProtectionFeeInPence,
     totalBuyerPaysInPence: productPriceInPence + shippingCostInPence + buyerProtectionFeeInPence,
-    sellerReceivesInPence: productPriceInPence + shippingCostInPence, // 100%
+    // 100% of the item price. Shipping is retained to buy the label.
+    sellerReceivesInPence: productPriceInPence,
   };
 }
 

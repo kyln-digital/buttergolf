@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, ProductCondition } from "@buttergolf/db";
-import { LISTING_PRICE_LIMITS, getListingPriceBoundsMessage } from "@buttergolf/constants";
+import {
+  LISTING_PRICE_LIMITS,
+  getListingPriceBoundsMessage,
+  getParcelPreset,
+  validateParcel,
+} from "@buttergolf/constants";
+import { validateUKAddress, type ShippingAddress } from "@/lib/address-validation";
 import { getUserIdFromRequest } from "@/lib/auth";
 import { cloudinary, extractPublicId, isValidCloudinaryUrl } from "@/lib/cloudinary";
 import { mapSlidersToConditionEnum } from "@/lib/product-condition";
@@ -89,6 +95,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       "gripCondition",
       "headCondition",
       "shaftCondition",
+      "parcelPresetId",
+      "length",
+      "width",
+      "height",
+      "weight",
     ];
 
     const updateData: Record<string, unknown> = {};
@@ -238,6 +249,54 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         effectivePrice > LISTING_PRICE_LIMITS.MAX
       ) {
         return NextResponse.json({ error: getListingPriceBoundsMessage() }, { status: 400 });
+      }
+
+      // Shipping readiness, same as POST /api/products. Without these a draft
+      // could be published with no postage address and no parcel — the buyer
+      // pays, then label generation fails.
+      const sellerAddress = await prisma.address.findFirst({
+        where: { userId: user.id, isDefault: true },
+      });
+
+      // Validate the address the way label purchase will, so a listing can't
+      // pass here and then fail after the buyer has paid. validateSellerCanShip
+      // is worded for buyers ("this seller hasn't...") and names no field, so
+      // go to the field-level validator and tell the seller what to fix.
+      if (!sellerAddress) {
+        return NextResponse.json(
+          {
+            error: "Add your postage address before publishing a listing",
+            code: "SELLER_ADDRESS_REQUIRED",
+          },
+          { status: 400 }
+        );
+      }
+
+      const addressCheck = validateUKAddress(sellerAddress as ShippingAddress, { isSeller: true });
+      if (!addressCheck.isValid) {
+        return NextResponse.json(
+          {
+            error: `Your postage address needs fixing before you can publish: ${addressCheck.errors[0].message}`,
+            code: "SELLER_ADDRESS_REQUIRED",
+            errors: addressCheck.errors,
+          },
+          { status: 400 }
+        );
+      }
+
+      const preset = getParcelPreset(effective.parcelPresetId as string | null);
+      const parcelErrors = validateParcel({
+        length: Number(effective.length) || preset?.length || 0,
+        width: Number(effective.width) || preset?.width || 0,
+        height: Number(effective.height) || preset?.height || 0,
+        weight: Number(effective.weight) || preset?.weight || 0,
+      });
+
+      if (parcelErrors.length > 0) {
+        return NextResponse.json(
+          { error: parcelErrors[0].message, code: "PARCEL_INVALID", errors: parcelErrors },
+          { status: 400 }
+        );
       }
     }
 

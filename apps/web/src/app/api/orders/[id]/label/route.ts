@@ -1,7 +1,25 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
-import { generateShippingLabel } from "@/lib/shipengine";
+import { generateShippingLabelRecordingFailure } from "@/lib/shipengine";
 import { getUserIdFromRequest } from "@/lib/auth";
+
+/**
+ * Which label failures are the caller's to fix, and which are ours.
+ *
+ * The seller can act on an incomplete address; they can do nothing about
+ * missing carrier config or an unreachable ShipEngine, and those should read
+ * as server faults in logs and monitoring.
+ */
+const LABEL_ERROR_STATUS: Record<string, number> = {
+  SELLER_ADDRESS_INVALID: 400,
+  NO_RATES_AVAILABLE: 400,
+  ORDER_NOT_FOUND: 404,
+  ALREADY_GENERATED: 409,
+  NOT_CONFIGURED: 503,
+  NO_CARRIERS_CONFIGURED: 503,
+  NO_RATE_MEETS_SERVICE: 503,
+  PURCHASE_FAILED: 502,
+};
 
 /**
  * POST /api/orders/[id]/label
@@ -68,19 +86,25 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       );
     }
 
-    // Generate the label
-    const result = await generateShippingLabel({ orderId });
+    // Generate the label. The recording wrapper persists any failure on the
+    // order, so a seller who retries later still sees why the last attempt
+    // failed rather than an empty action column.
+    const attempt = await generateShippingLabelRecordingFailure(orderId);
+
+    if (attempt.status === "failed") {
+      return NextResponse.json(
+        { error: attempt.message, code: attempt.code },
+        { status: LABEL_ERROR_STATUS[attempt.code] ?? 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      ...result,
+      ...attempt.label,
     });
   } catch (error) {
     console.error("Error generating label:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to generate label" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to generate label" }, { status: 500 });
   }
 }
 
