@@ -570,10 +570,12 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     if (recordPhase !== "loading" || !recordRouteId) return;
 
     let applied = false;
+    let cancelled = false;
 
     const loadRecord = async () => {
       try {
         const response = await fetch(`/api/products/${recordRouteId}`);
+        if (cancelled) return;
         if (!response.ok) {
           applyRecordEvent({ type: "load-failed", generation: recordGeneration });
           return;
@@ -610,7 +612,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
         // outside it — so without this check an out-of-order response could
         // still push its data onto the screen, leaving the form showing one
         // record while targeting another.
-        if (!canApplyLoad(recordRef.current, recordGeneration)) return;
+        if (cancelled || !canApplyLoad(recordRef.current, recordGeneration)) return;
 
         // A stored title is the seller's, whether they typed it or accepted the
         // generated one. Without this the auto-title effect would regenerate
@@ -628,13 +630,21 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
         // Surface the failure rather than leaving a spinner up forever. Saving
         // stays blocked either way, so a failed fetch can never overwrite the
         // record with a blank form.
-        if (!applied) {
+        if (!applied && !cancelled) {
           applyRecordEvent({ type: "load-failed", generation: recordGeneration });
         }
       }
     };
 
     void loadRecord();
+
+    // The generation alone is not enough to identify *this* run: Strict Mode
+    // replays the effect with the same generation, so a delayed replay would
+    // still pass canApplyLoad and overwrite edits made since the first response
+    // landed. Only the active run may touch the form.
+    return () => {
+      cancelled = true;
+    };
   }, [recordPhase, recordRouteId, recordGeneration, setFormData, applyRecordEvent]);
 
   // Helper function to singularize category names

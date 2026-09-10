@@ -20,11 +20,50 @@ export interface SellStorageKeyParams {
   editProductId?: string;
 }
 
-/** The bare key, used only for a listing that has no record yet. */
-export const NEW_LISTING_STORAGE_KEY = SELL_DRAFT_STORAGE_PREFIX;
+const TAB_ID_SESSION_KEY = `${SELL_DRAFT_STORAGE_PREFIX}-tab-id`;
+
+/**
+ * A stable id for this browser tab, from sessionStorage — which is per-tab and
+ * survives reloads.
+ *
+ * A record-backed form can share a key across tabs safely: both are editing the
+ * same row. A brand-new listing cannot. Two `/sell` tabs are two *different*
+ * listings, but neither has an id yet, so a shared key means the last writer
+ * wins and the other tab can hydrate those fields after a reload and autosave
+ * them as its own row.
+ *
+ * Falls back to a per-call id when sessionStorage is unavailable (private
+ * browsing, SSR): the draft simply isn't recoverable, which is the safe way to
+ * fail.
+ */
+function tabId(): string {
+  if (typeof window === "undefined") return "server";
+
+  try {
+    const existing = window.sessionStorage.getItem(TAB_ID_SESSION_KEY);
+    if (existing) return existing;
+
+    const created = Math.random().toString(36).slice(2, 10);
+    window.sessionStorage.setItem(TAB_ID_SESSION_KEY, created);
+    return created;
+  } catch {
+    return "no-session";
+  }
+}
+
+/**
+ * The key for a listing that has no record yet. Per-tab, so two `/sell` tabs
+ * keep their own in-progress work. Recovery therefore spans reloads but not a
+ * tab being closed — an acceptable trade against two tabs merging into one
+ * listing, especially since autosave persists a draft server-side within
+ * seconds anyway.
+ */
+export function newListingStorageKey(): string {
+  return `${SELL_DRAFT_STORAGE_PREFIX}-new-${tabId()}`;
+}
 
 export function sellStorageKey({ draftId, editProductId }: SellStorageKeyParams): string {
   if (editProductId) return `${SELL_DRAFT_STORAGE_PREFIX}-edit-${editProductId}`;
   if (draftId) return `${SELL_DRAFT_STORAGE_PREFIX}-draft-${draftId}`;
-  return NEW_LISTING_STORAGE_KEY;
+  return newListingStorageKey();
 }

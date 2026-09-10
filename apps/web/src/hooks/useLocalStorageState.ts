@@ -42,6 +42,10 @@ export function useLocalStorageState<T>(
   // caller, so there is nothing to keep in sync.
   const defaultValueRef = useRef(defaultValue);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // A pending write belongs to the key it was queued for. Flushed when the key
+  // changes (or on unmount) — otherwise the next key's first write clears the
+  // timer and the previous record's last edits are simply lost.
+  const flushPendingWrite = useRef<(() => void) | null>(null);
 
   // Hydrate from localStorage on mount
   useEffect(() => {
@@ -115,13 +119,29 @@ export function useLocalStorageState<T>(
         clearTimeout(debounceTimer.current);
       }
 
-      debounceTimer.current = setTimeout(() => {
+      const write = () => {
         try {
           const envelope = { value, _updatedAt: Date.now(), _version: schemaVersion };
           localStorage.setItem(key, JSON.stringify(envelope));
         } catch {
           // Storage full or blocked — silently degrade
         }
+      };
+
+      // Captured with the key it was queued for, so a flush writes it where it
+      // belongs rather than under whatever key is current by then.
+      flushPendingWrite.current = () => {
+        if (debounceTimer.current) {
+          clearTimeout(debounceTimer.current);
+          debounceTimer.current = null;
+        }
+        flushPendingWrite.current = null;
+        write();
+      };
+
+      debounceTimer.current = setTimeout(() => {
+        flushPendingWrite.current = null;
+        write();
       }, debounceMs);
     },
     [key, debounceMs, schemaVersion]
@@ -129,12 +149,9 @@ export function useLocalStorageState<T>(
 
   useEffect(() => {
     return () => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
-        debounceTimer.current = null;
-      }
+      flushPendingWrite.current?.();
     };
-  }, []);
+  }, [key]);
 
   // Wrapper that updates both React state and localStorage
   const setPersistedState = useCallback(
