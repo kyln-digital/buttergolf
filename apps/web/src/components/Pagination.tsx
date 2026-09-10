@@ -12,17 +12,24 @@ interface PaginationProps {
 
 type PageItem = number | "gap";
 
-/** First, last, and a window around the current page; gaps collapse to an ellipsis. */
+/**
+ * First, last, and a window around the current page. Near either edge the
+ * window widens to the first / last four pages so the list never reads
+ * "1 2 … 4"; a run of exactly one missing page is shown as the page itself
+ * rather than an ellipsis.
+ */
 function getPageItems(current: number, total: number): PageItem[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const wanted = new Set([1, total, current - 1, current, current + 1]);
-  if (current <= 3) wanted.add(4);
-  if (current >= total - 2) wanted.add(total - 3);
+  const wanted = new Set<number>([1, total]);
+  const from = current <= 3 ? 2 : current >= total - 2 ? total - 4 : current - 1;
+  const to = current <= 3 ? 5 : current >= total - 2 ? total - 1 : current + 1;
+  for (let page = from; page <= to; page++) wanted.add(page);
   const pages = [...wanted].filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
   const items: PageItem[] = [];
   let previous = 0;
   for (const page of pages) {
-    if (page - previous > 1) items.push("gap");
+    if (page - previous === 2) items.push(previous + 1);
+    else if (page - previous > 2) items.push("gap");
     items.push(page);
     previous = page;
   }
