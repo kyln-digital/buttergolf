@@ -11,6 +11,7 @@ import { SECTION_MAX_WIDTH, SectionHeader } from "./Section";
 const CARD_WIDTH = "clamp(200px, 40vw, 280px)";
 const CARD_GAP = 16;
 const SECONDS_PER_CATEGORY = 4;
+const MARQUEE_DURATION_SECONDS = CATEGORIES.length * SECONDS_PER_CATEGORY;
 const MOBILE_MEDIA_QUERY = "(max-width: 768px)";
 
 export function CategoriesSection() {
@@ -35,8 +36,17 @@ export function CategoriesSection() {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  const animationDuration = CATEGORIES.length * SECONDS_PER_CATEGORY;
   const shouldAnimate = isMounted && !prefersReducedMotion && !isMobile;
+  // The animation lives in classes (not an inline style) so the paused class
+  // can override it: an inline `animation` shorthand resets play-state to
+  // running and beats any class.
+  const trackClassName = [
+    "categories-track",
+    shouldAnimate && "categories-track--animate",
+    isPaused && "categories-track--paused",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <Column
@@ -69,17 +79,7 @@ export function CategoriesSection() {
         onFocus={() => setIsPaused(true)}
         onBlur={() => setIsPaused(false)}
       >
-        <Row
-          className={isPaused ? "categories-track categories-track--paused" : "categories-track"}
-          gap={CARD_GAP}
-          paddingHorizontal="$md"
-          style={{
-            animation: shouldAnimate
-              ? `categories-marquee ${animationDuration}s linear infinite`
-              : "none",
-            willChange: shouldAnimate ? "transform" : "auto",
-          }}
-        >
+        <Row className={trackClassName} gap={CARD_GAP} paddingHorizontal="$md">
           {(isMobile ? CATEGORIES : duplicatedCategories).map((category, index) => (
             <Link
               key={`${category.slug}-${index}`}
@@ -136,6 +136,11 @@ export function CategoriesSection() {
           overflow-x: hidden;
           overflow-y: visible;
         }
+        .categories-track--animate {
+          animation: categories-marquee ${MARQUEE_DURATION_SECONDS}s linear infinite;
+          will-change: transform;
+        }
+        /* Declared after --animate so it wins the play-state on hover / focus. */
         .categories-track--paused {
           animation-play-state: paused;
         }

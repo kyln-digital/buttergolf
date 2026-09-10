@@ -65,9 +65,11 @@ function HeartIcon({ filled }: Readonly<{ filled: boolean }>) {
 /**
  * ProductCard
  *
- * Flat, outlined card: image on top (4:3), title, price, seller. The whole card
- * is the link; the only other control is the favourite heart. Nothing moves on
- * hover - the border shifts one tone, matching the Button family.
+ * Flat, outlined card: image on top (4:3), title, price, seller. The link
+ * (a real anchor on web) covers the whole card; the favourite heart is a
+ * sibling laid over the image rather than a control nested inside the anchor,
+ * so keyboard and screen-reader users get two distinct actions. Nothing moves
+ * on hover - the border shifts one tone, matching the Button family.
  */
 export function ProductCard({
   product,
@@ -83,134 +85,140 @@ export function ProductCard({
   const anchorProps = isWeb && href ? { tag: "a" as const, href } : {};
 
   const handleFavouritePress = (event?: GestureResponderEvent) => {
-    // The heart sits inside the card anchor: stop the card press and the
-    // anchor's own navigation.
     event?.stopPropagation?.();
-    (event as unknown as { preventDefault?: () => void } | undefined)?.preventDefault?.();
     onFavourite?.(product.id);
   };
 
   return (
     <Card
       variant="outlined"
-      interactive
       padding={0}
       width="100%"
       backgroundColor="$card"
       borderRadius="$lg"
-      overflow="hidden"
-      onPress={onPress}
-      focusable
-      focusVisibleStyle={focusRing}
-      {...anchorProps}
+      overflow="visible"
+      position="relative"
+      pressStyle={{ scale: 0.98 }}
     >
-      {/* Image - 4:3 */}
-      <Column position="relative" width="100%" aspectRatio={4 / 3} overflow="hidden">
-        <Image
-          source={{ uri: product.imageUrl }}
-          alt={product.title}
-          width="100%"
-          height="100%"
-          objectFit="cover"
-        />
+      {/* The link: image + text. Its focus ring is drawn around the card. */}
+      <Column
+        width="100%"
+        borderRadius="$lg"
+        overflow="hidden"
+        cursor="pointer"
+        onPress={onPress}
+        focusable
+        focusVisibleStyle={focusRing}
+        {...anchorProps}
+      >
+        {/* Image - 4:3 */}
+        <Column position="relative" width="100%" aspectRatio={4 / 3} overflow="hidden">
+          <Image
+            source={{ uri: product.imageUrl }}
+            alt={product.title}
+            width="100%"
+            height="100%"
+            objectFit="cover"
+          />
 
-        {/* Promotion badge - top left */}
-        {product.activePromotion && (
-          <View
-            position="absolute"
-            top="$sm"
-            left="$sm"
-            backgroundColor={product.activePromotion.type === "BUMP" ? "$primary" : "$success"}
-            paddingHorizontal="$sm"
-            paddingVertical="$xs"
-            borderRadius="$full"
-            zIndex={2}
-          >
-            <Text size="$1" fontWeight="700" color="$textInverse">
-              {product.activePromotion.type === "BUMP" ? "BOOSTED" : "PRO SHOP"}
-            </Text>
-          </View>
-        )}
-
-        {/* Favourite - top right */}
-        <GlassmorphismCard
-          intensity="medium"
-          position="absolute"
-          top="$sm"
-          right="$sm"
-          width={36}
-          height={36}
-          borderRadius="$full"
-          alignItems="center"
-          justifyContent="center"
-          zIndex={2}
-          cursor="pointer"
-          role="button"
-          focusable
-          aria-label={isFavourited ? "Remove from favourites" : "Add to favourites"}
-          aria-pressed={isFavourited}
-          onPress={handleFavouritePress}
-          pressStyle={{ scale: 0.92, opacity: 0.85 }}
-          focusVisibleStyle={focusRing}
-          style={isWeb ? getGlassmorphismStyles("medium") : undefined}
-        >
-          <HeartIcon filled={isFavourited} />
-        </GlassmorphismCard>
-      </Column>
-
-      {/* Content */}
-      <Column paddingHorizontal="$md" paddingTop="$sm" paddingBottom="$md" gap="$xs">
-        <Text
-          size="$5"
-          fontWeight="600"
-          color="$text"
-          numberOfLines={2}
-          height={TITLE_HEIGHT}
-          style={
-            isWeb
-              ? {
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                }
-              : undefined
-          }
-        >
-          {product.title}
-        </Text>
-
-        <Text size="$6" fontWeight="700" color="$text">
-          £{product.price.toFixed(2)}
-        </Text>
-
-        <Row alignItems="center" gap="$sm" flexWrap="wrap">
-          <Text size="$4" color="$textSecondary" numberOfLines={1} flexShrink={1}>
-            {sellerName}
-          </Text>
-          {sellerRatingCount > 0 ? (
-            <Row alignItems="center" gap="$xs">
-              <Text color="$primary" size="$4">
-                ★
-              </Text>
-              <Text size="$4" fontWeight="500" color="$textSecondary">
-                {sellerRating?.toFixed(1)}
-              </Text>
-            </Row>
-          ) : (
+          {/* Promotion badge - top left */}
+          {product.activePromotion && (
             <View
-              backgroundColor="$buttonSecondaryBg"
+              position="absolute"
+              top="$sm"
+              left="$sm"
+              backgroundColor={product.activePromotion.type === "BUMP" ? "$primary" : "$success"}
               paddingHorizontal="$sm"
-              paddingVertical={2}
+              paddingVertical="$xs"
               borderRadius="$full"
+              zIndex={2}
             >
-              <Text size="$1" fontWeight="600" color="$textSecondary">
-                NEW SELLER
+              <Text size="$1" fontWeight="700" color="$textInverse">
+                {product.activePromotion.type === "BUMP" ? "BOOSTED" : "PRO SHOP"}
               </Text>
             </View>
           )}
-        </Row>
+        </Column>
+
+        {/* Content */}
+        <Column paddingHorizontal="$md" paddingTop="$sm" paddingBottom="$md" gap="$xs">
+          <Text
+            size="$5"
+            fontWeight="600"
+            color="$text"
+            numberOfLines={2}
+            height={TITLE_HEIGHT}
+            style={
+              isWeb
+                ? {
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }
+                : undefined
+            }
+          >
+            {product.title}
+          </Text>
+
+          <Text size="$6" fontWeight="700" color="$text">
+            £{product.price.toFixed(2)}
+          </Text>
+
+          <Row alignItems="center" gap="$sm" flexWrap="wrap">
+            <Text size="$4" color="$textSecondary" numberOfLines={1} flexShrink={1}>
+              {sellerName}
+            </Text>
+            {sellerRatingCount > 0 ? (
+              <Row alignItems="center" gap="$xs">
+                <Text color="$primary" size="$4">
+                  ★
+                </Text>
+                <Text size="$4" fontWeight="500" color="$textSecondary">
+                  {sellerRating?.toFixed(1)}
+                </Text>
+              </Row>
+            ) : (
+              <View
+                backgroundColor="$buttonSecondaryBg"
+                paddingHorizontal="$sm"
+                paddingVertical={2}
+                borderRadius="$full"
+              >
+                <Text size="$1" fontWeight="600" color="$textSecondary">
+                  NEW SELLER
+                </Text>
+              </View>
+            )}
+          </Row>
+        </Column>
       </Column>
+
+      {/* Favourite - top right, a sibling of the link so it is never nested in it */}
+      <GlassmorphismCard
+        intensity="medium"
+        position="absolute"
+        top="$sm"
+        right="$sm"
+        width={36}
+        height={36}
+        borderRadius="$full"
+        alignItems="center"
+        justifyContent="center"
+        zIndex={2}
+        cursor="pointer"
+        role="button"
+        focusable
+        aria-label={isFavourited ? "Remove from favourites" : "Add to favourites"}
+        aria-pressed={isFavourited}
+        onPress={handleFavouritePress}
+        pressStyle={{ scale: 0.92, opacity: 0.85 }}
+        focusVisibleStyle={focusRing}
+        style={isWeb ? getGlassmorphismStyles("medium") : undefined}
+      >
+        <HeartIcon filled={isFavourited} />
+      </GlassmorphismCard>
     </Card>
   );
 }
