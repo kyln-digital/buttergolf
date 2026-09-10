@@ -3,13 +3,9 @@ import { buildBrandedCoverUrl } from "@/lib/cloudinary";
 /** Shown when a product has no images yet (e.g. a part-filled draft). */
 export const PRODUCT_IMAGE_PLACEHOLDER = "/placeholder-product.jpg";
 
-/**
- * The shape every product-image resolver needs. Callers pass Prisma rows
- * directly; extra fields are preserved by `resolveProductImages`.
- */
+/** The shape every product-image resolver needs — Prisma rows satisfy it. */
 export interface ResolvableProductImage {
   url: string;
-  isBrandProcessed?: boolean;
 }
 
 /**
@@ -21,15 +17,14 @@ export interface ResolvableProductImage {
  * seller reordering their photos gets a correctly branded cover immediately,
  * with no re-upload.
  *
- * `isBrandProcessed` rows are legacy: the treatment is already baked into the
- * stored asset, so applying it again would run background removal over the
- * brand pattern itself.
+ * Older listings have the treatment baked into the stored asset by the previous
+ * upload-time transformation. Re-applying it to those is harmless and verified:
+ * Cloudinary's background removal treats the tiled pattern as background and
+ * the underlay puts it straight back, so the result is visually identical.
+ * That's why no "already processed" flag is needed.
  */
 export function resolveImageUrl(image: ResolvableProductImage, isCover: boolean): string {
-  if (!isCover || image.isBrandProcessed) {
-    return image.url;
-  }
-  return buildBrandedCoverUrl(image.url);
+  return isCover ? buildBrandedCoverUrl(image.url) : image.url;
 }
 
 /**

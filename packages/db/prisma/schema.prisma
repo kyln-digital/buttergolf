@@ -147,12 +147,6 @@ model ProductImage {
   productId String
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
-  /// True when the stored asset already has background removal and the brand
-  /// pattern baked in by an upload-time Cloudinary transformation. Legacy rows
-  /// only. New uploads store the raw photo and the brand pattern is applied as
-  /// a delivery-time transformation to whichever image is currently the cover,
-  /// so reordering photos keeps the cover on-brand. See lib/product-images.ts.
-  isBrandProcessed Boolean @default(false)
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
