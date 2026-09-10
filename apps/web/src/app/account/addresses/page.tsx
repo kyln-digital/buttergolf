@@ -106,7 +106,7 @@ export default function AddressesPage() {
 
   // Redirect if not signed in
   if (isLoaded && !isSignedIn) {
-    router.push("/sign-in?redirect=/account/addresses");
+    router.push("/sign-in?redirect_url=%2Faccount%2Faddresses");
     return null;
   }
 
