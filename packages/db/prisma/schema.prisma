@@ -467,7 +467,11 @@ model Conversation {
   sellerId  String
   orderId   String?  @unique // Linked once order is created
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  /// The creating migration gave this column a CURRENT_TIMESTAMP default, which
+  /// the model didn't declare. Declared here so the schema matches the database
+  /// — the alternative, a migration to drop the default, would change nothing
+  /// at runtime (Prisma always supplies the value) for no benefit.
+  updatedAt DateTime @default(now()) @updatedAt
 
   product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   buyer    User     @relation("BuyerConversations", fields: [buyerId], references: [id], onDelete: Cascade)
