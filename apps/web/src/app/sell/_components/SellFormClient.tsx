@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useReducer } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { LISTING_PRICE_LIMITS, getListingPriceBoundsMessage } from "@buttergolf/constants";
@@ -24,6 +24,15 @@ import {
 } from "@buttergolf/ui";
 import { ImageUpload } from "@/components/ImageUpload";
 import { PhotoTipsCard } from "./PhotoTipsCard";
+import {
+  sellRecordReducer,
+  initialSellRecordState,
+  canSave,
+  saveTarget,
+  isHydrating,
+  hasLoadFailed,
+} from "../_lib/sell-record-state";
+import { createSaveQueue, type SaveQueue } from "../_lib/save-queue";
 
 interface Category {
   id: string;
@@ -261,51 +270,35 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
   // Track whether the user has dismissed the recovery prompt
   const [recoveryDismissed, setRecoveryDismissed] = useState(false);
-  // The id of the DB row backing this listing: passed in as a prop, or set by
-  // the first autosave. A ref rather than state because submit needs the id the
-  // moment an autosave assigns it — a state update would not be visible to the
-  // closure that is already running.
-  // Starts null even when an id was passed in: the record's data isn't on
-  // screen yet, so there is nothing safe to write to until the load lands.
-  const savedDraftIdRef = useRef<string | null>(null);
-  // Every autosave still in flight. A set rather than a single promise because
-  // useAutoSave can start a second save while the first is still pending —
-  // tracking only the newest would let an older PATCH land after the submit,
-  // carrying `isDraft: true` and a stale image list.
-  const inFlightSavesRef = useRef<Set<Promise<AutoSaveResult>>>(new Set());
+  // --- Record identity ---
+  // Which row this form writes to, whether the data on screen is actually that
+  // row's, and which in-flight work is still relevant. All of it lives in one
+  // reducer (see _lib/sell-record-state.ts) so the rules are in one place and
+  // unit-testable, rather than spread across half a dozen refs that have to
+  // agree at every await.
+  const [record, dispatchRecord] = useReducer(sellRecordReducer, undefined, () =>
+    initialSellRecordState(loadProductId ?? null, uuidv4())
+  );
+  // Read during async work so the *current* generation is compared, not the one
+  // captured when a closure was created.
+  const recordRef = useRef(record);
+  recordRef.current = record;
 
-  /** Waits for every outstanding autosave so this write lands last. */
-  const settleInFlightSaves = useCallback(async () => {
-    while (inFlightSavesRef.current.size > 0) {
-      // Re-read after each pass: settling one save can start another.
-      await Promise.allSettled([...inFlightSavesRef.current]);
-    }
-  }, []);
-  /**
-   * The record whose data is currently in `formData` — null for a blank form.
-   * Deliberately the id rather than a boolean: on a client navigation from edit
-   * A to edit B, `loadProductId` changes during render while the effect that
-   * reloads is passive and runs later. Comparing the two makes the form
-   * un-ready in that same render, closing the window where a click could save
-   * A's data against B.
-   */
-  const [loadedRecordId, setLoadedRecordId] = useState<string | null>(null);
-  const [recordLoadFailed, setRecordLoadFailed] = useState(false);
-  /**
-   * Bumped every time the form switches records. In-flight work captures it and
-   * re-checks before mutating record-scoped state, so a response that lands
-   * after the form has moved on is discarded rather than applied to the wrong
-   * listing.
-   */
-  const recordGenerationRef = useRef(0);
-  /** Lets the load effect tell a record switch from the first mount. */
+  const isRecordReadyToSave = canSave(record);
+  const isLoadingRecord = isHydrating(record);
+  const recordLoadFailed = hasLoadFailed(record);
+
+  // --- Write ordering ---
+  // Autosave, "Save draft" and publish all mutate the same row, so they run
+  // through one FIFO queue. At most one write is in flight at a time and they
+  // land in the order requested, which is what stops an autosave overwriting a
+  // publish with `isDraft: true`.
+  const saveQueueRef = useRef<SaveQueue | null>(null);
+  saveQueueRef.current ??= createSaveQueue();
+
+  // The reducer was initialised with the first route, so the effect below only
+  // dispatches for genuine switches.
   const hasRunLoadEffectRef = useRef(false);
-  /** True when the data on screen belongs to the record we'd be writing to. */
-  const isRecordReadyToSave = (loadProductId ?? null) === loadedRecordId;
-  /** An existing record is being fetched and its data isn't on screen yet. */
-  const isLoadingRecord = Boolean(loadProductId) && !isRecordReadyToSave && !recordLoadFailed;
-  // Stable requestId for first-create idempotency until we get a real draft ID.
-  const draftRequestIdRef = useRef<string>(uuidv4());
 
   // Show the recovery banner when localStorage has meaningful data and
   // we're NOT loading a specific draft from the DB
@@ -314,7 +307,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
   // --- DB autosave via useAutoSave ---
   const persistDraft = useCallback(
-    async (data: FormData, targetId?: string | null): Promise<AutoSaveResult> => {
+    async (data: FormData): Promise<AutoSaveResult> => {
       if (!hasMeaningfulDraftContent(data)) {
         return "skipped";
       }
@@ -322,16 +315,18 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       const parsedPrice = Number.parseFloat(data.price);
       const safePrice = Number.isFinite(parsedPrice) ? parsedPrice : 0;
 
-      // Which record this save is for. Compared again before adopting a
-      // created row below, so a response that lands after the form has moved on
-      // can't retarget it.
-      const generation = recordGenerationRef.current;
+      // Snapshot the record this write is for. Because saves are serialised,
+      // this is read at the moment the write actually starts — not when it was
+      // requested — so it reflects any navigation that happened while queued.
+      const snapshot = recordRef.current;
+      const generation = snapshot.generation;
+      const existingId = saveTarget(snapshot);
 
-      // Callers that awaited something first pass the target they captured
-      // before that await, so a navigation mid-wait can't redirect the write.
-      // Otherwise read the ref, not state: a POST that resolved moments ago may
-      // have set the id without React having re-rendered this closure yet.
-      const existingId = targetId !== undefined ? targetId : savedDraftIdRef.current;
+      // The form moved to another record while this sat in the queue; its data
+      // belongs nowhere now.
+      if (!canSave(snapshot)) {
+        return "skipped";
+      }
 
       try {
         if (existingId) {
@@ -377,22 +372,16 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
             ...data,
             price: safePrice,
             brandName: undefined,
-            requestId: draftRequestIdRef.current,
+            requestId: snapshot.createRequestId,
             isDraft: true,
           }),
         });
 
         if (response.ok) {
           const product = await response.json();
-
-          // Only adopt the newly created row if the form is still on the record
-          // this save started for. A POST from a fresh /sell form can resolve
-          // after the user has navigated to ?draftId=B; assigning here
-          // unconditionally would point the ref back at the old row, and B's
-          // next save would PATCH it with B's data.
-          if (recordGenerationRef.current === generation) {
-            savedDraftIdRef.current = product.id;
-          }
+          // Stamped with the generation this write started in; the reducer
+          // discards it if the form has since moved to another record.
+          dispatchRecord({ type: "row-created", generation, rowId: product.id });
           return "saved";
         }
         return "error";
@@ -405,20 +394,12 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
   const handleAutoSave = useCallback(
     async (data: FormData): Promise<AutoSaveResult> => {
-      // Once a submit or explicit draft-save is under way, a background save
-      // would only race it — and the autosave payload carries `isDraft: true`,
-      // so landing last it would unpublish what was just published.
+      // Queued like every other write, so it can never overtake or be overtaken
+      // by a publish. persistDraft re-checks the record when it actually runs.
       if (isSubmittingRef.current) {
         return "skipped";
       }
-
-      const pending = persistDraft(data);
-      inFlightSavesRef.current.add(pending);
-      try {
-        return await pending;
-      } finally {
-        inFlightSavesRef.current.delete(pending);
-      }
+      return saveQueueRef.current!.enqueue(() => persistDraft(data));
     },
     [persistDraft]
   );
@@ -433,75 +414,58 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     enabled: isHydrated && !loading && isRecordReadyToSave,
   });
 
-  // --- Load an existing draft or listing from the DB when an id is provided ---
+  // --- Record switching ---
+  // One dispatch resets everything record-scoped: the write target, the load
+  // phase, the idempotency key, and the generation that invalidates work
+  // already in flight for the record being left.
   useEffect(() => {
-    // Switching records invalidates anything already in flight for the old one.
-    recordGenerationRef.current += 1;
-    // Title provenance and the user's manual additions belong to the record
+    if (!hasRunLoadEffectRef.current) {
+      // The reducer was initialised with this route already.
+      hasRunLoadEffectRef.current = true;
+      return;
+    }
+
+    dispatchRecord({
+      type: "route-changed",
+      routeId: loadProductId ?? null,
+      createRequestId: uuidv4(),
+    });
+
+    // Title provenance and the seller's manual additions belong to the record
     // that was on screen, not the one arriving.
     titleManuallyOverriddenRef.current = false;
     setUserAddedText("");
 
-    // Whether this run is a genuine record switch rather than the first mount.
-    // The effect only re-runs when loadProductId actually changes, so any run
-    // after the first is a switch.
-    const isRecordSwitch = hasRunLoadEffectRef.current;
-    hasRunLoadEffectRef.current = true;
-
     if (!loadProductId) {
-      // Navigated from a draft/edit route back to a blank form (e.g.
-      // /sell?draftId=… → /sell). Both record-scoped refs have to be dropped:
-      // savedDraftIdRef would PATCH the listing we just left, and reusing the
-      // old requestId would make the create call idempotently return that same
-      // draft instead of making a new one.
-      savedDraftIdRef.current = null;
-      draftRequestIdRef.current = uuidv4();
-
       // useLocalStorageState only replaces in-memory state when the new key has
       // something stored, so without this the previous listing's fields and
-      // photos stay on screen — and the form is save-ready with no target, so
-      // autosave would create a fresh draft that duplicates it. Only on a real
-      // switch: on first mount this state is either empty or a recovery draft
-      // the seller should keep.
-      if (isRecordSwitch) {
-        setFormData(EMPTY_FORM_DATA);
-      }
-
-      setLoadedRecordId(null);
-      setRecordLoadFailed(false);
-      return;
+      // photos stay on screen — and a blank form is immediately saveable, so
+      // autosave would create a fresh draft duplicating it.
+      setFormData(EMPTY_FORM_DATA);
     }
+  }, [loadProductId, setFormData]);
 
-    // Next's router reuses this component between /sell/[id]/edit routes, so
-    // the id can change under a mounted form. Until the new record has landed,
-    // the form still shows the *previous* listing's data — so there is no safe
-    // write target: pointing the ref at the new id would let a save put the old
-    // listing's data into the new one. Clear the target and close the gate, and
-    // only adopt the new id once its data is actually on screen.
-    let cancelled = false;
+  // --- Loading the routed record ---
+  // Driven by the state machine rather than by the route directly: it runs
+  // whenever a record enters the "loading" phase, and stamps its result with
+  // the generation it read from state. The reducer drops results whose
+  // generation has moved on, so there is exactly one staleness rule.
+  const { phase: recordPhase, routeId: recordRouteId, generation: recordGeneration } = record;
 
-    savedDraftIdRef.current = null;
-    // Clear the loaded marker as well as the target. Leaving it set makes the
-    // readiness check pass again if the seller returns to a record before the
-    // fetch they left lands (A → B → A): the ids match, but the write target
-    // was cleared on the way through B, so a save would create a duplicate
-    // draft instead of updating A.
-    setLoadedRecordId(null);
-    setRecordLoadFailed(false);
+  useEffect(() => {
+    if (recordPhase !== "loading" || !recordRouteId) return;
 
-    const loadDraft = async () => {
+    let applied = false;
+
+    const loadRecord = async () => {
       try {
-        const response = await fetch(`/api/products/${loadProductId}`);
-        // A response for an id we've since navigated away from must not be
-        // applied over the newer one.
-        if (cancelled) return;
+        const response = await fetch(`/api/products/${recordRouteId}`);
         if (!response.ok) {
-          setRecordLoadFailed(true);
+          dispatchRecord({ type: "load-failed", generation: recordGeneration });
           return;
         }
 
         const product = await response.json();
-        if (cancelled) return;
 
         const loaded: FormData = {
           title: product.title || "",
@@ -529,23 +493,21 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
           titleManuallyOverriddenRef.current = true;
         }
 
+        applied = true;
         setFormData(loaded);
-        // Adopt the write target only now that this record's data is on screen.
-        savedDraftIdRef.current = loadProductId;
-        setLoadedRecordId(loadProductId);
+        dispatchRecord({ type: "load-succeeded", generation: recordGeneration });
       } catch {
         // Surface the failure rather than leaving a spinner up forever. Saving
-        // stays blocked, so a failed fetch can never overwrite the record.
-        if (!cancelled) setRecordLoadFailed(true);
+        // stays blocked either way, so a failed fetch can never overwrite the
+        // record with a blank form.
+        if (!applied) {
+          dispatchRecord({ type: "load-failed", generation: recordGeneration });
+        }
       }
     };
 
-    void loadDraft();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [loadProductId, setFormData]);
+    void loadRecord();
+  }, [recordPhase, recordRouteId, recordGeneration, setFormData]);
 
   // Helper function to singularize category names
   const singularize = (word: string): string => {
@@ -780,77 +742,77 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       return;
     }
 
-    // The record this submit is for, captured before any await. Navigating to
-    // another listing mid-wait must not redirect the write to that one.
-    const capturedTarget = savedDraftIdRef.current;
-    const capturedGeneration = recordGenerationRef.current;
+    // The record this submit is for. Queued behind any autosave already
+    // running, so by the time it executes an in-flight draft creation has
+    // finished and its row id is in the state machine.
+    const capturedGeneration = record.generation;
 
     try {
-      // Let any autosave already in flight finish first. Two writes racing here
-      // would be ordered by the server, and the autosave's payload carries
-      // `isDraft: true` plus an older image list — landing last, it would
-      // unpublish the listing or resurrect deleted photos. Waiting also lets a
-      // pending draft-creation POST hand us its id below.
-      await settleInFlightSaves();
+      const response = await saveQueueRef.current!.enqueue(async () => {
+        // Re-read once this write actually starts. If the form moved to a
+        // different record while queued, this data belongs nowhere — writing it
+        // would publish the wrong listing or duplicate it.
+        const snapshot = recordRef.current;
+        if (snapshot.generation !== capturedGeneration || !canSave(snapshot)) {
+          return null;
+        }
 
-      // If the form moved to a different record while we waited, this data no
-      // longer belongs anywhere: writing it would either publish the wrong
-      // listing or duplicate it. Abandon rather than guess.
-      if (recordGenerationRef.current !== capturedGeneration) {
+        // Autosave may already have created a draft row for this listing.
+        // Publish THAT row rather than POSTing a second product — otherwise the
+        // draft is orphaned and sits in the seller's listings as an untitled
+        // £0.00 card.
+        const draftToPublish = saveTarget(snapshot);
+
+        return draftToPublish
+          ? await fetch(`/api/seller/products/${draftToPublish}`, {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                title: formData.title,
+                description: formData.description,
+                price: parsedPrice,
+                // `condition` is derived server-side from the three sliders below.
+                brandId: formData.brandId,
+                model: formData.model || null,
+                categoryId: formData.categoryId,
+                flex: formData.flex || null,
+                loft: formData.loft || null,
+                woodsSubcategory: formData.woodsSubcategory || null,
+                headCoverIncluded: formData.headCoverIncluded,
+                gripCondition: formData.gripCondition,
+                headCondition: formData.headCondition,
+                shaftCondition: formData.shaftCondition,
+                images: formData.images.map((url, index) => ({ url, sortOrder: index })),
+                // Editing a live listing leaves isDraft alone; publishing a draft
+                // flips it.
+                ...(isEditingListing ? {} : { isDraft: false }),
+              }),
+            })
+          : await fetch("/api/products", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                ...formData,
+                price: parsedPrice,
+                // Don't send brandName (display only)
+                brandName: undefined,
+                // Request ID for server-side idempotency
+                requestId: requestIdRef.current,
+              }),
+            });
+      });
+
+      // The queued write found the form on a different record and stood down.
+      if (response === null) {
         setError(RECORD_CHANGED_MESSAGE);
         setLoading(false);
         isSubmittingRef.current = false;
         return;
       }
-
-      // Autosave may already have created a draft row for this listing. Publish
-      // THAT row rather than POSTing a second product — otherwise the draft is
-      // orphaned and sits in the seller's listings as an untitled £0.00 card.
-      // The ref is safe to consult now the generation check above has confirmed
-      // it still refers to this same record; the wait may have just created it.
-      const draftToPublish = capturedTarget ?? savedDraftIdRef.current;
-
-      const response = draftToPublish
-        ? await fetch(`/api/seller/products/${draftToPublish}`, {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              title: formData.title,
-              description: formData.description,
-              price: parsedPrice,
-              // `condition` is derived server-side from the three sliders below.
-              brandId: formData.brandId,
-              model: formData.model || null,
-              categoryId: formData.categoryId,
-              flex: formData.flex || null,
-              loft: formData.loft || null,
-              woodsSubcategory: formData.woodsSubcategory || null,
-              headCoverIncluded: formData.headCoverIncluded,
-              gripCondition: formData.gripCondition,
-              headCondition: formData.headCondition,
-              shaftCondition: formData.shaftCondition,
-              images: formData.images.map((url, index) => ({ url, sortOrder: index })),
-              // Editing a live listing leaves isDraft alone; publishing a draft
-              // flips it.
-              ...(isEditingListing ? {} : { isDraft: false }),
-            }),
-          })
-        : await fetch("/api/products", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              ...formData,
-              price: parsedPrice,
-              // Don't send brandName (display only)
-              brandName: undefined,
-              // Request ID for server-side idempotency
-              requestId: requestIdRef.current,
-            }),
-          });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -913,25 +875,24 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       return;
     }
 
-    // Captured before the await for the same reason as in handleSubmit.
-    const capturedTarget = savedDraftIdRef.current;
-    const capturedGeneration = recordGenerationRef.current;
+    // Queued like every other write; persistDraft re-checks the record when it
+    // actually runs, and abandons if the form has moved on since.
+    const capturedGeneration = record.generation;
 
     try {
-      // Same ordering concern as publishing: let an in-flight autosave settle
-      // so this save is the last write, and so it can hand us the draft id.
-      await settleInFlightSaves();
+      const result = await saveQueueRef.current!.enqueue(() => {
+        if (recordRef.current.generation !== capturedGeneration) {
+          return Promise.resolve<AutoSaveResult>("skipped");
+        }
+        return persistDraft(formData);
+      });
 
-      // Abandon rather than write this form's data against whatever record the
-      // page has moved on to.
-      if (recordGenerationRef.current !== capturedGeneration) {
+      if (result === "skipped") {
         setError(RECORD_CHANGED_MESSAGE);
         setLoading(false);
         isSubmittingRef.current = false;
         return;
       }
-
-      const result = await persistDraft(formData, capturedTarget ?? savedDraftIdRef.current);
       if (result !== "saved") {
         throw new Error("Failed to save draft");
       }
