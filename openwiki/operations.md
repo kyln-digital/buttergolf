@@ -7,7 +7,7 @@ Canonical source: `AGENTS.md` (root). `CLAUDE.md` imports it via `@AGENTS.md`.
 - Vercel's Production Branch is `main`: merging a PR to `main` deploys **straight to production**. There is no separate `production` branch or promotion step (verified 2026-09-10 from the GitHub deployment records: merges to `main` create `Production` deployments; PR pushes create `Preview` deployments).
 - Every PR branch gets a Vercel **preview** deploy — verify changes there before merging.
 - Merging is the release decision: only when CI is green, the preview has been checked, and a human has asked for it.
-- **Migrations are not applied by the build.** `turbo run build` depends on `db:generate` only. Apply them with `pnpm db:migrate:deploy` and `DATABASE_URL` set to the **production** database (`vercel env pull --environment=production`; never an ambient local `.env`). **Migrate first, then merge**, so code deploying on merge never meets an un-migrated schema, and keep migrations backwards-compatible with the deployed code (expand, then contract).
+- **Migrations are not applied by the build.** `turbo run build` depends on `db:generate` only. Apply them with `pnpm db:migrate:deploy`, which reads `DATABASE_URL` from `packages/db/.env` (per `packages/db/prisma.config.ts`); pull the **production** value into that file first with `vercel env pull packages/db/.env --environment=production`, never trusting whatever is already there. **Migrate first, then merge**, so code deploying on merge never meets an un-migrated schema, and keep migrations backwards-compatible with the deployed code (expand, then contract).
 
 ## CI (`.github/workflows/ci.yml`)
 
