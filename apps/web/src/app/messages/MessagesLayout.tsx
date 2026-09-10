@@ -82,7 +82,6 @@ export function MessagesLayout({
 
   const containerStyle = {
     overflow: "hidden" as const,
-    boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
   };
 
   // On mobile, show either the thread list or the conversation, not both
