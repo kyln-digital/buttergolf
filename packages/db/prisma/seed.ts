@@ -1,3 +1,13 @@
+import path from "node:path";
+import { config } from "dotenv";
+
+// Load packages/db/.env before the client resolves DATABASE_URL. Prisma Client
+// does not read .env itself — only the CLI does — so without this the seed runs
+// against whatever DATABASE_URL the shell happens to export, or fails outright.
+// dotenv does not override an already-exported value, so an explicit
+// DATABASE_URL still wins.
+config({ path: path.join(__dirname, "..", ".env") });
+
 import { PrismaClient, ProductCondition } from "../generated/client";
 import { CATEGORIES } from "@buttergolf/constants";
 import { BRANDS } from "../src/constants/brands";
