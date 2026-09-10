@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import {
   Column,
   Row,
@@ -20,27 +20,66 @@ import type { FilterState } from "./FilterSidebar";
 interface MobileFilterSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Committed filters; the sheet edits a draft copy until Apply. */
   filters: FilterState;
   availableBrands: string[];
   priceRange: { min: number; max: number };
-  activeFilterCount: number;
-  onChange: (filters: Partial<FilterState>) => void;
-  onClearAll: () => void;
-  onApply: () => void;
+  onApply: (next: FilterState) => void;
 }
 
+/**
+ * Mobile filters edit a draft: Apply commits it to the listings, Cancel (or
+ * swiping the sheet away) discards it, so nothing refetches mid-edit.
+ */
 export function MobileFilterSheet({
   open,
   onOpenChange,
   filters,
   availableBrands,
   priceRange,
-  activeFilterCount,
-  onChange,
-  onClearAll,
   onApply,
 }: Readonly<MobileFilterSheetProps>) {
   const headingId = useId();
+
+  const priceBounds = useMemo(
+    () => ({ min: Math.floor(priceRange.min), max: Math.ceil(priceRange.max) }),
+    [priceRange.min, priceRange.max]
+  );
+
+  const [draft, setDraft] = useState<FilterState>(filters);
+
+  // Start every session from the committed filters.
+  useEffect(() => {
+    if (open) {
+      setDraft(filters); // eslint-disable-line react-hooks/set-state-in-effect -- reset the draft when the sheet opens
+    }
+  }, [open, filters]);
+
+  const updateDraft = (patch: Partial<FilterState>) => {
+    setDraft((prev) => ({ ...prev, ...patch }));
+  };
+
+  const clearDraft = () => {
+    setDraft({
+      category: null,
+      conditions: [],
+      minPrice: priceBounds.min,
+      maxPrice: priceBounds.max,
+      brands: [],
+      showFavouritesOnly: false,
+    });
+  };
+
+  const draftCount =
+    (draft.category ? 1 : 0) +
+    draft.conditions.length +
+    draft.brands.length +
+    (draft.minPrice !== priceBounds.min || draft.maxPrice !== priceBounds.max ? 1 : 0);
+
+  const handleApply = () => {
+    onApply(draft);
+    onOpenChange(false);
+  };
 
   return (
     <Sheet modal open={open} onOpenChange={onOpenChange} snapPoints={[88]} dismissOnSnapToBottom>
@@ -65,8 +104,8 @@ export function MobileFilterSheet({
           <Heading id={headingId} level={2} size="$5">
             Filters
           </Heading>
-          {activeFilterCount > 0 && (
-            <Button butterVariant="ghost" size="$3" onPress={onClearAll}>
+          {draftCount > 0 && (
+            <Button butterVariant="ghost" size="$3" onPress={clearDraft}>
               Clear all
             </Button>
           )}
@@ -77,15 +116,15 @@ export function MobileFilterSheet({
           <Column paddingHorizontal="$md" paddingBottom="$md">
             <FilterSection title="Category">
               <CategoryFilter
-                selectedCategory={filters.category}
-                onChange={(category) => onChange({ category })}
+                selectedCategory={draft.category}
+                onChange={(category) => updateDraft({ category })}
               />
             </FilterSection>
 
             <FilterSection title="Condition">
               <ConditionFilter
-                selectedConditions={filters.conditions}
-                onChange={(conditions) => onChange({ conditions })}
+                selectedConditions={draft.conditions}
+                onChange={(conditions) => updateDraft({ conditions })}
               />
             </FilterSection>
 
@@ -93,25 +132,25 @@ export function MobileFilterSheet({
               <PriceRangeFilter
                 minPrice={priceRange.min}
                 maxPrice={priceRange.max}
-                selectedMin={filters.minPrice}
-                selectedMax={filters.maxPrice}
-                onChange={(minPrice, maxPrice) => onChange({ minPrice, maxPrice })}
+                selectedMin={draft.minPrice}
+                selectedMax={draft.maxPrice}
+                onChange={(minPrice, maxPrice) => updateDraft({ minPrice, maxPrice })}
               />
             </FilterSection>
 
             <FilterSection title="Brand">
               <BrandFilter
                 availableBrands={availableBrands}
-                selectedBrands={filters.brands}
-                onChange={(brands) => onChange({ brands })}
+                selectedBrands={draft.brands}
+                onChange={(brands) => updateDraft({ brands })}
               />
             </FilterSection>
 
             <FilterSection title="Favourites">
               <SwitchWithLabel
                 label="Show favourites only"
-                checked={filters.showFavouritesOnly}
-                onCheckedChange={(checked) => onChange({ showFavouritesOnly: checked })}
+                checked={draft.showFavouritesOnly}
+                onCheckedChange={(checked) => updateDraft({ showFavouritesOnly: checked })}
                 size="$3"
               />
             </FilterSection>
@@ -129,15 +168,7 @@ export function MobileFilterSheet({
           <Button butterVariant="ghost" size="$5" flex={1} onPress={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button
-            butterVariant="primary"
-            size="$5"
-            flex={1}
-            onPress={() => {
-              onApply();
-              onOpenChange(false);
-            }}
-          >
+          <Button butterVariant="primary" size="$5" flex={1} onPress={handleApply}>
             Apply filters
           </Button>
         </Row>

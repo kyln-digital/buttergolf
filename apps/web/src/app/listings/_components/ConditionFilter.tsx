@@ -1,6 +1,7 @@
 "use client";
 
-import { Column, Row, Text, Checkbox } from "@buttergolf/ui";
+import { useId } from "react";
+import { Column, Row, Label, Checkbox } from "@buttergolf/ui";
 
 const CONDITIONS = [
   { value: "NEW", label: "New" },
@@ -17,6 +18,8 @@ interface ConditionFilterProps {
 }
 
 export function ConditionFilter({ selectedConditions, onChange }: Readonly<ConditionFilterProps>) {
+  const idPrefix = useId();
+
   const handleToggle = (condition: string) => {
     if (selectedConditions.includes(condition)) {
       onChange(selectedConditions.filter((c) => c !== condition));
@@ -27,18 +30,32 @@ export function ConditionFilter({ selectedConditions, onChange }: Readonly<Condi
 
   return (
     <Column>
-      {CONDITIONS.map((condition) => (
-        <Row key={condition.value} gap="$sm" alignItems="center" minHeight={36}>
-          <Checkbox
-            checked={selectedConditions.includes(condition.value)}
-            onChange={() => handleToggle(condition.value)}
-            size="sm"
-          />
-          <Text size="$4" cursor="pointer" onPress={() => handleToggle(condition.value)}>
-            {condition.label}
-          </Text>
-        </Row>
-      ))}
+      {CONDITIONS.map((condition) => {
+        const checkboxId = `${idPrefix}-${condition.value}`;
+        const labelId = `${checkboxId}-label`;
+        return (
+          <Row key={condition.value} gap="$sm" alignItems="center" minHeight={36}>
+            <Checkbox
+              id={checkboxId}
+              checked={selectedConditions.includes(condition.value)}
+              onChange={() => handleToggle(condition.value)}
+              size="sm"
+              aria-labelledby={labelId}
+            />
+            {/* Names the checkbox via aria-labelledby; pressing it toggles the box. */}
+            <Label
+              id={labelId}
+              size="$4"
+              fontWeight="400"
+              marginBottom={0}
+              cursor="pointer"
+              onPress={() => handleToggle(condition.value)}
+            >
+              {condition.label}
+            </Label>
+          </Row>
+        );
+      })}
     </Column>
   );
 }

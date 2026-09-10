@@ -190,7 +190,10 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
         >
           {/* Gallery */}
           <Column gap="$sm" flex={1} minWidth={0} width="100%" $gtMd={{ width: "auto" }}>
+            {/* A real button so Enter / Space open the lightbox */}
             <Card
+              tag="button"
+              {...{ type: "button" }}
               variant="outlined"
               interactive
               padding={0}
@@ -245,6 +248,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   return (
                     <Card
                       key={img.id}
+                      tag="button"
+                      {...{ type: "button" }}
                       variant="outlined"
                       interactive
                       padding={0}

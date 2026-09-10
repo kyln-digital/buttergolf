@@ -80,6 +80,10 @@ export interface CheckboxProps {
   id?: string;
   name?: string;
   value?: string;
+  /** Accessible name for the control (use one of these or a visible label). */
+  "aria-label"?: string;
+  /** Id of the element that labels the control. */
+  "aria-labelledby"?: string;
 }
 
 export function Checkbox({
@@ -91,6 +95,8 @@ export function Checkbox({
   id,
   name,
   value,
+  "aria-label": ariaLabel,
+  "aria-labelledby": ariaLabelledBy,
 }: CheckboxProps) {
   const [uncontrolledChecked, setUncontrolledChecked] = useState(defaultChecked);
 
@@ -118,12 +124,15 @@ export function Checkbox({
 
   return (
     <CheckboxBox
+      role="checkbox"
       checked={checked}
       disabled={disabled}
       size={size}
       onPress={handleChange}
       aria-checked={checked}
       aria-disabled={disabled}
+      aria-label={ariaLabel}
+      aria-labelledby={ariaLabelledBy}
       tabIndex={disabled ? -1 : 0}
       {...({ onKeyDown: handleKeyDown } as {
         onKeyDown: React.KeyboardEventHandler;

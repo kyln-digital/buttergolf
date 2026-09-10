@@ -1,6 +1,7 @@
 "use client";
 
-import { Column, Row, Text, Checkbox } from "@buttergolf/ui";
+import { useId } from "react";
+import { Column, Row, Text, Label, Checkbox } from "@buttergolf/ui";
 
 interface BrandFilterProps {
   availableBrands: string[];
@@ -13,6 +14,8 @@ export function BrandFilter({
   selectedBrands,
   onChange,
 }: Readonly<BrandFilterProps>) {
+  const idPrefix = useId();
+
   const handleToggle = (brand: string) => {
     if (selectedBrands.includes(brand)) {
       onChange(selectedBrands.filter((b) => b !== brand));
@@ -31,18 +34,32 @@ export function BrandFilter({
 
   return (
     <Column>
-      {availableBrands.map((brand) => (
-        <Row key={brand} gap="$sm" alignItems="center" minHeight={36}>
-          <Checkbox
-            checked={selectedBrands.includes(brand)}
-            onChange={() => handleToggle(brand)}
-            size="sm"
-          />
-          <Text size="$4" cursor="pointer" onPress={() => handleToggle(brand)}>
-            {brand}
-          </Text>
-        </Row>
-      ))}
+      {availableBrands.map((brand) => {
+        const checkboxId = `${idPrefix}-${brand.replace(/\s+/g, "-")}`;
+        const labelId = `${checkboxId}-label`;
+        return (
+          <Row key={brand} gap="$sm" alignItems="center" minHeight={36}>
+            <Checkbox
+              id={checkboxId}
+              checked={selectedBrands.includes(brand)}
+              onChange={() => handleToggle(brand)}
+              size="sm"
+              aria-labelledby={labelId}
+            />
+            {/* Names the checkbox via aria-labelledby; pressing it toggles the box. */}
+            <Label
+              id={labelId}
+              size="$4"
+              fontWeight="400"
+              marginBottom={0}
+              cursor="pointer"
+              onPress={() => handleToggle(brand)}
+            >
+              {brand}
+            </Label>
+          </Row>
+        );
+      })}
     </Column>
   );
 }

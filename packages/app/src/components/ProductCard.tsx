@@ -195,9 +195,12 @@ export function ProductCard({
         </Column>
       </Column>
 
-      {/* Favourite - top right, a sibling of the link so it is never nested in it */}
+      {/* Favourite - top right, a sibling of the link so it is never nested in
+          it, and a real <button> on web so Enter / Space toggle it */}
       <GlassmorphismCard
+        {...(isWeb ? { tag: "button" as const, type: "button" } : {})}
         intensity="medium"
+        padding={0}
         position="absolute"
         top="$sm"
         right="$sm"

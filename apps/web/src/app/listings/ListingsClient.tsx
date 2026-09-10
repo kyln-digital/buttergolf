@@ -530,10 +530,7 @@ export function ListingsClient({
         filters={filters}
         availableBrands={availableFilters?.availableBrands || []}
         priceRange={availableFilters?.priceRange || { min: 0, max: 10000 }}
-        activeFilterCount={activeFilterCount}
-        onChange={handleFilterChange}
-        onClearAll={handleClearAll}
-        onApply={() => fetchProducts(1)}
+        onApply={setFilters}
       />
 
       <TrustSection />
