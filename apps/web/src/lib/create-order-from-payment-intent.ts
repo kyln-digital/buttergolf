@@ -7,7 +7,8 @@ import {
   sendEmail,
   sendPaymentOnHoldEmail,
 } from "@/lib/email";
-import { generateShippingLabel } from "@/lib/shipengine";
+import { generateShippingLabelRecordingFailure } from "@/lib/shipengine";
+import { getBaseUrl } from "@/lib/base-url";
 
 type OrderRecord = Awaited<ReturnType<typeof prisma.order.create>>;
 
@@ -117,11 +118,20 @@ export async function createOrderFromPaymentIntent(
     return { status: "pending", reason: "buyer_not_found" };
   }
 
-  // Get shipping details from the payment intent
-  const shippingDetails = paymentIntent.shipping;
+  // Where to post the item to.
+  //
+  // The web PaymentElement flow attaches this as `paymentIntent.shipping` via
+  // the Address Element. The mobile PaymentSheet does not — it collects a full
+  // address into `billing_details` instead, which left every mobile purchase
+  // charged with no order created and no label (PAY-3). Falling back to the
+  // charge's billing address fixes mobile without needing an app release.
+  const shippingDetails = paymentIntent.shipping ?? (await getShippingFromCharge(paymentIntent));
 
-  if (!shippingDetails?.address) {
-    console.error("[createOrderFromPaymentIntent] Missing shipping details in payment intent");
+  if (!shippingDetails?.address?.line1 || !shippingDetails.address.postal_code) {
+    console.error(
+      "[createOrderFromPaymentIntent] No usable delivery address on payment intent or charge",
+      { paymentIntentId: paymentIntent.id }
+    );
     return { status: "pending", reason: "missing_shipping" };
   }
 
@@ -179,6 +189,12 @@ export async function createOrderFromPaymentIntent(
   const buyerProtectionFee = buyerProtectionFeeInPence / 100;
   const sellerPayout = sellerPayoutInPence / 100;
 
+  // The service the buyer chose and paid for. Previously this reached Stripe
+  // metadata and stopped there, so label purchase had no idea what had been
+  // promised and just bought the cheapest thing available.
+  const shippingOptionId = paymentIntent.metadata.shippingOptionId || null;
+  const shippingServiceName = paymentIntent.metadata.shippingOptionName || null;
+
   // Get charge ID for later transfer
   const stripeChargeId =
     typeof paymentIntent.latest_charge === "string"
@@ -197,6 +213,8 @@ export async function createOrderFromPaymentIntent(
         stripeChargeId,
         amountTotal,
         shippingCost,
+        shippingOptionId,
+        shippingServiceName,
         buyerProtectionFee,
         stripePlatformFee: buyerProtectionFee,
         stripeSellerPayout: sellerPayout,
@@ -243,6 +261,53 @@ export async function createOrderFromPaymentIntent(
 }
 
 /**
+ * Recover a delivery address from the charge's billing details.
+ *
+ * Only used when `paymentIntent.shipping` is absent. The mobile PaymentSheet
+ * is configured with `AddressCollectionMode.FULL`, so the buyer really did
+ * enter a full postal address — it just lands on `billing_details` rather than
+ * on the intent's shipping field.
+ */
+async function getShippingFromCharge(
+  paymentIntent: Stripe.PaymentIntent
+): Promise<Stripe.PaymentIntent.Shipping | null> {
+  const chargeId =
+    typeof paymentIntent.latest_charge === "string"
+      ? paymentIntent.latest_charge
+      : paymentIntent.latest_charge?.id;
+
+  if (!chargeId) return null;
+
+  try {
+    const charge = await stripe.charges.retrieve(chargeId);
+
+    // Stripe may already have shipping on the charge itself.
+    if (charge.shipping?.address?.line1) {
+      return charge.shipping as Stripe.PaymentIntent.Shipping;
+    }
+
+    const billing = charge.billing_details;
+    if (!billing?.address?.line1) return null;
+
+    return {
+      name: billing.name ?? "",
+      phone: billing.phone ?? undefined,
+      address: {
+        line1: billing.address.line1,
+        line2: billing.address.line2 ?? null,
+        city: billing.address.city ?? null,
+        state: billing.address.state ?? null,
+        postal_code: billing.address.postal_code ?? null,
+        country: billing.address.country ?? null,
+      },
+    } as Stripe.PaymentIntent.Shipping;
+  } catch (error) {
+    console.error("[createOrderFromPaymentIntent] Could not read charge for address", error);
+    return null;
+  }
+}
+
+/**
  * Handles post-order tasks: emails, shipping label, seller notifications.
  * Runs after order creation and should not block the response.
  */
@@ -281,7 +346,7 @@ async function handlePostOrderTasks(
               <p style="color: #323232; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
                 Please complete your Stripe Connect profile to add your address.
               </p>
-              <a href="${process.env.NEXT_PUBLIC_APP_URL}/sell" style="display: inline-block; background-color: #F45314; color: #FFFFFF; padding: 14px 28px; text-decoration: none; border-radius: 100px; font-weight: 600; font-size: 16px;">
+              <a href="${getBaseUrl()}/sell" style="display: inline-block; background-color: #F45314; color: #FFFFFF; padding: 14px 28px; text-decoration: none; border-radius: 100px; font-weight: 600; font-size: 16px;">
                 Complete Your Profile
               </a>
               <p style="color: #545454; font-size: 14px; line-height: 1.6; margin-top: 24px;">
@@ -299,18 +364,20 @@ async function handlePostOrderTasks(
     }
   }
 
-  // Attempt to generate shipping label automatically
-  try {
-    const labelResult = await generateShippingLabel({ orderId });
+  // Attempt to generate the shipping label. Failures are recorded on the order
+  // so the seller sees why no label appeared, rather than nothing happening.
+  const labelAttempt = await generateShippingLabelRecordingFailure(orderId);
+  if (labelAttempt.status === "ok") {
     console.info("[createOrderFromPaymentIntent] Shipping label generated:", {
       orderId,
-      trackingNumber: labelResult.trackingNumber,
-      carrier: labelResult.carrier,
+      trackingNumber: labelAttempt.label.trackingNumber,
+      carrier: labelAttempt.label.carrier,
     });
-  } catch (labelError) {
-    console.warn("[createOrderFromPaymentIntent] Could not auto-generate shipping label:", {
+  } else {
+    console.error("[createOrderFromPaymentIntent] Shipping label failed:", {
       orderId,
-      error: labelError instanceof Error ? labelError.message : "Unknown error",
+      code: labelAttempt.code,
+      message: labelAttempt.message,
     });
   }
 

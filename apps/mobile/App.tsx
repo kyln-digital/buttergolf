@@ -9,7 +9,7 @@ import {
 } from "@react-navigation/native";
 import * as Notifications from "expo-notifications";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { LISTING_PRICE_LIMITS } from "@buttergolf/constants";
+import { LISTING_PRICE_LIMITS, validateParcel } from "@buttergolf/constants";
 import { brandColors } from "@buttergolf/config";
 import {
   Provider,
@@ -48,6 +48,7 @@ import type {
   SellFormData,
   ImageData,
 } from "@buttergolf/app";
+import { resolveFormParcel } from "@buttergolf/app";
 import { OnboardingScreen } from "@buttergolf/app/src/features/onboarding";
 import { HomeScreen } from "@buttergolf/app/src/features/home";
 import { CategoryListScreen } from "@buttergolf/app/src/features/categories";
@@ -446,6 +447,12 @@ async function submitListingToApi(
     );
   }
 
+  const resolvedParcel = resolveFormParcel(data);
+  const parcelErrors = validateParcel(resolvedParcel);
+  if (parcelErrors.length > 0) {
+    throw new Error(parcelErrors[0].message);
+  }
+
   // Generate a unique request ID for idempotency
   const requestId = `mobile-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
@@ -467,6 +474,13 @@ async function submitListingToApi(
     gripCondition: data.gripCondition,
     headCondition: data.headCondition,
     shaftCondition: data.shaftCondition,
+    // Postage. Send the resolved parcel so the server never has to invent
+    // dimensions for the rate quote or the label.
+    parcelPresetId: data.parcelPresetId || undefined,
+    length: resolvedParcel.length || undefined,
+    width: resolvedParcel.width || undefined,
+    height: resolvedParcel.height || undefined,
+    weight: resolvedParcel.weight || undefined,
     // Idempotency key
     requestId,
   };

@@ -3,7 +3,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
-import { LISTING_PRICE_LIMITS, getListingPriceBoundsMessage } from "@buttergolf/constants";
+import {
+  LISTING_PRICE_LIMITS,
+  getListingPriceBoundsMessage,
+  PARCEL_PRESETS,
+  getParcelPreset,
+  getDefaultParcelPresetId,
+  validateParcel,
+} from "@buttergolf/constants";
 import { useLocalStorageState } from "@/hooks/useLocalStorageState";
 import { useAutoSave, type AutoSaveStatus, type AutoSaveResult } from "@/hooks/useAutoSave";
 import {
@@ -61,6 +68,13 @@ interface FormData {
   headCondition: number; // Head condition rating 1-10
   shaftCondition: number; // Shaft condition rating 1-10
   images: string[];
+  // Postage. The preset supplies dimensions; the overrides are optional and
+  // stored as entered so a half-typed number doesn't become a real dimension.
+  parcelPresetId: string;
+  parcelLength: string;
+  parcelWidth: string;
+  parcelHeight: string;
+  parcelWeight: string;
 }
 
 const FLEX_OPTIONS = [
@@ -161,6 +175,11 @@ const EMPTY_FORM_DATA: FormData = {
   headCondition: 7,
   shaftCondition: 7,
   images: [],
+  parcelPresetId: "",
+  parcelLength: "",
+  parcelWidth: "",
+  parcelHeight: "",
+  parcelWeight: "",
 };
 
 function hasMeaningfulDraftContent(data: FormData): boolean {
@@ -178,6 +197,7 @@ function hasMeaningfulDraftContent(data: FormData): boolean {
     data.gripCondition !== 7 ||
     data.headCondition !== 7 ||
     data.shaftCondition !== 7 ||
+    data.parcelPresetId.trim().length > 0 ||
     data.images.length > 0
   );
 }
@@ -231,6 +251,32 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
   const [savedDraftId, setSavedDraftId] = useState<string | null>(draftId ?? null);
   // Stable requestId for first-create idempotency until we get a real draft ID.
   const draftRequestIdRef = useRef<string>(uuidv4());
+
+  // --- Postage ---
+  const selectedParcelPreset = getParcelPreset(formData.parcelPresetId);
+
+  // What we'll actually declare to the carrier: the seller's overrides where
+  // they gave one, the preset everywhere else.
+  const resolvedParcel = {
+    length: Number.parseFloat(formData.parcelLength) || selectedParcelPreset?.length || 0,
+    width: Number.parseFloat(formData.parcelWidth) || selectedParcelPreset?.width || 0,
+    height: Number.parseFloat(formData.parcelHeight) || selectedParcelPreset?.height || 0,
+    weight: Number.parseFloat(formData.parcelWeight) || selectedParcelPreset?.weight || 0,
+  };
+
+  const parcelErrors = selectedParcelPreset ? validateParcel(resolvedParcel) : [];
+
+  // Preselect a sensible parcel from the chosen category so the seller is
+  // confirming a guess rather than starting from a blank list.
+  const selectedCategorySlug = categories.find((c) => c.id === formData.categoryId)?.slug;
+  useEffect(() => {
+    if (!formData.parcelPresetId && selectedCategorySlug) {
+      setFormData((prev) => ({
+        ...prev,
+        parcelPresetId: getDefaultParcelPresetId(selectedCategorySlug),
+      }));
+    }
+  }, [formData.parcelPresetId, selectedCategorySlug, setFormData]);
 
   // Show the recovery banner when localStorage has meaningful data and
   // we're NOT loading a specific draft from the DB
@@ -328,6 +374,13 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
         const product = await response.json();
 
         const loaded: FormData = {
+          parcelPresetId: product.parcelPresetId || "",
+          // Stored dimensions come back as the resolved values; show them as
+          // overrides so the seller sees exactly what will be declared.
+          parcelLength: product.length ? String(product.length) : "",
+          parcelWidth: product.width ? String(product.width) : "",
+          parcelHeight: product.height ? String(product.height) : "",
+          parcelWeight: product.weight ? String(product.weight) : "",
           title: product.title || "",
           description: product.description || "",
           price: product.price ? String(product.price) : "",
@@ -550,6 +603,20 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
       return;
     }
 
+    if (!formData.parcelPresetId) {
+      setError("Choose how you'll post this item");
+      setLoading(false);
+      isSubmittingRef.current = false;
+      return;
+    }
+
+    if (parcelErrors.length > 0) {
+      setError(parcelErrors[0].message);
+      setLoading(false);
+      isSubmittingRef.current = false;
+      return;
+    }
+
     try {
       const response = await fetch("/api/products", {
         method: "POST",
@@ -561,6 +628,15 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
           price: parsedPrice,
           // Don't send brandName (display only)
           brandName: undefined,
+          // Send the resolved parcel, not the raw override strings.
+          length: resolvedParcel.length,
+          width: resolvedParcel.width,
+          height: resolvedParcel.height,
+          weight: resolvedParcel.weight,
+          parcelLength: undefined,
+          parcelWidth: undefined,
+          parcelHeight: undefined,
+          parcelWeight: undefined,
           // Request ID for server-side idempotency
           requestId: requestIdRef.current,
         }),
@@ -1217,6 +1293,97 @@ export function SellFormClient({ draftId }: SellFormClientProps) {
                       Enter your asking price in GBP ({LISTING_PRICE_LIMITS.MIN} -{" "}
                       {LISTING_PRICE_LIMITS.MAX})
                     </HelperText>
+                  </Column>
+
+                  {/* Postage — feeds the buyer's shipping quote and the label we
+                      buy on their behalf, so it has to be the packed box. */}
+                  <Column gap="$xs" width="100%">
+                    <FormLabel required>Postage</FormLabel>
+                    <RadioGroup
+                      value={formData.parcelPresetId}
+                      onValueChange={(value) => setFormData({ ...formData, parcelPresetId: value })}
+                    >
+                      <Column gap="$xs" width="100%">
+                        {PARCEL_PRESETS.map((preset) => (
+                          <Row key={preset.id} gap="$sm" alignItems="center">
+                            <Radio value={preset.id}>
+                              <RadioIndicator />
+                            </Radio>
+                            <Text
+                              size="$4"
+                              color="$text"
+                              onPress={() =>
+                                setFormData({ ...formData, parcelPresetId: preset.id })
+                              }
+                              cursor="pointer"
+                              flex={1}
+                            >
+                              {preset.label}{" "}
+                              <Text size="$3" color="$textSecondary">
+                                ({preset.length}×{preset.width}×{preset.height}cm,{" "}
+                                {preset.weight >= 1000
+                                  ? `${(preset.weight / 1000).toFixed(1)}kg`
+                                  : `${preset.weight}g`}
+                                )
+                              </Text>
+                            </Text>
+                          </Row>
+                        ))}
+                      </Column>
+                    </RadioGroup>
+                    <HelperText>
+                      Pick the closest match to your packed parcel. This sets the buyer&apos;s
+                      shipping quote and the label.
+                    </HelperText>
+                  </Column>
+
+                  {/* Optional exact measurements */}
+                  <Column gap="$xs" width="100%">
+                    <FormLabel>Exact size and weight (optional)</FormLabel>
+                    <Row gap="$sm" width="100%" flexWrap="wrap">
+                      <Input
+                        value={formData.parcelLength}
+                        onChangeText={(value) => setFormData({ ...formData, parcelLength: value })}
+                        placeholder={`Length ${selectedParcelPreset?.length ?? ""}cm`}
+                        size="$4"
+                        inputMode="decimal"
+                        flex={1}
+                      />
+                      <Input
+                        value={formData.parcelWidth}
+                        onChangeText={(value) => setFormData({ ...formData, parcelWidth: value })}
+                        placeholder={`Width ${selectedParcelPreset?.width ?? ""}cm`}
+                        size="$4"
+                        inputMode="decimal"
+                        flex={1}
+                      />
+                      <Input
+                        value={formData.parcelHeight}
+                        onChangeText={(value) => setFormData({ ...formData, parcelHeight: value })}
+                        placeholder={`Height ${selectedParcelPreset?.height ?? ""}cm`}
+                        size="$4"
+                        inputMode="decimal"
+                        flex={1}
+                      />
+                      <Input
+                        value={formData.parcelWeight}
+                        onChangeText={(value) => setFormData({ ...formData, parcelWeight: value })}
+                        placeholder={`Weight ${selectedParcelPreset?.weight ?? ""}g`}
+                        size="$4"
+                        inputMode="decimal"
+                        flex={1}
+                      />
+                    </Row>
+                    {parcelErrors.length > 0 ? (
+                      <Text size="$2" color="$error" marginTop="$xs">
+                        {parcelErrors[0].message}
+                      </Text>
+                    ) : (
+                      <HelperText>
+                        Leave blank to use the preset. Accurate measurements mean an accurate quote
+                        and no carrier surcharges.
+                      </HelperText>
+                    )}
                   </Column>
 
                   {/* Error Message */}

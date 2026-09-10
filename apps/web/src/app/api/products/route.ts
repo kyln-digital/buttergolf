@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { prisma, ProductCondition } from "@buttergolf/db";
-import { LISTING_PRICE_LIMITS, getListingPriceBoundsMessage } from "@buttergolf/constants";
+import {
+  LISTING_PRICE_LIMITS,
+  getListingPriceBoundsMessage,
+  getParcelPreset,
+  validateParcel,
+  type ParcelDimensions,
+} from "@buttergolf/constants";
 import { getUserIdFromRequest } from "@/lib/auth";
 
 // Map slider values to ProductCondition enum for backwards compatibility
@@ -105,6 +111,7 @@ export async function POST(request: Request) {
       headCondition,
       shaftCondition,
       // Shipping dimensions
+      parcelPresetId,
       length,
       width,
       height,
@@ -220,6 +227,55 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "At least one image is required" }, { status: 400 });
     }
 
+    // ============================================================
+    // SHIPPING READINESS (published listings only)
+    // A listing that can't be posted is worse than no listing: the buyer pays,
+    // the label fails, and we're refunding a sale that should never have been
+    // possible. Both gates below are the cheapest place to catch that.
+    // ============================================================
+    let resolvedParcel: ParcelDimensions | null = null;
+
+    if (!isDraft) {
+      // Gate 1: the seller must have somewhere to post from. Without this,
+      // order creation invents an "Address pending" placeholder and label
+      // generation fails after the buyer has already been charged.
+      const sellerAddress = await prisma.address.findFirst({
+        where: { userId: user.id, isDefault: true },
+      });
+
+      if (!sellerAddress || sellerAddress.street1 === "Address pending") {
+        return NextResponse.json(
+          {
+            error: "Add your postage address before publishing a listing",
+            code: "SELLER_ADDRESS_REQUIRED",
+          },
+          { status: 400 }
+        );
+      }
+
+      // Gate 2: the parcel has to be postable. Prefer the seller's own numbers,
+      // fall back to the preset they picked, then to the category default.
+      const preset = getParcelPreset(parcelPresetId);
+      resolvedParcel = {
+        length: Number(length) || preset?.length || 0,
+        width: Number(width) || preset?.width || 0,
+        height: Number(height) || preset?.height || 0,
+        weight: Number(weight) || preset?.weight || 0,
+      };
+
+      const parcelErrors = validateParcel(resolvedParcel);
+      if (parcelErrors.length > 0) {
+        return NextResponse.json(
+          {
+            error: parcelErrors[0].message,
+            code: "PARCEL_INVALID",
+            errors: parcelErrors,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // Validate slider ranges if provided
     if (gripCondition && (gripCondition < 1 || gripCondition > 10)) {
       return NextResponse.json(
@@ -316,11 +372,13 @@ export async function POST(request: Request) {
           gripCondition: gripCondition || 7,
           headCondition: headCondition || 7,
           shaftCondition: shaftCondition || 7,
-          // Shipping dimensions
-          length: length ? Number(length) : null,
-          width: width ? Number(width) : null,
-          height: height ? Number(height) : null,
-          weight: weight ? Number(weight) : null,
+          // Shipping dimensions. Published listings store the validated parcel
+          // so rating and label purchase never fall back to invented defaults.
+          parcelPresetId: parcelPresetId || null,
+          length: resolvedParcel?.length ?? (length ? Number(length) : null),
+          width: resolvedParcel?.width ?? (width ? Number(width) : null),
+          height: resolvedParcel?.height ?? (height ? Number(height) : null),
+          weight: resolvedParcel?.weight ?? (weight ? Number(weight) : null),
           // Idempotency key for duplicate prevention
           requestId: requestId || null,
           // Draft status

@@ -40,6 +40,31 @@ type PaymentHoldStatus =
   | "DISPUTED"
   | "REFUNDED";
 
+/**
+ * Turn a stored `CODE: raw message` into something a seller can act on.
+ *
+ * The raw text is a ShipEngine/internal message written for us, not for them;
+ * most of these are ours to fix, so say so rather than showing a stack of API
+ * jargon next to a "Generate Label" button.
+ */
+function describeLabelError(labelError: string): string {
+  const [code] = labelError.split(":");
+
+  switch (code) {
+    case "SELLER_ADDRESS_INVALID":
+      return "Your postage address is incomplete. Update it in settings, then try again.";
+    case "NO_RATE_MEETS_SERVICE":
+      return "No carrier could meet the delivery speed the buyer paid for. We're looking into it — try again shortly.";
+    case "NO_RATES_AVAILABLE":
+      return "No carrier would quote for this parcel. Check the size and weight on your listing.";
+    case "NOT_CONFIGURED":
+    case "NO_CARRIERS_CONFIGURED":
+      return "Shipping is temporarily unavailable on our side. We've been notified — no action needed from you.";
+    default:
+      return "Something went wrong buying the label. Try again, and contact us if it keeps failing.";
+  }
+}
+
 interface Order {
   id: string;
   createdAt: Date;
@@ -53,7 +78,9 @@ interface Order {
   labelUrl: string | null;
   labelPngUrl: string | null;
   labelZplUrl: string | null;
+  labelError: string | null;
   carrier: string | null;
+  shippingServiceName: string | null;
   paymentHoldStatus: PaymentHoldStatus | null;
   autoReleaseAt: Date | null;
   product: {
@@ -168,6 +195,8 @@ function OrderCard({ order }: { order: Order }) {
   const [trackingCode, setTrackingCode] = useState(order.trackingCode);
   const [trackingUrl, setTrackingUrl] = useState(order.trackingUrl);
   const [status, setStatus] = useState(order.status);
+  const [shipmentStatus, setShipmentStatus] = useState(order.shipmentStatus);
+  const [markingShipped, setMarkingShipped] = useState(false);
 
   const statusConfig = STATUS_CONFIG[status];
   const needsAddressUpdate = order.fromAddress.street1 === "Address pending";
@@ -186,6 +215,31 @@ function OrderCard({ order }: { order: Order }) {
   };
 
   const daysUntilRelease = getDaysUntilAutoRelease();
+
+  const handleMarkShipped = async () => {
+    setMarkingShipped(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/orders/${order.id}/shipment-status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "IN_TRANSIT" }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to update status");
+      }
+
+      setShipmentStatus("IN_TRANSIT");
+      setStatus("SHIPPED");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update status");
+    } finally {
+      setMarkingShipped(false);
+    }
+  };
 
   const handleGenerateLabel = async () => {
     setGenerating(true);
@@ -208,6 +262,7 @@ function OrderCard({ order }: { order: Order }) {
       setTrackingCode(data.trackingNumber);
       setTrackingUrl(data.trackingUrl);
       setStatus("LABEL_GENERATED");
+      setShipmentStatus("PRE_TRANSIT");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate label");
     } finally {
@@ -343,6 +398,26 @@ function OrderCard({ order }: { order: Order }) {
 
         {/* Actions */}
         <Column gap="$sm" alignItems="flex-end" minWidth={160}>
+          {status === "PAYMENT_CONFIRMED" && order.labelError && !needsAddressUpdate && (
+            <Column
+              gap="$xs"
+              backgroundColor="$errorLight"
+              borderRadius="$md"
+              padding="$sm"
+              width="100%"
+            >
+              <Row gap="$xs" alignItems="center">
+                <AlertCircle size={14} color="$error" />
+                <Text size="$2" fontWeight="600" color="$error">
+                  Label couldn&apos;t be created
+                </Text>
+              </Row>
+              <Text size="$2" color="$error">
+                {describeLabelError(order.labelError)}
+              </Text>
+            </Column>
+          )}
+
           {status === "PAYMENT_CONFIRMED" && (
             <>
               {needsAddressUpdate ? (
@@ -442,6 +517,27 @@ function OrderCard({ order }: { order: Order }) {
                 </a>
               )}
             </Column>
+          )}
+
+          {labelUrl && shipmentStatus === "PRE_TRANSIT" && (
+            <Button
+              size="$4"
+              borderWidth={1}
+              borderColor="$border"
+              backgroundColor="transparent"
+              width="100%"
+              onPress={handleMarkShipped}
+              disabled={markingShipped}
+            >
+              {markingShipped ? (
+                <Spinner size="sm" />
+              ) : (
+                <>
+                  <Truck size={16} />
+                  <Text marginLeft="$xs">Mark as posted</Text>
+                </>
+              )}
+            </Button>
           )}
 
           {trackingUrl && (

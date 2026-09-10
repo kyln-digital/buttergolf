@@ -110,6 +110,9 @@ model Product {
   width       Float?
   height      Float?
   weight      Float?
+  // Which parcel preset the seller picked. length/width/height/weight above are
+  // the resolved values (preset defaults, or the seller's overrides).
+  parcelPresetId String?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   brandId     String?
@@ -205,6 +208,10 @@ model Order {
   easypostShipmentId   String?
   shipEngineShipmentId String?
   shipEngineRateId     String?
+  // The shipping option the buyer selected and paid for at checkout. The
+  // purchased label must satisfy this — see selectRateForOption in shipengine.ts.
+  shippingOptionId     String?
+  shippingServiceName  String?
   labelUrl             String?
   labelPngUrl          String?
   labelZplUrl          String?
@@ -218,6 +225,11 @@ model Order {
   actualDelivery       DateTime?
   status               OrderStatus    @default(PAYMENT_CONFIRMED)
   labelGeneratedAt     DateTime?
+  // Why the last label attempt failed, and when. Label purchase is
+  // fire-and-forget after payment, so without this a failure is invisible to
+  // everyone — the seller sees no label and no reason.
+  labelError           String?
+  labelAttemptedAt     DateTime?
   shippedAt            DateTime?
   deliveredAt          DateTime?
   createdAt            DateTime       @default(now())

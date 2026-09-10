@@ -4,6 +4,7 @@
 
 export type { ProductCondition } from "../../types/product";
 import type { ProductCondition } from "../../types/product";
+import { getParcelPreset, type ParcelDimensions } from "@buttergolf/constants";
 
 export interface SellFormData {
   // Step 1: Photos
@@ -33,6 +34,37 @@ export interface SellFormData {
   title: string;
   description: string;
   price: string;
+
+  // Step 4: Postage
+  /** Preset the seller picked. Supplies dimensions unless they override below. */
+  parcelPresetId: string;
+  /** Seller overrides, as entered. Empty string means "use the preset". */
+  parcelLength: string;
+  parcelWidth: string;
+  parcelHeight: string;
+  parcelWeight: string;
+}
+
+/**
+ * Resolve what will actually be declared to the carrier: the seller's
+ * overrides where they typed one, the chosen preset everywhere else.
+ *
+ * Overrides are held as strings so a half-typed "1" never becomes a real 1cm
+ * dimension — only a finite, positive number wins over the preset.
+ */
+export function resolveFormParcel(formData: SellFormData): ParcelDimensions {
+  const preset = getParcelPreset(formData.parcelPresetId);
+  const override = (value: string, fallback: number) => {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  };
+
+  return {
+    length: override(formData.parcelLength, preset?.length ?? 0),
+    width: override(formData.parcelWidth, preset?.width ?? 0),
+    height: override(formData.parcelHeight, preset?.height ?? 0),
+    weight: override(formData.parcelWeight, preset?.weight ?? 0),
+  };
 }
 
 export interface ImageData {
@@ -164,7 +196,7 @@ export interface Model {
   brandId: string;
 }
 
-export type SellStep = 1 | 2 | 3 | 4;
+export type SellStep = 1 | 2 | 3 | 4 | 5;
 
 export const SELL_STEPS = [
   { step: 1 as const, title: "Photos", description: "Add up to 5 photos" },
@@ -178,5 +210,6 @@ export const SELL_STEPS = [
     title: "Listing",
     description: "Title, description & price",
   },
-  { step: 4 as const, title: "Review", description: "Review and submit" },
+  { step: 4 as const, title: "Postage", description: "Parcel size & weight" },
+  { step: 5 as const, title: "Review", description: "Review and submit" },
 ];

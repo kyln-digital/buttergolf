@@ -3,9 +3,19 @@
 import React from "react";
 import { TouchableOpacity } from "react-native";
 import { Column, Row, Text, View, Image, ScrollView } from "@buttergolf/ui";
-import { Pencil, Camera, Tag, FileText, CheckCircle, AlertCircle } from "@tamagui/lucide-icons";
+import {
+  Pencil,
+  Camera,
+  Tag,
+  FileText,
+  CheckCircle,
+  AlertCircle,
+  Package,
+} from "@tamagui/lucide-icons";
+import { getParcelPreset } from "@buttergolf/constants";
 
 import type { SellFormData, SellStep } from "../types";
+import { resolveFormParcel } from "../types";
 import {
   FLEX_OPTIONS,
   getConditionLabel,
@@ -80,6 +90,7 @@ function ReviewSection({ title, icon, step, onEdit, children }: Readonly<ReviewS
 }
 
 export function ReviewStep({ formData, onEdit, direction }: Readonly<ReviewStepProps>) {
+  const reviewParcel = resolveFormParcel(formData);
   // Calculate overall condition from the 3 component ratings
   const avgCondition = calculateAverageCondition(
     formData.gripCondition,
@@ -380,6 +391,37 @@ export function ReviewStep({ formData, onEdit, direction }: Readonly<ReviewStepP
                 </Text>
                 <Text fontFamily="$heading" size="$11" fontWeight="800" color="$spicedClementine">
                   {formatPrice(formData.price)}
+                </Text>
+              </Column>
+            </Column>
+          </ReviewSection>
+
+          {/* Postage Section */}
+          <ReviewSection
+            title="Postage"
+            icon={<Package size={18} color="$textSecondary" />}
+            step={4}
+            onEdit={onEdit}
+          >
+            <Column gap="$4">
+              <Column gap="$1">
+                <Text size="$2" fontWeight="500" color="$textSecondary">
+                  PARCEL
+                </Text>
+                <Text size="$6" fontWeight="600" color="$text">
+                  {getParcelPreset(formData.parcelPresetId)?.label ?? "Not set"}
+                </Text>
+              </Column>
+
+              <Column gap="$1">
+                <Text size="$2" fontWeight="500" color="$textSecondary">
+                  SIZE & WEIGHT
+                </Text>
+                <Text size="$4" fontWeight="400" color="$text">
+                  {reviewParcel.length}×{reviewParcel.width}×{reviewParcel.height}cm ·{" "}
+                  {reviewParcel.weight >= 1000
+                    ? `${(reviewParcel.weight / 1000).toFixed(1)}kg`
+                    : `${reviewParcel.weight}g`}
                 </Text>
               </Column>
             </Column>

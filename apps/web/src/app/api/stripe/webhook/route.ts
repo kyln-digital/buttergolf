@@ -9,9 +9,11 @@ import {
   sendEmail,
   sendPaymentOnHoldEmail,
 } from "@/lib/email";
-import { generateShippingLabel } from "@/lib/shipengine";
+import { generateShippingLabelRecordingFailure } from "@/lib/shipengine";
+import { getBaseUrl } from "@/lib/base-url";
 import { createOrderFromPaymentIntent } from "@/lib/create-order-from-payment-intent";
 import { PROMOTION_PRICES } from "@/lib/pricing";
+import { SHIPPING_OPTIONS } from "@buttergolf/constants";
 
 // Disable body parsing for webhook
 export const runtime = "nodejs";
@@ -316,8 +318,17 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const productPriceInPence = parseInt(session.metadata?.productPriceInPence || "0", 10);
   const buyerProtectionFee = buyerProtectionFeeInPence / 100;
 
-  // Seller gets 100% of product + shipping
-  const sellerPayout = productPriceInPence / 100 + shippingCost;
+  // The buyer's shipping payment funds the label we buy on their behalf, so it
+  // is not the seller's to receive. The seller is paid for the item.
+  const sellerPayout = productPriceInPence / 100;
+
+  // Recover which shipping option the buyer picked. Stripe generates its own
+  // rate ids for shipping_rate_data, so match on the amount charged — our
+  // option prices are distinct by design.
+  const shippingAmountInPence = session.shipping_cost?.amount_total ?? 0;
+  const chosenOption = SHIPPING_OPTIONS.find(
+    (option) => option.priceInPence === shippingAmountInPence
+  );
 
   // Get charge ID from payment intent for later transfer
   let stripeChargeId: string | null = null;
@@ -347,6 +358,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         stripeChargeId,
         amountTotal,
         shippingCost,
+        shippingOptionId: chosenOption?.id ?? null,
+        shippingServiceName: chosenOption?.name ?? null,
         // Vinted-style: buyer protection fee as platform revenue
         buyerProtectionFee,
         stripePlatformFee: buyerProtectionFee, // For backwards compatibility
@@ -464,7 +477,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
               <p style="color: #323232; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
                 Please complete your Stripe Connect profile to add your address. This address will be used as the return address on all shipping labels.
               </p>
-              <a href="${process.env.NEXT_PUBLIC_APP_URL}/sell" style="display: inline-block; background-color: #F45314; color: #FFFFFF; padding: 14px 28px; text-decoration: none; border-radius: 100px; font-weight: 600; font-size: 16px;">
+              <a href="${getBaseUrl()}/sell" style="display: inline-block; background-color: #F45314; color: #FFFFFF; padding: 14px 28px; text-decoration: none; border-radius: 100px; font-weight: 600; font-size: 16px;">
                 Complete Your Profile
               </a>
               <p style="color: #545454; font-size: 14px; line-height: 1.6; margin-top: 24px;">
@@ -480,29 +493,23 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     }
   }
 
-  // Attempt to generate shipping label automatically
-  // (will fail gracefully if seller has no valid address)
-  try {
-    console.info("Attempting to auto-generate shipping label for order:", order.id);
+  // Attempt to generate the shipping label. Failures are recorded on the order
+  // so the seller sees why no label appeared, rather than nothing happening.
+  console.info("Attempting to auto-generate shipping label for order:", order.id);
+  const labelAttempt = await generateShippingLabelRecordingFailure(order.id);
 
-    const labelResult = await generateShippingLabel({
-      orderId: order.id,
-    });
-
+  if (labelAttempt.status === "ok") {
     console.info("Shipping label generated successfully:", {
       orderId: order.id,
-      trackingNumber: labelResult.trackingNumber,
-      carrier: labelResult.carrier,
+      trackingNumber: labelAttempt.label.trackingNumber,
+      carrier: labelAttempt.label.carrier,
     });
-
     // Label generated email is sent by generateShippingLabel()
-  } catch (labelError) {
-    // Don't fail the order if label generation fails
-    // Seller will need to generate manually later
-    console.warn("Could not auto-generate shipping label:", {
+  } else {
+    console.error("Could not auto-generate shipping label:", {
       orderId: order.id,
-      error: labelError instanceof Error ? labelError.message : "Unknown error",
-      reason: "Seller may need to update their address first",
+      code: labelAttempt.code,
+      error: labelAttempt.message,
     });
   }
 
