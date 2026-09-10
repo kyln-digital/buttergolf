@@ -4,8 +4,8 @@ import { useEffect, useState, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { Column, Text, Heading, Button, Card, Spinner, Row, Image } from "@buttergolf/ui";
 import { Lock, ShieldCheck, MapPin, Mail, Check } from "@tamagui/lucide-icons";
-import Link from "next/link";
 import confetti from "canvas-confetti";
+import { useLinkPress } from "@/hooks/useLinkPress";
 
 interface OrderDetails {
   id: string;
@@ -45,6 +45,7 @@ interface ApiResponse {
 }
 
 function CheckoutSuccessContent() {
+  const linkPress = useLinkPress();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
   const paymentIntentId = searchParams.get("payment_intent");
@@ -167,11 +168,13 @@ function CheckoutSuccessContent() {
         paddingVertical="$3xl"
         paddingHorizontal="$lg"
       >
-        <Card variant="elevated" padding="$xl" maxWidth={500}>
+        <Card variant="outlined" padding="$xl" maxWidth={500} borderRadius="$lg">
           <Column gap="$lg" alignItems="center">
             <Spinner size="lg" color="$primary" />
             <Column gap="$sm" alignItems="center">
-              <Heading level={3}>Processing Your Order</Heading>
+              <Heading level={2} size="$6">
+                Processing your order
+              </Heading>
               <Text color="$textSecondary" textAlign="center">
                 Your payment was successful! We&apos;re setting up your order...
               </Text>
@@ -208,7 +211,7 @@ function CheckoutSuccessContent() {
         paddingVertical="$3xl"
         paddingHorizontal="$lg"
       >
-        <Card variant="elevated" padding="$xl" maxWidth={500}>
+        <Card variant="outlined" padding="$xl" maxWidth={500} borderRadius="$lg">
           <Column gap="$lg" alignItems="center">
             <Column
               backgroundColor="$successLight"
@@ -222,7 +225,9 @@ function CheckoutSuccessContent() {
               <Check size={24} color="$textInverse" />
             </Column>
             <Column gap="$sm" alignItems="center">
-              <Heading level={3}>Payment Successful!</Heading>
+              <Heading level={2} size="$6">
+                Payment successful
+              </Heading>
               <Text color="$textSecondary" textAlign="center" lineHeight="$5">
                 Your payment was processed successfully. You should receive an order confirmation
                 email shortly.
@@ -234,16 +239,24 @@ function CheckoutSuccessContent() {
               </Text>
             )}
             <Row gap="$md" marginTop="$md" flexWrap="wrap" justifyContent="center">
-              <Link href="/orders" style={{ textDecoration: "none" }}>
-                <Button butterVariant="primary" size="$5">
-                  View My Orders
-                </Button>
-              </Link>
-              <Link href="/" style={{ textDecoration: "none" }}>
-                <Button butterVariant="secondary" size="$5" width="100%" height={56}>
-                  Continue Shopping
-                </Button>
-              </Link>
+              <Button
+                butterVariant="primary"
+                size="$5"
+                tag="a"
+                href="/orders"
+                onPress={linkPress("/orders")}
+              >
+                View my orders
+              </Button>
+              <Button
+                butterVariant="secondary"
+                size="$5"
+                tag="a"
+                href="/listings"
+                onPress={linkPress("/listings")}
+              >
+                Continue shopping
+              </Button>
             </Row>
           </Column>
         </Card>
@@ -281,8 +294,8 @@ function CheckoutSuccessContent() {
 
           {/* Success Message */}
           <Column gap="$sm" alignItems="center">
-            <Heading level={1} textAlign="center">
-              Order Confirmed!
+            <Heading level={1} size="$8" textAlign="center">
+              Order confirmed
             </Heading>
             <Text color="$textSecondary" textAlign="center" size="$5">
               Thank you for your purchase. Your order has been successfully placed.
@@ -565,27 +578,28 @@ function CheckoutSuccessContent() {
 
           {/* Action Buttons - All in one row */}
           <Row gap="$md" marginTop="$md" fullWidth flexWrap="wrap">
-            <Link
+            <Button
+              butterVariant="primary"
+              size="$5"
+              flex={1}
+              minWidth={180}
+              tag="a"
               href={`/orders/${order.id}`}
-              style={{ textDecoration: "none", flex: 1, minWidth: 180 }}
+              onPress={linkPress(`/orders/${order.id}`)}
             >
-              <Button butterVariant="primary" size="$5" width="100%">
-                View Order Details
-              </Button>
-            </Link>
-            <Link href="/" style={{ textDecoration: "none", flex: 1, minWidth: 180 }}>
-              <Button
-                size="$5"
-                width="100%"
-                borderWidth={2}
-                borderColor="$border"
-                backgroundColor="transparent"
-                color="$text"
-                borderRadius="$full"
-              >
-                Continue Shopping
-              </Button>
-            </Link>
+              View order details
+            </Button>
+            <Button
+              butterVariant="secondary"
+              size="$5"
+              flex={1}
+              minWidth={180}
+              tag="a"
+              href="/listings"
+              onPress={linkPress("/listings")}
+            >
+              Continue shopping
+            </Button>
           </Row>
         </Column>
       </Card>
