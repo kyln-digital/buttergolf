@@ -59,6 +59,7 @@ export function HeroRedesign() {
           alt=""
           aria-hidden="true"
           loading="lazy"
+          className="hero-club"
           style={{
             position: "absolute",
             left: "1.5%",
@@ -77,6 +78,7 @@ export function HeroRedesign() {
           alt=""
           aria-hidden="true"
           loading="lazy"
+          className="hero-club"
           style={{
             position: "absolute",
             left: "10%",
@@ -95,6 +97,7 @@ export function HeroRedesign() {
           alt=""
           aria-hidden="true"
           loading="lazy"
+          className="hero-club"
           style={{
             position: "absolute",
             left: "67%",
@@ -113,6 +116,7 @@ export function HeroRedesign() {
           alt=""
           aria-hidden="true"
           loading="lazy"
+          className="hero-club"
           style={{
             position: "absolute",
             right: "1.5%",
@@ -140,15 +144,11 @@ export function HeroRedesign() {
           >
             <Heading
               level={1}
+              size="$11"
+              $gtSm={{ size: "$13" }}
+              $gtMd={{ size: "$14" }}
               color="$text"
               textAlign="center"
-              style={{
-                fontFamily: "var(--font-urbanist)",
-                fontSize: "5rem",
-                fontStyle: "normal",
-                fontWeight: 700,
-                lineHeight: "5rem",
-              }}
             >
               Butter Up
               <br />
@@ -157,7 +157,14 @@ export function HeroRedesign() {
 
             <Spacer size="$sm" />
 
-            <Text size="$11" color="$text" textAlign="center" fontWeight="500">
+            <Text
+              size="$7"
+              $gtSm={{ size: "$9" }}
+              $gtMd={{ size: "$11" }}
+              color="$text"
+              textAlign="center"
+              fontWeight="500"
+            >
               The Marketplace to Buy, Sell & Upgrade
             </Text>
 
@@ -174,6 +181,11 @@ export function HeroRedesign() {
           </Column>
         </Theme>
       </div>
+      <style>{`
+        @media (max-width: 800px) {
+          .hero-club { display: none; }
+        }
+      `}</style>
     </Column>
   );
 }
