@@ -264,7 +264,7 @@ export function ChatMessageList({
                       paddingHorizontal="$md"
                       paddingVertical="$xs"
                     >
-                      <Text size="$3" color="$textTertiary" textAlign="center">
+                      <Text size="$3" color="$textSecondary" textAlign="center">
                         {message.content}
                       </Text>
                     </View>

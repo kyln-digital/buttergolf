@@ -159,7 +159,7 @@ const STATUS_BADGE_VARIANT: Record<ShipmentStatus, BadgeVariant> = {
 };
 
 const STATUS_LABELS: Record<ShipmentStatus, string> = {
-  PENDING: "Pending Label",
+  PENDING: "Pending label",
   PRE_TRANSIT: "Label Created",
   IN_TRANSIT: "In Transit",
   OUT_FOR_DELIVERY: "Out for Delivery",
@@ -658,7 +658,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
 
             <Column gap="$sm">
               <Row justifyContent="space-between">
-                <Text size="$5">Product Price</Text>
+                <Text size="$5">Product price</Text>
                 <Text size="$5">£{order.product.price.toFixed(2)}</Text>
               </Row>
               <Row justifyContent="space-between">
@@ -668,7 +668,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
               {order.buyerProtectionFee && order.buyerProtectionFee > 0 && (
                 <Row justifyContent="space-between">
                   <Row gap="$xs" alignItems="center">
-                    <Text size="$5">Buyer Protection</Text>
+                    <Text size="$5">Buyer protection</Text>
                     <Shield size={14} color="$textSecondary" />
                   </Row>
                   <Text size="$5">£{order.buyerProtectionFee.toFixed(2)}</Text>
@@ -679,7 +679,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                 <Text size="$6" fontWeight="700">
                   Total
                 </Text>
-                <Text size="$6" fontWeight="700" color="$primary">
+                <Text size="$6" fontWeight="700" color="$text">
                   £{order.amountTotal.toFixed(2)}
                 </Text>
               </Row>
@@ -790,10 +790,10 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                 }
                 size="lg"
               >
-                {order.paymentHoldStatus === "HELD" && "Payment Held"}
+                {order.paymentHoldStatus === "HELD" && "Payment held"}
                 {order.paymentHoldStatus === "PENDING_SELLER_ONBOARDING" &&
                   "Awaiting Seller Verification"}
-                {order.paymentHoldStatus === "RELEASED" && "Payment Released"}
+                {order.paymentHoldStatus === "RELEASED" && "Payment released"}
                 {order.paymentHoldStatus === "DISPUTED" && "Disputed"}
                 {order.paymentHoldStatus === "REFUNDED" && "Refunded"}
               </Badge>
