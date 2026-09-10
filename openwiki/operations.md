@@ -24,7 +24,12 @@ Until previews get their own database, work with it rather than round it:
 
 - Keep migrations **additive and backwards-compatible** — expand now, contract in a later release — so a schema that runs ahead of the deployed code is harmless.
 - Apply deliberately, close to the merge that needs it: `vercel env pull packages/db/.env --environment=production` then `pnpm db:migrate:deploy`. (An exported `DATABASE_URL` works too — the db tasks declare it in `turbo.json`, which otherwise filters it out of the task environment.) **Migrate first, then merge** (merging deploys to production — see the release model above).
-- Check `packages/db/.env` before running anything that writes — `db:migrate:deploy`, `db:push`, `db:seed`, or `prisma migrate reset` (there is no `db:reset` script). A Docker URL there is local; anything pulled from Vercel is production, whichever environment it was pulled from.
+- Before running anything that writes — `db:migrate:deploy`, `db:push`, `db:seed`, or `prisma migrate reset` (there is no `db:reset` script) — check the shell **and** the file, in that order:
+  1. `echo $DATABASE_URL`. An exported value **wins over `packages/db/.env`**, because `prisma.config.ts` calls dotenv without `override`, so it will not replace a variable that is already set. Verified by pointing `.env` at a dead port, exporting a live URL, and watching the migrations land on the exported one.
+  2. `packages/db/.env`, if nothing is exported. A Docker URL there is local; anything pulled from Vercel is production, whichever environment it was pulled from.
+
+  Checking only the file is what gives false reassurance: it can read `localhost` while an exported production URL is the one Prisma actually uses.
+
 - The `migrations` CI job (below) runs against a throwaway container and proves the migrations are _internally_ consistent. It says nothing about whether they have been applied to the live database, and it never connects to it.
 
 **Removing the trap** is a dashboard change on Neon/Vercel, not a code change: enable database branching on the `buttergolf-db` integration so each preview deploy gets its own Neon branch, then narrow the `DATABASE_URL` variable in Vercel to `Production` only. After that, previews become disposable, CI can apply migrations to a real preview branch, and schema changes stop being production releases.
