@@ -308,7 +308,9 @@ export function SellerListingsScreen({
               </Text>
               {tab.count !== undefined && tab.count > 0 && (
                 <View
-                  backgroundColor={activeFilter === tab.key ? "$overlayLight20" : "$gray200"}
+                  backgroundColor={
+                    activeFilter === tab.key ? "$overlayLight20" : "$backgroundHover"
+                  }
                   borderRadius="$full"
                   paddingHorizontal="$2"
                   minWidth={20}
@@ -386,7 +388,7 @@ export function SellerListingsScreen({
                       width={80}
                       height={80}
                       borderRadius="$md"
-                      backgroundColor="$gray100"
+                      backgroundColor="$backgroundMuted"
                       overflow="hidden"
                     >
                       {listing.images[0] && (

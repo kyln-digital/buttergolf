@@ -325,14 +325,14 @@ export function OrdersScreen({
                         width={80}
                         height={80}
                         borderRadius="$md"
-                        backgroundColor="$gray100"
+                        backgroundColor="$backgroundMuted"
                       />
                     ) : (
                       <View
                         width={80}
                         height={80}
                         borderRadius="$md"
-                        backgroundColor="$backgroundHover"
+                        backgroundColor="$backgroundMuted"
                         alignItems="center"
                         justifyContent="center"
                       >

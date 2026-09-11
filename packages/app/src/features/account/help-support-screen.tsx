@@ -245,7 +245,7 @@ export function HelpSupportScreen({
                 <Accordion.HeightAnimator animation="medium">
                   <Accordion.Content
                     animation="medium"
-                    backgroundColor="$gray100"
+                    backgroundColor="$backgroundMuted"
                     borderRadius="$lg"
                     padding="$4"
                     marginBottom="$2"

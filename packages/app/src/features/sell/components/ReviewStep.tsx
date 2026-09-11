@@ -41,7 +41,7 @@ interface ReviewSectionProps {
 function ReviewSection({ title, icon, step, onEdit, children }: Readonly<ReviewSectionProps>) {
   return (
     <Column
-      backgroundColor="$pureWhite"
+      backgroundColor="$surface"
       borderRadius="$xl"
       borderWidth={2}
       borderColor="$cloudMist"
@@ -52,7 +52,7 @@ function ReviewSection({ title, icon, step, onEdit, children }: Readonly<ReviewS
         paddingVertical="$3"
         alignItems="center"
         justifyContent="space-between"
-        backgroundColor="$gray100"
+        backgroundColor="$backgroundMuted"
         borderBottomWidth={1}
         borderBottomColor="$cloudMist"
       >
@@ -70,7 +70,7 @@ function ReviewSection({ title, icon, step, onEdit, children }: Readonly<ReviewS
           <Row
             alignItems="center"
             gap="$2"
-            backgroundColor="$pureWhite"
+            backgroundColor="$background"
             paddingHorizontal="$3"
             paddingVertical="$2"
             borderRadius="$full"
@@ -282,7 +282,7 @@ export function ReviewStep({ formData, onEdit, direction }: Readonly<ReviewStepP
                       Head Cover
                     </Text>
                     <View
-                      backgroundColor={formData.headCoverIncluded ? "$success" : "$gray100"}
+                      backgroundColor={formData.headCoverIncluded ? "$success" : "$backgroundMuted"}
                       paddingHorizontal="$3"
                       paddingVertical="$1"
                       borderRadius="$full"
@@ -322,7 +322,7 @@ export function ReviewStep({ formData, onEdit, direction }: Readonly<ReviewStepP
               <Column
                 gap="$2"
                 marginTop="$2"
-                backgroundColor="$gray100"
+                backgroundColor="$backgroundMuted"
                 borderRadius="$lg"
                 padding="$3"
               >

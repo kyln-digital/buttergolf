@@ -225,6 +225,7 @@ const customTokens = createTokens({
     backgroundPress: brandColors.cloudMistPress,
     backgroundFocus: brandColors.lemonHaze,
     backgroundStrong: brandColors.lemonHaze,
+    backgroundMuted: brandColors.gray100,
     backgroundTransparent: "rgba(255, 255, 255, 0)",
 
     // Text colors (Ironstone primary, Slate Smoke secondary, Gray 700 muted)
@@ -357,6 +358,9 @@ const lightTheme = {
   backgroundPress: brandColors.cloudMistPress,
   backgroundFocus: brandColors.lemonHaze,
   backgroundStrong: brandColors.lemonHaze,
+  // Subtle grey fill for panels, image placeholders and read-only fields. Use this
+  // rather than raw $gray100, which stays light in dark mode.
+  backgroundMuted: brandColors.gray100,
   backgroundTransparent: "rgba(255, 255, 255, 0)",
 
   // Text colors (Ironstone on white)
@@ -479,6 +483,8 @@ const darkTheme = {
   backgroundPress: brandColors.ironstonePress,
   backgroundFocus: brandColors.ironstoneHover,
   backgroundStrong: brandColors.ironstone,
+  // Slightly darker than the page, so muted panels read as inset like they do in light.
+  backgroundMuted: brandColors.ironstoneHover,
   backgroundTransparent: "rgba(50, 50, 50, 0)",
 
   // Text colors - override for dark mode (Pure White on dark)

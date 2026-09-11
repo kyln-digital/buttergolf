@@ -298,7 +298,7 @@ export function DetailsStep({
         style={{ opacity: disabled ? 0.5 : 1 }}
       >
         <Row
-          backgroundColor={disabled ? "$gray100" : "$pureWhite"}
+          backgroundColor={disabled ? "$backgroundMuted" : "$surface"}
           borderWidth={2}
           borderColor={value ? "$spicedClementine" : "$cloudMist"}
           borderRadius="$xl"
@@ -439,7 +439,7 @@ export function DetailsStep({
         left={0}
         right={0}
         bottom={0}
-        backgroundColor="$pureWhite"
+        backgroundColor="$background"
         zIndex={100}
       >
         {/* Picker Header */}
@@ -474,7 +474,7 @@ export function DetailsStep({
         {showSearch && (
           <Column paddingHorizontal="$4" paddingVertical="$3">
             <Row
-              backgroundColor="$gray100"
+              backgroundColor="$backgroundMuted"
               borderRadius="$xl"
               paddingHorizontal="$4"
               paddingVertical="$3"
@@ -673,7 +673,7 @@ export function DetailsStep({
                 accessibilityLabel="Toggle head cover included"
               >
                 <Row
-                  backgroundColor="$pureWhite"
+                  backgroundColor="$surface"
                   borderWidth={2}
                   borderColor={formData.headCoverIncluded ? "$spicedClementine" : "$cloudMist"}
                   borderRadius="$xl"
@@ -700,7 +700,7 @@ export function DetailsStep({
           <Column
             gap="$4"
             marginTop="$4"
-            backgroundColor="$gray100"
+            backgroundColor="$backgroundMuted"
             borderRadius="$xl"
             padding="$4"
           >

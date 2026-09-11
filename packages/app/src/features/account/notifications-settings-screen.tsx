@@ -188,7 +188,12 @@ export function NotificationSettingsScreen({
         </Column>
 
         {/* Info */}
-        <Column backgroundColor="$gray100" borderRadius="$lg" padding="$4" marginBottom="$4">
+        <Column
+          backgroundColor="$backgroundMuted"
+          borderRadius="$lg"
+          padding="$4"
+          marginBottom="$4"
+        >
           <Text size="$3" color="$textSecondary">
             You can change your notification preferences at any time. Push notifications require
             permission from your device settings.
