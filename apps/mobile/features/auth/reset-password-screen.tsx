@@ -12,7 +12,7 @@ import {
   Spinner,
 } from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useSignIn } from "@clerk/clerk-expo";
+import { isClerkAPIResponseError, useSignIn } from "@clerk/clerk-expo";
 import { AuthFormInput, AuthErrorDisplay } from "./components";
 import {
   validateVerificationCode,
@@ -26,6 +26,7 @@ import { PasswordStrength } from "./types";
 interface ResetPasswordScreenProps {
   email?: string;
   onSuccess?: () => void;
+  onNavigateToTwoFactor?: () => void;
   onNavigateBack?: () => void;
 }
 
@@ -36,6 +37,7 @@ interface ResetPasswordScreenProps {
 export function ResetPasswordScreen({
   email,
   onSuccess,
+  onNavigateToTwoFactor,
   onNavigateBack,
 }: Readonly<ResetPasswordScreenProps>) {
   const insets = useSafeAreaInsets();
@@ -109,34 +111,59 @@ export function ResetPasswordScreen({
     setIsSubmitting(true);
 
     try {
-      // Attempt password reset with code and new password
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await (signIn as any).resetPassword({
+      // Verifies the emailed code and sets the new password in one call.
+      // signIn.resetPassword() is only for a sign-in already in needs_new_password.
+      const result = await signIn.attemptFirstFactor({
+        strategy: "reset_password_email_code",
         code,
         password: newPassword,
       });
 
-      if (result?.createdSessionId) {
-        // Password reset successful, create session
+      if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
         onSuccess?.();
+      } else if (result.status === "needs_second_factor") {
+        // The password has changed, but signing in still needs the account's second factor
+        if (onNavigateToTwoFactor) {
+          onNavigateToTwoFactor();
+        } else {
+          setError(
+            "Two-factor authentication is required but not configured. Please contact support."
+          );
+        }
       } else {
+        console.warn("[ResetPassword] Unhandled status:", result.status);
         setError("Password reset incomplete. Please try again.");
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error("[ResetPassword] Error:", err);
+      const clerkError = isClerkAPIResponseError(err) ? err.errors[0] : undefined;
+      const message = clerkError
+        ? mapClerkErrorToMessage(clerkError.code, clerkError.longMessage || clerkError.message)
+        : "Password reset failed. Please try again.";
 
-      if (errorMessage.includes("verification_code_invalid")) {
-        setCodeError(mapClerkErrorToMessage("verification_code_invalid"));
-      } else if (errorMessage.includes("password_not_strong_enough")) {
-        setPasswordError(mapClerkErrorToMessage("password_not_strong_enough"));
+      // Clerk tags form errors with the field they belong to
+      const field = clerkError?.meta?.paramName;
+      if (field === "code") {
+        setCodeError(message);
+      } else if (field === "password") {
+        setPasswordError(message);
       } else {
-        setError(errorMessage || "Password reset failed. Please try again.");
+        setError(message);
       }
     } finally {
       setIsSubmitting(false);
     }
-  }, [code, newPassword, confirmPassword, isLoaded, signIn, setActive, onSuccess]);
+  }, [
+    code,
+    newPassword,
+    confirmPassword,
+    isLoaded,
+    signIn,
+    setActive,
+    onSuccess,
+    onNavigateToTwoFactor,
+  ]);
 
   const getPasswordStrengthColor = (strength: PasswordStrength) => {
     switch (strength) {

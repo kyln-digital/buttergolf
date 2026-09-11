@@ -139,9 +139,29 @@ describe("mapClerkErrorToMessage", () => {
     );
   });
 
+  it("maps the codes the Clerk API actually returns", () => {
+    expect(mapClerkErrorToMessage("form_identifier_not_found")).toBe("Email address not found");
+    expect(mapClerkErrorToMessage("form_code_incorrect")).toBe("Invalid verification code");
+    expect(mapClerkErrorToMessage("verification_expired")).toBe(
+      "Verification code has expired. Please request a new one."
+    );
+    expect(mapClerkErrorToMessage("form_password_pwned")).toBe(
+      "This password has appeared in a data breach. Please choose a different one."
+    );
+  });
+
   it("falls back to a generic message for unknown codes", () => {
     expect(mapClerkErrorToMessage("some_unknown_code")).toBe(
       "An error occurred. Please try again or contact support."
+    );
+  });
+
+  it("prefers the given fallback over the generic message for unknown codes", () => {
+    expect(mapClerkErrorToMessage("some_unknown_code", "Clerk's own message")).toBe(
+      "Clerk's own message"
+    );
+    expect(mapClerkErrorToMessage("form_code_incorrect", "Clerk's own message")).toBe(
+      "Invalid verification code"
     );
   });
 });
