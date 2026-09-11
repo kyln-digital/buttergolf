@@ -81,7 +81,7 @@ pnpm build           # build all apps
 - [Domain & Business Logic](domain.md) — Listings, offers, messaging, orders, shipping, promotions, favourites, seller onboarding
 - [Payments & Escrow](payments.md) — Stripe Connect model, payment lifecycle, onboarding, cron jobs, pricing
 - [Web App & API](web-api.md) — Next.js App Router pages, API route map, middleware, server actions, key lib utilities
-- [Data Model](data-model.md) — Prisma schema: 17 models, 9 enums, relationships, cascade rules
+- [Data Model](data-model.md) — Prisma schema: 18 models, 9 enums, relationships, cascade rules
 - [Operations & CI/CD](operations.md) — Release model, CI, env vars, Vercel config, scripts, testing
 
 ## Existing Long-Form Docs

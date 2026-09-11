@@ -28,6 +28,7 @@ const isComingSoonAllowedRoute = createRouteMatcher([
   "/sign-in(.*)", // Allow sign-in for admin bypass
   "/sign-up(.*)", // Allow sign-up for admin bypass
   "/mobile-onboarding(.*)", // Allow mobile Stripe onboarding (uses token-based auth, not cookies)
+  "/upload-from-phone(.*)", // QR photo handoff from the sell form (token in URL fragment, not cookies)
 ]);
 
 // Allowlist of browser origins permitted to make cross-origin API calls.
