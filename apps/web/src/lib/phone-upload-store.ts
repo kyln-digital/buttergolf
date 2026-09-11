@@ -129,9 +129,36 @@ export async function reservePhoneUploadSlot(
   });
 }
 
-/** Fills a reserved slot with the uploaded asset, making it visible to the desktop. */
-export async function completePhoneUpload(reservationId: string, url: string): Promise<void> {
-  await prisma.phoneUpload.update({ where: { id: reservationId }, data: { url } });
+export type CompletePhoneUploadOutcome = "completed" | "closed";
+
+/**
+ * Fills a reserved slot with the uploaded asset, making it visible to the
+ * desktop. Takes the same per-session lock as close, and refuses if the
+ * desktop closed the session while the upload was in flight: filling it then
+ * would tell the phone "sent" for a photo no desktop will ever collect. The
+ * caller destroys the asset and releases the slot on `closed`.
+ */
+export async function completePhoneUpload(
+  session: PhoneUploadSession,
+  reservationId: string,
+  url: string
+): Promise<CompletePhoneUploadOutcome> {
+  const { sessionId, clerkId } = session;
+
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${sessionId}::text))`;
+
+    const closed = await tx.phoneUpload.findFirst({
+      where: { sessionId, clerkId, url: CLOSED_URL },
+      select: { id: true },
+    });
+    if (closed) {
+      return "closed";
+    }
+
+    await tx.phoneUpload.update({ where: { id: reservationId }, data: { url } });
+    return "completed";
+  });
 }
 
 /**

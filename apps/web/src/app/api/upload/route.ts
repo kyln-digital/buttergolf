@@ -329,7 +329,10 @@ export async function POST(request: Request): Promise<NextResponse> {
     // Hand the photo to the desktop by filling the slot reserved above.
     if (phoneSession && reservationId) {
       try {
-        await completePhoneUpload(reservationId, result.secure_url);
+        const outcome = await completePhoneUpload(phoneSession, reservationId, result.secure_url);
+        if (outcome === "closed") {
+          throw new Error("Session closed while the upload was in flight");
+        }
         reservationId = null;
       } catch (completeError) {
         logError("Failed to record phone upload", completeError, {
@@ -395,7 +398,21 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
   } catch (error) {
     // Nothing reached the desktop, so the phone keeps its slot for a retry.
-    await releaseReservation();
+    // A failed upload call is not proof that no asset exists: a timeout can
+    // land after Cloudinary accepted it. destroy() is idempotent ("not found"
+    // is a success), so destroy first and release only once that succeeded;
+    // otherwise the reservation stays as the sweep's pointer to the asset.
+    if (reservationId) {
+      const destroyed = await cloudinary.uploader
+        .destroy(`products/${publicId}`)
+        .then(() => true)
+        .catch(() => false);
+      if (destroyed) {
+        await releaseReservation();
+      } else {
+        reservationId = null;
+      }
+    }
 
     const errorMessage = error instanceof Error ? error.message : "Upload failed";
 

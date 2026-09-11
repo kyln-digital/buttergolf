@@ -9,7 +9,7 @@ export const maxDuration = 60;
 /**
  * GET /api/cron/sweep-phone-uploads
  *
- * Removes phone-upload handoff rows a day or more old and destroys the
+ * Removes phone-upload handoff rows two days or more old and destroys the
  * Cloudinary asset behind any that never became a product image, so photos a
  * seller sent from their phone but never collected don't stay billable.
  *

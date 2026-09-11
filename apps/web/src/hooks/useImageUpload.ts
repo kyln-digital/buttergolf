@@ -13,6 +13,21 @@ export interface UploadResult {
   contentType: string;
 }
 
+/**
+ * Thrown when the upload route answers with an error. Carries the HTTP status
+ * so callers can react to specific outcomes (the phone page turns a 410 into
+ * its "finished on your computer" state) instead of matching message text.
+ */
+export class UploadError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number
+  ) {
+    super(message);
+    this.name = "UploadError";
+  }
+}
+
 export interface UseImageUploadReturn {
   upload: (file: File, isFirstImage?: boolean) => Promise<UploadResult>;
   uploading: boolean;
@@ -94,7 +109,7 @@ export function useImageUpload({ authToken }: UseImageUploadOptions = {}): UseIm
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Upload failed");
+        throw new UploadError(errorData.error || "Upload failed", response.status);
       }
 
       const result: UploadResult = await response.json();

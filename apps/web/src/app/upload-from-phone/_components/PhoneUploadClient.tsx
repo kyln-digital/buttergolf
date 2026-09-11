@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Button, Column, Heading, Image, Row, Spinner, Text } from "@buttergolf/ui";
 import { Camera, Check, Images } from "@tamagui/lucide-icons";
 import { ImageCropModal } from "@/components/ImageCropModal";
-import { useImageUpload } from "@/hooks/useImageUpload";
+import { useImageUpload, UploadError } from "@/hooks/useImageUpload";
 import {
   isHeicFile,
   normaliseImageFile,
@@ -176,6 +176,12 @@ export function PhoneUploadClient() {
     } catch (err) {
       // The hook surfaces the message via `uploadError`.
       console.error("Phone upload failed:", err);
+      // A refusal that means the whole session is over deserves the full-page
+      // notice, not an error line under controls that can no longer work.
+      if (err instanceof UploadError) {
+        if (err.status === 410) setPhase("closed");
+        if (err.status === 401) setPhase("expired");
+      }
     }
   };
 

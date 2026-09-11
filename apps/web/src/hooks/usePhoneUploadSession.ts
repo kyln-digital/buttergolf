@@ -206,9 +206,28 @@ export function usePhoneUploadSession({
     [storageScope]
   );
 
-  // Restore a session left by a reload of the same record, expired or not:
-  // an expired one may still have photos waiting to be placed.
+  // On a scope change, drop whatever the previous scope was doing before
+  // restoring the new one. The scope carries the seller's identity, and the
+  // form stays mounted across a Clerk sign-out, so without this a second
+  // account on the same tab would inherit the first account's live poller.
+  // Then restore a session left by a reload of the same record, expired or
+  // not: an expired one may still have photos waiting to be placed.
+  const previousScopeRef = useRef<string | undefined>(undefined);
   useEffect(() => {
+    const scopeChanged =
+      previousScopeRef.current !== undefined && previousScopeRef.current !== storageScope;
+    previousScopeRef.current = storageScope;
+
+    if (scopeChanged) {
+      activeSessionIdRef.current = null;
+      drainingRef.current = [];
+      placedIdsRef.current = new Set();
+      setSession(null);
+      setReceivedCount(0);
+      setPendingCount(0);
+      setError(null);
+    }
+
     if (!storageScope) return;
     const stored = readStoredSession(storageScope);
     if (stored) {
