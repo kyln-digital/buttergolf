@@ -9,6 +9,7 @@ import {
   readBearerToken,
   verifyPhoneUploadSessionToken,
 } from "@/lib/phone-upload-session";
+import { listCompletedPhoneUploads } from "@/lib/phone-upload-store";
 import type { PhoneUploadSessionCreated, PhoneUploadSessionStatus } from "@/lib/phone-upload";
 
 /**
@@ -102,11 +103,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     );
   }
 
-  const photos = await prisma.phoneUpload.findMany({
-    where: { sessionId: session.sessionId, clerkId: session.clerkId },
-    orderBy: { createdAt: "asc" },
-    select: { id: true, url: true },
-  });
+  const photos = await listCompletedPhoneUploads(session.sessionId, session.clerkId);
 
   const payload: PhoneUploadSessionStatus = {
     sessionId: session.sessionId,

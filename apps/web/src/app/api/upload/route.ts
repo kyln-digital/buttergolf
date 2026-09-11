@@ -9,10 +9,10 @@ import {
   type PhoneUploadSession,
 } from "@/lib/phone-upload-session";
 import {
-  countPhoneUploads,
+  completePhoneUpload,
   phoneAllowanceUsedMessage,
-  recordPhoneUpload,
-  type RecordPhoneUploadOutcome,
+  releasePhoneUploadSlot,
+  reservePhoneUploadSlot,
 } from "@/lib/phone-upload-store";
 import {
   isAllowedUploadType,
@@ -125,18 +125,6 @@ export async function POST(request: Request): Promise<NextResponse> {
       Object.entries(corsHeaders).forEach(([key, value]) => response.headers.set(key, value));
       return response;
     }
-
-    // A phone session carries its own allowance, set from the slots the sell
-    // form had free when the code was generated. This early check is only a
-    // courtesy so an over-limit phone doesn't pay to upload a rejected photo;
-    // the check that enforces the cap runs atomically when the upload is
-    // recorded below.
-    if (phoneSession && (await countPhoneUploads(phoneSession)) >= phoneSession.maxPhotos) {
-      return NextResponse.json(
-        { error: phoneAllowanceUsedMessage(phoneSession.maxPhotos) },
-        { status: 409, headers: corsHeaders }
-      );
-    }
   } catch (authError) {
     // Authentication system failure (not just "unauthorized")
     logError("Authentication failed during upload", authError, {
@@ -190,6 +178,44 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
   }
 
+  // A phone session's allowance is taken *before* the body is read or
+  // Cloudinary is called, so a leaked code can never drive more uploads than
+  // it was signed for: concurrent requests queue on the reservation instead of
+  // all slipping past a count. The slot is released on every failure below and
+  // filled in once the asset exists.
+  let reservationId: string | null = null;
+  const releaseReservation = () => {
+    if (reservationId) {
+      releasePhoneUploadSlot(reservationId);
+      reservationId = null;
+    }
+  };
+
+  if (phoneSession) {
+    try {
+      const reservation = await reservePhoneUploadSlot(phoneSession);
+      if (reservation.kind === "over-cap") {
+        return NextResponse.json(
+          { error: phoneAllowanceUsedMessage(phoneSession.maxPhotos) },
+          { status: 409, headers: corsHeaders }
+        );
+      }
+      reservationId = reservation.id;
+    } catch (reserveError) {
+      logError("Failed to reserve phone upload slot", reserveError, {
+        errorId: UPLOAD_FAILED,
+        userId,
+        filename,
+        phoneSessionId: phoneSession.sessionId,
+      });
+
+      return NextResponse.json(
+        { error: "Couldn't reach your computer's session. Please try again." },
+        { status: 500, headers: corsHeaders }
+      );
+    }
+  }
+
   try {
     // Convert request body to base64 for Cloudinary upload
     let arrayBuffer: ArrayBuffer;
@@ -202,6 +228,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
       // Content-Length can be absent or wrong, so the real size decides.
       if (buffer.length > MAX_UPLOAD_FILE_SIZE_BYTES) {
+        releaseReservation();
         return NextResponse.json(
           { error: `File size must be less than ${MAX_UPLOAD_FILE_SIZE_LABEL}` },
           { status: 413, headers: corsHeaders }
@@ -217,6 +244,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         contentType,
       });
 
+      releaseReservation();
       return NextResponse.json(
         {
           error: "Failed to process image",
@@ -271,37 +299,26 @@ export async function POST(request: Request): Promise<NextResponse> {
       phoneSessionId: phoneSession?.sessionId,
     });
 
-    // Hand the photo to the desktop. The allowance is enforced here, under a
-    // per-session lock, because the early check above can be raced by
-    // concurrent uploads with the same token.
-    if (phoneSession) {
-      let outcome: RecordPhoneUploadOutcome | "failed";
+    // Hand the photo to the desktop by filling the slot reserved above.
+    if (phoneSession && reservationId) {
       try {
-        outcome = await recordPhoneUpload(phoneSession, result.secure_url);
-      } catch (recordError) {
-        logError("Failed to record phone upload", recordError, {
+        await completePhoneUpload(reservationId, result.secure_url);
+        reservationId = null;
+      } catch (completeError) {
+        logError("Failed to record phone upload", completeError, {
           errorId: UPLOAD_FAILED,
           userId,
           filename,
           phoneSessionId: phoneSession.sessionId,
         });
-        outcome = "failed";
-      }
 
-      if (outcome !== "recorded") {
         // The desktop will never see this asset, so don't keep paying for it.
         // Best-effort, as in the listing routes: an orphan is logged, never a
         // second error for the phone.
         cloudinary.uploader.destroy(result.public_id).catch((err) => {
           console.error("Failed to delete Cloudinary asset:", { publicId: result.public_id, err });
         });
-
-        if (outcome === "over-cap") {
-          return NextResponse.json(
-            { error: phoneAllowanceUsedMessage(phoneSession.maxPhotos) },
-            { status: 409, headers: corsHeaders }
-          );
-        }
+        releaseReservation();
 
         return NextResponse.json(
           {
@@ -323,6 +340,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       { headers: corsHeaders }
     );
   } catch (error) {
+    // Nothing reached the desktop, so the phone keeps its slot for a retry.
+    releaseReservation();
+
     const errorMessage = error instanceof Error ? error.message : "Upload failed";
 
     // If background removal fails, provide helpful error

@@ -27,6 +27,15 @@ export interface UsePhoneUploadSessionOptions {
   onPhotos: (urls: string[]) => string[];
   /** Slots the form has free. Baked into the token as the phone's allowance. */
   remainingSlots: number;
+  /**
+   * Identity of the form record this session belongs to. When given, a live
+   * session is kept in sessionStorage under it and restored after a reload of
+   * the same record. Pass the same key the form uses for its own draft and
+   * clear it with {@link clearStoredPhoneUploadSession} wherever the form
+   * clears that draft, so a code minted for one listing can never be restored
+   * into another. Without it the session lives in component state only.
+   */
+  storageScope?: string;
 }
 
 export interface UsePhoneUploadSessionReturn {
@@ -47,18 +56,60 @@ export interface UsePhoneUploadSessionReturn {
   stop: () => void;
 }
 
+const STORAGE_PREFIX = "buttergolf-phone-upload-session";
+
+function storageKeyFor(scope: string): string {
+  return `${STORAGE_PREFIX}:${scope}`;
+}
+
+function readStoredSession(scope: string): PhoneUploadSessionSnapshot | null {
+  try {
+    const raw = window.sessionStorage.getItem(storageKeyFor(scope));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<PhoneUploadSessionSnapshot>;
+    if (
+      typeof parsed.sessionId !== "string" ||
+      typeof parsed.url !== "string" ||
+      typeof parsed.expiresAt !== "number" ||
+      typeof parsed.maxPhotos !== "number"
+    ) {
+      return null;
+    }
+    if (parsed.expiresAt <= Date.now()) return null;
+    return parsed as PhoneUploadSessionSnapshot;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredSession(scope: string, session: PhoneUploadSessionSnapshot | null): void {
+  try {
+    if (session) {
+      window.sessionStorage.setItem(storageKeyFor(scope), JSON.stringify(session));
+    } else {
+      window.sessionStorage.removeItem(storageKeyFor(scope));
+    }
+  } catch {
+    // Storage blocked: the session still works for the life of this page.
+  }
+}
+
+/**
+ * Forgets any stored session for a form record. Call it wherever the form
+ * discards that record's draft (publish, save, "start fresh").
+ */
+export function clearStoredPhoneUploadSession(scope: string): void {
+  writeStoredSession(scope, null);
+}
+
 /**
  * Desktop side of the phone photo handoff. Mints a session, polls it while it
  * is live, and offers new photos to the caller.
- *
- * The session lives only in component state, on purpose: persisting it would
- * let a code minted for one listing keep feeding photos into whatever listing
- * the same tab opens next. Losing the link on a reload costs two clicks to
- * regenerate; crossing listings costs a seller's trust.
  */
 export function usePhoneUploadSession({
   onPhotos,
   remainingSlots,
+  storageScope,
 }: UsePhoneUploadSessionOptions): UsePhoneUploadSessionReturn {
   const [session, setSession] = useState<PhoneUploadSessionSnapshot | null>(null);
   const [isStarting, setIsStarting] = useState(false);
@@ -68,12 +119,23 @@ export function usePhoneUploadSession({
   const [now, setNow] = useState(() => Date.now());
 
   // Ids of photos the form has taken. Anything the server returns that isn't
-  // in here is offered on every poll until the form accepts it.
+  // in here is offered on every poll until the form accepts it. Not persisted:
+  // after a restore every photo is offered again and the form keeps the ones
+  // it doesn't already hold, which is the only source of truth for "placed".
   const placedIdsRef = useRef<Set<string>>(new Set());
   const onPhotosRef = useRef(onPhotos);
   useEffect(() => {
     onPhotosRef.current = onPhotos;
   }, [onPhotos]);
+
+  // Restore a session left by a reload of the same record.
+  useEffect(() => {
+    if (!storageScope) return;
+    const stored = readStoredSession(storageScope);
+    if (stored) {
+      setSession(stored);
+    }
+  }, [storageScope]);
 
   const isExpired = session !== null && now >= session.expiresAt;
   const secondsLeft = session ? Math.max(0, Math.ceil((session.expiresAt - now) / 1000)) : 0;
@@ -81,7 +143,8 @@ export function usePhoneUploadSession({
   const stop = useCallback(() => {
     setSession(null);
     setPendingCount(0);
-  }, []);
+    if (storageScope) writeStoredSession(storageScope, null);
+  }, [storageScope]);
 
   const start = useCallback(async () => {
     setIsStarting(true);
@@ -111,12 +174,13 @@ export function usePhoneUploadSession({
       setPendingCount(0);
       setNow(Date.now());
       setSession(next);
+      if (storageScope) writeStoredSession(storageScope, next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't create a QR code.");
     } finally {
       setIsStarting(false);
     }
-  }, [remainingSlots]);
+  }, [remainingSlots, storageScope]);
 
   // Tick once a second for the countdown while a session is live.
   useEffect(() => {

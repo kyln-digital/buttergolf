@@ -49,6 +49,13 @@ export interface ImageUploadProps {
   onReorderImages?: (urls: string[]) => void;
   maxImages?: number;
   currentImages?: string[];
+  /**
+   * Identity of the record these photos belong to. Lets a live phone session
+   * survive a reload of the same record without ever being restored into a
+   * different one. The owner must clear it (see `clearStoredPhoneUploadSession`)
+   * wherever it discards the record's draft.
+   */
+  phoneSessionScope?: string;
 }
 
 /** A single sortable image thumbnail with delete + set-as-cover controls */
@@ -191,6 +198,7 @@ export function ImageUpload({
   onReorderImages,
   maxImages = 5,
   currentImages = [],
+  phoneSessionScope,
 }: Readonly<ImageUploadProps>) {
   const { upload, uploading, error, progress } = useImageUpload();
   const [dragActive, setDragActive] = useState(false);
@@ -206,6 +214,12 @@ export function ImageUpload({
   const currentImagesRef = useRef(currentImages);
   currentImagesRef.current = currentImages;
 
+  // A desktop photo mid-conversion, mid-crop or mid-upload has a slot spoken
+  // for that `currentImages` doesn't show yet. Read by the phone callback so a
+  // poll can't hand that last slot to the phone and leave the grid one over.
+  const desktopBusyRef = useRef(false);
+  desktopBusyRef.current = converting || cropModalOpen || uploading;
+
   /**
    * Places phone photos into free slots and reports which of the offered URLs
    * the form now holds. Whatever doesn't fit is left for the hook to offer
@@ -216,7 +230,8 @@ export function ImageUpload({
     (urls: string[]): string[] => {
       const held = currentImagesRef.current;
       const already = new Set(held);
-      const room = Math.max(0, maxImages - held.length);
+      const reservedForDesktop = desktopBusyRef.current ? 1 : 0;
+      const room = Math.max(0, maxImages - held.length - reservedForDesktop);
 
       const alreadyHeld = urls.filter((url) => already.has(url));
       const placedNow = urls.filter((url) => !already.has(url)).slice(0, room);
@@ -230,6 +245,7 @@ export function ImageUpload({
   const phone = usePhoneUploadSession({
     onPhotos: handlePhonePhotos,
     remainingSlots: maxImages - currentImages.length,
+    storageScope: phoneSessionScope,
   });
   const phoneSessionLive = phone.session !== null && !phone.isExpired;
   const hasRoom = currentImages.length < maxImages;

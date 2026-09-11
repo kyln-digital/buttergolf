@@ -31,6 +31,7 @@ import {
   Spinner,
 } from "@buttergolf/ui";
 import { ImageUpload } from "@/components/ImageUpload";
+import { clearStoredPhoneUploadSession } from "@/hooks/usePhoneUploadSession";
 import { PhotoTipsCard } from "./PhotoTipsCard";
 import {
   sellRecordReducer,
@@ -1004,6 +1005,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
       const product = (response.data ?? {}) as { title?: string };
       clearLocalDraft();
+      clearStoredPhoneUploadSession(storageKey);
 
       if (isEditingListing) {
         router.push("/seller/listings?updated=1");
@@ -1087,6 +1089,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
       // Navigate to seller listings page after saving draft
       clearLocalDraft();
+      clearStoredPhoneUploadSession(storageKey);
       router.push("/seller/listings");
       // Note: Don't reset isSubmittingRef here - we're navigating away
     } catch (err) {
@@ -1190,6 +1193,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                     size="$3"
                     onPress={() => {
                       clearLocalDraft();
+                      clearStoredPhoneUploadSession(storageKey);
                       setFormData(EMPTY_FORM_DATA);
                       setRecoveryDismissed(true);
                     }}
@@ -1236,6 +1240,9 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                           // Remount on a record switch so a phone-photo session
                           // started for one listing can't feed the next.
                           key={`images-${record.generation}`}
+                          // Scopes the session's reload restore to this record's
+                          // draft key; cleared alongside clearLocalDraft above.
+                          phoneSessionScope={storageKey}
                           onUploadComplete={handleImageUpload}
                           onRemoveImage={handleRemoveImage}
                           onReorderImages={handleReorderImages}
