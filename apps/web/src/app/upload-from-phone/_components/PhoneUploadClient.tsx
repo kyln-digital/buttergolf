@@ -58,6 +58,16 @@ export function PhoneUploadClient() {
 
   const { upload, uploading, error: uploadError, progress } = useImageUpload({ authToken: token });
 
+  // Scanning a second code while this page is already open only changes the
+  // fragment, which would leave everything below bound to the first token and
+  // send photos to the wrong listing. A reload re-runs the whole handshake
+  // for the new token; nothing here is worth carrying across.
+  useEffect(() => {
+    const handleHashChange = () => window.location.reload();
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
   // Read the token from the fragment and confirm the session with the server.
   useEffect(() => {
     const found = readPhoneUploadTokenFromHash(window.location.hash);

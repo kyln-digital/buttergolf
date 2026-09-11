@@ -1151,18 +1151,31 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     setLoading(true);
     setError(null);
 
-    // Settle the phone handoff before judging the draft: a photo that finished
-    // on the server since the uploader last polled is meaningful content too.
-    const images = await settlePhonePhotos();
-    if (images === null) {
-      setError(PHONE_SETTLE_FAILED_MESSAGE);
+    // Decide whether there is anything to save *before* settling, since
+    // settling closes the seller's code: a photo that finished on the server
+    // since the uploader last polled is meaningful content too, so peek at
+    // those without closing.
+    const hasLatePhonePhoto =
+      !hasMeaningfulDraftContent(formData) &&
+      phoneSessionScope !== undefined &&
+      (
+        await collectLatePhoneUploads(
+          phoneSessionScope,
+          formData.images,
+          MAX_LISTING_IMAGES - formData.images.length
+        )
+      ).length > 0;
+
+    if (!hasMeaningfulDraftContent(formData) && !hasLatePhonePhoto) {
+      setError("Add at least one detail before saving a draft.");
       setLoading(false);
       isSubmittingRef.current = false;
       return;
     }
 
-    if (!hasMeaningfulDraftContent({ ...formData, images })) {
-      setError("Add at least one detail before saving a draft.");
+    const images = await settlePhonePhotos();
+    if (images === null) {
+      setError(PHONE_SETTLE_FAILED_MESSAGE);
       setLoading(false);
       isSubmittingRef.current = false;
       return;

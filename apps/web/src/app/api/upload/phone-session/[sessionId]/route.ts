@@ -23,8 +23,9 @@ interface RouteContext {
  *
  * Desktop, Clerk cookie. Lists every photo the phone has sent to one of the
  * caller's sessions. Returns the full list rather than a delta so a reload
- * (or a missed poll) loses nothing; the client dedupes by id. 410 once the
- * session has been closed, so a stale poller stops.
+ * (or a missed poll) loses nothing; the client dedupes by id. A closed
+ * session still answers 200 with its photos and `closed: true`: the form's
+ * final drain runs after closing, and a poller stops once it sees the flag.
  */
 export async function GET(_request: Request, { params }: RouteContext): Promise<NextResponse> {
   const { userId } = await auth();

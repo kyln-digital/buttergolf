@@ -98,8 +98,9 @@ export async function GET(request: Request): Promise<NextResponse> {
   }
 
   // The phone reads this once on load and after each upload; a holder of a
-  // leaked token shouldn't get unbounded reads out of it either.
-  const { isLimited, resetAt } = await checkRateLimit(session.sessionId, {
+  // leaked token shouldn't get unbounded reads out of it either. Keyed by the
+  // seller, so several codes share one budget rather than each getting its own.
+  const { isLimited, resetAt } = await checkRateLimit(session.clerkId, {
     maxRequests: 60,
     windowMs: 60_000,
     keyFn: (id) => `phone-session:status:${id}`,
