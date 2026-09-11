@@ -32,11 +32,17 @@ import {
   Spinner,
 } from "@buttergolf/ui";
 import { ImageUpload } from "@/components/ImageUpload";
+import { flushSync } from "react-dom";
 import {
   clearStoredPhoneUploadSession,
   closePhoneUploadSessionsForScope,
   collectLatePhoneUploads,
+  markLatePhoneUploadsPlaced,
 } from "@/hooks/usePhoneUploadSession";
+
+/** Shown when the phone photo session can't be closed before publishing or saving. */
+const PHONE_SETTLE_FAILED_MESSAGE =
+  "Couldn't finish the phone photo session. Check your connection and try again.";
 
 /** Photos a listing can carry; the uploader's cap and the phone handoff's ceiling. */
 const MAX_LISTING_IMAGES = 5;
@@ -378,35 +384,48 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   const latestImagesRef = useRef(formData.images);
   latestImagesRef.current = formData.images;
 
-  const settlePhonePhotos = useCallback(async (): Promise<string[]> => {
+  const settlePhonePhotos = useCallback(async (): Promise<string[] | null> => {
     if (!phoneSessionScope) return latestImagesRef.current;
+
     // The close must be confirmed, not merely attempted: an error status
-    // would leave the phone able to upload into a session nobody polls. Retry
-    // a few times; if it still won't confirm, carry on (the sweep reclaims
-    // anything that lands later) rather than trapping the seller in the form.
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      if (await closePhoneUploadSessionsForScope(phoneSessionScope)) break;
-      if (attempt === 2) {
-        console.warn("[SellForm] Phone session close not confirmed; continuing");
-      } else {
-        await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
-      }
+    // would leave the phone able to upload into a session nobody polls, and
+    // the photo it sent would be missing from the saved listing. Retry a few
+    // times; if it still won't confirm, the settle has failed and the caller
+    // must not write.
+    let closed = false;
+    for (let attempt = 0; attempt < 3 && !closed; attempt += 1) {
+      if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+      closed = await closePhoneUploadSessionsForScope(phoneSessionScope);
     }
+    if (!closed) return null;
+
     // Read the form's images only now: the uploader and the poller were still
-    // free to add to them while the close was in flight, and a list captured
-    // before the await would overwrite whatever they added.
+    // free to add to them while the close was in flight.
     const held = latestImagesRef.current;
     const late = await collectLatePhoneUploads(
       phoneSessionScope,
       held,
       MAX_LISTING_IMAGES - held.length
     );
-    const current = latestImagesRef.current;
-    const additions = late.filter((url) => !current.includes(url));
-    if (additions.length === 0) return current;
-    const merged = [...current, ...additions].slice(0, MAX_LISTING_IMAGES);
+
+    // Merge against the form state as it is at this instant, synchronously,
+    // and record as placed only what actually fitted: a poll response that
+    // landed during the collection may have taken a slot, and a photo it
+    // squeezed out must be offered again rather than remembered as placed.
+    let merged: string[] = latestImagesRef.current;
+    let kept: string[] = [];
+    flushSync(() => {
+      setFormData((prev) => {
+        const base = prev.images;
+        const additions = late.filter((photo) => !base.includes(photo.url));
+        const next = [...base, ...additions.map((photo) => photo.url)].slice(0, MAX_LISTING_IMAGES);
+        kept = late.filter((photo) => next.includes(photo.url)).map((photo) => photo.id);
+        merged = next;
+        return next === base ? prev : { ...prev, images: next };
+      });
+    });
     latestImagesRef.current = merged;
-    setFormData((prev) => ({ ...prev, images: merged }));
+    markLatePhoneUploadsPlaced(phoneSessionScope, kept);
     return merged;
   }, [phoneSessionScope, setFormData]);
   // --- Record identity ---
@@ -928,17 +947,6 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       return;
     }
 
-    // Settle the phone handoff before judging the photos: the first photo may
-    // have finished on the server since the uploader last polled.
-    const images = await settlePhonePhotos();
-
-    if (images.length === 0) {
-      setError("Please upload at least one image");
-      setLoading(false);
-      isSubmittingRef.current = false;
-      return;
-    }
-
     const parsedPrice = Number.parseFloat(formData.price);
     if (
       Number.isNaN(parsedPrice) ||
@@ -960,6 +968,25 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
     if (parcelErrors.length > 0) {
       setError(parcelErrors[0].message);
+      setLoading(false);
+      isSubmittingRef.current = false;
+      return;
+    }
+
+    // Settle the phone handoff last, once everything else is valid: it closes
+    // the seller's code, which a still-open form after a validation error
+    // would then need reissued. Judged after settling because the first photo
+    // may have finished on the server since the uploader last polled.
+    const images = await settlePhonePhotos();
+    if (images === null) {
+      setError(PHONE_SETTLE_FAILED_MESSAGE);
+      setLoading(false);
+      isSubmittingRef.current = false;
+      return;
+    }
+
+    if (images.length === 0) {
+      setError("Please upload at least one image");
       setLoading(false);
       isSubmittingRef.current = false;
       return;
@@ -1127,6 +1154,12 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     // Settle the phone handoff before judging the draft: a photo that finished
     // on the server since the uploader last polled is meaningful content too.
     const images = await settlePhonePhotos();
+    if (images === null) {
+      setError(PHONE_SETTLE_FAILED_MESSAGE);
+      setLoading(false);
+      isSubmittingRef.current = false;
+      return;
+    }
 
     if (!hasMeaningfulDraftContent({ ...formData, images })) {
       setError("Add at least one detail before saving a draft.");

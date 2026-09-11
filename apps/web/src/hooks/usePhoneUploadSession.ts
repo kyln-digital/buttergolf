@@ -563,9 +563,15 @@ export function usePhoneUploadSession({
 
         if (afterExpiry) setExpiredPollDone(true);
 
-        // The desktop has finished with the active code (published, saved or
-        // discarded elsewhere): its photos are placed, nothing more will come.
-        if (active.kind === "ok" && active.closed) stop();
+        // The desktop has finished with the active code (the form is settling
+        // for publish or save): its photos are placed, nothing more will come.
+        // Stop polling locally only. Storage and the live registry stay, so
+        // the terminal drain that follows the close can still find and claim
+        // whatever this poll did not fit; the form clears them after writing.
+        if (active.kind === "ok" && active.closed) {
+          activeSessionIdRef.current = null;
+          setSession(null);
+        }
       } catch {
         // Transient network error; the next tick retries.
       } finally {
@@ -603,17 +609,20 @@ export function usePhoneUploadSession({
  * for the next two-second poll; without this it would be missing from the
  * listing and destroyed by the sweep. Looks at the current code and any
  * replaced ones still draining, from storage and from the mounted hook (so a
- * blocked sessionStorage doesn't skip it). Returns at most `room` URLs,
+ * blocked sessionStorage doesn't skip it). Returns at most `room` photos,
  * skipping anything already placed (including photos the seller placed and
- * removed). Never throws: on any failure the caller proceeds with what it has.
+ * removed). Marks nothing: the caller merges what it can and then calls
+ * {@link markLatePhoneUploadsPlaced} with the ids it actually kept, so a
+ * photo squeezed out by a concurrent placement is offered again rather than
+ * lost. Never throws: on any failure the caller proceeds with what it has.
  */
 export async function collectLatePhoneUploads(
   scope: string,
   heldUrls: readonly string[],
   room: number
-): Promise<string[]> {
+): Promise<PhoneUploadPhoto[]> {
   if (room <= 0) return [];
-  const { sessionIds, placedIds, stored } = knownStateForScope(scope);
+  const { sessionIds, placedIds } = knownStateForScope(scope);
   if (sessionIds.length === 0) return [];
 
   const held = new Set(heldUrls);
@@ -630,18 +639,21 @@ export async function collectLatePhoneUploads(
       late.push(photo);
     }
   }
+  return late;
+}
 
-  // Record them as placed everywhere a later restore or collection looks, so
-  // none is offered twice.
-  if (late.length > 0) {
-    const lateIds = late.map((photo) => photo.id);
-    const live = liveStateByScope.get(scope);
-    if (live) for (const id of lateIds) live.placedIds.add(id);
-    if (stored) {
-      writeStoredSession(scope, { ...stored, placedIds: [...stored.placedIds, ...lateIds] });
-    }
+/**
+ * Records late photos the form kept as placed, everywhere a later restore or
+ * collection looks, so none is offered twice.
+ */
+export function markLatePhoneUploadsPlaced(scope: string, ids: readonly string[]): void {
+  if (ids.length === 0) return;
+  const live = liveStateByScope.get(scope);
+  if (live) for (const id of ids) live.placedIds.add(id);
+  const stored = readStoredSession(scope);
+  if (stored) {
+    writeStoredSession(scope, { ...stored, placedIds: [...stored.placedIds, ...ids] });
   }
-  return late.map((photo) => photo.url);
 }
 
 /**

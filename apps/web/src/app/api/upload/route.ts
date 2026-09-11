@@ -341,8 +341,29 @@ export async function POST(request: Request): Promise<NextResponse> {
           // lock before assuming the slot is empty: destroying the asset of a
           // row that did fill would leave the listing with a dead URL.
           const state = await getPhoneUploadReservationState(phoneSession, reservationId).catch(
-            () => "pending" as const
+            () => "unknown" as const
           );
+          if (state === "unknown") {
+            // Indeterminate: the fill may have committed and the desktop may
+            // already hold the URL. Destroying would risk a dead image, and
+            // releasing would drop the sweep's only pointer, so keep the
+            // reservation exactly as it is and let the seller check.
+            logError("Phone upload completion indeterminate", completeError, {
+              errorId: UPLOAD_FAILED,
+              userId,
+              filename,
+              phoneSessionId: phoneSession.sessionId,
+              reservationId,
+            });
+            reservationId = null;
+            return NextResponse.json(
+              {
+                error:
+                  "Couldn't confirm your photo reached your computer. Check there before sending it again.",
+              },
+              { status: 500, headers: corsHeaders }
+            );
+          }
           if (state !== "filled") throw completeError;
           outcome = "completed";
         }
