@@ -40,7 +40,7 @@ function DimensionInput({
         {label}
       </Text>
       <Row
-        backgroundColor="$pureWhite"
+        backgroundColor="$surface"
         borderWidth={2}
         borderColor={focused ? "$spicedClementine" : "$cloudMist"}
         borderRadius="$lg"
@@ -55,14 +55,13 @@ function DimensionInput({
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           placeholder={placeholder}
-          placeholderTextColor="$textMuted"
           keyboardType="decimal-pad"
           borderWidth={0}
           backgroundColor="transparent"
           size="$5"
           color="$text"
         />
-        <Text size="$3" color="$textMuted">
+        <Text size="$3" color="$textSecondary">
           {unit}
         </Text>
       </Row>
