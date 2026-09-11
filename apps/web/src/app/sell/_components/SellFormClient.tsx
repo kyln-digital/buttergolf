@@ -34,6 +34,7 @@ import {
 import { ImageUpload } from "@/components/ImageUpload";
 import {
   clearStoredPhoneUploadSession,
+  closePhoneUploadSessionsForScope,
   collectLatePhoneUploads,
 } from "@/hooks/usePhoneUploadSession";
 
@@ -366,10 +367,18 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
    * finished uploading after the uploader's last two-second poll. Without
    * this, publishing a moment after the phone said "sent" would leave that
    * photo out of the listing, and the sweep would later destroy it.
+   *
+   * Closes the phone sessions first and waits for the server to confirm, so
+   * nothing can complete between this read and the write that follows: a
+   * phone still uploading gets a 410 and its "finished on your computer"
+   * notice instead of a "sent" for a photo the listing will never hold.
+   * Called only once the seller has committed to publishing or saving, since
+   * afterwards the phone needs a fresh code.
    */
-  const withLatePhonePhotos = useCallback(
+  const settlePhonePhotos = useCallback(
     async (held: string[]): Promise<string[]> => {
       if (!phoneSessionScope) return held;
+      await closePhoneUploadSessionsForScope(phoneSessionScope);
       const late = await collectLatePhoneUploads(
         phoneSessionScope,
         held,
@@ -901,7 +910,11 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       return;
     }
 
-    if (formData.images.length === 0) {
+    // Settle the phone handoff before judging the photos: the first photo may
+    // have finished on the server since the uploader last polled.
+    const images = await settlePhonePhotos(formData.images);
+
+    if (images.length === 0) {
       setError("Please upload at least one image");
       setLoading(false);
       isSubmittingRef.current = false;
@@ -933,9 +946,6 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       isSubmittingRef.current = false;
       return;
     }
-
-    // Pick up any phone photo that landed since the uploader last polled.
-    const images = await withLatePhonePhotos(formData.images);
 
     // The record this submit is for. Queued behind any autosave already
     // running, so by the time it executes an in-flight draft creation has
@@ -1096,15 +1106,16 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     setLoading(true);
     setError(null);
 
-    if (!hasMeaningfulDraftContent(formData)) {
+    // Settle the phone handoff before judging the draft: a photo that finished
+    // on the server since the uploader last polled is meaningful content too.
+    const images = await settlePhonePhotos(formData.images);
+
+    if (!hasMeaningfulDraftContent({ ...formData, images })) {
       setError("Add at least one detail before saving a draft.");
       setLoading(false);
       isSubmittingRef.current = false;
       return;
     }
-
-    // Pick up any phone photo that landed since the uploader last polled.
-    const images = await withLatePhonePhotos(formData.images);
 
     // Queued like every other write; persistDraft re-checks the record when it
     // actually runs, and abandons if the form has moved on since.

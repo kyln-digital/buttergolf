@@ -586,3 +586,27 @@ export async function collectLatePhoneUploads(
   }
   return late.map((photo) => photo.url);
 }
+
+/**
+ * Closes every session a form record is responsible for and waits for the
+ * server to confirm, unlike {@link clearStoredPhoneUploadSession} which is
+ * fire-and-forget for use during navigation. Publish and save call this
+ * *before* their final collection, so the server is already refusing new
+ * uploads (and failing in-flight completions with a 410 to the phone) when
+ * the collection runs; nothing can complete in the gap between the read and
+ * the write. Leaves storage in place, since the write may still fail and the
+ * form stay open.
+ */
+export async function closePhoneUploadSessionsForScope(scope: string): Promise<void> {
+  const ids = new Set<string>(liveSessionIdsByScope.get(scope) ?? []);
+  const stored = readStoredSession(scope);
+  if (stored) {
+    ids.add(stored.sessionId);
+    for (const entry of stored.draining) ids.add(entry.sessionId);
+  }
+  await Promise.all(
+    Array.from(ids).map((id) =>
+      fetch(`/api/upload/phone-session/${id}`, { method: "DELETE" }).catch(() => undefined)
+    )
+  );
+}
