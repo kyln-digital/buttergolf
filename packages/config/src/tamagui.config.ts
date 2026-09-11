@@ -539,10 +539,10 @@ const darkTheme = {
   // Text semantic colors - override for dark mode
   text: brandColors.pureWhite,
   textSecondary: brandColors.cloudMist,
-  // 60% white rather than a solid grey, so muted text stays readable on every dark
-  // surface (~5.7:1 on the page, ~4:1 on Slate Smoke surfaces).
-  textTertiary: brandColors.overlayLight60,
-  textMuted: brandColors.overlayLight60,
+  // 70% white rather than a solid grey, so muted text stays readable on every dark
+  // surface (~7:1 on the page, ~4.7:1 on Slate Smoke surfaces).
+  textTertiary: brandColors.overlayLight70,
+  textMuted: brandColors.overlayLight70,
   // Keep inverse text white so orange primary buttons remain white-text in all themes.
   textInverse: brandColors.pureWhite,
   // 70% white keeps ~4.7:1 on the Slate Smoke field surface.
