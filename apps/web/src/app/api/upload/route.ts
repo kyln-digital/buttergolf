@@ -1,8 +1,14 @@
 import { type UploadApiOptions } from "cloudinary";
 import { NextResponse } from "next/server";
+import { prisma } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
 import { checkRateLimit, rateLimitResponse } from "@/middleware/rate-limit";
 import { cloudinary } from "@/lib/cloudinary";
+import {
+  readBearerToken,
+  verifyPhoneUploadSessionToken,
+  type PhoneUploadSession,
+} from "@/lib/phone-upload-session";
 import {
   isAllowedUploadType,
   MAX_UPLOAD_FILE_SIZE_BYTES,
@@ -53,6 +59,10 @@ function getCorsHeaders(request: Request): Record<string, string> {
 export async function POST(request: Request): Promise<NextResponse> {
   const corsHeaders = getCorsHeaders(request);
   let userId: string | null = null;
+  // Set when the caller is a phone that scanned the sell form's QR code. Its
+  // token is a narrow capability minted by /api/upload/phone-session, and each
+  // upload it makes is recorded so the desktop can pick it up.
+  let phoneSession: PhoneUploadSession | null = null;
 
   // Check if Cloudinary is configured
   if (
@@ -85,8 +95,14 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   try {
-    // Authenticate user (supports both web cookies and mobile Bearer token)
-    userId = await getUserIdFromRequest(request);
+    // A QR-code session token is checked first: it is not a Clerk token, so
+    // handing it to auth() would only produce a noisy "unauthenticated". Any
+    // other Bearer (Clerk session, mobile session) falls through as before.
+    const bearer = readBearerToken(request);
+    phoneSession = bearer ? await verifyPhoneUploadSessionToken(bearer) : null;
+
+    // Authenticate user (supports web cookies, mobile Bearer token, phone QR token)
+    userId = phoneSession ? phoneSession.clerkId : await getUserIdFromRequest(request);
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
@@ -103,6 +119,25 @@ export async function POST(request: Request): Promise<NextResponse> {
       const response = rateLimitResponse(resetAt);
       Object.entries(corsHeaders).forEach(([key, value]) => response.headers.set(key, value));
       return response;
+    }
+
+    // A phone session carries its own allowance, set from the slots the sell
+    // form had free when the code was generated. Checked before the body is
+    // read so an over-limit phone doesn't pay to upload a rejected photo.
+    if (phoneSession) {
+      const uploaded = await prisma.phoneUpload.count({
+        where: { sessionId: phoneSession.sessionId, clerkId: phoneSession.clerkId },
+      });
+      if (uploaded >= phoneSession.maxPhotos) {
+        return NextResponse.json(
+          {
+            error: `This QR code has already sent ${phoneSession.maxPhotos} photo${
+              phoneSession.maxPhotos === 1 ? "" : "s"
+            }. Generate a new one on your computer to send more.`,
+          },
+          { status: 409, headers: corsHeaders }
+        );
+      }
     }
   } catch (authError) {
     // Authentication system failure (not just "unauthorized")
@@ -235,7 +270,37 @@ export async function POST(request: Request): Promise<NextResponse> {
       dimensions: `${result.width}x${result.height}`,
       format: result.format,
       bytes: result.bytes,
+      phoneSessionId: phoneSession?.sessionId,
     });
+
+    // Hand the photo to the desktop. If this fails the asset is orphaned in
+    // Cloudinary, which is cheap; telling the phone it worked when the desktop
+    // will never see it is not.
+    if (phoneSession) {
+      try {
+        await prisma.phoneUpload.create({
+          data: {
+            sessionId: phoneSession.sessionId,
+            clerkId: phoneSession.clerkId,
+            url: result.secure_url,
+          },
+        });
+      } catch (recordError) {
+        logError("Failed to record phone upload", recordError, {
+          errorId: UPLOAD_FAILED,
+          userId,
+          filename,
+          phoneSessionId: phoneSession.sessionId,
+        });
+
+        return NextResponse.json(
+          {
+            error: "Your photo uploaded but couldn't be sent to your computer. Please try again.",
+          },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
 
     return NextResponse.json(
       {

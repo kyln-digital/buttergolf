@@ -156,6 +156,28 @@ model ProductImage {
   @@map("product_images")
 }
 
+/// A photo sent from a seller's phone to the sell form open on another device.
+///
+/// The desktop mints a short-lived signed token, shows it as a QR code, and
+/// polls this table for the session id inside it; the phone uploads to
+/// Cloudinary with that token and each upload lands here. Rows are a handoff
+/// buffer, not part of the listing: the desktop copies the URL into its form
+/// state, and stale rows are swept when the seller starts a new session.
+model PhoneUpload {
+  id        String   @id @default(cuid())
+  /// Random id minted per QR code (the token's `jti`). Not guessable.
+  sessionId String
+  /// Clerk user id of the seller who minted the session. The desktop may only
+  /// read sessions carrying its own id.
+  clerkId   String
+  url       String
+  createdAt DateTime @default(now())
+
+  @@index([sessionId, createdAt])
+  @@index([clerkId, createdAt])
+  @@map("phone_uploads")
+}
+
 model Favourite {
   id        String   @id @default(cuid())
   userId    String

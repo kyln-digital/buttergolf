@@ -20,7 +20,16 @@ export interface UseImageUploadReturn {
   progress: number;
 }
 
-export function useImageUpload(): UseImageUploadReturn {
+export interface UseImageUploadOptions {
+  /**
+   * Sent as a Bearer credential instead of relying on the Clerk cookie. Used
+   * by the phone upload page, whose visitor scanned a QR code and is not
+   * signed in on that device.
+   */
+  authToken?: string | null;
+}
+
+export function useImageUpload({ authToken }: UseImageUploadOptions = {}): UseImageUploadReturn {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
@@ -66,14 +75,17 @@ export function useImageUpload(): UseImageUploadReturn {
 
       setProgress(30);
 
+      const headers: Record<string, string> = { "Content-Type": file.type };
+      if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+      }
+
       // Upload to API route with isFirstImage flag for background removal
       const response = await fetch(
         `/api/upload?filename=${encodeURIComponent(filename)}&isFirstImage=${isFirstImage}`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": file.type,
-          },
+          headers,
           body: file,
         }
       );

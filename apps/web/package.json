@@ -49,6 +49,7 @@
     "next-seo": "catalog:",
     "next-sitemap": "catalog:",
     "nuka-carousel": "catalog:",
+    "qrcode.react": "4.2.0",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-image-crop": "catalog:",

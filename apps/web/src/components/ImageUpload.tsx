@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { Text, Row, Column, Image, Spinner } from "@buttergolf/ui";
+import { Text, Row, Column, Image, Spinner, Button } from "@buttergolf/ui";
+import { Smartphone } from "@tamagui/lucide-icons";
 import {
   DndContext,
   closestCenter,
@@ -20,7 +21,9 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useImageUpload } from "../hooks/useImageUpload";
+import { usePhoneUploadSession } from "../hooks/usePhoneUploadSession";
 import { ImageCropModal } from "./ImageCropModal";
+import { PhoneUploadQrModal } from "./PhoneUploadQrModal";
 import {
   isHeicFile,
   normaliseImageFile,
@@ -31,6 +34,13 @@ import {
 /** Renders a byte count as MB for error messages, e.g. "14.2MB". */
 function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
+
+/** "4:05" style countdown for the phone-session status line. */
+function formatCountdown(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
 export interface ImageUploadProps {
@@ -188,7 +198,39 @@ export function ImageUpload({
   const [fileToCrop, setFileToCrop] = useState<File | null>(null);
   const [converting, setConverting] = useState(false);
   const [convertError, setConvertError] = useState<string | null>(null);
+  const [phoneModalOpen, setPhoneModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Read inside the phone-photo callback, which fires from a poll timer and
+  // would otherwise see the images as they were when the session started.
+  const currentImagesRef = useRef(currentImages);
+  currentImagesRef.current = currentImages;
+
+  const handlePhonePhotos = useCallback(
+    (urls: string[]) => {
+      const held = currentImagesRef.current;
+      const already = new Set(held);
+      const room = Math.max(0, maxImages - held.length);
+      // After a desktop reload the whole session is reported again, so drop
+      // anything already in the form before filling the remaining slots.
+      const fresh = urls.filter((url) => !already.has(url)).slice(0, room);
+      for (const url of fresh) onUploadComplete(url);
+    },
+    [maxImages, onUploadComplete]
+  );
+
+  const phone = usePhoneUploadSession({
+    onPhotos: handlePhonePhotos,
+    remainingSlots: maxImages - currentImages.length,
+  });
+  const phoneSessionLive = phone.session !== null && !phone.isExpired;
+
+  const openPhoneModal = useCallback(() => {
+    setPhoneModalOpen(true);
+    if (!phoneSessionLive) void phone.start();
+  }, [phone, phoneSessionLive]);
+
+  const closePhoneModal = useCallback(() => setPhoneModalOpen(false), []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -441,6 +483,23 @@ export function ImageUpload({
           )}
         </Column>
 
+        {/* Phone handoff: sits outside the drop zone so a press can't also open the file picker */}
+        {currentImages.length < maxImages && (
+          <Row gap="$sm" alignItems="center" justifyContent="center" flexWrap="wrap">
+            <Button butterVariant="ghost" size="$3" icon={Smartphone} onPress={openPhoneModal}>
+              {phoneSessionLive ? "Show phone code" : "Add photos from your phone"}
+            </Button>
+            {phoneSessionLive && (
+              <Text size="$2" color={phone.receivedCount > 0 ? "$success" : "$textSecondary"}>
+                {phone.receivedCount > 0
+                  ? `${phone.receivedCount} received from your phone`
+                  : "Waiting for your phone"}{" "}
+                · {formatCountdown(phone.secondsLeft)} left
+              </Text>
+            )}
+          </Row>
+        )}
+
         {(error || convertError) && (
           <Text size="$3" color="$error" textAlign="center">
             {error || convertError}
@@ -529,6 +588,18 @@ export function ImageUpload({
           }}
         />
       )}
+
+      <PhoneUploadQrModal
+        open={phoneModalOpen}
+        onClose={closePhoneModal}
+        session={phone.session}
+        isExpired={phone.isExpired}
+        secondsLeft={phone.secondsLeft}
+        receivedCount={phone.receivedCount}
+        isStarting={phone.isStarting}
+        error={phone.error}
+        onRegenerate={() => void phone.start()}
+      />
     </>
   );
 }

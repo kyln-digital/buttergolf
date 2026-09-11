@@ -147,6 +147,7 @@ Authentication uses **Clerk** (`@clerk/nextjs` for web, `@clerk/clerk-expo` for 
 Product images are uploaded to **Cloudinary** and stored as `ProductImage` records (URL + sort order).
 
 - Upload endpoint: `POST /api/upload` — handles auth for both web (Clerk cookies) and mobile (Bearer tokens)
+- Phone handoff: the web sell form can show a QR code ("Add photos from your phone"). It mints a 15-minute token (`apps/web/src/lib/phone-upload-session.ts`, signed with `MOBILE_SESSION_SECRET`) that the phone page `/upload-from-phone` uses as a Bearer credential against `POST /api/upload`; each upload lands in `phone_uploads` and the form polls `GET /api/upload/phone-session/[sessionId]` every 2s. No sign-in on the phone; the allowance is capped per token and hard-capped at 10.
 - Cloudinary client: `apps/web/src/lib/cloudinary.ts`
 - Placeholder image: defined in `packages/constants/src/images.ts`
 - Aspect ratio: 4:3 (`PRODUCT_IMAGE_ASPECT_RATIO`)
