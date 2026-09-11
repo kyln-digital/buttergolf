@@ -340,6 +340,11 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
   // Track whether the user has dismissed the recovery prompt
   const [recoveryDismissed, setRecoveryDismissed] = useState(false);
+  // Bumped when the seller discards the draft in place ("start fresh"). The
+  // uploader is keyed on it so a live phone session, which lives in the
+  // uploader's state rather than in storage, is torn down with the draft
+  // instead of continuing to feed photos into the fresh listing.
+  const [uploaderEpoch, setUploaderEpoch] = useState(0);
   // --- Record identity ---
   // Which row this form writes to, whether the data on screen is actually that
   // row's, and which in-flight work is still relevant. All of it lives in one
@@ -1194,6 +1199,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                     onPress={() => {
                       clearLocalDraft();
                       clearStoredPhoneUploadSession(storageKey);
+                      setUploaderEpoch((epoch) => epoch + 1);
                       setFormData(EMPTY_FORM_DATA);
                       setRecoveryDismissed(true);
                     }}
@@ -1237,9 +1243,10 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                       {/* Left: Image Upload (2/3 width on desktop) */}
                       <Column flex={2} minWidth={300} width="100%">
                         <ImageUpload
-                          // Remount on a record switch so a phone-photo session
-                          // started for one listing can't feed the next.
-                          key={`images-${record.generation}`}
+                          // Remount on a record switch or an in-place discard so a
+                          // phone-photo session started for one listing can't feed
+                          // the next.
+                          key={`images-${record.generation}-${uploaderEpoch}`}
                           // Scopes the session's reload restore to this record's
                           // draft key; cleared alongside clearLocalDraft above.
                           phoneSessionScope={storageKey}

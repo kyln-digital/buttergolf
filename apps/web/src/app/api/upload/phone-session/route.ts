@@ -54,17 +54,19 @@ export async function POST(request: Request): Promise<NextResponse> {
       clampPhoneUploadMax(requestedMax)
     );
 
-    // Best effort: a failed sweep must not stop the seller getting a code.
-    prisma.phoneUpload
-      .deleteMany({
+    // Best effort: a failed sweep must not stop the seller getting a code. It
+    // is awaited all the same, because a serverless invocation can be frozen
+    // as soon as the response is sent and the sweep would then never run.
+    try {
+      await prisma.phoneUpload.deleteMany({
         where: { clerkId: userId, createdAt: { lt: new Date(Date.now() - STALE_UPLOAD_AGE_MS) } },
-      })
-      .catch((sweepError: unknown) => {
-        logError("Failed to sweep stale phone uploads", sweepError, {
-          errorId: UPLOAD_FAILED,
-          userId,
-        });
       });
+    } catch (sweepError) {
+      logError("Failed to sweep stale phone uploads", sweepError, {
+        errorId: UPLOAD_FAILED,
+        userId,
+      });
+    }
 
     const payload: PhoneUploadSessionCreated = {
       sessionId: session.sessionId,
