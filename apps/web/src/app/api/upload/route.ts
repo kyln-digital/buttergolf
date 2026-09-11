@@ -1,6 +1,5 @@
 import { type UploadApiOptions } from "cloudinary";
 import { NextResponse } from "next/server";
-import { prisma } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
 import { checkRateLimit, rateLimitResponse } from "@/middleware/rate-limit";
 import { cloudinary } from "@/lib/cloudinary";
@@ -9,6 +8,12 @@ import {
   verifyPhoneUploadSessionToken,
   type PhoneUploadSession,
 } from "@/lib/phone-upload-session";
+import {
+  countPhoneUploads,
+  phoneAllowanceUsedMessage,
+  recordPhoneUpload,
+  type RecordPhoneUploadOutcome,
+} from "@/lib/phone-upload-store";
 import {
   isAllowedUploadType,
   MAX_UPLOAD_FILE_SIZE_BYTES,
@@ -122,22 +127,15 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     // A phone session carries its own allowance, set from the slots the sell
-    // form had free when the code was generated. Checked before the body is
-    // read so an over-limit phone doesn't pay to upload a rejected photo.
-    if (phoneSession) {
-      const uploaded = await prisma.phoneUpload.count({
-        where: { sessionId: phoneSession.sessionId, clerkId: phoneSession.clerkId },
-      });
-      if (uploaded >= phoneSession.maxPhotos) {
-        return NextResponse.json(
-          {
-            error: `This QR code has already sent ${phoneSession.maxPhotos} photo${
-              phoneSession.maxPhotos === 1 ? "" : "s"
-            }. Generate a new one on your computer to send more.`,
-          },
-          { status: 409, headers: corsHeaders }
-        );
-      }
+    // form had free when the code was generated. This early check is only a
+    // courtesy so an over-limit phone doesn't pay to upload a rejected photo;
+    // the check that enforces the cap runs atomically when the upload is
+    // recorded below.
+    if (phoneSession && (await countPhoneUploads(phoneSession)) >= phoneSession.maxPhotos) {
+      return NextResponse.json(
+        { error: phoneAllowanceUsedMessage(phoneSession.maxPhotos) },
+        { status: 409, headers: corsHeaders }
+      );
     }
   } catch (authError) {
     // Authentication system failure (not just "unauthorized")
@@ -273,18 +271,13 @@ export async function POST(request: Request): Promise<NextResponse> {
       phoneSessionId: phoneSession?.sessionId,
     });
 
-    // Hand the photo to the desktop. If this fails the asset is orphaned in
-    // Cloudinary, which is cheap; telling the phone it worked when the desktop
-    // will never see it is not.
+    // Hand the photo to the desktop. The allowance is enforced here, under a
+    // per-session lock, because the early check above can be raced by
+    // concurrent uploads with the same token.
     if (phoneSession) {
+      let outcome: RecordPhoneUploadOutcome | "failed";
       try {
-        await prisma.phoneUpload.create({
-          data: {
-            sessionId: phoneSession.sessionId,
-            clerkId: phoneSession.clerkId,
-            url: result.secure_url,
-          },
-        });
+        outcome = await recordPhoneUpload(phoneSession, result.secure_url);
       } catch (recordError) {
         logError("Failed to record phone upload", recordError, {
           errorId: UPLOAD_FAILED,
@@ -292,6 +285,23 @@ export async function POST(request: Request): Promise<NextResponse> {
           filename,
           phoneSessionId: phoneSession.sessionId,
         });
+        outcome = "failed";
+      }
+
+      if (outcome !== "recorded") {
+        // The desktop will never see this asset, so don't keep paying for it.
+        // Best-effort, as in the listing routes: an orphan is logged, never a
+        // second error for the phone.
+        cloudinary.uploader.destroy(result.public_id).catch((err) => {
+          console.error("Failed to delete Cloudinary asset:", { publicId: result.public_id, err });
+        });
+
+        if (outcome === "over-cap") {
+          return NextResponse.json(
+            { error: phoneAllowanceUsedMessage(phoneSession.maxPhotos) },
+            { status: 409, headers: corsHeaders }
+          );
+        }
 
         return NextResponse.json(
           {

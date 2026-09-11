@@ -3,8 +3,8 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { QRCodeSVG } from "qrcode.react";
+import { getTokenValue } from "tamagui";
 import { Button, Column, Heading, Row, Spinner, Text } from "@buttergolf/ui";
-import { brandColors } from "@buttergolf/config";
 import type { PhoneUploadSessionSnapshot } from "@/hooks/usePhoneUploadSession";
 
 interface PhoneUploadQrModalProps {
@@ -14,6 +14,8 @@ interface PhoneUploadQrModalProps {
   isExpired: boolean;
   secondsLeft: number;
   receivedCount: number;
+  /** Photos the phone has sent that the grid had no room for yet. */
+  pendingCount: number;
   isStarting: boolean;
   error: string | null;
   /** Mints a fresh code (used when the current one has expired or failed). */
@@ -39,11 +41,18 @@ export function PhoneUploadQrModal({
   isExpired,
   secondsLeft,
   receivedCount,
+  pendingCount,
   isStarting,
   error,
   onRegenerate,
 }: Readonly<PhoneUploadQrModalProps>) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // The QR code ignores the theme on purpose: phone cameras need dark modules
+  // on a light ground to lock on, so it is drawn in the brand's fixed ink and
+  // paper tokens rather than the theme's text/background pair.
+  const qrInk = getTokenValue("$ironstone", "color") as string | undefined;
+  const qrPaper = getTokenValue("$pureWhite", "color") as string | undefined;
 
   useEffect(() => {
     if (!open) return;
@@ -80,7 +89,6 @@ export function PhoneUploadQrModal({
       style={{
         position: "fixed",
         inset: 0,
-        backgroundColor: "rgba(0, 0, 0, 0.6)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -88,17 +96,29 @@ export function PhoneUploadQrModal({
         zIndex: 100000,
         padding: "16px",
       }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
     >
+      {/* Scrim: the secondary brand tone at 60%, closes on press */}
       <Column
+        position="absolute"
+        top={0}
+        left={0}
+        right={0}
+        bottom={0}
+        backgroundColor="$secondary"
+        opacity={0.6}
+        onPress={onClose}
+        accessibilityLabel="Close"
+      />
+      <Column
+        position="relative"
         backgroundColor="$surface"
         borderRadius="$xl"
         overflow="hidden"
         maxWidth={440}
         width="100%"
-        style={{ boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.4)" }}
+        shadowColor="$shadowColorPress"
+        shadowRadius={40}
+        shadowOffset={{ width: 0, height: 20 }}
       >
         <Row
           paddingHorizontal="$xl"
@@ -135,9 +155,7 @@ export function PhoneUploadQrModal({
         <Column paddingHorizontal="$xl" paddingVertical="$xl" gap="$lg" alignItems="center">
           {showCode ? (
             <Column
-              // Always white behind the code, whatever the theme: phone
-              // cameras need dark modules on a light ground to lock on.
-              backgroundColor={brandColors.pureWhite}
+              backgroundColor="$pureWhite"
               padding="$md"
               borderRadius="$lg"
               borderWidth={1}
@@ -148,8 +166,8 @@ export function PhoneUploadQrModal({
                 size={220}
                 level="M"
                 marginSize={1}
-                bgColor={brandColors.pureWhite}
-                fgColor={brandColors.ironstone}
+                bgColor={qrPaper}
+                fgColor={qrInk}
                 title="QR code linking your phone to this listing"
               />
             </Column>
@@ -204,6 +222,13 @@ export function PhoneUploadQrModal({
                   {receivedCount > 0 ? photosLabel : "Waiting for your phone…"}
                 </Text>
               </Row>
+              {pendingCount > 0 && (
+                <Text size="$3" color="$warning" textAlign="center">
+                  {pendingCount === 1
+                    ? "1 photo is waiting for a free slot. Remove a photo to add it."
+                    : `${pendingCount} photos are waiting for a free slot. Remove a photo to add them.`}
+                </Text>
+              )}
               <Text size="$2" color="$textMuted">
                 Code expires in {formatCountdown(secondsLeft)}
               </Text>

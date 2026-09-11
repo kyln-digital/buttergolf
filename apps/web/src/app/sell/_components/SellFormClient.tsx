@@ -1233,6 +1233,9 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                       {/* Left: Image Upload (2/3 width on desktop) */}
                       <Column flex={2} minWidth={300} width="100%">
                         <ImageUpload
+                          // Remount on a record switch so a phone-photo session
+                          // started for one listing can't feed the next.
+                          key={`images-${record.generation}`}
                           onUploadComplete={handleImageUpload}
                           onRemoveImage={handleRemoveImage}
                           onReorderImages={handleReorderImages}

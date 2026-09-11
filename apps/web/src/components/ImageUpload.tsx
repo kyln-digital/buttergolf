@@ -206,15 +206,23 @@ export function ImageUpload({
   const currentImagesRef = useRef(currentImages);
   currentImagesRef.current = currentImages;
 
+  /**
+   * Places phone photos into free slots and reports which of the offered URLs
+   * the form now holds. Whatever doesn't fit is left for the hook to offer
+   * again once a slot frees up, rather than being quietly dropped: the phone
+   * has already told the seller those photos were sent.
+   */
   const handlePhonePhotos = useCallback(
-    (urls: string[]) => {
+    (urls: string[]): string[] => {
       const held = currentImagesRef.current;
       const already = new Set(held);
       const room = Math.max(0, maxImages - held.length);
-      // After a desktop reload the whole session is reported again, so drop
-      // anything already in the form before filling the remaining slots.
-      const fresh = urls.filter((url) => !already.has(url)).slice(0, room);
-      for (const url of fresh) onUploadComplete(url);
+
+      const alreadyHeld = urls.filter((url) => already.has(url));
+      const placedNow = urls.filter((url) => !already.has(url)).slice(0, room);
+      for (const url of placedNow) onUploadComplete(url);
+
+      return [...alreadyHeld, ...placedNow];
     },
     [maxImages, onUploadComplete]
   );
@@ -224,6 +232,17 @@ export function ImageUpload({
     remainingSlots: maxImages - currentImages.length,
   });
   const phoneSessionLive = phone.session !== null && !phone.isExpired;
+  const hasRoom = currentImages.length < maxImages;
+
+  const phoneStatus = !phoneSessionLive
+    ? null
+    : phone.pendingCount > 0
+      ? `${phone.pendingCount} from your phone waiting for a free slot · remove a photo to add ${
+          phone.pendingCount === 1 ? "it" : "them"
+        }`
+      : phone.receivedCount > 0
+        ? `${phone.receivedCount} received from your phone`
+        : "Waiting for your phone";
 
   const openPhoneModal = useCallback(() => {
     setPhoneModalOpen(true);
@@ -483,18 +502,26 @@ export function ImageUpload({
           )}
         </Column>
 
-        {/* Phone handoff: sits outside the drop zone so a press can't also open the file picker */}
-        {currentImages.length < maxImages && (
+        {/* Phone handoff: sits outside the drop zone so a press can't also open the file picker.
+            Stays visible while a session is live even when the grid is full, so photos waiting
+            for a slot are never invisible. */}
+        {(hasRoom || phoneSessionLive) && (
           <Row gap="$sm" alignItems="center" justifyContent="center" flexWrap="wrap">
             <Button butterVariant="ghost" size="$3" icon={Smartphone} onPress={openPhoneModal}>
               {phoneSessionLive ? "Show phone code" : "Add photos from your phone"}
             </Button>
-            {phoneSessionLive && (
-              <Text size="$2" color={phone.receivedCount > 0 ? "$success" : "$textSecondary"}>
-                {phone.receivedCount > 0
-                  ? `${phone.receivedCount} received from your phone`
-                  : "Waiting for your phone"}{" "}
-                · {formatCountdown(phone.secondsLeft)} left
+            {phoneStatus && (
+              <Text
+                size="$2"
+                color={
+                  phone.pendingCount > 0
+                    ? "$warning"
+                    : phone.receivedCount > 0
+                      ? "$success"
+                      : "$textSecondary"
+                }
+              >
+                {phoneStatus} · {formatCountdown(phone.secondsLeft)} left
               </Text>
             )}
           </Row>
@@ -596,6 +623,7 @@ export function ImageUpload({
         isExpired={phone.isExpired}
         secondsLeft={phone.secondsLeft}
         receivedCount={phone.receivedCount}
+        pendingCount={phone.pendingCount}
         isStarting={phone.isStarting}
         error={phone.error}
         onRegenerate={() => void phone.start()}

@@ -19,11 +19,12 @@ export interface PhoneUploadSessionSnapshot {
 
 export interface UsePhoneUploadSessionOptions {
   /**
-   * Called with the URLs of photos the phone has sent that this hook hasn't
-   * reported before. After a reload the whole session is reported again, so
-   * callers should ignore URLs they already hold.
+   * Offered the URLs of photos the phone has sent that are not yet in the
+   * form. Must return the subset that *is* now in the form (placed by this
+   * call or already there). Anything else is treated as waiting for a free
+   * slot and offered again on the next poll.
    */
-  onPhotos: (urls: string[]) => void;
+  onPhotos: (urls: string[]) => string[];
   /** Slots the form has free. Baked into the token as the phone's allowance. */
   remainingSlots: number;
 }
@@ -34,8 +35,10 @@ export interface UsePhoneUploadSessionReturn {
   isExpired: boolean;
   /** Whole seconds until expiry; 0 when expired or when there is no session. */
   secondsLeft: number;
-  /** Photos received in this session so far. */
+  /** Photos the phone has sent in this session, placed or waiting. */
   receivedCount: number;
+  /** Photos the phone has sent that the form had no room for yet. */
+  pendingCount: number;
   isStarting: boolean;
   error: string | null;
   /** Mints a fresh session, replacing any existing one. */
@@ -44,54 +47,14 @@ export interface UsePhoneUploadSessionReturn {
   stop: () => void;
 }
 
-const STORAGE_PREFIX = "buttergolf-phone-upload-session";
-
-/**
- * One key per sell-form record, so a session restored after a reload can only
- * feed the record it was started for. The sell form's URL identifies the
- * record (/sell, /sell?draftId=…, /sell/[id]/edit) and does not change while
- * it is open.
- */
-function storageKey(): string {
-  return `${STORAGE_PREFIX}:${window.location.pathname}${window.location.search}`;
-}
-
-function readStoredSession(): PhoneUploadSessionSnapshot | null {
-  try {
-    const raw = window.sessionStorage.getItem(storageKey());
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<PhoneUploadSessionSnapshot>;
-    if (
-      typeof parsed.sessionId !== "string" ||
-      typeof parsed.url !== "string" ||
-      typeof parsed.expiresAt !== "number" ||
-      typeof parsed.maxPhotos !== "number"
-    ) {
-      return null;
-    }
-    if (parsed.expiresAt <= Date.now()) return null;
-    return parsed as PhoneUploadSessionSnapshot;
-  } catch {
-    return null;
-  }
-}
-
-function writeStoredSession(session: PhoneUploadSessionSnapshot | null): void {
-  try {
-    if (session) {
-      window.sessionStorage.setItem(storageKey(), JSON.stringify(session));
-    } else {
-      window.sessionStorage.removeItem(storageKey());
-    }
-  } catch {
-    // Storage blocked: the session still works for the life of this page.
-  }
-}
-
 /**
  * Desktop side of the phone photo handoff. Mints a session, polls it while it
- * is live, and reports new photos to the caller. The session survives a reload
- * of the same sell-form URL via sessionStorage.
+ * is live, and offers new photos to the caller.
+ *
+ * The session lives only in component state, on purpose: persisting it would
+ * let a code minted for one listing keep feeding photos into whatever listing
+ * the same tab opens next. Losing the link on a reload costs two clicks to
+ * regenerate; crossing listings costs a seller's trust.
  */
 export function usePhoneUploadSession({
   onPhotos,
@@ -101,31 +64,23 @@ export function usePhoneUploadSession({
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [receivedCount, setReceivedCount] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
   const [now, setNow] = useState(() => Date.now());
 
-  // Ids already handed to the caller. Deliberately not persisted: after a
-  // reload every photo is reported again and the caller filters against what
-  // it still holds, which is the only source of truth for "already added".
-  const seenIdsRef = useRef<Set<string>>(new Set());
+  // Ids of photos the form has taken. Anything the server returns that isn't
+  // in here is offered on every poll until the form accepts it.
+  const placedIdsRef = useRef<Set<string>>(new Set());
   const onPhotosRef = useRef(onPhotos);
   useEffect(() => {
     onPhotosRef.current = onPhotos;
   }, [onPhotos]);
-
-  // Restore a session left by a reload.
-  useEffect(() => {
-    const stored = readStoredSession();
-    if (stored) {
-      setSession(stored);
-    }
-  }, []);
 
   const isExpired = session !== null && now >= session.expiresAt;
   const secondsLeft = session ? Math.max(0, Math.ceil((session.expiresAt - now) / 1000)) : 0;
 
   const stop = useCallback(() => {
     setSession(null);
-    writeStoredSession(null);
+    setPendingCount(0);
   }, []);
 
   const start = useCallback(async () => {
@@ -151,11 +106,11 @@ export function usePhoneUploadSession({
         maxPhotos: created.maxPhotos,
       };
 
-      seenIdsRef.current = new Set();
+      placedIdsRef.current = new Set();
       setReceivedCount(0);
+      setPendingCount(0);
       setNow(Date.now());
       setSession(next);
-      writeStoredSession(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't create a QR code.");
     } finally {
@@ -193,12 +148,26 @@ export function usePhoneUploadSession({
         const { photos } = (await response.json()) as { photos: PhoneUploadPhoto[] };
         if (cancelled) return;
 
-        const fresh = photos.filter((photo) => !seenIdsRef.current.has(photo.id));
-        if (fresh.length === 0) return;
+        // Everything not yet placed, including photos offered before and
+        // turned away for lack of room: a slot may have freed up since.
+        const waiting = photos.filter((photo) => !placedIdsRef.current.has(photo.id));
+        if (waiting.length === 0) {
+          setPendingCount(0);
+          return;
+        }
 
-        for (const photo of fresh) seenIdsRef.current.add(photo.id);
-        setReceivedCount(seenIdsRef.current.size);
-        onPhotosRef.current(fresh.map((photo) => photo.url));
+        const placed = new Set(onPhotosRef.current(waiting.map((photo) => photo.url)));
+        let stillWaiting = 0;
+        for (const photo of waiting) {
+          if (placed.has(photo.url)) {
+            placedIdsRef.current.add(photo.id);
+          } else {
+            stillWaiting += 1;
+          }
+        }
+
+        setReceivedCount(placedIdsRef.current.size + stillWaiting);
+        setPendingCount(stillWaiting);
       } catch {
         // Transient network error; the next tick retries.
       }
@@ -218,6 +187,7 @@ export function usePhoneUploadSession({
     isExpired,
     secondsLeft,
     receivedCount,
+    pendingCount,
     isStarting,
     error,
     start,
