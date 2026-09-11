@@ -307,43 +307,84 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Stale claims: an order flipped to RELEASED whose transfer was never
-    // recorded and for which Stripe has no transfer in the order's group is a
-    // crash between claim and transfer. After a grace period (a transfer may
-    // still be in flight from a concurrent process) hand it back to the
-    // PENDING_SELLER_ONBOARDING pass below, whose per-order idempotency key
-    // makes the retry safe even if the original transfer did in fact land.
+    // Reconciliation: orders claimed RELEASED with no transfer recorded. Two
+    // causes: (a) the transfer went through but the follow-up DB write failed,
+    // (b) a crash between claim and transfer. Every release path tags its
+    // transfer with `transfer_group: order.id`, so one lookup per order tells
+    // them apart: (a) is repaired from the transfer; (b), once older than the
+    // grace period (a transfer may still be in flight from a concurrent
+    // process), is handed back to the PENDING_SELLER_ONBOARDING pass below,
+    // whose per-order idempotency key makes the retry safe even if the
+    // original transfer did in fact land. Younger claims are left alone and
+    // counted. Lookups run in small parallel batches to stay well inside
+    // Stripe's rate limits; this list is empty on a healthy day.
     const staleClaimCutoff = new Date(Date.now() - 60 * 60 * 1000);
-    const staleClaims = await prisma.order.findMany({
-      where: {
-        paymentHoldStatus: "RELEASED",
-        stripeTransferId: null,
-        updatedAt: { lt: staleClaimCutoff },
-      },
-      select: { id: true },
+    const orphanCandidates = await prisma.order.findMany({
+      where: { paymentHoldStatus: "RELEASED", stripeTransferId: null },
+      select: { id: true, updatedAt: true },
       take: 50,
     });
 
-    for (const stale of staleClaims) {
-      try {
-        const transfers = await stripe.transfers.list({ transfer_group: stale.id, limit: 1 });
-        if (transfers.data[0]) continue; // the repair pass below records it
+    let repairedReleases = 0;
+    let requeuedReleases = 0;
+    const RECONCILE_BATCH = 5;
+    for (let i = 0; i < orphanCandidates.length; i += RECONCILE_BATCH) {
+      const batch = orphanCandidates.slice(i, i + RECONCILE_BATCH);
+      await Promise.all(
+        batch.map(async (orphan) => {
+          try {
+            const transfers = await stripe.transfers.list({
+              transfer_group: orphan.id,
+              limit: 1,
+            });
+            const transfer = transfers.data[0];
 
-        const requeued = await prisma.order.updateMany({
-          where: { id: stale.id, paymentHoldStatus: "RELEASED", stripeTransferId: null },
-          data: { paymentHoldStatus: "PENDING_SELLER_ONBOARDING", stripePayoutStatus: null },
-        });
-        if (requeued.count > 0) {
-          console.warn("RECONCILIATION: re-queued stale release claim for retry:", {
-            orderId: stale.id,
-          });
-        }
-      } catch (staleError) {
-        console.error("RECONCILIATION: failed to inspect stale release claim:", {
-          orderId: stale.id,
-          error: staleError instanceof Error ? staleError.message : "Unknown error",
-        });
-      }
+            if (transfer) {
+              const repaired = await prisma.order.updateMany({
+                where: { id: orphan.id, stripeTransferId: null },
+                data: {
+                  stripeTransferId: transfer.id,
+                  paymentReleasedAt: new Date(transfer.created * 1000),
+                  stripePayoutStatus: "completed",
+                },
+              });
+              if (repaired.count > 0) {
+                repairedReleases += 1;
+                console.warn("RECONCILIATION: repaired RELEASED order from its transfer:", {
+                  orderId: orphan.id,
+                  transferId: transfer.id,
+                });
+              }
+              return;
+            }
+
+            if (orphan.updatedAt < staleClaimCutoff) {
+              const requeued = await prisma.order.updateMany({
+                where: { id: orphan.id, paymentHoldStatus: "RELEASED", stripeTransferId: null },
+                data: { paymentHoldStatus: "PENDING_SELLER_ONBOARDING", stripePayoutStatus: null },
+              });
+              if (requeued.count > 0) {
+                requeuedReleases += 1;
+                console.warn("RECONCILIATION: re-queued stale release claim for retry:", {
+                  orderId: orphan.id,
+                });
+              }
+            }
+          } catch (reconcileError) {
+            console.error("RECONCILIATION: failed to inspect RELEASED order without transfer:", {
+              orderId: orphan.id,
+              error: reconcileError instanceof Error ? reconcileError.message : "Unknown error",
+            });
+          }
+        })
+      );
+    }
+
+    const orphanedReleases = orphanCandidates.length - repairedReleases - requeuedReleases;
+    if (orphanedReleases > 0) {
+      console.error("RECONCILIATION: orders marked RELEASED with no transfer (recent claims):", {
+        count: orphanedReleases,
+      });
     }
 
     // Second pass: drain orders the buyer already confirmed but which were
@@ -428,55 +469,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Reconciliation: orders claimed RELEASED with no transfer recorded. Two
-    // causes: (a) the transfer went through but the follow-up DB write failed,
-    // (b) a crash between claim and transfer. Every release path tags its
-    // transfer with `transfer_group: order.id`, so (a) is repairable here by
-    // looking the transfer up; (b) is left alone and alerted, since a transfer
-    // may still be in flight from a concurrent process.
-    const orphanCandidates = await prisma.order.findMany({
-      where: { paymentHoldStatus: "RELEASED", stripeTransferId: null },
-      select: { id: true },
-      take: 50,
-    });
-
-    let repairedReleases = 0;
-    for (const orphan of orphanCandidates) {
-      try {
-        const transfers = await stripe.transfers.list({ transfer_group: orphan.id, limit: 1 });
-        const transfer = transfers.data[0];
-        if (!transfer) continue;
-
-        const repaired = await prisma.order.updateMany({
-          where: { id: orphan.id, stripeTransferId: null },
-          data: {
-            stripeTransferId: transfer.id,
-            paymentReleasedAt: new Date(transfer.created * 1000),
-            stripePayoutStatus: "completed",
-          },
-        });
-        if (repaired.count > 0) {
-          repairedReleases += 1;
-          console.warn("RECONCILIATION: repaired RELEASED order from its transfer:", {
-            orderId: orphan.id,
-            transferId: transfer.id,
-          });
-        }
-      } catch (repairError) {
-        console.error("RECONCILIATION: failed to look up transfer for order:", {
-          orderId: orphan.id,
-          error: repairError instanceof Error ? repairError.message : "Unknown error",
-        });
-      }
-    }
-
-    const orphanedReleases = orphanCandidates.length - repairedReleases;
-    if (orphanedReleases > 0) {
-      console.error("RECONCILIATION: orders marked RELEASED with no transfer:", {
-        count: orphanedReleases,
-      });
-    }
-
     const totalProcessed = ordersToRelease.length + pendingOnboarding.length;
     const successCount = results.filter((r) => r.status === "success").length;
     const failedCount = results.filter((r) => r.status === "failed").length;
@@ -487,6 +479,7 @@ export async function GET(request: NextRequest) {
       failed: failedCount,
       orphanedReleases,
       repairedReleases,
+      requeuedReleases,
     });
 
     return NextResponse.json({
@@ -497,6 +490,7 @@ export async function GET(request: NextRequest) {
       failedCount,
       orphanedReleases,
       repairedReleases,
+      requeuedReleases,
       results,
     });
   } catch (error) {

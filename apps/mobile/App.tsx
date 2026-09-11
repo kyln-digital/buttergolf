@@ -51,7 +51,7 @@ import type {
 } from "@buttergolf/app";
 import { resolveFormParcel } from "@buttergolf/app";
 import { OnboardingScreen } from "@buttergolf/app/src/features/onboarding";
-import { PayoutSetupScreen } from "@buttergolf/app/src/features/payouts";
+import { PayoutSetupScreen } from "@buttergolf/app";
 import { HomeScreen } from "@buttergolf/app/src/features/home";
 import { CategoryListScreen } from "@buttergolf/app/src/features/categories";
 import { useMobileFavourites } from "@buttergolf/app/src/hooks";

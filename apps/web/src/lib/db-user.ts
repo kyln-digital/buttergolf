@@ -30,22 +30,20 @@ export async function ensureDbUserFromRequest(request: Request): Promise<DbUserR
 
   const existing = await prisma.user.findUnique({
     where: { clerkId },
-    select: { ...DB_USER_SELECT, email: true },
+    select: { ...DB_USER_SELECT, email: true, firstName: true, lastName: true },
   });
 
   if (existing) {
     // The row can exist with empty details when an older code path created it
-    // before Clerk data was available. Backfill so payout prefill has names.
-    if ((!existing.email || existing.email === "") && clerkUser.email) {
+    // before Clerk data was available. Backfill whatever is blank and Clerk
+    // can supply, so payout prefill has an email and names to work with.
+    const backfill: { email?: string; firstName?: string; lastName?: string } = {};
+    if (!existing.email && clerkUser.email) backfill.email = clerkUser.email;
+    if (!existing.firstName && clerkUser.firstName) backfill.firstName = clerkUser.firstName;
+    if (!existing.lastName && clerkUser.lastName) backfill.lastName = clerkUser.lastName;
+    if (Object.keys(backfill).length > 0) {
       console.info(`[DB User] Backfilling Clerk data onto user ${existing.id}`);
-      await prisma.user.update({
-        where: { id: existing.id },
-        data: {
-          email: clerkUser.email,
-          firstName: clerkUser.firstName || "",
-          lastName: clerkUser.lastName || "",
-        },
-      });
+      await prisma.user.update({ where: { id: existing.id }, data: backfill });
     }
     return { id: existing.id, clerkId: existing.clerkId };
   }

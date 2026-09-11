@@ -11,7 +11,7 @@
  */
 import { useCallback, useState } from "react";
 import { Alert } from "react-native";
-import { PayoutSetupError } from "@buttergolf/app/src/features/payouts";
+import { PayoutSetupError } from "@buttergolf/app";
 import type {
   BankAccountTokenInput,
   PayoutDetailsInput,

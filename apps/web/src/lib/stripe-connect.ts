@@ -149,10 +149,11 @@ export async function syncConnectStatus(
 function statusNeedsSync(user: ConnectUser, summary: ConnectStatusSummary): boolean {
   if (user.stripeOnboardingComplete !== summary.isComplete) return true;
   if (user.stripeAccountStatus !== summary.status) return true;
+  // Compare as sets: Stripe doesn't promise a stable order for currently_due.
   const storedDue = Array.isArray(user.stripeRequirementsDue)
-    ? (user.stripeRequirementsDue as string[])
+    ? [...(user.stripeRequirementsDue as string[])].sort()
     : [];
-  const liveDue = summary.requirements.currentlyDue;
+  const liveDue = [...summary.requirements.currentlyDue].sort();
   if (storedDue.length !== liveDue.length) return true;
   return storedDue.some((field, i) => field !== liveDue[i]);
 }
