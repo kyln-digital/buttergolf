@@ -12,6 +12,8 @@ import { SignUpFormData, PasswordStrength } from "./types";
 interface SignUpScreenProps {
   onSuccess?: (email: string) => void;
   onNavigateToSignIn?: () => void;
+  /** An existing account with two-factor auth can arrive here via Apple/Google SSO */
+  onNavigateToTwoFactor?: () => void;
   onNavigateBack?: () => void;
 }
 
@@ -22,6 +24,7 @@ interface SignUpScreenProps {
 export function SignUpScreen({
   onSuccess,
   onNavigateToSignIn,
+  onNavigateToTwoFactor,
   onNavigateBack,
 }: Readonly<SignUpScreenProps>) {
   const insets = useSafeAreaInsets();
@@ -234,7 +237,11 @@ export function SignUpScreen({
 
           {/* No onSuccess: an SSO sign-up is already verified, so skip the email-code screen
               and let <SignedIn> take over once the session is active. */}
-          <SocialAuthButtons onError={setError} disabled={isSubmitting} />
+          <SocialAuthButtons
+            onError={setError}
+            onNeedsSecondFactor={onNavigateToTwoFactor}
+            disabled={isSubmitting}
+          />
 
           {/* Form Fields */}
           <Column gap="$4">

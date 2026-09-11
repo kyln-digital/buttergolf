@@ -91,6 +91,13 @@ export const brandColors = {
   // Button-specific borders (for depth on filled buttons)
   primaryBorder: "#F04300", // Darker than spicedClementine
   secondaryBorder: "#000000", // Pure black for Ironstone buttons
+
+  // Third-party logo colours, fixed by Google's sign-in branding guidelines
+  // (the four segments of the "G" on "Continue with Google")
+  googleBlue: "#4285F4",
+  googleRed: "#EA4335",
+  googleYellow: "#FBBC05",
+  googleGreen: "#34A853",
 } as const;
 
 export type BrandColor = keyof typeof brandColors;

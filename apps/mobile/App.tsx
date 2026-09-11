@@ -2369,6 +2369,7 @@ function OnboardingFlow() {
                 setFlowState("verifyEmail");
               }}
               onNavigateToSignIn={() => setFlowState("signIn")}
+              onNavigateToTwoFactor={() => setFlowState("twoFactor")}
               onNavigateBack={() => setFlowState("onboarding")}
             />
           )}
