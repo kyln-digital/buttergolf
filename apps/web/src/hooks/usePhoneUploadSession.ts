@@ -323,10 +323,23 @@ export function usePhoneUploadSession({
   // session left by a reload of the same record, expired or not: an expired
   // one may still have photos waiting to be placed.
   const previousScopeRef = useRef<string | undefined>(undefined);
+  // Mirror of `session` for the scope effect, which must not re-run on every
+  // session change but does need the current one when a scope first appears.
+  const sessionRef = useRef<PhoneUploadSessionSnapshot | null>(null);
+  sessionRef.current = session;
   useEffect(() => {
     const previousScope = previousScopeRef.current;
     const scopeChanged = previousScope !== undefined && previousScope !== storageScope;
     previousScopeRef.current = storageScope;
+
+    // The scope arriving for the first time (Clerk finished hydrating) while a
+    // code is already live: adopt that session under the scope, so it is
+    // persisted, registered, and therefore closed and drained by the form's
+    // terminal actions, rather than discarding it for whatever storage holds.
+    if (!scopeChanged && storageScope && sessionRef.current) {
+      persist(sessionRef.current);
+      return;
+    }
 
     if (scopeChanged) {
       const toClose = new Set(drainingRef.current.map((entry) => entry.sessionId));
@@ -355,7 +368,7 @@ export function usePhoneUploadSession({
       setSession(snapshot);
       registerLive(snapshot.sessionId);
     }
-  }, [storageScope, setDraining, registerLive]);
+  }, [storageScope, setDraining, registerLive, persist]);
 
   // The registry entry belongs to a mounted hook; storage keeps the snapshot.
   useEffect(() => {
