@@ -189,9 +189,16 @@ export function usePhoneUploadSession({
     return () => window.clearInterval(id);
   }, [session, isExpired]);
 
-  // Poll for photos while the session is live.
+  // Poll while the session is live. Once the code has expired the desktop
+  // endpoint is still readable (it only needs the Clerk session), so keep going
+  // for as long as photos are waiting and there is room to place them: a photo
+  // the phone sent while the grid was full must not be stranded just because
+  // the seller made room after the fifteen minutes were up.
+  const canDrainPending = pendingCount > 0 && remainingSlots > 0;
+  const shouldPoll = session !== null && (!isExpired || canDrainPending);
+
   useEffect(() => {
-    if (!session || isExpired) return;
+    if (!session || !shouldPoll) return;
 
     let cancelled = false;
 
@@ -244,7 +251,7 @@ export function usePhoneUploadSession({
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [session, isExpired, stop]);
+  }, [session, shouldPoll, stop]);
 
   return {
     session,

@@ -250,15 +250,22 @@ export function ImageUpload({
   const phoneSessionLive = phone.session !== null && !phone.isExpired;
   const hasRoom = currentImages.length < maxImages;
 
-  const phoneStatus = !phoneSessionLive
-    ? null
-    : phone.pendingCount > 0
-      ? `${phone.pendingCount} from your phone waiting for a free slot · remove a photo to add ${
-          phone.pendingCount === 1 ? "it" : "them"
-        }`
-      : phone.receivedCount > 0
-        ? `${phone.receivedCount} received from your phone`
-        : "Waiting for your phone";
+  const phonePending = phone.pendingCount > 0;
+  // Photos waiting for a slot stay visible after the code expires: the hook
+  // keeps offering them, so the seller must be able to see there's something
+  // to make room for.
+  const showPhoneStatus = phoneSessionLive || phonePending;
+
+  const phoneStatusText = phonePending
+    ? `${phone.pendingCount} from your phone waiting for a free slot · remove a photo to add ${
+        phone.pendingCount === 1 ? "it" : "them"
+      }`
+    : phone.receivedCount > 0
+      ? `${phone.receivedCount} received from your phone`
+      : "Waiting for your phone";
+  const phoneStatusSuffix = phoneSessionLive
+    ? ` · ${formatCountdown(phone.secondsLeft)} left`
+    : " · code expired";
 
   const openPhoneModal = useCallback(() => {
     setPhoneModalOpen(true);
@@ -521,23 +528,24 @@ export function ImageUpload({
         {/* Phone handoff: sits outside the drop zone so a press can't also open the file picker.
             Stays visible while a session is live even when the grid is full, so photos waiting
             for a slot are never invisible. */}
-        {(hasRoom || phoneSessionLive) && (
+        {(hasRoom || showPhoneStatus) && (
           <Row gap="$sm" alignItems="center" justifyContent="center" flexWrap="wrap">
             <Button butterVariant="ghost" size="$3" icon={Smartphone} onPress={openPhoneModal}>
               {phoneSessionLive ? "Show phone code" : "Add photos from your phone"}
             </Button>
-            {phoneStatus && (
+            {showPhoneStatus && (
               <Text
                 size="$2"
                 color={
-                  phone.pendingCount > 0
+                  phonePending
                     ? "$warning"
                     : phone.receivedCount > 0
                       ? "$success"
                       : "$textSecondary"
                 }
               >
-                {phoneStatus} · {formatCountdown(phone.secondsLeft)} left
+                {phoneStatusText}
+                {phoneStatusSuffix}
               </Text>
             )}
           </Row>

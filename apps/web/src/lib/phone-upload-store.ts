@@ -67,17 +67,20 @@ export async function completePhoneUpload(reservationId: string, url: string): P
 }
 
 /**
- * Gives a reserved slot back after a failed upload. Best-effort and not
- * awaited: the phone is already getting an error, and a slot that leaks here
- * is reclaimed by the pending TTL anyway.
+ * Gives a reserved slot back after a failed upload. Never throws: the phone is
+ * already getting an error, and a slot that leaks here is reclaimed by the
+ * pending TTL anyway. Callers should still await it, since a serverless
+ * function may be frozen as soon as its response is sent.
  */
-export function releasePhoneUploadSlot(reservationId: string): void {
-  prisma.phoneUpload.delete({ where: { id: reservationId } }).catch((error: unknown) => {
+export async function releasePhoneUploadSlot(reservationId: string): Promise<void> {
+  try {
+    await prisma.phoneUpload.delete({ where: { id: reservationId } });
+  } catch (error) {
     logError("Failed to release phone upload slot", error, {
       errorId: UPLOAD_FAILED,
       reservationId,
     });
-  });
+  }
 }
 
 /** Photos the phone has finished sending for a session, oldest first. */

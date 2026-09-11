@@ -183,11 +183,14 @@ export async function POST(request: Request): Promise<NextResponse> {
   // it was signed for: concurrent requests queue on the reservation instead of
   // all slipping past a count. The slot is released on every failure below and
   // filled in once the asset exists.
+  // Awaited on every failure path: a serverless invocation can be frozen the
+  // moment the response goes out, so cleanup that isn't awaited may never run.
   let reservationId: string | null = null;
-  const releaseReservation = () => {
+  const releaseReservation = async () => {
     if (reservationId) {
-      releasePhoneUploadSlot(reservationId);
+      const id = reservationId;
       reservationId = null;
+      await releasePhoneUploadSlot(id);
     }
   };
 
@@ -228,7 +231,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
       // Content-Length can be absent or wrong, so the real size decides.
       if (buffer.length > MAX_UPLOAD_FILE_SIZE_BYTES) {
-        releaseReservation();
+        await releaseReservation();
         return NextResponse.json(
           { error: `File size must be less than ${MAX_UPLOAD_FILE_SIZE_LABEL}` },
           { status: 413, headers: corsHeaders }
@@ -244,7 +247,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         contentType,
       });
 
-      releaseReservation();
+      await releaseReservation();
       return NextResponse.json(
         {
           error: "Failed to process image",
@@ -314,11 +317,11 @@ export async function POST(request: Request): Promise<NextResponse> {
 
         // The desktop will never see this asset, so don't keep paying for it.
         // Best-effort, as in the listing routes: an orphan is logged, never a
-        // second error for the phone.
-        cloudinary.uploader.destroy(result.public_id).catch((err) => {
+        // second error for the phone. Awaited so the function isn't frozen first.
+        await cloudinary.uploader.destroy(result.public_id).catch((err) => {
           console.error("Failed to delete Cloudinary asset:", { publicId: result.public_id, err });
         });
-        releaseReservation();
+        await releaseReservation();
 
         return NextResponse.json(
           {
@@ -341,7 +344,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
   } catch (error) {
     // Nothing reached the desktop, so the phone keeps its slot for a retry.
-    releaseReservation();
+    await releaseReservation();
 
     const errorMessage = error instanceof Error ? error.message : "Upload failed";
 
