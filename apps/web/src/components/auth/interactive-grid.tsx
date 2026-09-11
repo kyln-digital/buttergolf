@@ -6,6 +6,10 @@ import React, { useState } from "react";
  * InteractiveGridPattern is a component that renders a grid pattern with interactive squares.
  * Customized for ButterGolf branding with Spiced Clementine (#F45314) accents.
  *
+ * The SVG is absolutely positioned to fill its (relatively positioned) parent and scales its
+ * grid to cover that box, so it never contributes to the parent's layout width. This app has
+ * no Tailwind, so sizing/positioning must be inline rather than utility classes.
+ *
  * @param width - The width of each square.
  * @param height - The height of each square.
  * @param squares - The number of squares in the grid. The first element is the number of horizontal squares, and the second element is the number of vertical squares.
@@ -32,16 +36,26 @@ export function InteractiveGridPattern({
   squares = [24, 24],
   className = "",
   squaresClassName = "",
+  style,
   ...props
 }: InteractiveGridPatternProps) {
   const [horizontal, vertical] = squares;
   const [hoveredSquare, setHoveredSquare] = useState<number | null>(null);
+  const gridWidth = width * horizontal;
+  const gridHeight = height * vertical;
 
   return (
     <svg
-      width={width * horizontal}
-      height={height * vertical}
-      className={`absolute inset-0 h-full w-full border border-[#F45314]/20 ${className}`}
+      viewBox={`0 0 ${gridWidth} ${gridHeight}`}
+      preserveAspectRatio="xMidYMid slice"
+      className={className}
+      style={{
+        position: "absolute",
+        inset: 0,
+        width: "100%",
+        height: "100%",
+        ...style,
+      }}
       {...props}
     >
       {Array.from({ length: horizontal * vertical }).map((_, index) => {
