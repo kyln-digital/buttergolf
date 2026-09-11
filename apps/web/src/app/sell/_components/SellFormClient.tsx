@@ -375,22 +375,29 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
    * Called only once the seller has committed to publishing or saving, since
    * afterwards the phone needs a fresh code.
    */
-  const settlePhonePhotos = useCallback(
-    async (held: string[]): Promise<string[]> => {
-      if (!phoneSessionScope) return held;
-      await closePhoneUploadSessionsForScope(phoneSessionScope);
-      const late = await collectLatePhoneUploads(
-        phoneSessionScope,
-        held,
-        MAX_LISTING_IMAGES - held.length
-      );
-      if (late.length === 0) return held;
-      const merged = [...held, ...late];
-      setFormData((prev) => ({ ...prev, images: merged }));
-      return merged;
-    },
-    [phoneSessionScope, setFormData]
-  );
+  const latestImagesRef = useRef(formData.images);
+  latestImagesRef.current = formData.images;
+
+  const settlePhonePhotos = useCallback(async (): Promise<string[]> => {
+    if (!phoneSessionScope) return latestImagesRef.current;
+    await closePhoneUploadSessionsForScope(phoneSessionScope);
+    // Read the form's images only now: the uploader and the poller were still
+    // free to add to them while the close was in flight, and a list captured
+    // before the await would overwrite whatever they added.
+    const held = latestImagesRef.current;
+    const late = await collectLatePhoneUploads(
+      phoneSessionScope,
+      held,
+      MAX_LISTING_IMAGES - held.length
+    );
+    const current = latestImagesRef.current;
+    const additions = late.filter((url) => !current.includes(url));
+    if (additions.length === 0) return current;
+    const merged = [...current, ...additions].slice(0, MAX_LISTING_IMAGES);
+    latestImagesRef.current = merged;
+    setFormData((prev) => ({ ...prev, images: merged }));
+    return merged;
+  }, [phoneSessionScope, setFormData]);
   // --- Record identity ---
   // Which row this form writes to, whether the data on screen is actually that
   // row's, and which in-flight work is still relevant. All of it lives in one
@@ -912,7 +919,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
     // Settle the phone handoff before judging the photos: the first photo may
     // have finished on the server since the uploader last polled.
-    const images = await settlePhonePhotos(formData.images);
+    const images = await settlePhonePhotos();
 
     if (images.length === 0) {
       setError("Please upload at least one image");
@@ -1108,7 +1115,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
     // Settle the phone handoff before judging the draft: a photo that finished
     // on the server since the uploader last polled is meaningful content too.
-    const images = await settlePhonePhotos(formData.images);
+    const images = await settlePhonePhotos();
 
     if (!hasMeaningfulDraftContent({ ...formData, images })) {
       setError("Add at least one detail before saving a draft.");

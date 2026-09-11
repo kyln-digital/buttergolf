@@ -67,8 +67,9 @@ function getCorsHeaders(request: Request): Record<string, string> {
 }
 
 // A 10MB body plus one Cloudinary call finishes well inside this. It also
-// bounds how long a phone-session reservation can be in flight, which is what
-// lets the store treat a five-minute-old reservation as provably dead.
+// bounds how long a phone-session reservation can be genuinely in flight: any
+// reservation older than this whose request never released it belongs to a
+// crashed invocation, and the sweep reclaims its asset.
 export const maxDuration = 60;
 
 export async function POST(request: Request): Promise<NextResponse> {

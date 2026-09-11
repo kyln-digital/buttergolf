@@ -94,13 +94,39 @@ interface StoredPhoneUploadSession extends PhoneUploadSessionSnapshot {
   draining: DrainingSession[];
 }
 
+/** What a mounted hook currently holds for a scope, independent of storage. */
+interface LiveScopeState {
+  /** The active code and any replaced codes still draining. */
+  sessionIds: Set<string>;
+  /** Photos already placed, so a terminal collection never re-adds a removed one. */
+  placedIds: Set<string>;
+}
+
 /**
- * Every session id a mounted hook is currently responsible for, by scope.
- * `clearStoredPhoneUploadSession` closes these as well as what is in storage,
- * so a session is closed on publish even when sessionStorage is blocked and
- * the snapshot was never written.
+ * Every session a mounted hook is currently responsible for, by scope. The
+ * terminal helpers consult this as well as storage, so publish still closes
+ * and drains the session even when sessionStorage is blocked and the snapshot
+ * was never written.
  */
-const liveSessionIdsByScope = new Map<string, Set<string>>();
+const liveStateByScope = new Map<string, LiveScopeState>();
+
+/** Session ids and placed ids for a scope, from the mounted hook and storage combined. */
+function knownStateForScope(scope: string): {
+  sessionIds: string[];
+  placedIds: Set<string>;
+  stored: StoredPhoneUploadSession | null;
+} {
+  const live = liveStateByScope.get(scope);
+  const stored = readStoredSession(scope);
+  const sessionIds = new Set<string>(live?.sessionIds ?? []);
+  const placedIds = new Set<string>(live?.placedIds ?? []);
+  if (stored) {
+    sessionIds.add(stored.sessionId);
+    for (const entry of stored.draining) sessionIds.add(entry.sessionId);
+    for (const id of stored.placedIds) placedIds.add(id);
+  }
+  return { sessionIds: Array.from(sessionIds), placedIds, stored };
+}
 
 function storageKeyFor(scope: string): string {
   return `${STORAGE_PREFIX}:${scope}`;
@@ -184,15 +210,9 @@ function closeSessionOnServer(sessionId: string): void {
  * fresh").
  */
 export function clearStoredPhoneUploadSession(scope: string): void {
-  const ids = new Set<string>(liveSessionIdsByScope.get(scope) ?? []);
-  const stored = readStoredSession(scope);
-  if (stored) {
-    ids.add(stored.sessionId);
-    for (const entry of stored.draining) ids.add(entry.sessionId);
-  }
-  for (const id of ids) closeSessionOnServer(id);
+  for (const id of knownStateForScope(scope).sessionIds) closeSessionOnServer(id);
   writeStoredSession(scope, null);
-  liveSessionIdsByScope.delete(scope);
+  liveStateByScope.delete(scope);
 }
 
 /** Outcome of fetching one session's photo list. */
@@ -248,6 +268,9 @@ export function usePhoneUploadSession({
   // upload in flight at expiry, or photos that were waiting for a slot. A
   // regenerated code belongs to the same form, so those photos belong here.
   const drainingRef = useRef<DrainingSession[]>([]);
+  // `isStarting` is React state and lands on the next render; two presses in
+  // the same tick would otherwise mint two codes, one of which nothing closes.
+  const startInFlightRef = useRef(false);
   const onPhotosRef = useRef(onPhotos);
   useEffect(() => {
     onPhotosRef.current = onPhotos;
@@ -256,9 +279,12 @@ export function usePhoneUploadSession({
   const registerLive = useCallback(
     (active: string | null) => {
       if (!storageScope) return;
-      const ids = new Set(drainingRef.current.map((entry) => entry.sessionId));
-      if (active) ids.add(active);
-      liveSessionIdsByScope.set(storageScope, ids);
+      const sessionIds = new Set(drainingRef.current.map((entry) => entry.sessionId));
+      if (active) sessionIds.add(active);
+      liveStateByScope.set(storageScope, {
+        sessionIds,
+        placedIds: new Set(placedIdsRef.current),
+      });
     },
     [storageScope]
   );
@@ -302,7 +328,7 @@ export function usePhoneUploadSession({
       const toClose = new Set(drainingRef.current.map((entry) => entry.sessionId));
       if (activeSessionIdRef.current) toClose.add(activeSessionIdRef.current);
       for (const id of toClose) closeSessionOnServer(id);
-      if (previousScope) liveSessionIdsByScope.delete(previousScope);
+      if (previousScope) liveStateByScope.delete(previousScope);
 
       activeSessionIdRef.current = null;
       setDraining([]);
@@ -330,7 +356,7 @@ export function usePhoneUploadSession({
   // The registry entry belongs to a mounted hook; storage keeps the snapshot.
   useEffect(() => {
     return () => {
-      if (storageScope) liveSessionIdsByScope.delete(storageScope);
+      if (storageScope) liveStateByScope.delete(storageScope);
     };
   }, [storageScope]);
 
@@ -351,6 +377,7 @@ export function usePhoneUploadSession({
   }, [persist]);
 
   const start = useCallback(async () => {
+    if (startInFlightRef.current) return;
     if (pendingCount > 0) {
       setError(
         pendingCount === 1
@@ -360,6 +387,7 @@ export function usePhoneUploadSession({
       return;
     }
 
+    startInFlightRef.current = true;
     setIsStarting(true);
     setError(null);
     try {
@@ -408,6 +436,7 @@ export function usePhoneUploadSession({
       setError(err instanceof Error ? err.message : "Couldn't create a QR code.");
     } finally {
       setIsStarting(false);
+      startInFlightRef.current = false;
     }
   }, [pendingCount, remainingSlots, persist, session, setDraining]);
 
@@ -548,9 +577,10 @@ export function usePhoneUploadSession({
  * form state, and a photo can be complete on the server while still waiting
  * for the next two-second poll; without this it would be missing from the
  * listing and destroyed by the sweep. Looks at the current code and any
- * replaced ones still draining. Returns at most `room` URLs, skipping
- * anything already placed (including photos the seller placed and removed).
- * Never throws: on any failure the caller proceeds with what it has.
+ * replaced ones still draining, from storage and from the mounted hook (so a
+ * blocked sessionStorage doesn't skip it). Returns at most `room` URLs,
+ * skipping anything already placed (including photos the seller placed and
+ * removed). Never throws: on any failure the caller proceeds with what it has.
  */
 export async function collectLatePhoneUploads(
   scope: string,
@@ -558,31 +588,33 @@ export async function collectLatePhoneUploads(
   room: number
 ): Promise<string[]> {
   if (room <= 0) return [];
-  const stored = readStoredSession(scope);
-  if (!stored) return [];
+  const { sessionIds, placedIds, stored } = knownStateForScope(scope);
+  if (sessionIds.length === 0) return [];
 
   const held = new Set(heldUrls);
-  const placed = new Set(stored.placedIds);
   const late: PhoneUploadPhoto[] = [];
 
-  for (const sessionId of [stored.sessionId, ...stored.draining.map((d) => d.sessionId)]) {
+  for (const sessionId of sessionIds) {
     if (late.length >= room) break;
     const outcome = await fetchSessionPhotos(sessionId);
     if (outcome.kind !== "ok") continue;
     for (const photo of outcome.photos) {
       if (late.length >= room) break;
-      if (placed.has(photo.id) || held.has(photo.url)) continue;
+      if (placedIds.has(photo.id) || held.has(photo.url)) continue;
       if (late.some((existing) => existing.url === photo.url)) continue;
       late.push(photo);
     }
   }
 
-  // Record them as placed so a restore of this scope never re-offers them.
+  // Record them as placed everywhere a later restore or collection looks, so
+  // none is offered twice.
   if (late.length > 0) {
-    writeStoredSession(scope, {
-      ...stored,
-      placedIds: [...stored.placedIds, ...late.map((photo) => photo.id)],
-    });
+    const lateIds = late.map((photo) => photo.id);
+    const live = liveStateByScope.get(scope);
+    if (live) for (const id of lateIds) live.placedIds.add(id);
+    if (stored) {
+      writeStoredSession(scope, { ...stored, placedIds: [...stored.placedIds, ...lateIds] });
+    }
   }
   return late.map((photo) => photo.url);
 }
@@ -598,14 +630,8 @@ export async function collectLatePhoneUploads(
  * form stay open.
  */
 export async function closePhoneUploadSessionsForScope(scope: string): Promise<void> {
-  const ids = new Set<string>(liveSessionIdsByScope.get(scope) ?? []);
-  const stored = readStoredSession(scope);
-  if (stored) {
-    ids.add(stored.sessionId);
-    for (const entry of stored.draining) ids.add(entry.sessionId);
-  }
   await Promise.all(
-    Array.from(ids).map((id) =>
+    knownStateForScope(scope).sessionIds.map((id) =>
       fetch(`/api/upload/phone-session/${id}`, { method: "DELETE" }).catch(() => undefined)
     )
   );
