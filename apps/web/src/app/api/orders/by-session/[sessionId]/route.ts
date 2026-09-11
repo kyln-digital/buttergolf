@@ -3,6 +3,7 @@ import { prisma } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
 import { requesterOwnsCheckoutSession } from "@/lib/checkout-session-ownership";
 import { stripe } from "@/lib/stripe";
+import { createOrderFromCheckoutSession } from "@/lib/create-order-from-checkout-session";
 
 /**
  * Get order details by Stripe Checkout Session ID
@@ -33,31 +34,34 @@ export async function GET(req: Request, { params }: { params: Promise<{ sessionI
     }
 
     // First, try to find order by checkout session ID
-    const order = await prisma.order.findFirst({
-      where: {
-        stripeCheckoutId: sessionId,
-        OR: [{ buyerId: requester.id }, { sellerId: requester.id }],
-      },
-      include: {
-        product: {
-          include: {
-            images: {
-              orderBy: { sortOrder: "asc" },
-              take: 1,
+    const findOrder = () =>
+      prisma.order.findFirst({
+        where: {
+          stripeCheckoutId: sessionId,
+          OR: [{ buyerId: requester.id }, { sellerId: requester.id }],
+        },
+        include: {
+          product: {
+            include: {
+              images: {
+                orderBy: { sortOrder: "asc" },
+                take: 1,
+              },
+              brand: true,
             },
-            brand: true,
+          },
+          toAddress: true,
+          seller: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            },
           },
         },
-        toAddress: true,
-        seller: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
-    });
+      });
+
+    let order = await findOrder();
 
     // If not found, the webhook might not have processed yet — or the
     // session belongs to someone else. Never disclose Stripe session state
@@ -80,14 +84,32 @@ export async function GET(req: Request, { params }: { params: Promise<{ sessionI
         }
 
         if (session.status === "complete" && session.payment_status === "paid") {
-          // Payment is complete but order not yet created
-          // This means webhook is still processing
-          // Return a "pending" status for the client to poll
-          return NextResponse.json({
-            status: "processing",
-            message: "Your order is being processed. Please wait a moment.",
-            sessionId,
-          });
+          // Paid, but no order yet. The webhook normally creates it within
+          // seconds; when it hasn't (delivery lag, or an environment Stripe
+          // can't reach — a preview deployment, say) create it here from the
+          // same verified session. It's the webhook's own idempotent path,
+          // keyed on the session and payment intent, so a concurrent webhook
+          // delivery can't produce a second order — whichever runs second
+          // finds the first one's row.
+          try {
+            await createOrderFromCheckoutSession(session);
+          } catch (creationError) {
+            console.warn(
+              "[Order by session] Fallback order creation failed; the webhook may have won:",
+              creationError
+            );
+          }
+          order = await findOrder();
+
+          if (!order) {
+            // Still nothing (double-sell refund, or a race we lost to a
+            // webhook that is mid-write). Let the client keep polling.
+            return NextResponse.json({
+              status: "processing",
+              message: "Your order is being processed. Please wait a moment.",
+              sessionId,
+            });
+          }
         } else if (session.status === "open") {
           // Session is still open, checkout not completed
           return NextResponse.json({ error: "Checkout not completed" }, { status: 400 });
@@ -99,7 +121,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ sessionI
         return NextResponse.json({ error: "Order not found" }, { status: 404 });
       }
 
-      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+      if (!order) {
+        return NextResponse.json({ error: "Order not found" }, { status: 404 });
+      }
     }
 
     // Return order details
