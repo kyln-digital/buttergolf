@@ -62,6 +62,11 @@ function getCorsHeaders(request: Request): Record<string, string> {
   return headers;
 }
 
+// A 10MB body plus one Cloudinary call finishes well inside this. It also
+// bounds how long a phone-session reservation can be in flight, which is what
+// lets the store treat a five-minute-old reservation as provably dead.
+export const maxDuration = 60;
+
 export async function POST(request: Request): Promise<NextResponse> {
   const corsHeaders = getCorsHeaders(request);
   let userId: string | null = null;
@@ -275,9 +280,16 @@ export async function POST(request: Request): Promise<NextResponse> {
     });
 
     // Build upload options
+    // The public id is generated here, never taken from the request. The
+    // `filename` query is only ever used for logging: letting a caller choose
+    // the id would let anyone with an upload credential (a leaked QR token
+    // included) overwrite an existing `products/…` asset by naming it.
+    const publicId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+
     const uploadOptions: UploadApiOptions = {
       folder: "products",
-      public_id: filename.replace(/\.[^/.]+$/, ""), // Remove file extension
+      public_id: publicId,
+      overwrite: false,
       resource_type: "image",
     };
 

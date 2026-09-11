@@ -153,6 +153,18 @@ export function useLocalStorageState<T>(
     };
   }, [key]);
 
+  // A reload or tab close doesn't run unmount cleanups, so a write still
+  // sitting in the debounce window would be lost with the page. localStorage
+  // is synchronous, so flushing from pagehide lands it in time. Without this,
+  // anything changed in the last second before a reload (a typed field, a
+  // photo the phone handoff just placed) came back missing.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const flush = () => flushPendingWrite.current?.();
+    window.addEventListener("pagehide", flush);
+    return () => window.removeEventListener("pagehide", flush);
+  }, []);
+
   // Wrapper that updates both React state and localStorage
   const setPersistedState = useCallback(
     (valueOrUpdater: T | ((prev: T) => T)) => {

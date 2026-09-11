@@ -88,6 +88,17 @@ export async function GET(request: Request): Promise<NextResponse> {
     );
   }
 
+  // The phone reads this once on load and after each upload; a holder of a
+  // leaked token shouldn't get unbounded reads out of it either.
+  const { isLimited, resetAt } = await checkRateLimit(session.sessionId, {
+    maxRequests: 60,
+    windowMs: 60_000,
+    keyFn: (id) => `phone-session:status:${id}`,
+  });
+  if (isLimited) {
+    return rateLimitResponse(resetAt);
+  }
+
   if (await isPhoneUploadSessionClosed(session.sessionId, session.clerkId)) {
     return NextResponse.json({ error: PHONE_SESSION_CLOSED_MESSAGE }, { status: 410 });
   }

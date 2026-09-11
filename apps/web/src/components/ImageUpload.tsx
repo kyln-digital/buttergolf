@@ -539,6 +539,9 @@ export function ImageUpload({
             </Button>
             {showPhoneStatus && (
               <Text
+                // Polling updates this; announce arrivals to screen readers too.
+                role="status"
+                aria-live="polite"
                 size="$2"
                 color={
                   phonePending

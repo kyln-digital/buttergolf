@@ -285,7 +285,8 @@ export function PhoneUploadQrModal({
           )}
 
           {showCode && (
-            <Column gap="$xs" alignItems="center">
+            // Polling updates this block; announce arrivals to screen readers too.
+            <Column gap="$xs" alignItems="center" role="status" aria-live="polite">
               <Row gap="$sm" alignItems="center">
                 {receivedCount === 0 && <Spinner size="sm" color="$primary" />}
                 <Text size="$4" color={receivedCount > 0 ? "$success" : "$textSecondary"}>

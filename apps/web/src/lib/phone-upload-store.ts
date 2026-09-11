@@ -31,9 +31,11 @@ const CLOSED_URL = "closed";
 const SENTINEL_URLS = [PENDING_URL, CLOSED_URL];
 
 /**
- * A reservation older than this belongs to a request that died mid-upload
- * (a 10MB body finishes long before it). Treated as free so a crash can't
- * hold a slot hostage for the rest of the session.
+ * A reservation older than this belongs to a request that died mid-upload.
+ * The upload route caps its own run time at sixty seconds (`maxDuration`),
+ * so a reservation five minutes old cannot still be in flight; treating it as
+ * free means a crash can't hold a slot hostage for the rest of the session
+ * without ever reclaiming one from a slow but live upload.
  */
 const PENDING_TTL_MS = 5 * 60 * 1000;
 
