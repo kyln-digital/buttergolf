@@ -298,7 +298,7 @@ export function DetailsStep({
         style={{ opacity: disabled ? 0.5 : 1 }}
       >
         <Row
-          backgroundColor={disabled ? "$gray100" : "$pureWhite"}
+          backgroundColor={disabled ? "$backgroundMuted" : "$surface"}
           borderWidth={2}
           borderColor={value ? "$spicedClementine" : "$cloudMist"}
           borderRadius="$xl"
@@ -439,7 +439,7 @@ export function DetailsStep({
         left={0}
         right={0}
         bottom={0}
-        backgroundColor="$pureWhite"
+        backgroundColor="$background"
         zIndex={100}
       >
         {/* Picker Header */}
@@ -451,18 +451,17 @@ export function DetailsStep({
           borderBottomWidth={1}
           borderBottomColor="$cloudMist"
         >
-          <TouchableOpacity
-            onPress={closePicker}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              backgroundColor: "#F5F5F5",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <X size={20} color="$text" />
+          <TouchableOpacity onPress={closePicker} accessibilityLabel="Close">
+            <View
+              width={40}
+              height={40}
+              borderRadius="$full"
+              backgroundColor="$backgroundMuted"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <X size={20} color="$text" />
+            </View>
           </TouchableOpacity>
           <Text fontFamily="$heading" size="$7" fontWeight="700" color="$text">
             Select {title}
@@ -474,7 +473,7 @@ export function DetailsStep({
         {showSearch && (
           <Column paddingHorizontal="$4" paddingVertical="$3">
             <Row
-              backgroundColor="$gray100"
+              backgroundColor="$backgroundMuted"
               borderRadius="$xl"
               paddingHorizontal="$4"
               paddingVertical="$3"
@@ -673,7 +672,7 @@ export function DetailsStep({
                 accessibilityLabel="Toggle head cover included"
               >
                 <Row
-                  backgroundColor="$pureWhite"
+                  backgroundColor="$surface"
                   borderWidth={2}
                   borderColor={formData.headCoverIncluded ? "$spicedClementine" : "$cloudMist"}
                   borderRadius="$xl"
@@ -700,7 +699,7 @@ export function DetailsStep({
           <Column
             gap="$4"
             marginTop="$4"
-            backgroundColor="$gray100"
+            backgroundColor="$backgroundMuted"
             borderRadius="$xl"
             padding="$4"
           >

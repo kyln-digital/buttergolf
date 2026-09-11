@@ -127,7 +127,7 @@ export function PostageStep({ formData, onUpdate, direction }: Readonly<PostageS
                 accessibilityState={{ selected: isSelected }}
                 accessibilityLabel={`${preset.label}. ${preset.hint}`}
                 cursor="pointer"
-                backgroundColor={isSelected ? "$vanillaCream" : "$pureWhite"}
+                backgroundColor={isSelected ? "$primaryLight" : "$surface"}
                 borderWidth={2}
                 borderColor={isSelected ? "$spicedClementine" : "$cloudMist"}
                 borderRadius="$xl"

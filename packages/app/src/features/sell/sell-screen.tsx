@@ -186,7 +186,7 @@ export function SellScreen({
   return (
     <Column
       flex={1}
-      backgroundColor="$pureWhite"
+      backgroundColor="$background"
       paddingTop={insets.top}
       paddingBottom={insets.bottom}
     >
@@ -198,14 +198,14 @@ export function SellScreen({
         justifyContent="space-between"
         borderBottomWidth={1}
         borderBottomColor="$cloudMist"
-        backgroundColor="$pureWhite"
+        backgroundColor="$background"
       >
         {/* Back/Close Button */}
         <Button
           size="$4"
           circular
           backgroundColor="transparent"
-          pressStyle={{ backgroundColor: "$gray100" }}
+          pressStyle={{ backgroundColor: "$backgroundMuted" }}
           onPress={currentStep === 1 ? onClose : goToPreviousStep}
           aria-label={currentStep === 1 ? "Close" : "Go back"}
         >
@@ -311,7 +311,7 @@ export function SellScreen({
         paddingBottom={Math.max(insets.bottom, 16)}
         borderTopWidth={1}
         borderTopColor="$cloudMist"
-        backgroundColor="$pureWhite"
+        backgroundColor="$background"
       >
         {currentStep < TOTAL_STEPS ? (
           <Button

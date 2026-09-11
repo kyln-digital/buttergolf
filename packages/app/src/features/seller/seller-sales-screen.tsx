@@ -424,11 +424,11 @@ export function SellerSalesScreen({
                           width={60}
                           height={60}
                           borderRadius="$md"
-                          backgroundColor="$gray100"
+                          backgroundColor="$backgroundMuted"
                           overflow="hidden"
                         >
                           {item.product.images[0] && (
-                            <View width="100%" height="100%" backgroundColor="$gray200" />
+                            <View width="100%" height="100%" backgroundColor="$backgroundHover" />
                           )}
                         </View>
                         <Column flex={1}>

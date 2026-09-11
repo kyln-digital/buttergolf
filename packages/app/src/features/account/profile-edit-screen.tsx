@@ -244,7 +244,7 @@ export function ProfileEditScreen({
               size="$5"
               value={user?.email || ""}
               editable={false}
-              backgroundColor="$gray100"
+              backgroundColor="$backgroundMuted"
               color="$textSecondary"
             />
             <Text size="$2" color="$textMuted">

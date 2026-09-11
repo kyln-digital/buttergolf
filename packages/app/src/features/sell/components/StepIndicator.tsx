@@ -17,7 +17,7 @@ export function StepIndicator({ currentStep, totalSteps }: Readonly<StepIndicato
   };
 
   return (
-    <Row paddingHorizontal="$4" paddingVertical="$3" gap="$2" backgroundColor="$pureWhite">
+    <Row paddingHorizontal="$4" paddingVertical="$3" gap="$2" backgroundColor="$background">
       {Array.from({ length: totalSteps }, (_, i) => {
         const stepNumber = i + 1;
         const isActiveOrCompleted = stepNumber <= currentStep;
