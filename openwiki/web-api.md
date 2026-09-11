@@ -133,4 +133,4 @@ Exactly one file: `apps/web/src/app/actions/products.ts` — `getRecentProducts(
 - Adding a Bearer-authenticated GET route? Set `force-dynamic` or the Authorization header gets eaten by edge caching
 - Changing listing filters? Do it in `lib/listings.ts`, not in the page or API route, or the SSR pages and API feed drift
 - Two Stripe webhooks with **different secrets**: `STRIPE_WEBHOOK_SECRET` (payments) vs `STRIPE_CONNECT_WEBHOOK_SECRET` (Connect)
-- `/api/stripe/connect/mobile-onboard` is `@deprecated` legacy flow — don't extend it
+- Payout setup is ButterGolf's own form (`/api/stripe/connect/setup/details`, `/setup/bank-account`); `/api/stripe/connect/account` only issues the embedded component session used as a verification fallback

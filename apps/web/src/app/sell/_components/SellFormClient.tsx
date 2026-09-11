@@ -47,6 +47,7 @@ import {
 import { createSaveQueue, type SaveQueue } from "../_lib/save-queue";
 import { fetchJsonWithTimeout } from "../_lib/fetch-with-timeout";
 import { sellStorageKey } from "../_lib/sell-storage-key";
+import { useLinkPress } from "@/hooks/useLinkPress";
 
 interface Category {
   id: string;
@@ -284,6 +285,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   // Both modes load an existing product by id; they differ in how it's saved.
   const loadProductId = editProductId ?? draftId;
   const router = useRouter();
+  const linkPress = useLinkPress();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -1896,6 +1898,35 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                             : "List item"}
                       </Button>
                     </Row>
+                    {/* Publishing is what silently creates the seller's Stripe
+                        connected account, so the agreement has to be visible at
+                        the point of the click that records acceptance. */}
+                    <Text size="$2" color="$textTertiary" textAlign="center">
+                      By publishing you agree to our{" "}
+                      <Text
+                        size="$2"
+                        color="$primary"
+                        tag="a"
+                        {...{ href: "/terms-of-service" }}
+                        onPress={linkPress("/terms-of-service")}
+                      >
+                        Terms of Service
+                      </Text>
+                      , which include the{" "}
+                      <Text
+                        size="$2"
+                        color="$primary"
+                        tag="a"
+                        {...{
+                          href: "https://stripe.com/connect-account/legal/full",
+                          target: "_blank",
+                          rel: "noopener noreferrer",
+                        }}
+                      >
+                        Stripe Connected Account Agreement
+                      </Text>
+                      .
+                    </Text>
                     <Text size="$2" color="$helperText" textAlign="center">
                       What do you think of our upload process?{" "}
                       <Text size="$2" color="$primary" cursor="pointer">

@@ -10,6 +10,7 @@ import {
 import * as Notifications from "expo-notifications";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { LISTING_PRICE_LIMITS, validateParcel } from "@buttergolf/constants";
+import type { PayoutStatus } from "@buttergolf/constants";
 import { brandColors } from "@buttergolf/config";
 import {
   Provider,
@@ -50,6 +51,7 @@ import type {
 } from "@buttergolf/app";
 import { resolveFormParcel } from "@buttergolf/app";
 import { OnboardingScreen } from "@buttergolf/app/src/features/onboarding";
+import { PayoutSetupScreen } from "@buttergolf/app/src/features/payouts";
 import { HomeScreen } from "@buttergolf/app/src/features/home";
 import { CategoryListScreen } from "@buttergolf/app/src/features/categories";
 import { useMobileFavourites } from "@buttergolf/app/src/hooks";
@@ -61,6 +63,7 @@ import {
   Text as RNText,
   Pressable as RNPressable,
   Alert,
+  Linking,
   Platform,
   useColorScheme,
 } from "react-native";
@@ -86,7 +89,12 @@ import {
   deferredSecureStoreGet,
   deferredSecureStoreSet,
 } from "./lib/apiClient";
-import { useStripeOnboarding, useLabelActions, useCheckoutFlow } from "./lib/wrapperActions";
+import {
+  usePayoutSetupActions,
+  useStripeVerificationWebView,
+  useLabelActions,
+  useCheckoutFlow,
+} from "./lib/wrapperActions";
 import {
   registerForPushNotificationsAsync,
   registerPushTokenWithBackend,
@@ -235,6 +243,9 @@ const linking = {
       },
       HelpSupport: {
         path: "account/help",
+      },
+      PayoutSetup: {
+        path: "payout-setup",
       },
       SellerDashboard: {
         path: "seller/dashboard",
@@ -762,7 +773,7 @@ function AccountScreenWrapper({ navigation }: { navigation: any }) {
   const apiUrl = API_URL;
 
   // Get seller status from context (already fetched at app level)
-  const { status: sellerStatus, refresh: refreshSellerStatus } = useSellerStatusContext();
+  const { status: sellerStatus } = useSellerStatusContext();
 
   // Fetch pending orders count
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
@@ -815,9 +826,6 @@ function AccountScreenWrapper({ navigation }: { navigation: any }) {
     // After signOut, Clerk will automatically switch to SignedOut state
   }, [signOut, getToken, apiUrl]);
 
-  // Shared Stripe Connect onboarding flow (also used by SellerDashboardScreenWrapper).
-  const handleStartSellerOnboarding = useStripeOnboarding(apiUrl, getToken, refreshSellerStatus);
-
   return (
     <AccountScreen
       user={
@@ -839,14 +847,9 @@ function AccountScreenWrapper({ navigation }: { navigation: any }) {
       onViewOrders={() => navigation.navigate("Orders")}
       onViewFavourites={() => navigation.navigate("Favourites")}
       onViewSellerDashboard={() => navigation.navigate("SellerSales")}
-      onStartSellerOnboarding={() => {
-        void handleStartSellerOnboarding();
-      }}
+      onStartSellerOnboarding={() => navigation.navigate("PayoutSetup")}
       onViewAddresses={() => navigation.navigate("Addresses")}
-      onViewPayments={() => {
-        // TODO: Implement payments WebView for Stripe Connect
-        Alert.alert("Coming Soon", "Payment settings will be available soon.");
-      }}
+      onViewPayments={() => navigation.navigate("PayoutSetup")}
       onViewNotifications={() => navigation.navigate("NotificationSettings")}
       onViewHelp={() => navigation.navigate("HelpSupport")}
     />
@@ -1091,12 +1094,115 @@ function HelpSupportScreenWrapper({ navigation }: { navigation: any }) {
 }
 
 /**
+ * The verification fallback rendered inside PayoutSetupScreen.
+ *
+ * Everything else on the payout form is native; an ID document or proof of
+ * liveness is the one thing Stripe insists on collecting itself, so this opens
+ * the hosted flow in a web session and tells the screen to re-read its status
+ * when the seller comes back.
+ */
+function PayoutVerificationStep({
+  onVerify,
+  onDone,
+}: {
+  onVerify: () => Promise<void>;
+  onDone: () => void;
+}) {
+  const [isOpening, setIsOpening] = useState(false);
+
+  const handlePress = useCallback(async () => {
+    setIsOpening(true);
+    try {
+      await onVerify();
+      onDone();
+    } finally {
+      setIsOpening(false);
+    }
+  }, [onVerify, onDone]);
+
+  return (
+    <Button
+      butterVariant="primary"
+      size="$5"
+      disabled={isOpening}
+      onPress={() => {
+        void handlePress();
+      }}
+    >
+      <Text color="$textInverse">
+        {isOpening ? "Opening verification…" : "Verify your identity"}
+      </Text>
+    </Button>
+  );
+}
+
+/**
+ * Wrapper component for the shared PayoutSetupScreen.
+ *
+ * Payout setup is native now: the screen collects name, date of birth, address
+ * and phone, then UK bank details that are tokenised on the device via
+ * stripe-react-native, so the account number never reaches our servers. The
+ * WebView appears only when Stripe still wants a document from the seller.
+ */
+function PayoutSetupScreenWrapper({
+  navigation,
+  initialStep,
+}: {
+  navigation: any;
+  initialStep?: "details" | "bank";
+}) {
+  const { getToken } = useAuth();
+  const apiUrl = API_URL;
+  const { refresh: refreshSellerStatus } = useSellerStatusContext();
+
+  const { fetchStatus, submitDetails, submitBankAccount, createBankAccountToken } =
+    usePayoutSetupActions(apiUrl, getToken);
+
+  const openVerification = useStripeVerificationWebView(apiUrl, getToken, refreshSellerStatus);
+
+  const renderVerification = useCallback(
+    ({ onDone }: { status: PayoutStatus; onDone: () => void }) => (
+      <PayoutVerificationStep onVerify={openVerification} onDone={onDone} />
+    ),
+    [openVerification]
+  );
+
+  const handleOpenLink = useCallback(
+    (href: string) => {
+      void Linking.openURL(href.startsWith("http") ? href : `${apiUrl}${href}`);
+    },
+    [apiUrl]
+  );
+
+  const handleComplete = useCallback(() => {
+    void refreshSellerStatus(true).finally(() => {
+      navigation.goBack();
+    });
+  }, [refreshSellerStatus, navigation]);
+
+  return (
+    <PayoutSetupScreen
+      showHeader
+      initialStep={initialStep}
+      fetchStatus={fetchStatus}
+      submitDetails={submitDetails}
+      submitBankAccount={submitBankAccount}
+      createBankAccountToken={createBankAccountToken}
+      renderVerification={renderVerification}
+      termsHref="/terms-of-service"
+      onOpenLink={handleOpenLink}
+      onComplete={handleComplete}
+      onExit={() => navigation.goBack()}
+    />
+  );
+}
+
+/**
  * Wrapper component for SellerDashboardScreen with API integration.
  */
 function SellerDashboardScreenWrapper({ navigation }: { navigation: any }) {
   const { getToken } = useAuth();
   const apiUrl = API_URL;
-  const { refresh: refreshSellerStatus } = useSellerStatusContext();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1119,9 +1225,6 @@ function SellerDashboardScreenWrapper({ navigation }: { navigation: any }) {
     void fetchStats();
   }, [fetchStats]);
 
-  // Shared Stripe Connect onboarding flow (also used by AccountScreenWrapper).
-  const handleOpenPayoutSetup = useStripeOnboarding(apiUrl, getToken, refreshSellerStatus);
-
   return (
     <SellerDashboardScreen
       stats={stats}
@@ -1130,12 +1233,8 @@ function SellerDashboardScreenWrapper({ navigation }: { navigation: any }) {
       onListItem={() => navigation.navigate("Sell")}
       onViewSales={() => navigation.navigate("SellerSales")}
       onViewListings={() => navigation.navigate("SellerListings")}
-      onViewPayments={() => {
-        Alert.alert("Coming Soon", "Payment settings will be available soon.");
-      }}
-      onViewPayouts={() => {
-        void handleOpenPayoutSetup();
-      }}
+      onViewPayments={() => navigation.navigate("PayoutSetup")}
+      onViewPayouts={() => navigation.navigate("PayoutSetup")}
       onViewSettings={() => navigation.navigate("Account")}
       onBack={() => navigation.goBack()}
       onRefresh={fetchStats}
@@ -2162,6 +2261,20 @@ export default function App() {
                         <Stack.Screen name="HelpSupport" options={{ headerShown: false }}>
                           {({ navigation }: { navigation: any }) => (
                             <HelpSupportScreenWrapper navigation={navigation} />
+                          )}
+                        </Stack.Screen>
+                        <Stack.Screen name="PayoutSetup" options={{ headerShown: false }}>
+                          {({
+                            route,
+                            navigation,
+                          }: {
+                            route: { params?: { step?: "details" | "bank" } };
+                            navigation: any;
+                          }) => (
+                            <PayoutSetupScreenWrapper
+                              navigation={navigation}
+                              initialStep={route.params?.step}
+                            />
                           )}
                         </Stack.Screen>
                         <Stack.Screen name="SellerDashboard" options={{ headerShown: false }}>

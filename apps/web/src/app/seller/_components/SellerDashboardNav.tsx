@@ -3,15 +3,7 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Column, Text, Row } from "@buttergolf/ui";
-import {
-  LayoutDashboard,
-  Package,
-  ShoppingBag,
-  CreditCard,
-  Wallet,
-  FileText,
-  Settings,
-} from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, Wallet, Settings } from "lucide-react";
 
 interface NavItem {
   href: string;
@@ -36,19 +28,9 @@ const navItems: NavItem[] = [
     icon: <Package size={20} />,
   },
   {
-    href: "/seller/payments",
-    label: "Payments",
-    icon: <CreditCard size={20} />,
-  },
-  {
     href: "/seller/payouts",
     label: "Payouts",
     icon: <Wallet size={20} />,
-  },
-  {
-    href: "/seller/documents",
-    label: "Documents",
-    icon: <FileText size={20} />,
   },
   {
     href: "/seller/settings",
@@ -62,11 +44,10 @@ const navItems: NavItem[] = [
  *
  * Sidebar navigation for the seller dashboard with links to:
  * - Dashboard (overview)
+ * - Sales (orders the seller has to fulfil)
  * - Listings (product management)
- * - Payments (transactions, disputes via ConnectPayments)
- * - Payouts (balance, payouts via ConnectBalances/Payouts)
- * - Documents (tax documents via ConnectDocuments)
- * - Settings (account management via ConnectAccountManagement)
+ * - Payouts (balance, bank account, payout history)
+ * - Settings (the payout details we hold on file)
  */
 export function SellerDashboardNav() {
   const pathname = usePathname();

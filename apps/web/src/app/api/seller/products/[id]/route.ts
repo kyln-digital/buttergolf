@@ -10,6 +10,7 @@ import { validateUKAddress, type ShippingAddress } from "@/lib/address-validatio
 import { getUserIdFromRequest } from "@/lib/auth";
 import { cloudinary, extractPublicId, isValidCloudinaryUrl } from "@/lib/cloudinary";
 import { mapSlidersToConditionEnum } from "@/lib/product-condition";
+import { ensureConnectAccountInBackground, getTosEvidenceFromRequest } from "@/lib/stripe-connect";
 
 /** Safety cap on how many image rows one request may touch. */
 const MAX_IMAGE_IDS = 20;
@@ -419,6 +420,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           console.error("Failed to delete Cloudinary asset:", { publicId, err });
         });
       }
+    }
+
+    // Same as the create path: going live is when the seller becomes someone
+    // we will owe money to, so the connected account is created here, with
+    // their terms acceptance taken from this request. Fire-and-forget.
+    if (isPublishing) {
+      ensureConnectAccountInBackground({
+        userId: user.id,
+        tos: getTosEvidenceFromRequest(request),
+      });
     }
 
     return NextResponse.json(updatedProduct);

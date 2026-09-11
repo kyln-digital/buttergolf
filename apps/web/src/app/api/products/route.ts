@@ -11,6 +11,7 @@ import {
 import { getUserIdFromRequest } from "@/lib/auth";
 import { validateUKAddress, type ShippingAddress } from "@/lib/address-validation";
 import { mapSlidersToConditionEnum } from "@/lib/product-condition";
+import { ensureConnectAccountInBackground, getTosEvidenceFromRequest } from "@/lib/stripe-connect";
 
 export async function POST(request: Request) {
   try {
@@ -416,6 +417,18 @@ export async function POST(request: Request) {
         },
       });
     });
+
+    // Publishing is the moment the seller becomes someone we will owe money
+    // to, so create their connected account now — recording their acceptance
+    // of our terms (which incorporate the Stripe Connected Account Agreement)
+    // from this very request. Fire-and-forget: a failure here just means the
+    // account is created later, when they open payout setup.
+    if (!product.isDraft) {
+      ensureConnectAccountInBackground({
+        userId: user.id,
+        tos: getTosEvidenceFromRequest(request),
+      });
+    }
 
     return NextResponse.json(product, { status: 201 });
   } catch (error) {

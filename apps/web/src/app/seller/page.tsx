@@ -13,6 +13,7 @@ import {
 } from "@tamagui/lucide-icons";
 import Link from "next/link";
 import { useLinkPress } from "@/hooks/useLinkPress";
+import { usePayoutStatus } from "@/hooks/usePayoutStatus";
 
 interface SellerStats {
   totalListings: number;
@@ -42,6 +43,7 @@ const EMPTY_SELLER_STATS: SellerStats = {
  */
 export default function SellerDashboardPage() {
   const linkPress = useLinkPress();
+  const { status: payoutStatus } = usePayoutStatus();
   const [stats, setStats] = useState<SellerStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -104,7 +106,7 @@ export default function SellerDashboardPage() {
           <Heading level={1} size="$8">
             Seller dashboard
           </Heading>
-          <Text color="$textSecondary">Manage your listings, payments, and payouts</Text>
+          <Text color="$textSecondary">Manage your listings, sales, and payouts</Text>
         </Column>
         <Button
           butterVariant="primary"
@@ -151,20 +153,24 @@ export default function SellerDashboardPage() {
         </Heading>
         <Row gap="$md" flexWrap="wrap">
           <QuickActionCard
-            title="View Payments"
-            description="See your transaction history and manage disputes"
-            href="/seller/payments"
+            title="View sales"
+            description="Track the orders you need to send and what you've earned"
+            href="/seller/sales"
             icon={<DollarSign size={24} />}
           />
           <QuickActionCard
-            title="Manage Payouts"
-            description="View your balance and payout schedule"
+            title="Manage payouts"
+            description={
+              payoutStatus && !payoutStatus.isComplete
+                ? "Set up payouts so we can pay you for your sales"
+                : "See your balance, bank account and payout history"
+            }
             href="/seller/payouts"
             icon={<TrendingUp size={24} />}
           />
           <QuickActionCard
-            title="Account Settings"
-            description="Update your bank account and business info"
+            title="Payout details"
+            description="Update the name, address and bank account we pay you with"
             href="/seller/settings"
             icon={<Package size={24} />}
           />
