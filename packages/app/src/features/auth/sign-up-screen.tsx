@@ -5,23 +5,26 @@ import { Column, Row, ScrollView, Text, Button, Heading, Spinner } from "@butter
 import { ArrowLeft } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSignUp } from "@clerk/clerk-expo";
-import { AuthFormInput, AuthErrorDisplay } from "./components";
+import { AuthFormInput, AuthErrorDisplay, SocialAuthButtons } from "./components";
 import { validateSignUpForm, getPasswordStrength, mapClerkErrorToMessage } from "./utils";
 import { SignUpFormData, PasswordStrength } from "./types";
 
 interface SignUpScreenProps {
   onSuccess?: (email: string) => void;
   onNavigateToSignIn?: () => void;
+  /** An existing account with two-factor auth can arrive here via Apple/Google SSO */
+  onNavigateToTwoFactor?: () => void;
   onNavigateBack?: () => void;
 }
 
 /**
- * Sign-up screen with email/password registration
+ * Sign-up screen with Apple/Google SSO and email/password registration
  * Includes password strength validation and verification email sending
  */
 export function SignUpScreen({
   onSuccess,
   onNavigateToSignIn,
+  onNavigateToTwoFactor,
   onNavigateBack,
 }: Readonly<SignUpScreenProps>) {
   const insets = useSafeAreaInsets();
@@ -231,6 +234,14 @@ export function SignUpScreen({
 
           {/* Error Display */}
           {error && <AuthErrorDisplay error={error} onDismiss={() => setError(null)} />}
+
+          {/* No onSuccess: an SSO sign-up is already verified, so skip the email-code screen
+              and let <SignedIn> take over once the session is active. */}
+          <SocialAuthButtons
+            onError={setError}
+            onNeedsSecondFactor={onNavigateToTwoFactor}
+            disabled={isSubmitting}
+          />
 
           {/* Form Fields */}
           <Column gap="$4">
