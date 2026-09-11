@@ -77,6 +77,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     const body = await request.json();
+    // Consent flag for publish: the client confirms it showed the seller-terms
+    // line (which incorporates the Stripe Connected Account Agreement).
+    const acceptsSellerTerms = body?.acceptsSellerTerms === true;
 
     // Validate allowed fields
     const allowedFields = [
@@ -428,7 +431,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (isPublishing) {
       ensureConnectAccountInBackground({
         userId: user.id,
-        tos: getTosEvidenceFromRequest(request),
+        // Acceptance is recorded only when the consent copy was shown; else it
+        // stays due and the payout details step (which always shows it) collects it.
+        tos: acceptsSellerTerms ? getTosEvidenceFromRequest(request) : undefined,
       });
     }
 

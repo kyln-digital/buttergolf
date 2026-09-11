@@ -105,10 +105,14 @@ function buildPrefill(user: ConnectUser, hasDob: boolean): PayoutPrefill {
   };
 }
 
-/** Forget a Connect account Stripe no longer knows about. */
-export async function clearConnectAccount(userId: string): Promise<void> {
-  await prisma.user.update({
-    where: { id: userId },
+/**
+ * Forget a Connect account Stripe no longer knows about. When `accountId` is
+ * given the clear only applies while that ID is still the one on file, so a
+ * stale retrieval can never wipe an account a concurrent request just saved.
+ */
+export async function clearConnectAccount(userId: string, accountId?: string): Promise<void> {
+  await prisma.user.updateMany({
+    where: { id: userId, ...(accountId ? { stripeConnectId: accountId } : {}) },
     data: {
       stripeConnectId: null,
       stripeOnboardingComplete: false,
@@ -171,14 +175,14 @@ export async function retrieveConnectAccount(
     const account = await stripe.accounts.retrieve(accountId);
     if ((account as unknown as { deleted?: boolean }).deleted) {
       console.info(`[Stripe Connect] Account ${accountId} was deleted in Stripe, clearing`);
-      await clearConnectAccount(userId);
+      await clearConnectAccount(userId, accountId);
       return null;
     }
     return account;
   } catch (error) {
     if (isMissingAccountError(error)) {
       console.warn(`[Stripe Connect] Account ${accountId} not found in Stripe, clearing`);
-      await clearConnectAccount(userId);
+      await clearConnectAccount(userId, accountId);
       return null;
     }
     throw error;

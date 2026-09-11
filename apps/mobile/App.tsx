@@ -495,6 +495,9 @@ async function submitListingToApi(
     weight: resolvedParcel.weight || undefined,
     // Idempotency key
     requestId,
+    // The consent line under "List Item" is what this attests to; the API
+    // records Stripe terms acceptance only when it is set.
+    acceptsSellerTerms: true,
   };
 
   // Debug: log the payload being sent
@@ -756,6 +759,9 @@ function SellScreenWrapper({ navigation }: { navigation: any }) {
       onPickImages={pickImages}
       onTakePhoto={takePhoto}
       onSubmitListing={handleSubmitListing}
+      onOpenLink={(href) => {
+        void Linking.openURL(href.startsWith("http") ? href : `${API_URL}${href}`);
+      }}
       onClose={() => navigation.goBack()}
       onSuccess={(productId) => {
         navigation.navigate("ProductDetail", { id: productId });
@@ -850,7 +856,11 @@ function AccountScreenWrapper({ navigation }: { navigation: any }) {
       onViewSellerDashboard={() => navigation.navigate("SellerSales")}
       onStartSellerOnboarding={() => navigation.navigate("PayoutSetup")}
       onViewAddresses={() => navigation.navigate("Addresses")}
-      onViewPayments={() => navigation.navigate("PayoutSetup")}
+      onViewPayments={() => {
+        // Buyer-facing "Payment Methods" row; saved cards live in Stripe
+        // Checkout today, there is no native screen for them yet.
+        Alert.alert("Coming Soon", "Payment settings will be available soon.");
+      }}
       onViewNotifications={() => navigation.navigate("NotificationSettings")}
       onViewHelp={() => navigation.navigate("HelpSupport")}
     />
@@ -1254,7 +1264,7 @@ function SellerDashboardScreenWrapper({ navigation }: { navigation: any }) {
       onListItem={() => navigation.navigate("Sell")}
       onViewSales={() => navigation.navigate("SellerSales")}
       onViewListings={() => navigation.navigate("SellerListings")}
-      onViewPayments={() => navigation.navigate("PayoutSetup")}
+      onViewPayments={() => navigation.navigate("SellerSales")}
       onViewPayouts={() => navigation.navigate("PayoutSetup")}
       onViewSettings={() => navigation.navigate("Account")}
       onBack={() => navigation.goBack()}

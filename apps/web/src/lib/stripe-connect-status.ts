@@ -32,7 +32,11 @@ export function getRequestClientIp(request: Request): string | null {
     const first = forwarded.split(",")[0]?.trim();
     if (first) return first;
   }
-  return request.headers.get("x-real-ip")?.trim() || null;
+  return (
+    request.headers.get("x-real-ip")?.trim() ||
+    request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() ||
+    null
+  );
 }
 
 /**

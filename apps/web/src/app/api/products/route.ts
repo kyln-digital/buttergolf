@@ -112,6 +112,9 @@ export async function POST(request: Request) {
       requestId,
       // Draft flag
       isDraft,
+      // The client confirms it showed the seller-terms consent line (which
+      // incorporates the Stripe Connected Account Agreement) next to publish.
+      acceptsSellerTerms,
     } = body;
 
     // Defensive sanitisation: the client should send string URLs, but we occasionally
@@ -426,7 +429,10 @@ export async function POST(request: Request) {
     if (!product.isDraft) {
       ensureConnectAccountInBackground({
         userId: user.id,
-        tos: getTosEvidenceFromRequest(request),
+        // Only record acceptance when the client says the consent copy was
+        // shown; otherwise the account is created with tos_acceptance due
+        // and the payout details step (which always shows it) collects it.
+        tos: acceptsSellerTerms === true ? getTosEvidenceFromRequest(request) : undefined,
       });
     }
 

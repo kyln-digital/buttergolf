@@ -149,6 +149,37 @@ describe("validateDob", () => {
 });
 
 describe("validatePayoutDetails", () => {
+  it("lets a seller Stripe already knows omit the date of birth when it isn't required", () => {
+    const result = validatePayoutDetails(
+      {
+        firstName: "Jamie",
+        lastName: "Sutherland",
+        address: { line1: "12 Fairway Close", city: "Leeds", postalCode: "ls1 4ap" },
+        phone: "07700 900123",
+      },
+      new Date("2026-09-11T00:00:00Z"),
+      { requireDob: false }
+    );
+    expect(result.ok).toBe(true);
+    expect(result.value?.dob).toBeUndefined();
+  });
+
+  it("still rejects a half-typed date of birth when it isn't required", () => {
+    const result = validatePayoutDetails(
+      {
+        firstName: "Jamie",
+        lastName: "Sutherland",
+        dob: { day: 12, month: NaN, year: NaN },
+        address: { line1: "12 Fairway Close", city: "Leeds", postalCode: "LS1 4AP" },
+        phone: "07700 900123",
+      },
+      new Date("2026-09-11T00:00:00Z"),
+      { requireDob: false }
+    );
+    expect(result.ok).toBe(false);
+    expect(result.errors.dob).toBeTruthy();
+  });
+
   const valid: PayoutDetailsInput = {
     firstName: "  Jane ",
     lastName: " Doe ",
@@ -262,6 +293,13 @@ describe("classifyPayoutRequirement", () => {
     expect(classifyPayoutRequirement("individual.address.line1")).toBe("details");
     expect(classifyPayoutRequirement("tos_acceptance.ip")).toBe("details");
     expect(classifyPayoutRequirement("business_profile.url")).toBe("details");
+  });
+
+  it("routes only the address fields the form can provide", () => {
+    expect(classifyPayoutRequirement("individual.address.line1")).toBe("details");
+    expect(classifyPayoutRequirement("individual.address.postal_code")).toBe("details");
+    expect(classifyPayoutRequirement("individual.address.state")).toBe("verification");
+    expect(classifyPayoutRequirement("individual.address_kana.line1")).toBe("verification");
   });
 
   it("routes only the business_profile fields the details endpoint sets", () => {

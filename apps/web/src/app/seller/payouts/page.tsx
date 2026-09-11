@@ -337,7 +337,11 @@ function ReviewCard({
   const linkPress = useLinkPress();
   const isRejected = status.status === "rejected";
   const isRestricted = status.status === "restricted";
-  const isPending = status.requirements.pendingVerification.length > 0;
+  // Anything short of complete that isn't rejected/restricted is Stripe
+  // still working through what we sent (pending verification, or the
+  // transfers capability still activating), so keep the seller informed
+  // rather than presenting the account as ready.
+  const isPending = !isRejected && !isRestricted && !status.isComplete;
 
   if (!isRejected && !isRestricted && !isPending) return null;
 

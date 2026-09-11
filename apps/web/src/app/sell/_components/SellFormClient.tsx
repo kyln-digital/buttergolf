@@ -946,8 +946,9 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                 weight: resolvedParcel.weight,
                 images: formData.images.map((url, index) => ({ url, sortOrder: index })),
                 // Editing a live listing leaves isDraft alone; publishing a draft
-                // flips it.
-                ...(isEditingListing ? {} : { isDraft: false }),
+                // flips it. The consent line under the publish button is what
+                // acceptsSellerTerms attests to.
+                ...(isEditingListing ? {} : { isDraft: false, acceptsSellerTerms: true }),
               }),
             })
           : await fetchJsonWithTimeout("/api/products", {
@@ -958,6 +959,8 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
               body: JSON.stringify({
                 ...formData,
                 price: parsedPrice,
+                // The consent line under the publish button is what this attests to.
+                acceptsSellerTerms: true,
                 // Don't send brandName (display only)
                 brandName: undefined,
                 // Resolved parcel, not the raw override strings.

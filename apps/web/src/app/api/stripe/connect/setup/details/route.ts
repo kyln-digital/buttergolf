@@ -35,7 +35,11 @@ export async function POST(request: Request) {
     if (!body) {
       return NextResponse.json({ error: "Check the highlighted fields" }, { status: 400 });
     }
-    const validation = validatePayoutDetails(body as unknown as PayoutDetailsInput);
+    // DOB is optional here: the form requires it unless Stripe already has
+    // one, and Stripe re-lists individual.dob.* as due if it is still needed.
+    const validation = validatePayoutDetails(body as unknown as PayoutDetailsInput, new Date(), {
+      requireDob: false,
+    });
     if (!validation.ok || !validation.value) {
       return NextResponse.json(
         { error: "Check the highlighted fields", errors: validation.errors },
@@ -52,7 +56,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Stripe needs an IP with the terms acceptance. Vercel always sets the
+    // forwarding headers; a local dev server does not, so it gets loopback.
+    // In production a missing IP is a real problem and we say so rather
+    // than let the seller loop on a form that can never clear the
+    // tos_acceptance requirement.
     const tos = getTosEvidenceFromRequest(request);
+    if (!tos.ip) {
+      if (process.env.NODE_ENV === "production") {
+        console.error(`[Stripe Connect] No client IP on details request for user ${user.id}`);
+        return NextResponse.json(
+          { error: "We couldn't record your agreement to the terms. Please try again." },
+          { status: 400 }
+        );
+      }
+      tos.ip = "127.0.0.1";
+    }
     const accountId = await ensureConnectAccount({ userId: user.id, tos });
 
     try {
@@ -60,11 +79,9 @@ export async function POST(request: Request) {
         individual: {
           first_name: details.firstName,
           last_name: details.lastName,
-          dob: {
-            day: details.dob.day,
-            month: details.dob.month,
-            year: details.dob.year,
-          },
+          ...(details.dob
+            ? { dob: { day: details.dob.day, month: details.dob.month, year: details.dob.year } }
+            : {}),
           address: {
             line1: details.address.line1,
             ...(details.address.line2 ? { line2: details.address.line2 } : {}),
@@ -80,16 +97,13 @@ export async function POST(request: Request) {
         // satisfy what Stripe is asking for.
         business_profile: sellerBusinessProfile(),
         // Stripe expects a fresh acceptance whenever the platform collects
-        // updated information on the account holder's behalf.
-        ...(tos.ip
-          ? {
-              tos_acceptance: {
-                date: Math.floor(Date.now() / 1000),
-                ip: tos.ip,
-                ...(tos.userAgent ? { user_agent: tos.userAgent.slice(0, 512) } : {}),
-              },
-            }
-          : {}),
+        // updated information on the account holder's behalf. The form shows
+        // the consent line above its Continue button.
+        tos_acceptance: {
+          date: Math.floor(Date.now() / 1000),
+          ip: tos.ip,
+          ...(tos.userAgent ? { user_agent: tos.userAgent.slice(0, 512) } : {}),
+        },
       });
     } catch (stripeError) {
       const described = describeStripeInputError(stripeError);

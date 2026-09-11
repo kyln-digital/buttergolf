@@ -307,6 +307,45 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Stale claims: an order flipped to RELEASED whose transfer was never
+    // recorded and for which Stripe has no transfer in the order's group is a
+    // crash between claim and transfer. After a grace period (a transfer may
+    // still be in flight from a concurrent process) hand it back to the
+    // PENDING_SELLER_ONBOARDING pass below, whose per-order idempotency key
+    // makes the retry safe even if the original transfer did in fact land.
+    const staleClaimCutoff = new Date(Date.now() - 60 * 60 * 1000);
+    const staleClaims = await prisma.order.findMany({
+      where: {
+        paymentHoldStatus: "RELEASED",
+        stripeTransferId: null,
+        updatedAt: { lt: staleClaimCutoff },
+      },
+      select: { id: true },
+      take: 50,
+    });
+
+    for (const stale of staleClaims) {
+      try {
+        const transfers = await stripe.transfers.list({ transfer_group: stale.id, limit: 1 });
+        if (transfers.data[0]) continue; // the repair pass below records it
+
+        const requeued = await prisma.order.updateMany({
+          where: { id: stale.id, paymentHoldStatus: "RELEASED", stripeTransferId: null },
+          data: { paymentHoldStatus: "PENDING_SELLER_ONBOARDING", stripePayoutStatus: null },
+        });
+        if (requeued.count > 0) {
+          console.warn("RECONCILIATION: re-queued stale release claim for retry:", {
+            orderId: stale.id,
+          });
+        }
+      } catch (staleError) {
+        console.error("RECONCILIATION: failed to inspect stale release claim:", {
+          orderId: stale.id,
+          error: staleError instanceof Error ? staleError.message : "Unknown error",
+        });
+      }
+    }
+
     // Second pass: drain orders the buyer already confirmed but which were
     // parked because the seller hadn't finished onboarding. The Connect webhook
     // normally releases these, but if that event is missed they would otherwise

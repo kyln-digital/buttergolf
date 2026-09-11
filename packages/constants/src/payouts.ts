@@ -130,7 +130,11 @@ export interface PayoutDobInput {
 export interface PayoutDetailsInput {
   firstName: string;
   lastName: string;
-  dob: PayoutDobInput;
+  /**
+   * Omit (or leave every part blank) when Stripe already holds a date of
+   * birth — see PayoutPrefill.hasDob. Required for a first submission.
+   */
+  dob?: PayoutDobInput;
   address: PayoutAddressInput;
   /** Any format the user types; normalised to E.164 by validatePayoutDetails. */
   phone: string;
@@ -167,7 +171,7 @@ export type PayoutRequirementBucket = "details" | "bank" | "verification";
 const DETAILS_REQUIREMENT_PATTERNS: RegExp[] = [
   /^individual\.(first_name|last_name|email|phone)$/,
   /^individual\.dob\./,
-  /^individual\.address\./,
+  /^individual\.address\.(line1|line2|city|postal_code|country)$/,
   /^business_profile\.(url|mcc|product_description)$/,
   /^tos_acceptance\./,
 ];
@@ -312,9 +316,27 @@ export interface PayoutDetailsValidation {
   value?: PayoutDetailsInput;
 }
 
+export interface ValidatePayoutDetailsOptions {
+  /**
+   * Whether a date of birth must be present. The form passes
+   * `!prefill.hasDob`; the API passes false and lets Stripe decide, since a
+   * seller it already knows only needs to send what changed.
+   */
+  requireDob?: boolean;
+}
+
+/** True when no part of the date of birth was entered at all. */
+function isBlankDob(dob: PayoutDobInput | undefined): boolean {
+  if (!dob) return true;
+  return [dob.day, dob.month, dob.year].every(
+    (part) => part === undefined || part === null || Number.isNaN(part)
+  );
+}
+
 export function validatePayoutDetails(
   input: PayoutDetailsInput,
-  today: Date = new Date()
+  today: Date = new Date(),
+  { requireDob = true }: ValidatePayoutDetailsOptions = {}
 ): PayoutDetailsValidation {
   const errors: Partial<Record<PayoutDetailsField, string>> = {};
 
@@ -323,8 +345,14 @@ export function validatePayoutDetails(
   if (!firstName) errors.firstName = "Enter your first name";
   if (!lastName) errors.lastName = "Enter your last name";
 
-  const dobError = validateDob(input.dob ?? { day: NaN, month: NaN, year: NaN }, today);
-  if (dobError) errors.dob = dobError;
+  // A blank DOB is fine when not required (Stripe already has one); a
+  // partially typed one is always an error.
+  const dobBlank = isBlankDob(input.dob);
+  const dob = dobBlank && !requireDob ? undefined : input.dob;
+  if (dob !== undefined || requireDob) {
+    const dobError = validateDob(dob ?? { day: NaN, month: NaN, year: NaN }, today);
+    if (dobError) errors.dob = dobError;
+  }
 
   const line1 = (input.address?.line1 ?? "").trim();
   const line2 = (input.address?.line2 ?? "").trim();
@@ -345,7 +373,7 @@ export function validatePayoutDetails(
     value: {
       firstName,
       lastName,
-      dob: input.dob,
+      ...(dob ? { dob } : {}),
       address: {
         line1,
         ...(line2 ? { line2 } : {}),

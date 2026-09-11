@@ -132,6 +132,8 @@ export function PayoutSetupScreen({
   showHeader = false,
 }: Readonly<PayoutSetupScreenProps>) {
   const [status, setStatus] = useState<PayoutStatus | null>(initialStatus ?? null);
+  /** Stripe already holds a date of birth, so the form may leave it blank. */
+  const dobOnFile = status?.prefill.hasDob ?? false;
   const [step, setStep] = useState<PayoutSetupStep>(() =>
     initialStatus ? (initialStep ?? deriveStep(initialStatus)) : "loading"
   );
@@ -226,19 +228,26 @@ export function PayoutSetupScreen({
   );
 
   const handleDetailsSubmit = useCallback(async () => {
+    // Stripe already holding a DOB means the seller can leave it blank and we
+    // send nothing for it; anything typed is validated and sent as usual.
+    const dobTouched = Boolean(dobDay.trim() || dobMonth.trim() || dobYear.trim());
     const input: PayoutDetailsInput = {
       firstName,
       lastName,
-      dob: {
-        day: toDatePart(dobDay),
-        month: toDatePart(dobMonth),
-        year: toDatePart(dobYear),
-      },
+      ...(dobTouched || !dobOnFile
+        ? {
+            dob: {
+              day: toDatePart(dobDay),
+              month: toDatePart(dobMonth),
+              year: toDatePart(dobYear),
+            },
+          }
+        : {}),
       address: { line1, line2, city, postalCode },
       phone,
     };
 
-    const validation = validatePayoutDetails(input);
+    const validation = validatePayoutDetails(input, new Date(), { requireDob: !dobOnFile });
     if (!validation.ok || !validation.value) {
       setDetailsErrors(validation.errors as Record<string, string>);
       setFormError(null);
@@ -261,6 +270,7 @@ export function PayoutSetupScreen({
     city,
     dobDay,
     dobMonth,
+    dobOnFile,
     dobYear,
     firstName,
     handleFailure,
@@ -434,6 +444,10 @@ export function PayoutSetupScreen({
             {detailsErrors.dob ? (
               <Text size="$2" color="$error">
                 {detailsErrors.dob}
+              </Text>
+            ) : dobOnFile ? (
+              <Text size="$2" color="$textMuted">
+                Already on file. Leave blank to keep it.
               </Text>
             ) : null}
           </Column>
