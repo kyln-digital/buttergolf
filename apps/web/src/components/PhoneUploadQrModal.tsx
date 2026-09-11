@@ -47,6 +47,8 @@ export function PhoneUploadQrModal({
   onRegenerate,
 }: Readonly<PhoneUploadQrModalProps>) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previouslyFocusedElementRef = useRef<HTMLElement | null>(null);
 
   // The QR code ignores the theme on purpose: phone cameras need dark modules
   // on a light ground to lock on, so it is drawn in the brand's fixed ink and
@@ -54,24 +56,84 @@ export function PhoneUploadQrModal({
   const qrInk = getTokenValue("$ironstone", "color") as string | undefined;
   const qrPaper = getTokenValue("$pureWhite", "color") as string | undefined;
 
+  // Same modal discipline as ImageCropModal: lock scroll, inert the app behind
+  // the overlay, move focus in, and hand it back on close.
   useEffect(() => {
     if (!open) return;
 
     const originalOverflow = document.body.style.overflow;
+    const appRoot = document.getElementById("__next");
+    const hadInert = appRoot?.hasAttribute("inert") ?? false;
+    const originalAppPointerEvents = appRoot?.style.pointerEvents;
+
     document.body.style.overflow = "hidden";
+    appRoot?.setAttribute("inert", "");
+    if (appRoot) {
+      appRoot.style.pointerEvents = "none";
+    }
 
+    previouslyFocusedElementRef.current = document.activeElement as HTMLElement | null;
     const focusTimer = window.setTimeout(() => closeButtonRef.current?.focus(), 0);
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       document.body.style.overflow = originalOverflow;
+      if (appRoot && appRoot.isConnected) {
+        if (!hadInert) {
+          appRoot.removeAttribute("inert");
+        }
+        appRoot.style.pointerEvents = originalAppPointerEvents ?? "";
+      }
       window.clearTimeout(focusTimer);
-      window.removeEventListener("keydown", handleKeyDown);
+      previouslyFocusedElementRef.current?.focus();
     };
+  }, [open]);
+
+  // Escape closes; Tab cycles within the dialog rather than into the sell form.
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const container = modalRef.current;
+      if (!container) return;
+
+      const focusable = Array.from(
+        container.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+
+      if (event.shiftKey) {
+        if (active === first || !container.contains(active)) {
+          event.preventDefault();
+          last.focus();
+        }
+        return;
+      }
+
+      if (active === last || !container.contains(active)) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open, onClose]);
 
   // `open` only ever becomes true from a click, so this never renders during
@@ -83,6 +145,7 @@ export function PhoneUploadQrModal({
 
   const modalContent = (
     <div
+      ref={modalRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="phone-upload-qr-heading"

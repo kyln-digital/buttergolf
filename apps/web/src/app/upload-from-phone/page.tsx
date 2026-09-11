@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import { PhoneUploadClient } from "./_components/PhoneUploadClient";
 
 /**
@@ -15,12 +15,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-};
+// The root layout's viewport applies here unchanged: this is an ordinary
+// browser page, so pinch-to-zoom stays available for low-vision sellers.
 
 export default function UploadFromPhonePage() {
   return <PhoneUploadClient />;
