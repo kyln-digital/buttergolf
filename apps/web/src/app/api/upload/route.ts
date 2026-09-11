@@ -10,11 +10,13 @@ import {
 } from "@/lib/phone-upload-session";
 import {
   completePhoneUpload,
+  getPhoneUploadReservationState,
   isPhoneUploadSessionClosed,
   PHONE_SESSION_CLOSED_MESSAGE,
   phoneAllowanceUsedMessage,
   releasePhoneUploadSlot,
   reservePhoneUploadSlot,
+  type CompletePhoneUploadOutcome,
 } from "@/lib/phone-upload-store";
 import { BodyTooLargeError, readBodyWithLimit } from "@/lib/read-body-with-limit";
 import {
@@ -329,7 +331,20 @@ export async function POST(request: Request): Promise<NextResponse> {
     // Hand the photo to the desktop by filling the slot reserved above.
     if (phoneSession && reservationId) {
       try {
-        const outcome = await completePhoneUpload(phoneSession, reservationId, result.secure_url);
+        let outcome: CompletePhoneUploadOutcome;
+        try {
+          outcome = await completePhoneUpload(phoneSession, reservationId, result.secure_url);
+        } catch (completeError) {
+          // A transaction can commit and still surface an error (a dropped
+          // connection after COMMIT, say). Re-read the row under the session
+          // lock before assuming the slot is empty: destroying the asset of a
+          // row that did fill would leave the listing with a dead URL.
+          const state = await getPhoneUploadReservationState(phoneSession, reservationId).catch(
+            () => "pending" as const
+          );
+          if (state !== "filled") throw completeError;
+          outcome = "completed";
+        }
         if (outcome === "closed") {
           throw new Error("Session closed while the upload was in flight");
         }

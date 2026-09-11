@@ -182,6 +182,14 @@ export async function releasePhoneUploadSlot(reservationId: string): Promise<voi
   }
 }
 
+/**
+ * Rows older than this are no longer offered to the desktop, an hour before
+ * the sweep may touch them. A desktop can only place what it has just been
+ * told about, so this is what keeps "place it as a product image" and
+ * "destroy the unreferenced asset" from ever racing on the same row.
+ */
+const COLLECTABLE_AGE_MS = STALE_UPLOAD_AGE_MS - 60 * 60 * 1000;
+
 /** Photos the phone has finished sending for a session, oldest first. */
 export async function listCompletedPhoneUploads(
   sessionId: string,
@@ -193,9 +201,34 @@ export async function listCompletedPhoneUploads(
       clerkId,
       url: { notIn: [CLOSED_URL, MINTED_URL] },
       NOT: { url: { startsWith: PENDING_PREFIX } },
+      createdAt: { gte: new Date(Date.now() - COLLECTABLE_AGE_MS) },
     },
     orderBy: { createdAt: "asc" },
     select: { id: true, url: true },
+  });
+}
+
+export type PhoneUploadReservationState = "filled" | "pending" | "missing";
+
+/**
+ * What became of a reservation, read under the session lock. Used when
+ * filling it reported an error: a transaction can commit and still surface a
+ * failure to the caller, and destroying an asset whose row is already filled
+ * (and possibly already a product image) would leave the listing with a dead
+ * URL.
+ */
+export async function getPhoneUploadReservationState(
+  session: PhoneUploadSession,
+  reservationId: string
+): Promise<PhoneUploadReservationState> {
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${session.sessionId}::text))`;
+    const row = await tx.phoneUpload.findUnique({
+      where: { id: reservationId },
+      select: { url: true },
+    });
+    if (!row) return "missing";
+    return isPendingUrl(row.url) ? "pending" : "filled";
   });
 }
 

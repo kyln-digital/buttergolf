@@ -236,6 +236,9 @@ export function ImageUpload({
       const alreadyHeld = urls.filter((url) => already.has(url));
       const placedNow = urls.filter((url) => !already.has(url)).slice(0, room);
       for (const url of placedNow) onUploadComplete(url);
+      // The parent's state update lands on the next render; anyone reading
+      // the ref before then must already see these slots as taken.
+      currentImagesRef.current = [...held, ...placedNow];
 
       return [...alreadyHeld, ...placedNow];
     },
