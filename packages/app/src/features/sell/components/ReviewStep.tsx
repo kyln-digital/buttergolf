@@ -78,7 +78,8 @@ function ReviewSection({ title, icon, step, onEdit, children }: Readonly<ReviewS
             borderColor="$spicedClementine"
           >
             <Pencil size={14} color="$spicedClementine" />
-            <Text size="$3" fontWeight="600" color="$spicedClementine">
+            {/* Orange stays on the border and icon; 13px orange text is under 4.5:1 in both themes. */}
+            <Text size="$3" fontWeight="600" color="$text">
               Edit
             </Text>
           </Row>
