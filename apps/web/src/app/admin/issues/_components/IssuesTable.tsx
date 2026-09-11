@@ -134,7 +134,7 @@ export function IssuesTable({
           },
           {
             key: "age",
-            label: issue0(view) ? "Resolved" : "Opened",
+            label: view === "resolved" ? "Resolved" : "Opened",
             width: 170,
             render: (issue) =>
               issue.status === "RESOLVED" && issue.resolvedAt ? (
@@ -166,8 +166,4 @@ export function IssuesTable({
       />
     </Column>
   );
-}
-
-function issue0(view: string): boolean {
-  return view === "resolved";
 }
