@@ -10,7 +10,7 @@ import {
   mapClerkErrorToMessage,
   validateSignInForm,
   validateSignUpForm,
-} from "../packages/app/src/features/auth/utils";
+} from "../apps/mobile/features/auth/utils";
 
 describe("validateEmail", () => {
   it("accepts a well-formed email", () => {

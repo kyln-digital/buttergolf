@@ -61,7 +61,6 @@ Shared screens in `packages/app/src/features/` are **platform-agnostic "dumb" co
 | ------------- | -------------------------------------------------------------------------------------- |
 | `home/`       | `HomeScreen` — hero, category grid, search, buy/sell toggle                            |
 | `products/`   | `detail-screen.tsx`, `list-screen.tsx`                                                 |
-| `auth/`       | SignIn, SignUp, VerifyEmail, ForgotPassword, ResetPassword, TwoFactor                  |
 | `sell/`       | `sell-screen.tsx`, `DetailsStep.tsx`                                                   |
 | `orders/`     | `orders-screen.tsx`, `order-detail-screen.tsx`                                         |
 | `messages/`   | `messages-screen.tsx`, `message-thread-screen.tsx`                                     |
@@ -71,6 +70,8 @@ Shared screens in `packages/app/src/features/` are **platform-agnostic "dumb" co
 | `favourites/` | favourites screen                                                                      |
 | `rounds/`     | `screen.tsx`                                                                           |
 | `onboarding/` | `screen.tsx` (mobile Stripe onboarding gate)                                           |
+
+The auth screens (SignIn, SignUp, VerifyEmail, ForgotPassword, ResetPassword, TwoFactor) are not shared: they are built on `@clerk/clerk-expo`, so they live in `apps/mobile/features/auth/`. Web uses Clerk's prebuilt `<SignIn/>` / `<SignUp/>` from `@clerk/nextjs` instead.
 
 ### Provider Stack
 
