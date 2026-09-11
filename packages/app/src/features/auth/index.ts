@@ -7,7 +7,7 @@ export { ResetPasswordScreen } from "./reset-password-screen";
 export { TwoFactorScreen } from "./two-factor-screen";
 
 // Components
-export { AuthFormInput, AuthErrorDisplay } from "./components";
+export { AuthFormInput, AuthErrorDisplay, SocialAuthButtons } from "./components";
 
 // Types
 export type {

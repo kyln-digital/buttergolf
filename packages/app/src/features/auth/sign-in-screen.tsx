@@ -5,7 +5,7 @@ import { Column, Row, ScrollView, Text, Button, Heading, Spinner, View } from "@
 import { ArrowLeft } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSignIn } from "@clerk/clerk-expo";
-import { AuthFormInput, AuthErrorDisplay } from "./components";
+import { AuthFormInput, AuthErrorDisplay, SocialAuthButtons } from "./components";
 import { validateSignInForm, mapClerkErrorToMessage } from "./utils";
 import { SignInFormData } from "./types";
 
@@ -172,6 +172,13 @@ export function SignInScreen({
 
           {/* Error Display */}
           {error && <AuthErrorDisplay error={error} onDismiss={() => setError(null)} />}
+
+          <SocialAuthButtons
+            onSuccess={onSuccess}
+            onError={setError}
+            onNeedsSecondFactor={onNavigateToTwoFactor}
+            disabled={isSubmitting}
+          />
 
           {/* Email/Password Form */}
           <Column gap="$4">
