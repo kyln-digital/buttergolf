@@ -4,7 +4,7 @@ import React, { useState, useCallback } from "react";
 import { Column, Row, ScrollView, Text, Button, Heading, Spinner } from "@buttergolf/ui";
 import { ArrowLeft } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useSignUp } from "@clerk/clerk-expo";
+import { isClerkAPIResponseError, useSignUp } from "@clerk/clerk-expo";
 import { AuthFormInput, AuthErrorDisplay, SocialAuthButtons } from "./components";
 import { validateSignUpForm, getPasswordStrength, mapClerkErrorToMessage } from "./utils";
 import { SignUpFormData, PasswordStrength } from "./types";
@@ -156,16 +156,14 @@ export function SignUpScreen({
       // Call success to navigate to verify email screen with the email
       onSuccess?.(formData.email);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error("[SignUp] Error:", err);
+      const clerkError = isClerkAPIResponseError(err) ? err.errors[0] : undefined;
 
-      // Check for Clerk-specific error codes
-      if (errorMessage.includes("duplicate_identifier")) {
-        setError(mapClerkErrorToMessage("duplicate_identifier"));
-      } else if (errorMessage.includes("password_not_strong_enough")) {
-        setError(mapClerkErrorToMessage("password_not_strong_enough"));
-      } else {
-        setError(errorMessage || "Sign-up failed. Please try again.");
-      }
+      setError(
+        clerkError
+          ? mapClerkErrorToMessage(clerkError.code, clerkError.longMessage || clerkError.message)
+          : "Sign-up failed. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
     }

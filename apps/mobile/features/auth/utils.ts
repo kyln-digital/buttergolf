@@ -157,31 +157,24 @@ export function validateVerificationCode(code: string): string | null {
 export function mapClerkErrorToMessage(errorCode: string, fallback?: string): string {
   const errorMap: Record<string, string> = {
     // Sign-in errors
-    identifier_not_found: "Email address not found",
     form_identifier_not_found: "Email address not found",
-    password_incorrect: "Incorrect password",
-    auth_method_not_enabled: "Email authentication is not enabled",
+    form_password_incorrect: "Incorrect password",
+    form_password_or_identifier_incorrect: "Incorrect email or password",
 
     // Sign-up and new-password errors
-    duplicate_identifier: "This email is already registered",
-    password_not_strong_enough:
-      "Password is not strong enough. Use uppercase, lowercase, numbers and special characters.",
+    form_identifier_exists: "This email is already registered",
     form_password_not_strong_enough:
       "Password is not strong enough. Use uppercase, lowercase, numbers and special characters.",
     form_password_length_too_short: "Password must be at least 8 characters",
     form_password_pwned:
       "This password has appeared in a data breach. Please choose a different one.",
-    form_invalid: "Please check your information and try again",
 
     // Verification errors
-    verification_code_invalid: "Invalid verification code",
     form_code_incorrect: "Invalid verification code",
-    verification_code_expired: "Verification code has expired. Please request a new one.",
     verification_expired: "Verification code has expired. Please request a new one.",
     verification_failed: "Too many incorrect attempts. Please request a new code.",
 
-    // Network/General errors
-    form_error: "An error occurred. Please try again.",
+    // General errors
     too_many_requests: "Too many attempts. Please wait a moment and try again.",
   };
 

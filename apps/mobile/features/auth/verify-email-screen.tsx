@@ -4,7 +4,7 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import { Column, Row, ScrollView, Text, Button, Heading, Spinner, useTheme } from "@buttergolf/ui";
 import { Mail, ArrowLeft } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useSignUp } from "@clerk/clerk-expo";
+import { isClerkAPIResponseError, useSignUp } from "@clerk/clerk-expo";
 import { OtpInput, OtpInputRef } from "react-native-otp-entry";
 import { AuthErrorDisplay } from "./components";
 import { mapClerkErrorToMessage } from "./utils";
@@ -84,15 +84,14 @@ export function VerifyEmailScreen({
           setError("Verification incomplete. Please try again.");
         }
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.error("[VerifyEmail] Error:", err);
+        const clerkError = isClerkAPIResponseError(err) ? err.errors[0] : undefined;
 
-        if (errorMessage.includes("verification_code_invalid")) {
-          setError(mapClerkErrorToMessage("verification_code_invalid"));
-        } else if (errorMessage.includes("verification_code_expired")) {
-          setError(mapClerkErrorToMessage("verification_code_expired"));
-        } else {
-          setError(errorMessage || "Verification failed. Please check your code and try again.");
-        }
+        setError(
+          clerkError
+            ? mapClerkErrorToMessage(clerkError.code, clerkError.longMessage || clerkError.message)
+            : "Verification failed. Please check your code and try again."
+        );
 
         // Clear code on error
         otpRef.current?.clear();

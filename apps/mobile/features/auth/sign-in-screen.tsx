@@ -4,7 +4,7 @@ import React, { useState, useCallback } from "react";
 import { Column, Row, ScrollView, Text, Button, Heading, Spinner, View } from "@buttergolf/ui";
 import { ArrowLeft } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useSignIn } from "@clerk/clerk-expo";
+import { isClerkAPIResponseError, useSignIn } from "@clerk/clerk-expo";
 import { AuthFormInput, AuthErrorDisplay, SocialAuthButtons } from "./components";
 import { validateSignInForm, mapClerkErrorToMessage } from "./utils";
 import { SignInFormData } from "./types";
@@ -121,16 +121,13 @@ export function SignInScreen({
       }
     } catch (err) {
       console.error("[SignIn] Error:", err);
-      const errorMessage = err instanceof Error ? err.message : String(err);
+      const clerkError = isClerkAPIResponseError(err) ? err.errors[0] : undefined;
 
-      // Check for Clerk-specific error codes
-      if (errorMessage.includes("identifier_not_found")) {
-        setError(mapClerkErrorToMessage("identifier_not_found"));
-      } else if (errorMessage.includes("password_incorrect")) {
-        setError(mapClerkErrorToMessage("password_incorrect"));
-      } else {
-        setError(errorMessage || "Sign-in failed. Please check your credentials and try again.");
-      }
+      setError(
+        clerkError
+          ? mapClerkErrorToMessage(clerkError.code, clerkError.longMessage || clerkError.message)
+          : "Sign-in failed. Please check your credentials and try again."
+      );
     } finally {
       setIsSubmitting(false);
     }

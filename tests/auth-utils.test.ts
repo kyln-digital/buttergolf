@@ -130,17 +130,12 @@ describe("validateVerificationCode", () => {
 });
 
 describe("mapClerkErrorToMessage", () => {
-  it("maps known Clerk error codes to friendly messages", () => {
-    expect(mapClerkErrorToMessage("identifier_not_found")).toBe("Email address not found");
-    expect(mapClerkErrorToMessage("password_incorrect")).toBe("Incorrect password");
-    expect(mapClerkErrorToMessage("duplicate_identifier")).toBe("This email is already registered");
-    expect(mapClerkErrorToMessage("verification_code_expired")).toBe(
-      "Verification code has expired. Please request a new one."
-    );
-  });
-
-  it("maps the codes the Clerk API actually returns", () => {
+  it("maps the codes the Clerk API returns to friendly messages", () => {
     expect(mapClerkErrorToMessage("form_identifier_not_found")).toBe("Email address not found");
+    expect(mapClerkErrorToMessage("form_password_incorrect")).toBe("Incorrect password");
+    expect(mapClerkErrorToMessage("form_identifier_exists")).toBe(
+      "This email is already registered"
+    );
     expect(mapClerkErrorToMessage("form_code_incorrect")).toBe("Invalid verification code");
     expect(mapClerkErrorToMessage("verification_expired")).toBe(
       "Verification code has expired. Please request a new one."
