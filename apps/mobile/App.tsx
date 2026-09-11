@@ -21,12 +21,6 @@ import {
   MessagesScreen,
   MessageThreadScreen,
   routes,
-  SignInScreen,
-  SignUpScreen,
-  VerifyEmailScreen,
-  ForgotPasswordScreen,
-  ResetPasswordScreen,
-  TwoFactorScreen,
   AccountScreen,
   ProfileEditScreen,
   AddressesScreen,
@@ -57,6 +51,14 @@ import { CategoryListScreen } from "@buttergolf/app/src/features/categories";
 import { useMobileFavourites } from "@buttergolf/app/src/hooks";
 import { MobileCheckoutSheet } from "./components";
 import { SellerStatusProvider, useSellerStatusContext } from "./context";
+import {
+  SignInScreen,
+  SignUpScreen,
+  VerifyEmailScreen,
+  ForgotPasswordScreen,
+  ResetPasswordScreen,
+  TwoFactorScreen,
+} from "./features/auth";
 import RNEventSource from "react-native-sse";
 import {
   View as RNView,
