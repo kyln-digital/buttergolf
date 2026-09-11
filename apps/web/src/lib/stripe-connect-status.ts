@@ -90,7 +90,19 @@ export function firstBankAccount(account: Stripe.Account): PayoutBankAccountSumm
  * User.stripeOnboardingComplete): payouts enabled, transfers capability
  * active, nothing currently due.
  */
-export function deriveConnectStatus(account: Stripe.Account): ConnectStatusSummary {
+export interface DeriveConnectStatusOptions {
+  /**
+   * Our own record says this seller was previously fully set up
+   * (User.stripeOnboardingComplete). Used to tell "payouts paused" apart from
+   * "never finished", which Stripe's requirements alone don't distinguish.
+   */
+  wasComplete?: boolean;
+}
+
+export function deriveConnectStatus(
+  account: Stripe.Account,
+  { wasComplete = false }: DeriveConnectStatusOptions = {}
+): ConnectStatusSummary {
   const reqs = account.requirements;
   const currentlyDue = reqs?.currently_due ?? [];
   const pastDue = reqs?.past_due ?? [];
@@ -114,10 +126,19 @@ export function deriveConnectStatus(account: Stripe.Account): ConnectStatusSumma
     pastDue.length === 0 &&
     !isRejected;
 
+  // Stripe files a brand-new account's requirements straight into past_due
+  // (disabled_reason "requirements.past_due", no deadline) — that is "not set
+  // up yet", not "payouts paused". Only treat past_due as restricting when
+  // something was actually taken away: a deadline Stripe set has been missed,
+  // or the account was previously working.
+  const hasMissedDeadline =
+    pastDue.length > 0 &&
+    (reqs?.current_deadline != null || wasComplete || payoutsEnabled || transfersActive);
+
   let status: PayoutAccountStatus = "pending";
   if (isRejected) status = "rejected";
   else if (isComplete) status = "active";
-  else if (pastDue.length > 0) status = "restricted";
+  else if (hasMissedDeadline) status = "restricted";
 
   const classification = classifyPayoutRequirements([...currentlyDue, ...pastDue]);
 

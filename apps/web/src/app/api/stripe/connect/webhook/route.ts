@@ -157,7 +157,7 @@ export async function POST(req: Request) {
 async function handleAccountUpdated(account: Stripe.Account) {
   const user = await prisma.user.findUnique({
     where: { stripeConnectId: account.id },
-    select: { id: true },
+    select: { id: true, stripeOnboardingComplete: true },
   });
 
   if (!user) {
@@ -165,7 +165,7 @@ async function handleAccountUpdated(account: Stripe.Account) {
     return;
   }
 
-  const summary = deriveConnectStatus(account);
+  const summary = deriveConnectStatus(account, { wasComplete: user.stripeOnboardingComplete });
   await syncConnectStatus(user.id, summary);
 
   console.info(

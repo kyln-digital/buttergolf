@@ -368,7 +368,7 @@ export async function getConnectStatusForUser(userId: string): Promise<PayoutSta
     return noPayoutAccountStatus(buildPrefill(user, false));
   }
 
-  const summary = deriveConnectStatus(account);
+  const summary = deriveConnectStatus(account, { wasComplete: user.stripeOnboardingComplete });
   if (statusNeedsSync(user, summary)) {
     console.info(
       `[Stripe Connect] Syncing user ${user.id}: status=${summary.status} complete=${summary.isComplete} due=${summary.requirements.currentlyDue.length}`

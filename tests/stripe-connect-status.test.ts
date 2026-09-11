@@ -170,6 +170,44 @@ describe("deriveConnectStatus", () => {
     expect(summary.status).toBe("rejected");
   });
 
+  it("treats a fresh account's past_due (no deadline, never enabled) as pending, not restricted", () => {
+    // Exactly what Stripe returns seconds after creation: requirements in
+    // past_due, disabled_reason requirements.past_due, no deadline.
+    const summary = deriveConnectStatus(
+      account({
+        id: "acct_fresh_past_due",
+        payouts_enabled: false,
+        capabilities: { transfers: "inactive" } as Stripe.Account.Capabilities,
+        requirements: requirements({
+          currently_due: ["external_account", "individual.dob.day"],
+          past_due: ["external_account", "individual.dob.day"],
+          disabled_reason: "requirements.past_due",
+          current_deadline: null,
+        }),
+      })
+    );
+    expect(summary.status).toBe("pending");
+    expect(summary.needsDetails).toBe(true);
+    expect(summary.needsBankAccount).toBe(true);
+  });
+
+  it("is restricted when a previously complete seller has something past due", () => {
+    const summary = deriveConnectStatus(
+      account({
+        id: "acct_was_active",
+        payouts_enabled: false,
+        capabilities: { transfers: "inactive" } as Stripe.Account.Capabilities,
+        requirements: requirements({
+          currently_due: ["individual.verification.document"],
+          past_due: ["individual.verification.document"],
+          disabled_reason: "requirements.past_due",
+        }),
+      }),
+      { wasComplete: true }
+    );
+    expect(summary.status).toBe("restricted");
+  });
+
   it("is restricted once a Stripe deadline has passed", () => {
     const summary = deriveConnectStatus(
       account({
