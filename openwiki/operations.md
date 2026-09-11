@@ -90,7 +90,7 @@ Defined in `vercel.json`; all protected by `CRON_SECRET` bearer token (fail clos
 | `/api/cron/release-payments`    | `0 3 * * *` (03:00 UTC)  | Auto-release escrow 14 days post-delivery; drains `PENDING_SELLER_ONBOARDING`; verifies charge not refunded/disputed before transferring |
 | `/api/cron/expire-offers`       | `0 6 * * *` (06:00 UTC)  | Expire offers past `expiresAt`                                                                                                           |
 | `/api/cron/payment-reminders`   | `0 10 * * *` (10:00 UTC) | Payment reminder emails                                                                                                                  |
-| `/api/cron/sweep-phone-uploads` | `30 4 * * *` (04:30 UTC) | Remove phone-upload handoff rows a day old; destroy Cloudinary assets that never became a `ProductImage`                                 |
+| `/api/cron/sweep-phone-uploads` | `30 4 * * *` (04:30 UTC) | Remove phone-upload handoff rows two days old; destroy Cloudinary assets that never became a `ProductImage`                              |
 
 ## Environment Variables
 

@@ -10,11 +10,13 @@ import {
 } from "@/lib/phone-upload-session";
 import {
   completePhoneUpload,
+  isPhoneUploadSessionClosed,
   PHONE_SESSION_CLOSED_MESSAGE,
   phoneAllowanceUsedMessage,
   releasePhoneUploadSlot,
   reservePhoneUploadSlot,
 } from "@/lib/phone-upload-store";
+import { BodyTooLargeError, readBodyWithLimit } from "@/lib/read-body-with-limit";
 import {
   isAllowedUploadType,
   MAX_UPLOAD_FILE_SIZE_BYTES,
@@ -200,9 +202,18 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
   };
 
+  // The public id is generated here, never taken from the request. The
+  // `filename` query is only ever used for logging: letting a caller choose
+  // the id would let anyone with an upload credential (a leaked QR token
+  // included) overwrite an existing `products/…` asset by naming it. It is
+  // chosen before the reservation so the reservation can record it: if this
+  // invocation dies after Cloudinary succeeds, the sweep still knows what to
+  // destroy.
+  const publicId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+
   if (phoneSession) {
     try {
-      const reservation = await reservePhoneUploadSlot(phoneSession);
+      const reservation = await reservePhoneUploadSlot(phoneSession, publicId);
       if (reservation.kind === "closed") {
         return NextResponse.json(
           { error: PHONE_SESSION_CLOSED_MESSAGE },
@@ -233,16 +244,18 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   try {
     // Convert request body to base64 for Cloudinary upload
-    let arrayBuffer: ArrayBuffer;
     let buffer: Buffer;
     let base64Image: string;
 
     try {
-      arrayBuffer = await request.arrayBuffer();
-      buffer = Buffer.from(arrayBuffer);
-
-      // Content-Length can be absent or wrong, so the real size decides.
-      if (buffer.length > MAX_UPLOAD_FILE_SIZE_BYTES) {
+      // Content-Length can be absent or wrong, so the real size decides — and
+      // it is enforced as the stream arrives, not after it has all been held
+      // in memory, so a forged header can't make the function buffer more
+      // than the limit.
+      buffer = await readBodyWithLimit(request, MAX_UPLOAD_FILE_SIZE_BYTES);
+      base64Image = `data:${contentType};base64,${buffer.toString("base64")}`;
+    } catch (conversionError) {
+      if (conversionError instanceof BodyTooLargeError) {
         await releaseReservation();
         return NextResponse.json(
           { error: `File size must be less than ${MAX_UPLOAD_FILE_SIZE_LABEL}` },
@@ -250,8 +263,6 @@ export async function POST(request: Request): Promise<NextResponse> {
         );
       }
 
-      base64Image = `data:${contentType};base64,${buffer.toString("base64")}`;
-    } catch (conversionError) {
       logError("Failed to convert request body to base64", conversionError, {
         errorId: UPLOAD_CONVERSION_FAILED,
         userId,
@@ -280,12 +291,6 @@ export async function POST(request: Request): Promise<NextResponse> {
     });
 
     // Build upload options
-    // The public id is generated here, never taken from the request. The
-    // `filename` query is only ever used for logging: letting a caller choose
-    // the id would let anyone with an upload credential (a leaked QR token
-    // included) overwrite an existing `products/…` asset by naming it.
-    const publicId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
-
     const uploadOptions: UploadApiOptions = {
       folder: "products",
       public_id: publicId,
@@ -341,6 +346,20 @@ export async function POST(request: Request): Promise<NextResponse> {
           console.error("Failed to delete Cloudinary asset:", { publicId: result.public_id, err });
         });
         await releaseReservation();
+
+        // The usual reason the slot can't be filled is that the desktop closed
+        // the session while this upload was in flight. Say so, rather than
+        // inviting a retry that will only be refused.
+        const closedMeanwhile = await isPhoneUploadSessionClosed(
+          phoneSession.sessionId,
+          phoneSession.clerkId
+        ).catch(() => false);
+        if (closedMeanwhile) {
+          return NextResponse.json(
+            { error: PHONE_SESSION_CLOSED_MESSAGE },
+            { status: 410, headers: corsHeaders }
+          );
+        }
 
         return NextResponse.json(
           {

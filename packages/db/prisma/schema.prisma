@@ -153,6 +153,8 @@ model ProductImage {
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
+  /// The phone-upload sweep asks "does any listing still use this asset?" by URL.
+  @@index([url])
   @@map("product_images")
 }
 
@@ -162,10 +164,11 @@ model ProductImage {
 /// polls this table for the session id inside it; the phone uploads to
 /// Cloudinary with that token and each upload lands here. Rows are a handoff
 /// buffer, not part of the listing: the desktop copies the URL into its form
-/// state. Two sentinel `url` values live alongside real ones: "" for a slot
-/// reserved by an upload in flight and "closed" for a session the desktop has
-/// finished with. The daily sweep-phone-uploads cron removes rows a day old
-/// and destroys any asset that never became a product image.
+/// state. Two sentinel `url` shapes live alongside real ones: "pending:<id>"
+/// for a slot reserved by an upload in flight (the Cloudinary public id it
+/// will use) and "closed" for a session the desktop has finished with. The
+/// daily sweep-phone-uploads cron removes rows two days old and destroys any
+/// asset that never became a product image.
 model PhoneUpload {
   id        String   @id @default(cuid())
   /// Random id minted per QR code (the token's `jti`). Not guessable.
@@ -177,7 +180,8 @@ model PhoneUpload {
   createdAt DateTime @default(now())
 
   @@index([sessionId, createdAt])
-  @@index([clerkId, createdAt])
+  /// The daily sweep selects and orders by age alone.
+  @@index([createdAt])
   @@map("phone_uploads")
 }
 

@@ -181,6 +181,10 @@ export function usePhoneUploadSession({
   // in here is offered on every poll until the form accepts it. Persisted with
   // the session so a restore doesn't re-offer a photo the seller had removed.
   const placedIdsRef = useRef<Set<string>>(new Set());
+  // The session id polls may still act on. Set synchronously whenever the
+  // session changes, so a poll that was in flight for the old session drops
+  // its result even if it resolves before React has torn the effect down.
+  const activeSessionIdRef = useRef<string | null>(null);
   const onPhotosRef = useRef(onPhotos);
   useEffect(() => {
     onPhotosRef.current = onPhotos;
@@ -204,6 +208,7 @@ export function usePhoneUploadSession({
     const stored = readStoredSession(storageScope);
     if (stored) {
       const { placedIds, ...snapshot } = stored;
+      activeSessionIdRef.current = snapshot.sessionId;
       placedIdsRef.current = new Set(placedIds);
       setReceivedCount(placedIds.length);
       setExpiredPollDone(false);
@@ -221,6 +226,7 @@ export function usePhoneUploadSession({
     session === null || pendingCount === 0 ? (isExpired ? expiredPollDone : true) : false;
 
   const stop = useCallback(() => {
+    activeSessionIdRef.current = null;
     setSession(null);
     setPendingCount(0);
     persist(null);
@@ -262,6 +268,7 @@ export function usePhoneUploadSession({
       // still on its page tries to send, rather than collecting it nowhere.
       if (session) closeSessionOnServer(session.sessionId);
 
+      activeSessionIdRef.current = next.sessionId;
       placedIdsRef.current = new Set();
       setReceivedCount(0);
       setPendingCount(0);
@@ -309,7 +316,7 @@ export function usePhoneUploadSession({
           cache: "no-store",
         });
 
-        if (cancelled) return;
+        if (cancelled || activeSessionIdRef.current !== session.sessionId) return;
 
         if (!response.ok) {
           // Signed out, not ours, or closed: nothing more will arrive.
@@ -318,7 +325,7 @@ export function usePhoneUploadSession({
         }
 
         const { photos } = (await response.json()) as { photos: PhoneUploadPhoto[] };
-        if (cancelled) return;
+        if (cancelled || activeSessionIdRef.current !== session.sessionId) return;
 
         // Everything not yet placed, including photos offered before and
         // turned away for lack of room: a slot may have freed up since.

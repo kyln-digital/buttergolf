@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useReducer, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import { v4 as uuidv4 } from "uuid";
 import {
   LISTING_PRICE_LIMITS,
@@ -307,6 +308,14 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   // The bare key stays reserved for a brand-new listing, which is what the
   // recovery banner offers to restore.
   const storageKey = sellStorageKey({ draftId, editProductId });
+
+  // The phone-photo session is scoped to the seller as well as the record.
+  // sessionStorage outlives a Clerk sign-out, and a new listing's key is only
+  // per tab, so without the user id a second account signing in on the same
+  // tab could restore the first account's still-valid QR code. Undefined
+  // until Clerk has loaded, which simply defers restoring the session.
+  const { userId: clerkUserId } = useAuth();
+  const phoneSessionScope = clerkUserId ? `${clerkUserId}:${storageKey}` : undefined;
 
   const [formData, setFormData, { isHydrated, clear: clearLocalDraft }] =
     useLocalStorageState<FormData>(storageKey, EMPTY_FORM_DATA, {
@@ -1010,7 +1019,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
       const product = (response.data ?? {}) as { title?: string };
       clearLocalDraft();
-      clearStoredPhoneUploadSession(storageKey);
+      if (phoneSessionScope) clearStoredPhoneUploadSession(phoneSessionScope);
 
       if (isEditingListing) {
         router.push("/seller/listings?updated=1");
@@ -1094,7 +1103,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
       // Navigate to seller listings page after saving draft
       clearLocalDraft();
-      clearStoredPhoneUploadSession(storageKey);
+      if (phoneSessionScope) clearStoredPhoneUploadSession(phoneSessionScope);
       router.push("/seller/listings");
       // Note: Don't reset isSubmittingRef here - we're navigating away
     } catch (err) {
@@ -1198,7 +1207,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                     size="$3"
                     onPress={() => {
                       clearLocalDraft();
-                      clearStoredPhoneUploadSession(storageKey);
+                      if (phoneSessionScope) clearStoredPhoneUploadSession(phoneSessionScope);
                       setUploaderEpoch((epoch) => epoch + 1);
                       setFormData(EMPTY_FORM_DATA);
                       setRecoveryDismissed(true);
@@ -1249,7 +1258,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                           key={`images-${record.generation}-${uploaderEpoch}`}
                           // Scopes the session's reload restore to this record's
                           // draft key; cleared alongside clearLocalDraft above.
-                          phoneSessionScope={storageKey}
+                          phoneSessionScope={phoneSessionScope}
                           onUploadComplete={handleImageUpload}
                           onRemoveImage={handleRemoveImage}
                           onReorderImages={handleReorderImages}

@@ -106,17 +106,21 @@ export function PhoneUploadClient() {
     };
   }, []);
 
-  // Flip to expired the moment the token stops being accepted.
-  useEffect(() => {
-    if (phase !== "ready" || expiresAt === 0) return;
-    const remainingMs = expiresAt - Date.now();
-    const id = window.setTimeout(() => setPhase("expired"), Math.max(0, remainingMs));
-    return () => window.clearTimeout(id);
-  }, [phase, expiresAt]);
-
   const remaining = Math.max(0, maxPhotos - sent.length);
   const allSent = phase === "ready" && remaining === 0;
   const busy = converting || uploading;
+
+  // Flip to expired once the token stops being accepted, but not while a
+  // photo is still being converted or sent: the server judges the token when
+  // the upload *arrives*, so an upload started before expiry can still land,
+  // and the seller should see it finish rather than have the page vanish
+  // under it. Re-armed when `busy` clears, so a late flip still happens.
+  useEffect(() => {
+    if (phase !== "ready" || expiresAt === 0 || busy) return;
+    const remainingMs = expiresAt - Date.now();
+    const id = window.setTimeout(() => setPhase("expired"), Math.max(0, remainingMs));
+    return () => window.clearTimeout(id);
+  }, [phase, expiresAt, busy]);
 
   /** Same gate as the desktop uploader: size first, then HEIC to JPEG, then crop. */
   const openCropFor = useCallback(async (file: File) => {
