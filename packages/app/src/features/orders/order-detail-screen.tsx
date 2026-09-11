@@ -468,7 +468,7 @@ export function OrderDetailScreen({
                   {step.completed ? (
                     <CheckCircle size={16} color="white" />
                   ) : (
-                    <Text size="$2" color="$textMuted">
+                    <Text size="$2" color="$textSecondary">
                       {index + 1}
                     </Text>
                   )}

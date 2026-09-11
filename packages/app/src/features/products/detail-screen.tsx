@@ -174,7 +174,7 @@ export function ProductDetailScreen({
               width="100%"
               height={400}
               objectFit="cover"
-              backgroundColor="$gray100"
+              backgroundColor="$backgroundMuted"
             />
             {/* Back button overlay */}
             <Button
@@ -486,7 +486,7 @@ export function ProductDetailScreen({
                     height={100}
                     objectFit="cover"
                     borderRadius="$md"
-                    backgroundColor="$gray100"
+                    backgroundColor="$backgroundMuted"
                   />
                 ))}
               </Row>

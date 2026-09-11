@@ -61,8 +61,12 @@ export interface SellerListingsScreenProps {
 
 type FilterTab = "all" | "active" | "sold" | "draft";
 
-type StatusColorToken = "$success" | "$primary" | "$textMuted" | "$warning";
-type StatusColorLightToken = "$successLight" | "$primaryLight" | "$gray200" | "$warningLight";
+type StatusColorToken = "$success" | "$primary" | "$textSecondary" | "$warning";
+type StatusColorLightToken =
+  | "$successLight"
+  | "$primaryLight"
+  | "$backgroundHover"
+  | "$warningLight";
 
 const statusConfig: Record<
   ListingStatus,
@@ -70,7 +74,9 @@ const statusConfig: Record<
 > = {
   ACTIVE: { label: "Active", color: "$success", bgColor: "$successLight" },
   SOLD: { label: "Sold", color: "$primary", bgColor: "$primaryLight" },
-  DRAFT: { label: "Draft", color: "$textMuted", bgColor: "$gray200" },
+  // Theme-aware fill (unlike $gray200) so the badge works in dark mode; Slate Smoke text
+  // because the 12px label needs 4.5:1 on the grey fill, which muted text misses.
+  DRAFT: { label: "Draft", color: "$textSecondary", bgColor: "$backgroundHover" },
   INACTIVE: { label: "Inactive", color: "$warning", bgColor: "$warningLight" },
 };
 
@@ -302,7 +308,9 @@ export function SellerListingsScreen({
               </Text>
               {tab.count !== undefined && tab.count > 0 && (
                 <View
-                  backgroundColor={activeFilter === tab.key ? "$overlayLight20" : "$gray200"}
+                  backgroundColor={
+                    activeFilter === tab.key ? "$overlayLight20" : "$backgroundHover"
+                  }
                   borderRadius="$full"
                   paddingHorizontal="$2"
                   minWidth={20}
@@ -380,7 +388,7 @@ export function SellerListingsScreen({
                       width={80}
                       height={80}
                       borderRadius="$md"
-                      backgroundColor="$gray100"
+                      backgroundColor="$backgroundMuted"
                       overflow="hidden"
                     >
                       {listing.images[0] && (

@@ -20,15 +20,17 @@ export function AuthLayout({ children }: AuthLayoutProps) {
       {/* Left Panel - Branding (hidden on mobile, visible on lg+) */}
       <Column
         flex={1}
+        minWidth={0}
         height="100%"
         padding="$xl"
         backgroundColor="$background"
         justifyContent="space-between"
+        position="relative"
+        overflow="hidden"
         display="none"
         $gtLg={{
           display: "flex",
         }}
-        style={{ position: "relative", overflow: "hidden" }}
       >
         {/* ButterGolf Logo */}
         <Row zIndex={20}>
@@ -45,7 +47,6 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 
         {/* Interactive Grid Pattern */}
         <InteractiveGridPattern
-          className="inset-x-0 inset-y-[0%] h-full skew-y-12"
           style={{
             maskImage: "radial-gradient(500px circle at center, white, transparent)",
             WebkitMaskImage: "radial-gradient(500px circle at center, white, transparent)",
@@ -64,6 +65,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
       {/* Right Panel - Auth Form */}
       <Column
         flex={1}
+        minWidth={0}
         height="100%"
         alignItems="center"
         justifyContent="center"

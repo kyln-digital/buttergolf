@@ -151,7 +151,7 @@ export function ListingStep({ formData, onUpdate, direction }: Readonly<ListingS
               </Text>
             </Row>
             <Row
-              backgroundColor="$pureWhite"
+              backgroundColor="$surface"
               borderWidth={2}
               borderColor={titleFocused ? "$spicedClementine" : "$cloudMist"}
               borderRadius="$xl"
@@ -196,7 +196,7 @@ export function ListingStep({ formData, onUpdate, direction }: Readonly<ListingS
               Description
             </Text>
             <Column
-              backgroundColor="$pureWhite"
+              backgroundColor="$surface"
               borderWidth={2}
               borderColor={descFocused ? "$spicedClementine" : "$cloudMist"}
               borderRadius="$xl"
@@ -251,7 +251,7 @@ export function ListingStep({ formData, onUpdate, direction }: Readonly<ListingS
               </Text>
             </Row>
             <Row
-              backgroundColor="$pureWhite"
+              backgroundColor="$surface"
               borderWidth={2}
               borderColor={priceFocused ? "$spicedClementine" : "$cloudMist"}
               borderRadius="$xl"
@@ -259,7 +259,7 @@ export function ListingStep({ formData, onUpdate, direction }: Readonly<ListingS
               overflow="hidden"
             >
               <View
-                backgroundColor="$gray100"
+                backgroundColor="$backgroundMuted"
                 paddingHorizontal="$4"
                 paddingVertical="$4"
                 borderRightWidth={1}
@@ -297,7 +297,13 @@ export function ListingStep({ formData, onUpdate, direction }: Readonly<ListingS
         </Column>
 
         {/* Pricing Tips */}
-        <Column marginTop="$6" backgroundColor="$gray100" borderRadius="$xl" padding="$4" gap="$3">
+        <Column
+          marginTop="$6"
+          backgroundColor="$backgroundMuted"
+          borderRadius="$xl"
+          padding="$4"
+          gap="$3"
+        >
           <Text fontFamily="$heading" size="$5" fontWeight="700" color="$text">
             Pricing tips
           </Text>

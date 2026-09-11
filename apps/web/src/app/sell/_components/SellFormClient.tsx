@@ -1435,7 +1435,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                             <Text
                               flex={1}
                               size="$5"
-                              color={formData.title ? "$text" : "$textMuted"}
+                              color={formData.title ? "$text" : "$textSecondary"}
                             >
                               {formData.title || "Auto-generated from fields below"}
                             </Text>
