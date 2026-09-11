@@ -61,7 +61,7 @@ function DimensionInput({
           size="$5"
           color="$text"
         />
-        <Text size="$3" color="$textMuted">
+        <Text size="$3" color="$textSecondary">
           {unit}
         </Text>
       </Row>
