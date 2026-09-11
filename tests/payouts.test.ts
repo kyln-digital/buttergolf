@@ -259,8 +259,19 @@ describe("classifyPayoutRequirement", () => {
     expect(classifyPayoutRequirement("business_profile.url")).toBe("details");
   });
 
+  it("routes only the business_profile fields the details endpoint sets", () => {
+    expect(classifyPayoutRequirement("business_profile.mcc")).toBe("details");
+    expect(classifyPayoutRequirement("business_profile.product_description")).toBe("details");
+    // Anything else in the namespace must reach Stripe's component, not loop on our form.
+    expect(classifyPayoutRequirement("business_profile.support_phone")).toBe("verification");
+    expect(classifyPayoutRequirement("business_profile.support_email")).toBe("verification");
+  });
+
   it("sends anything it doesn't recognise to Stripe rather than guessing", () => {
     expect(classifyPayoutRequirement("company.tax_id")).toBe("verification");
+    expect(classifyPayoutRequirement("settings.payments.statement_descriptor")).toBe(
+      "verification"
+    );
     expect(classifyPayoutRequirement("something.brand.new")).toBe("verification");
   });
 });

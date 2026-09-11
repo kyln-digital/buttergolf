@@ -63,6 +63,7 @@ import {
   Text as RNText,
   Pressable as RNPressable,
   Alert,
+  KeyboardAvoidingView,
   Linking,
   Platform,
   useColorScheme,
@@ -103,9 +104,9 @@ import {
   unregisterPushTokenFromBackend,
   clearStoredPushToken,
 } from "./lib/notifications";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { PortalProvider } from "@tamagui/portal";
-import { Button, Text } from "@buttergolf/ui";
+import { Button, ScrollView, Text } from "@buttergolf/ui";
 import { useState, useEffect, useCallback } from "react";
 import { useFonts } from "expo-font";
 import * as ImagePicker from "expo-image-picker";
@@ -1153,6 +1154,7 @@ function PayoutSetupScreenWrapper({
 }) {
   const { getToken } = useAuth();
   const apiUrl = API_URL;
+  const insets = useSafeAreaInsets();
   const { refresh: refreshSellerStatus } = useSellerStatusContext();
 
   const { fetchStatus, submitDetails, submitBankAccount, createBankAccountToken } =
@@ -1180,20 +1182,39 @@ function PayoutSetupScreenWrapper({
     });
   }, [refreshSellerStatus, navigation]);
 
+  // The shared screen is a plain Column; on a phone the details form runs
+  // past the fold and the keyboard covers the lower fields, so the host
+  // supplies scrolling, keyboard avoidance and safe-area padding.
   return (
-    <PayoutSetupScreen
-      showHeader
-      initialStep={initialStep}
-      fetchStatus={fetchStatus}
-      submitDetails={submitDetails}
-      submitBankAccount={submitBankAccount}
-      createBankAccountToken={createBankAccountToken}
-      renderVerification={renderVerification}
-      termsHref="/terms-of-service"
-      onOpenLink={handleOpenLink}
-      onComplete={handleComplete}
-      onExit={() => navigation.goBack()}
-    />
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <ScrollView
+        flex={1}
+        backgroundColor="$background"
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{
+          paddingTop: insets.top + 8,
+          paddingBottom: insets.bottom + 32,
+          paddingHorizontal: 16,
+        }}
+      >
+        <PayoutSetupScreen
+          showHeader
+          initialStep={initialStep}
+          fetchStatus={fetchStatus}
+          submitDetails={submitDetails}
+          submitBankAccount={submitBankAccount}
+          createBankAccountToken={createBankAccountToken}
+          renderVerification={renderVerification}
+          termsHref="/terms-of-service"
+          onOpenLink={handleOpenLink}
+          onComplete={handleComplete}
+          onExit={() => navigation.goBack()}
+        />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

@@ -1,4 +1,5 @@
 import type Stripe from "stripe";
+import { after } from "next/server";
 import { prisma } from "@buttergolf/db";
 import {
   noPayoutAccountStatus,
@@ -275,8 +276,12 @@ export async function ensureConnectAccount({
     },
   });
 
-  await prisma.user.update({
-    where: { id: user.id },
+  // Publishing a listing and opening payout setup can overlap while the user
+  // still has no account, and both callers will reach this point. Only the
+  // first to write wins; the loser discards the account it just made so the
+  // seller's details never end up split across two.
+  const claimed = await prisma.user.updateMany({
+    where: { id: user.id, stripeConnectId: null },
     data: {
       stripeConnectId: account.id,
       stripeAccountType: "platform_managed",
@@ -285,21 +290,45 @@ export async function ensureConnectAccount({
     },
   });
 
+  if (claimed.count === 0) {
+    const winner = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { stripeConnectId: true },
+    });
+    if (winner?.stripeConnectId && winner.stripeConnectId !== account.id) {
+      console.warn(
+        `[Stripe Connect] Lost creation race for user ${user.id}: keeping ${winner.stripeConnectId}, deleting ${account.id}`
+      );
+      await stripe.accounts.del(account.id).catch((error) => {
+        console.error(`[Stripe Connect] Could not delete orphaned account ${account.id}:`, error);
+      });
+      return winner.stripeConnectId;
+    }
+  }
+
   console.info(`[Stripe Connect] Created account ${account.id} for user ${user.id}`);
   return account.id;
 }
 
 /**
- * Fire-and-forget variant for the listing publish path: never throws, never
- * blocks the response. A failure here just means the account is created later
- * when the seller opens payout setup.
+ * Non-blocking variant for the listing publish path. Runs after the response
+ * is sent via Next's `after()`, which keeps the serverless invocation alive
+ * until the work finishes — a detached promise would be cut off on Vercel the
+ * moment the response went out, leaving a Stripe account with no row pointing
+ * at it. Never throws; a failure just means the account is created later when
+ * the seller opens payout setup. Must be called from a request scope (a route
+ * handler or server action).
  */
 export function ensureConnectAccountInBackground(options: EnsureConnectAccountOptions): void {
-  void ensureConnectAccount(options).catch((error) => {
-    console.error(
-      `[Stripe Connect] Background account creation failed for user ${options.userId}:`,
-      error
-    );
+  after(async () => {
+    try {
+      await ensureConnectAccount(options);
+    } catch (error) {
+      console.error(
+        `[Stripe Connect] Background account creation failed for user ${options.userId}:`,
+        error
+      );
+    }
   });
 }
 

@@ -57,6 +57,14 @@ export default function MobileOnboardingPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const apiUrl = searchParams.get("apiUrl") || "";
+  /**
+   * `?mode=verification` is what the current app passes: it has its own
+   * native details and bank form, so this page only needs to collect the
+   * identity checks Stripe insists on. Without it (binaries shipped before the
+   * native form existed) this page is the seller's entire payout setup and
+   * must run Stripe's full onboarding as it always did.
+   */
+  const verificationOnly = searchParams.get("mode") === "verification";
 
   const [stripeConnectInstance, setStripeConnectInstance] = useState<StripeConnectInstance | null>(
     null
@@ -108,29 +116,38 @@ export default function MobileOnboardingPage() {
       // If apiUrl is provided, use it; otherwise use relative path (same origin)
       const baseUrl = apiUrl || "";
 
-      // Ask our own API what Stripe still wants from its UI before loading
-      // anything. If the answer is "nothing", the seller has no business
-      // seeing Stripe's form and we hand them straight back to the app.
-      try {
-        const statusResponse = await fetch(`${baseUrl}/api/stripe/connect/status`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+      // Verification mode: ask our own API what Stripe still wants from its
+      // UI before loading anything. If the answer is "nothing", the seller has
+      // no business seeing Stripe's form and we hand them straight back.
+      // Legacy mode skips this — the seller may have no account yet and needs
+      // the full flow.
+      if (verificationOnly) {
+        try {
+          const statusResponse = await fetch(`${baseUrl}/api/stripe/connect/status`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
 
-        if (statusResponse.ok) {
-          const status = (await statusResponse.json()) as Pick<PayoutStatus, "verificationFields">;
-          const fields = Array.isArray(status?.verificationFields) ? status.verificationFields : [];
+          if (statusResponse.ok) {
+            const status = (await statusResponse.json()) as Pick<
+              PayoutStatus,
+              "verificationFields"
+            >;
+            const fields = Array.isArray(status?.verificationFields)
+              ? status.verificationFields
+              : [];
 
-          if (fields.length === 0) {
-            returnToApp("complete");
-            return;
+            if (fields.length === 0) {
+              returnToApp("complete");
+              return;
+            }
+
+            setVerificationFields(fields);
           }
-
-          setVerificationFields(fields);
+        } catch (statusError) {
+          // Reading the status is an optimisation, not a precondition: if it
+          // fails we still load the component, just against currently_due.
+          console.warn("[MobileOnboarding] Could not read payout status:", statusError);
         }
-      } catch (statusError) {
-        // Reading the status is an optimisation, not a precondition: if it
-        // fails we still load the component, just against currently_due.
-        console.warn("[MobileOnboarding] Could not read payout status:", statusError);
       }
 
       const instance = loadConnectAndInitialize({
@@ -175,7 +192,7 @@ export default function MobileOnboardingPage() {
       setLoading(false);
       postMessageToRN({ type: "error", message: errorMsg });
     }
-  }, [token, apiUrl, returnToApp]);
+  }, [token, apiUrl, verificationOnly, returnToApp]);
 
   // Initialize on mount - only runs once due to dependency array
   useEffect(() => {
@@ -192,10 +209,10 @@ export default function MobileOnboardingPage() {
     returnToApp("exit");
   }, [returnToApp]);
 
-  // Auto-return to the app once Stripe has nothing left to ask for, so the
-  // seller doesn't have to hunt for a close button. Anything still due that we
-  // can collect ourselves is the native form's job, not this page's — so the
-  // test is verificationFields, not the account being fully enabled.
+  // Auto-return to the app once there is nothing left to collect here, so the
+  // seller doesn't have to hunt for a close button. In verification mode that
+  // means Stripe has no verification fields left (anything else is the native
+  // form's job); in legacy mode it means nothing at all is left to collect.
   useEffect(() => {
     if (!token || loading) return;
 
@@ -212,8 +229,14 @@ export default function MobileOnboardingPage() {
 
         if (!response.ok) return;
 
-        const status = (await response.json()) as Pick<PayoutStatus, "verificationFields">;
-        if (Array.isArray(status?.verificationFields) && status.verificationFields.length === 0) {
+        const status = (await response.json()) as Pick<
+          PayoutStatus,
+          "verificationFields" | "needsDetails" | "needsBankAccount" | "needsVerification"
+        >;
+        const nothingLeftHere = verificationOnly
+          ? Array.isArray(status?.verificationFields) && status.verificationFields.length === 0
+          : !status?.needsDetails && !status?.needsBankAccount && !status?.needsVerification;
+        if (nothingLeftHere) {
           returnToApp("complete");
         }
       } catch {
@@ -224,7 +247,7 @@ export default function MobileOnboardingPage() {
     return () => {
       window.clearInterval(interval);
     };
-  }, [token, loading, apiUrl, returnToApp]);
+  }, [token, loading, apiUrl, verificationOnly, returnToApp]);
 
   // Loading state
   if (loading) {
@@ -288,13 +311,24 @@ export default function MobileOnboardingPage() {
           onExit={handleExit}
           onStepChange={handleStepChange}
           collectionOptions={{
-            // Verification fallback: collect only what is currently due, and
-            // only the requirements our own form cannot satisfy. Everything
-            // else — name, date of birth, address, phone, bank details — has
-            // already been pushed to Stripe natively by PayoutSetupScreen.
             fields: "currently_due",
             futureRequirements: "omit",
-            ...(verificationFields ? { requirements: { only: verificationFields } } : {}),
+            ...(verificationOnly && verificationFields
+              ? // Verification fallback: only the requirements our own form
+                // cannot satisfy. Name, date of birth, address, phone and bank
+                // details were already pushed natively by PayoutSetupScreen.
+                { requirements: { only: verificationFields } }
+              : // Legacy full onboarding: keep the seller type fixed and hide
+                // the business-profile fields we prefill.
+                {
+                  requirements: {
+                    exclude: [
+                      "business_type",
+                      "business_profile.url",
+                      "business_profile.product_description",
+                    ],
+                  },
+                }),
           }}
         />
       </ConnectComponentsProvider>

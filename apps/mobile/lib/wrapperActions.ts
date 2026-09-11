@@ -169,9 +169,12 @@ export function useStripeVerificationWebView(
         throw new Error("Failed to create verification session");
       }
 
+      // `mode=verification` restricts Stripe's component to the identity
+      // checks our native form can't collect. Without it the page runs the
+      // full onboarding, which is what already-shipped binaries expect.
       const verificationUrl = `${apiUrl}/mobile-onboarding?token=${encodeURIComponent(
         session.token
-      )}&apiUrl=${encodeURIComponent(apiUrl)}`;
+      )}&apiUrl=${encodeURIComponent(apiUrl)}&mode=verification`;
       const WebBrowser = await import("expo-web-browser");
       const result = await WebBrowser.openAuthSessionAsync(
         verificationUrl,

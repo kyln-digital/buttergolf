@@ -71,8 +71,13 @@ export async function POST(request: Request) {
           phone: details.phone,
           ...(user.email ? { email: user.email } : {}),
         },
+        // Every business_profile field classifyPayoutRequirement routes to this
+        // step must be set here, or a seller could loop on a form that can't
+        // satisfy what Stripe is asking for.
         business_profile: {
           url: `${getBaseUrl()}/seller/${user.id}`,
+          mcc: "5941", // Sporting goods
+          product_description: "Second-hand golf equipment sold on the ButterGolf marketplace",
         },
         // Stripe expects a fresh acceptance whenever the platform collects
         // updated information on the account holder's behalf.

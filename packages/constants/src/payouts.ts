@@ -158,13 +158,18 @@ export interface BankAccountTokenInput {
  */
 export type PayoutRequirementBucket = "details" | "bank" | "verification";
 
+/**
+ * Exactly the requirements POST /api/stripe/connect/setup/details can
+ * satisfy. Anything else — a new business_profile or settings field Stripe
+ * starts asking for, say — must fall through to the verification bucket so the
+ * seller reaches Stripe's component instead of a form that can't submit it.
+ */
 const DETAILS_REQUIREMENT_PATTERNS: RegExp[] = [
   /^individual\.(first_name|last_name|email|phone)$/,
   /^individual\.dob\./,
   /^individual\.address\./,
-  /^business_profile\./,
+  /^business_profile\.(url|mcc|product_description)$/,
   /^tos_acceptance\./,
-  /^settings\./,
 ];
 
 export function classifyPayoutRequirement(field: string): PayoutRequirementBucket {
