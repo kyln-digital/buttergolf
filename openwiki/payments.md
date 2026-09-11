@@ -9,8 +9,9 @@ ButterGolf uses **Stripe Connect** with the **Separate Charges and Transfers** p
 ## How It Works
 
 ```
-SELLER:  Sign Up → List Product → Product Sells → Ship Item → Onboard Stripe → Receive Funds
-         (Clerk)    (No Stripe)   (No Stripe)     (No Stripe)  (When ready)    (Transfer)
+SELLER:  Sign Up → List Product ───────→ Product Sells → Ship Item → Add Payout Details → Receive Funds
+         (Clerk)    (Connect account       (No Stripe)     (No Stripe)  (Our own form,        (Transfer)
+                     created silently)                                   never a Stripe form)
 
 BUYER:   Browse → Purchase → Receive Item → Confirm Receipt
                     (Stripe       (Shipping)    (Triggers fund release)
@@ -21,9 +22,9 @@ Payment goes to PLATFORM account (escrow). Buyer never interacts with seller's S
 
 ## Payment Lifecycle
 
-### Step 1: Listing (No Stripe Required)
+### Step 1: Listing (No Seller-Facing Stripe)
 
-A seller creates a listing immediately after signing up with Clerk. Zero Stripe checks.
+A seller creates a listing immediately after signing up with Clerk. Nothing is gated on Stripe. The first time a listing is _published_ (`POST /api/products` with `isDraft: false`, or a draft flipped live by `PATCH /api/seller/products/[id]`), `ensureConnectAccountInBackground()` creates the connected account silently — fire-and-forget, so a Stripe outage can never fail a publish — and records the seller's terms acceptance (date, IP, user agent) from that very request. The publish button carries the consent copy that makes this acceptance real.
 
 ### Step 2: Purchase (Escrow to Platform)
 
@@ -64,7 +65,7 @@ Daily Vercel cron (`/api/cron/release-payments`, 03:00 UTC) auto-releases orders
 
 ### Step 6: Deferred Transfer
 
-When seller completes onboarding, the Stripe Connect `account.updated` webhook triggers `processPendingTransfersForSeller()` — releasing all held funds for that seller.
+When a seller's payout setup completes, the Stripe Connect `account.updated` webhook derives the status with `deriveConnectStatus()` and, once `isComplete`, triggers `processPendingTransfersForSeller()` — releasing all held funds for that seller.
 
 ## Payment Hold Statuses
 
@@ -86,9 +87,13 @@ When seller completes onboarding, the Stripe Connect `account.updated` webhook t
 | `POST /api/checkout/create-payment-intent`            | Create PaymentIntent (mobile/custom flow)                            |
 | `POST /api/stripe/webhook`                            | Stripe payment webhook (checkout completed, payment failed, etc.)    |
 | `POST /api/stripe/connect/webhook`                    | Stripe Connect webhook (account.updated → process pending transfers) |
-| `POST /api/stripe/connect/account-session`            | Create embedded component session for seller onboarding              |
-| `POST /api/stripe/connect/mobile-onboard`             | Mobile onboarding flow                                               |
-| `POST /api/stripe/connect/mobile-session`             | Mobile session token for Stripe onboarding                           |
+| `GET /api/stripe/connect/status`                      | Unified `PayoutStatus` — the one derivation every surface reads      |
+| `POST /api/stripe/connect/setup/details`              | Our own form, step 1: name, DOB, address, phone → `accounts.update`  |
+| `POST /api/stripe/connect/setup/bank-account`         | Our own form, step 2: a `btok_` from client-side tokenisation        |
+| `GET /api/stripe/connect/payouts`                     | Connected-account balance + recent payouts for the seller money page |
+| `POST /api/stripe/connect/account`                    | AccountSession for the embedded component (verification fallback)    |
+| `GET /api/stripe/connect/account`                     | Same payload as `/status`, kept for existing callers                 |
+| `POST /api/stripe/connect/mobile-session`             | Mobile session token for the WebView onboarding page                 |
 | `POST /api/orders/[id]/confirm-receipt`               | Buyer confirms delivery → triggers fund release                      |
 | `GET /api/orders/by-session/[sessionId]`              | Order lookup by Stripe checkout session                              |
 | `GET /api/orders/by-payment-intent/[paymentIntentId]` | Order lookup by PaymentIntent                                        |
@@ -147,13 +152,25 @@ Mobile uses a different checkout flow than web:
 
 ## Stripe Onboarding Configuration
 
-Stripe Connect Embedded Components with `controller` settings:
+Stripe Connect is invisible to sellers. There is no "onboard with Stripe" step — there is a ButterGolf form.
 
-- `stripe_dashboard: "none"` — sellers don't see Stripe dashboard
-- `fees: "application"` — platform handles fees
-- `losses: "application"` — platform bears losses
-- `requirement_collection: "application"` — platform collects requirements
-- Capabilities: `card_payments` + `transfers`
-- Country: GB
+**Account creation** (`ensureConnectAccount()` in `apps/web/src/lib/stripe-connect.ts`) happens silently on first listing publish, or on the first call to any payout route. `controller` settings:
+
+- `stripe_dashboard: "none"` — sellers have no Stripe Dashboard
+- `requirement_collection: "application"` — we collect requirements, which is what lets our terms carry the Stripe agreement and lets us set `disable_stripe_user_authentication`
+- `losses: { payments: "application" }` and `fees: { payer: "application" }` — required alongside the above
+- Capabilities: **`transfers` only**. Buyers pay the platform (separate charges and transfers), so sellers never take card payments; requesting `card_payments` would add requirements for a capability nobody uses.
+- Country: GB, `business_type: "individual"`
+
+**Terms acceptance** is recorded as `tos_acceptance` (date + client IP + user agent) taken from the seller's own request — the publish that created the account, and again on each details submission, since Stripe expects re-acceptance when the platform collects updated information. The consent copy sits under the publish button and section 6 of `/terms-of-service` incorporates the Stripe Connected Account Agreement.
+
+**Collection** is ours:
+
+- `POST /api/stripe/connect/setup/details` — validated by `validatePayoutDetails()` (`packages/constants/src/payouts.ts`), pushed via `accounts.update`. The date of birth goes to Stripe and is never stored by us; the phone, name and address are mirrored onto `User` and the default `Address`.
+- `POST /api/stripe/connect/setup/bank-account` — takes a `btok_` tokenised in the client, so raw sort code and account number never reach our server. Attaching one replaces the previous default GBP bank account.
+
+**The embedded component is a fallback only.** `POST /api/stripe/connect/account` returns an AccountSession for requirements Stripe will only accept through its own UI (identity document, proof of liveness). Callers restrict it with `collectionOptions.requirements.only` using `PayoutStatus.verificationFields`, which `classifyPayoutRequirement()` populates — anything unrecognised is routed there rather than guessed at.
+
+**One status derivation.** `deriveConnectStatus()` (`apps/web/src/lib/stripe-connect-status.ts`, pure and unit-tested in `tests/stripe-connect-status.test.ts`) is read by `/api/stripe/connect/status`, `/api/users/seller-status`, the Connect webhook and the account route alike. `User.stripeOnboardingComplete` now means **payouts enabled + `transfers` capability active + nothing currently due** — not `details_submitted`.
 
 **Key constraint**: 90-day fund-hold limit for non-US (GBP) platforms. `source_transaction` is used on all transfers to earmark specific charge funds.

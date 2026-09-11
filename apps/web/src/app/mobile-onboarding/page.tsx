@@ -7,12 +7,19 @@ import { loadConnectAndInitialize } from "@stripe/connect-js";
 import { ConnectAccountOnboarding, ConnectComponentsProvider } from "@stripe/react-connect-js";
 import { brandColors } from "@buttergolf/config";
 import type { StripeConnectInstance, StepChange } from "@stripe/connect-js";
+import type { PayoutStatus } from "@buttergolf/constants";
 
 /**
- * Mobile Onboarding Page
+ * Mobile verification fallback
  *
- * This page is loaded inside a WebView in the mobile app to provide
- * the Stripe Connect embedded onboarding experience.
+ * Payout setup is native: the mobile app's PayoutSetupScreen collects the
+ * seller's name, date of birth, address, phone and bank details and pushes
+ * them to Stripe itself. This page exists only for what is left — an ID
+ * document, proof of liveness, anything Stripe insists on collecting in its
+ * own UI — so it loads the embedded onboarding component restricted to exactly
+ * the requirements /api/stripe/connect/status reports as outstanding
+ * (`verificationFields`). When nothing is outstanding it returns to the app
+ * without showing Stripe's form at all.
  *
  * Communication with React Native:
  * - Receives short-lived mobile session token via URL query param: ?token=xxx
@@ -50,17 +57,40 @@ export default function MobileOnboardingPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const apiUrl = searchParams.get("apiUrl") || "";
+  /**
+   * `?mode=verification` is what the current app passes: it has its own
+   * native details and bank form, so this page only needs to collect the
+   * identity checks Stripe insists on. Without it (binaries shipped before the
+   * native form existed) this page is the seller's entire payout setup and
+   * must run Stripe's full onboarding as it always did.
+   */
+  const verificationOnly = searchParams.get("mode") === "verification";
 
   const [stripeConnectInstance, setStripeConnectInstance] = useState<StripeConnectInstance | null>(
     null
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * The requirements to hand Stripe's component, from the status endpoint.
+   * `null` means we could not read the status, in which case we fall back to
+   * whatever Stripe says is currently due.
+   */
+  const [verificationFields, setVerificationFields] = useState<string[] | null>(null);
   const hasRedirectedRef = useRef(false);
 
   // Signal ready to React Native
   useEffect(() => {
     postMessageToRN({ type: "ready" });
+  }, []);
+
+  const returnToApp = useCallback((reason: "complete" | "exit") => {
+    if (hasRedirectedRef.current) return;
+    hasRedirectedRef.current = true;
+
+    const deepLink = `buttergolf://seller/onboarding/complete?reason=${reason}`;
+    postMessageToRN({ type: "exit", success: true, reason });
+    window.location.href = deepLink;
   }, []);
 
   const initializeOnboarding = useCallback(async () => {
@@ -85,6 +115,43 @@ export default function MobileOnboardingPage() {
       // Determine the API base URL
       // If apiUrl is provided, use it; otherwise use relative path (same origin)
       const baseUrl = apiUrl || "";
+
+      // Verification mode: ask our own API what Stripe still wants from its
+      // UI before loading anything. If the answer is "nothing", the seller has
+      // no business seeing Stripe's form and we hand them straight back.
+      // Legacy mode skips this — the seller may have no account yet and needs
+      // the full flow.
+      // This fails closed: without a known list of verification fields we
+      // would mount Stripe's unrestricted form and start re-collecting
+      // details the native flow owns, so a failed status read is an error
+      // with a retry, never a fallback to the full flow.
+      if (verificationOnly) {
+        let fields: string[];
+        try {
+          const statusResponse = await fetch(`${baseUrl}/api/stripe/connect/status`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!statusResponse.ok) {
+            throw new Error(`Status request failed (${statusResponse.status})`);
+          }
+          const status = (await statusResponse.json()) as Pick<PayoutStatus, "verificationFields">;
+          fields = Array.isArray(status?.verificationFields) ? status.verificationFields : [];
+        } catch (statusError) {
+          console.error("[MobileOnboarding] Could not read payout status:", statusError);
+          const errorMsg = "We couldn't check what's still needed. Please try again.";
+          setError(errorMsg);
+          setLoading(false);
+          postMessageToRN({ type: "error", message: errorMsg });
+          return;
+        }
+
+        if (fields.length === 0) {
+          returnToApp("complete");
+          return;
+        }
+
+        setVerificationFields(fields);
+      }
 
       const instance = loadConnectAndInitialize({
         publishableKey,
@@ -128,25 +195,16 @@ export default function MobileOnboardingPage() {
       setLoading(false);
       postMessageToRN({ type: "error", message: errorMsg });
     }
-  }, [token, apiUrl]);
+  }, [token, apiUrl, verificationOnly, returnToApp]);
 
   // Initialize on mount - only runs once due to dependency array
   useEffect(() => {
     // Use void to indicate intentional fire-and-forget
-    void initializeOnboarding(); // eslint-disable-line react-hooks/set-state-in-effect -- Async initialization
+    void initializeOnboarding();
   }, [initializeOnboarding]);
 
   const handleStepChange = useCallback((stepChange: StepChange) => {
     postMessageToRN({ type: "step_change", step: stepChange.step });
-  }, []);
-
-  const returnToApp = useCallback((reason: "complete" | "exit") => {
-    if (hasRedirectedRef.current) return;
-    hasRedirectedRef.current = true;
-
-    const deepLink = `buttergolf://seller/onboarding/complete?reason=${reason}`;
-    postMessageToRN({ type: "exit", success: true, reason });
-    window.location.href = deepLink;
   }, []);
 
   const handleExit = useCallback(() => {
@@ -154,8 +212,10 @@ export default function MobileOnboardingPage() {
     returnToApp("exit");
   }, [returnToApp]);
 
-  // Auto-return to app once Stripe marks details as submitted.
-  // This handles the "Account onboarded" state without requiring the user to manually close.
+  // Auto-return to the app once there is nothing left to collect here, so the
+  // seller doesn't have to hunt for a close button. In verification mode that
+  // means Stripe has no verification fields left (anything else is the native
+  // form's job); in legacy mode it means nothing at all is left to collect.
   useEffect(() => {
     if (!token || loading) return;
 
@@ -164,8 +224,7 @@ export default function MobileOnboardingPage() {
       if (hasRedirectedRef.current) return;
 
       try {
-        const response = await fetch(`${baseUrl}/api/stripe/connect/account`, {
-          method: "GET",
+        const response = await fetch(`${baseUrl}/api/stripe/connect/status`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -173,8 +232,14 @@ export default function MobileOnboardingPage() {
 
         if (!response.ok) return;
 
-        const data = await response.json();
-        if (data?.onboardingComplete) {
+        const status = (await response.json()) as Pick<
+          PayoutStatus,
+          "verificationFields" | "needsDetails" | "needsBankAccount" | "needsVerification"
+        >;
+        const nothingLeftHere = verificationOnly
+          ? Array.isArray(status?.verificationFields) && status.verificationFields.length === 0
+          : !status?.needsDetails && !status?.needsBankAccount && !status?.needsVerification;
+        if (nothingLeftHere) {
           returnToApp("complete");
         }
       } catch {
@@ -185,7 +250,7 @@ export default function MobileOnboardingPage() {
     return () => {
       window.clearInterval(interval);
     };
-  }, [token, loading, apiUrl, returnToApp]);
+  }, [token, loading, apiUrl, verificationOnly, returnToApp]);
 
   // Loading state
   if (loading) {
@@ -194,7 +259,7 @@ export default function MobileOnboardingPage() {
         <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         <div style={styles.loadingContainer}>
           <div style={styles.spinner} />
-          <p style={styles.loadingText}>Setting up your seller account...</p>
+          <p style={styles.loadingText}>Checking what Stripe still needs...</p>
         </div>
       </div>
     );
@@ -249,19 +314,24 @@ export default function MobileOnboardingPage() {
           onExit={handleExit}
           onStepChange={handleStepChange}
           collectionOptions={{
-            // First-pass onboarding: collect only currently due requirements.
-            // This reduces late surprises and keeps the initial flow shorter.
             fields: "currently_due",
             futureRequirements: "omit",
-            // Keep seller type fixed to individual for ButterGolf's current seller model.
-            // Hide business profile fields for individual sellers to avoid irrelevant UX.
-            requirements: {
-              exclude: [
-                "business_type",
-                "business_profile.url",
-                "business_profile.product_description",
-              ],
-            },
+            ...(verificationOnly && verificationFields
+              ? // Verification fallback: only the requirements our own form
+                // cannot satisfy. Name, date of birth, address, phone and bank
+                // details were already pushed natively by PayoutSetupScreen.
+                { requirements: { only: verificationFields } }
+              : // Legacy full onboarding: keep the seller type fixed and hide
+                // the business-profile fields we prefill.
+                {
+                  requirements: {
+                    exclude: [
+                      "business_type",
+                      "business_profile.url",
+                      "business_profile.product_description",
+                    ],
+                  },
+                }),
           }}
         />
       </ConnectComponentsProvider>

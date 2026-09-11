@@ -1,23 +1,30 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import type { PayoutAccountStatus, PayoutStatus } from "@buttergolf/constants";
 
 /**
- * Seller status as returned by the /api/users/seller-status endpoint
+ * Seller status as returned by the /api/users/seller-status endpoint.
+ *
+ * Listing never requires Stripe; every flag here is about whether the seller
+ * can be *paid*. The flat keys are kept for app binaries already in the wild;
+ * `payoutStatus` carries the full picture for newer screens.
  */
 export interface SellerStatus {
   /** Whether user has a Stripe Connect account */
   hasAccount: boolean;
-  /** Whether Stripe onboarding is complete */
+  /** Payouts enabled, transfers active and nothing outstanding */
   onboardingComplete: boolean;
-  /** Whether user can create listings (onboarding complete + charges enabled) */
+  /** Same as onboardingComplete — the seller is fully set up to be paid */
   isReadyToSell: boolean;
-  /** Account status: pending, active, or restricted */
-  accountStatus: "pending" | "active" | "restricted" | null;
-  /** Whether the account can accept payments */
+  /** Coarse payout account state; null before the first fetch */
+  accountStatus: PayoutAccountStatus | null;
+  /** Transfers capability active (sellers never take card payments) */
   chargesEnabled: boolean;
   /** Whether the account can receive payouts */
   payoutsEnabled: boolean;
-  /** Outstanding requirements from Stripe */
+  /** Currently-due requirement names from Stripe */
   requirements?: string[];
+  /** The full payout status DTO (absent on very old server builds) */
+  payoutStatus?: PayoutStatus;
 }
 
 export interface UseSellerStatusOptions {

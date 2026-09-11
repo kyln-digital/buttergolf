@@ -126,8 +126,8 @@ Sellers onboard with Stripe Connect **only when they need to receive funds** —
 
 API routes:
 
-- `POST /api/stripe/connect/account-session` — create embedded component session
-- `POST /api/stripe/connect/mobile-onboard` — mobile onboarding flow
+- `POST /api/stripe/connect/setup/details` / `setup/bank-account` — ButterGolf's own payout form
+- `GET /api/stripe/connect/status` — unified payout status
 - `POST /api/stripe/connect/mobile-session` — mobile session token
 - `POST /api/stripe/connect/webhook` — Connect webhook (`account.updated` triggers pending transfer processing)
 - `GET /api/users/seller-status` — check onboarding status

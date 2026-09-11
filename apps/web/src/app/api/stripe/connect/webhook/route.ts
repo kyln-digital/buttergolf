@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@buttergolf/db";
 import Stripe from "stripe";
+import { deriveConnectStatus, syncConnectStatus } from "@/lib/stripe-connect";
 
 /**
  * POST /api/stripe/connect/webhook
@@ -15,8 +16,9 @@ import Stripe from "stripe";
  * - capability.updated: Track capability status changes
  * - person.updated: Track person verification status
  *
- * For Fully Embedded Connect integrations, this webhook stores requirements
- * data to enable the notification banner to function properly.
+ * Status is derived with the same `deriveConnectStatus` the status routes use,
+ * so webhook- and poll-driven updates agree; the stored requirements feed our
+ * own payout banner in the seller dashboard.
  */
 export async function POST(req: Request) {
   try {
@@ -145,113 +147,37 @@ export async function POST(req: Request) {
 }
 
 /**
- * Handle account.updated events
- * Syncs the Connect account status to our database using V2 API
+ * Sync a connected account's state to our database.
+ *
+ * The derivation is shared with the status routes (`deriveConnectStatus`), so
+ * webhook-driven and poll-driven updates can never disagree about whether a
+ * seller can be paid. `stripeOnboardingComplete` means payouts enabled,
+ * transfers capability active and nothing currently due.
  */
 async function handleAccountUpdated(account: Stripe.Account) {
-  try {
-    // Find user by Connect account ID
-    const user = await prisma.user.findUnique({
-      where: { stripeConnectId: account.id },
-    });
-
-    if (!user) {
-      console.warn(`User not found for Stripe account: ${account.id}`);
-      return;
-    }
-
-    // Fetch full account details from V2 API for accurate status
-    const response = await fetch(
-      `https://api.stripe.com/v2/core/accounts/${account.id}?include=configuration.merchant&include=requirements`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
-          "Stripe-Version": "2025-04-30.preview",
-        },
-      }
-    );
-
-    if (!response.ok) {
-      console.error(`Failed to fetch V2 account details: ${response.status}`);
-      // Fallback to V1 data from webhook event
-      return handleV1AccountUpdate(user.id, account);
-    }
-
-    const v2Account = await response.json();
-
-    // Determine account status from V2 API
-    const currentlyDue = v2Account.requirements?.currently_due || [];
-    const hasNoDue = currentlyDue.length === 0;
-    const cardPaymentsActive =
-      v2Account.configuration?.merchant?.capabilities?.card_payments?.status === "active";
-    const transfersActive =
-      v2Account.configuration?.merchant?.capabilities?.transfers?.status === "active";
-
-    let status = "pending";
-    if (hasNoDue && cardPaymentsActive && transfersActive) {
-      status = "active";
-    } else if (hasNoDue) {
-      status = "restricted"; // No requirements due but capabilities not fully active
-    }
-
-    // Extract requirements deadline if present
-    let requirementsDeadline: Date | null = null;
-    if (v2Account.requirements?.current_deadline) {
-      requirementsDeadline = new Date(v2Account.requirements.current_deadline * 1000);
-    }
-
-    // Update user record with requirements data for notification banner
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        stripeOnboardingComplete: hasNoDue,
-        stripeAccountStatus: status,
-        stripeRequirementsDue: currentlyDue.length > 0 ? currentlyDue : null,
-        stripeRequirementsDeadline: requirementsDeadline,
-      },
-    });
-
-    console.info(
-      `Updated user ${user.id} Connect status: ${status}, requirements: ${currentlyDue.length} (V2 API)`
-    );
-
-    // If seller just became fully onboarded, process any pending transfers
-    // Check capabilities directly rather than relying on derived status
-    if (cardPaymentsActive && transfersActive) {
-      await processPendingTransfersForSeller(user.id, account.id);
-    }
-
-    // Sync address from Stripe to database
-    await syncAddressFromStripe(user.id, account);
-  } catch (error) {
-    console.error("Error updating user from webhook:", error);
-    throw error;
-  }
-}
-
-/**
- * Fallback handler using V1 account data from webhook
- */
-async function handleV1AccountUpdate(userId: string, account: Stripe.Account) {
-  let status = "pending";
-  if (account.details_submitted && account.charges_enabled && account.payouts_enabled) {
-    status = "active";
-  } else if (account.details_submitted) {
-    status = "restricted";
-  }
-
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      stripeOnboardingComplete: account.details_submitted || false,
-      stripeAccountStatus: status,
-    },
+  const user = await prisma.user.findUnique({
+    where: { stripeConnectId: account.id },
+    select: { id: true },
   });
 
-  console.info(`Updated user ${userId} Connect status: ${status} (V1 fallback)`);
+  if (!user) {
+    console.warn(`User not found for Stripe account: ${account.id}`);
+    return;
+  }
 
-  // Sync address from Stripe to database
-  await syncAddressFromStripe(userId, account);
+  const summary = deriveConnectStatus(account);
+  await syncConnectStatus(user.id, summary);
+
+  console.info(
+    `Updated user ${user.id} Connect status: ${summary.status}, complete=${summary.isComplete}, requirements: ${summary.requirements.currentlyDue.length}`
+  );
+
+  // Newly payable seller: drain anything that was waiting on their setup.
+  if (summary.isComplete) {
+    await processPendingTransfersForSeller(user.id, account.id);
+  }
+
+  await syncAddressFromStripe(user.id, account);
 }
 
 /**

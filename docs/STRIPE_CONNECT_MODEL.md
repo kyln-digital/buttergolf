@@ -235,39 +235,58 @@ The seller payout = product price + shipping cost. The platform revenue = buyer 
 
 ### How It Works
 
-We use **Stripe Connect Embedded Components** (fully embedded onboarding) with `controller` settings for a seamless in-app experience:
+There is no "onboard with Stripe" step. Sellers fill in a ButterGolf form; we push the result to Stripe over the API.
 
-**File**: [apps/web/src/app/api/stripe/connect/account/route.ts](../apps/web/src/app/api/stripe/connect/account/route.ts)
+**1. The account is created silently.** `ensureConnectAccount()` runs on the first listing publish (fire-and-forget, so Stripe can never fail a publish) and on the first call to any payout route. It is idempotent and also re-creates an account Stripe no longer has.
+
+**File**: [apps/web/src/lib/stripe-connect.ts](../apps/web/src/lib/stripe-connect.ts)
 
 ```typescript
 const account = await stripe.accounts.create({
+  country: "GB",
+  business_type: "individual",
   controller: {
     stripe_dashboard: { type: "none" },
-    fees: { payer: "application" },
-    losses: { payments: "application" },
     requirement_collection: "application",
+    losses: { payments: "application" },
+    fees: { payer: "application" },
   },
-  capabilities: {
-    card_payments: { requested: true },
-    transfers: { requested: true },
-  },
-  country: "GB",
+  // transfers only: buyers pay the platform, so sellers never take card
+  // payments. Requesting card_payments would add requirements for a
+  // capability nobody uses.
+  capabilities: { transfers: { requested: true } },
+  tos_acceptance: { date, ip, user_agent }, // from the seller's own request
   // ...
 });
 ```
+
+**2. Terms acceptance is ours to record.** `requirement_collection: "application"` is what lets our own terms carry the Stripe Connected Account Agreement. `getTosEvidenceFromRequest()` takes the date, client IP and user agent from the request the seller made themselves — the publish that created the account, and again on each details submission, because Stripe expects re-acceptance when the platform collects updated information. The consent copy sits directly under the publish button, and section 6 of `/terms-of-service` incorporates the agreement.
+
+**3. We collect the details.** Two routes, both validated by the pure helpers in [packages/constants/src/payouts.ts](../packages/constants/src/payouts.ts):
+
+| Route                                         | Collects                                                                  |
+| --------------------------------------------- | ------------------------------------------------------------------------- |
+| `POST /api/stripe/connect/setup/details`      | Name, date of birth, address, phone → `accounts.update`                   |
+| `POST /api/stripe/connect/setup/bank-account` | A `btok_` tokenised client-side → `accounts.update({ external_account })` |
+
+The date of birth is sent to Stripe and never stored by us. Raw sort codes and account numbers never reach our server. Attaching a bank account replaces the connected account's previous default GBP one, so the same route handles "change my bank details".
+
+**4. The embedded component is a fallback only.** `POST /api/stripe/connect/account` still returns an AccountSession, but only for requirements Stripe will accept through nothing but its own UI — identity document, proof of liveness. Callers restrict it with `collectionOptions.requirements.only` using `PayoutStatus.verificationFields`. `classifyPayoutRequirement()` decides what goes where and routes anything unrecognised to the component rather than guessing.
+
+**5. One status derivation.** `deriveConnectStatus()` in [apps/web/src/lib/stripe-connect-status.ts](../apps/web/src/lib/stripe-connect-status.ts) is pure, unit-tested (`tests/stripe-connect-status.test.ts`), and read by `/api/stripe/connect/status`, `/api/users/seller-status`, `GET /api/stripe/connect/account` and the Connect webhook alike.
 
 ### Database Fields
 
 The `User` model tracks Stripe Connect state:
 
-| Field                        | Type               | Purpose                                              |
-| ---------------------------- | ------------------ | ---------------------------------------------------- |
-| `stripeConnectId`            | `String?` (unique) | Stripe Connect account ID (`acct_xxx`)               |
-| `stripeOnboardingComplete`   | `Boolean`          | Whether all requirements are submitted               |
-| `stripeAccountStatus`        | `String?`          | `active` / `restricted` / `pending` / `deauthorized` |
-| `stripeAccountType`          | `String?`          | `fully_embedded` for new accounts                    |
-| `stripeRequirementsDeadline` | `DateTime?`        | Deadline for outstanding requirements                |
-| `stripeRequirementsDue`      | `Json?`            | Array of currently_due requirements                  |
+| Field                        | Type               | Purpose                                                                                            |
+| ---------------------------- | ------------------ | -------------------------------------------------------------------------------------------------- |
+| `stripeConnectId`            | `String?` (unique) | Stripe Connect account ID (`acct_xxx`)                                                             |
+| `stripeOnboardingComplete`   | `Boolean`          | Payouts enabled **and** `transfers` active **and** nothing currently due (not `details_submitted`) |
+| `stripeAccountStatus`        | `String?`          | `active` / `pending` / `restricted` / `rejected` / `deauthorized`                                  |
+| `stripeAccountType`          | `String?`          | `fully_embedded` for new accounts                                                                  |
+| `stripeRequirementsDeadline` | `DateTime?`        | Deadline for outstanding requirements                                                              |
+| `stripeRequirementsDue`      | `Json?`            | Array of currently_due requirements                                                                |
 
 ---
 

@@ -92,7 +92,77 @@ export function TermsOfServiceClient() {
             </Column>
 
             <Column gap="$md">
-              <Heading level={2}>6. Prohibited Activities</Heading>
+              <Heading level={2}>6. Payment Processing and Payouts (Stripe)</Heading>
+              <Text>
+                Payment processing services for sellers on ButterGolf are provided by Stripe and are
+                subject to the{" "}
+                <Text
+                  color="$primary"
+                  tag="a"
+                  {...{
+                    href: "https://stripe.com/connect-account/legal/full",
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                  }}
+                >
+                  Stripe Connected Account Agreement
+                </Text>
+                , which includes the{" "}
+                <Text
+                  color="$primary"
+                  tag="a"
+                  {...{
+                    href: "https://stripe.com/legal/ssa",
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                  }}
+                >
+                  Stripe Terms of Service
+                </Text>{" "}
+                (collectively, the &ldquo;Stripe Services Agreement&rdquo;). By agreeing to these
+                terms, publishing a listing, or continuing to operate as a seller on ButterGolf, you
+                agree to be bound by the Stripe Services Agreement, as the same may be modified by
+                Stripe from time to time. As a condition of ButterGolf enabling payment processing
+                services through Stripe, you agree to provide ButterGolf with accurate and complete
+                information about you, and you authorise ButterGolf to share it and transaction
+                information related to your use of the payment processing services provided by
+                Stripe.
+              </Text>
+              <Text>
+                When you provide personal data in connection with selling on ButterGolf, Stripe
+                receives that personal data and processes it in accordance with{" "}
+                <Text
+                  color="$primary"
+                  tag="a"
+                  {...{
+                    href: "https://stripe.com/privacy",
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                  }}
+                >
+                  Stripe&rsquo;s Privacy Policy
+                </Text>
+                .
+              </Text>
+              <Text>
+                Stripe&rsquo;s acquiring partners and their contact details are set out in{" "}
+                <Text
+                  color="$primary"
+                  tag="a"
+                  {...{
+                    href: "https://stripe.com/legal/acquirer-disclosure",
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                  }}
+                >
+                  Stripe&rsquo;s acquirer disclosure
+                </Text>
+                .
+              </Text>
+            </Column>
+
+            <Column gap="$md">
+              <Heading level={2}>7. Prohibited Activities</Heading>
               <Text>You agree not to:</Text>
               <Column gap="$sm" paddingLeft="$lg">
                 <Text>• List counterfeit, stolen, or illegal items</Text>
@@ -105,7 +175,7 @@ export function TermsOfServiceClient() {
             </Column>
 
             <Column gap="$md">
-              <Heading level={2}>7. Intellectual Property</Heading>
+              <Heading level={2}>8. Intellectual Property</Heading>
               <Text>
                 All content on ButterGolf, including logos, designs, text, graphics, and software,
                 is the property of ButterGolf or its licensors and is protected by copyright and
@@ -115,7 +185,7 @@ export function TermsOfServiceClient() {
             </Column>
 
             <Column gap="$md">
-              <Heading level={2}>8. User Content</Heading>
+              <Heading level={2}>9. User Content</Heading>
               <Text>
                 By posting content on ButterGolf (including product listings, reviews, and
                 messages), you grant us a non-exclusive, royalty-free, worldwide licence to use,
@@ -125,7 +195,7 @@ export function TermsOfServiceClient() {
             </Column>
 
             <Column gap="$md">
-              <Heading level={2}>9. Disclaimers and Limitations</Heading>
+              <Heading level={2}>10. Disclaimers and Limitations</Heading>
               <Text>
                 ButterGolf is a marketplace platform that connects buyers and sellers. We are not a
                 party to transactions between users and do not guarantee the quality, safety, or
@@ -136,7 +206,7 @@ export function TermsOfServiceClient() {
             </Column>
 
             <Column gap="$md">
-              <Heading level={2}>10. Indemnification</Heading>
+              <Heading level={2}>11. Indemnification</Heading>
               <Text>
                 You agree to indemnify and hold harmless ButterGolf, its officers, directors,
                 employees, and agents from any claims, losses, damages, liabilities, and expenses
@@ -146,7 +216,7 @@ export function TermsOfServiceClient() {
             </Column>
 
             <Column gap="$md">
-              <Heading level={2}>11. Termination</Heading>
+              <Heading level={2}>12. Termination</Heading>
               <Text>
                 We reserve the right to suspend or terminate your account at any time for violation
                 of these Terms of Service or for any other reason at our sole discretion. Upon
@@ -155,7 +225,7 @@ export function TermsOfServiceClient() {
             </Column>
 
             <Column gap="$md">
-              <Heading level={2}>12. Dispute Resolution</Heading>
+              <Heading level={2}>13. Dispute Resolution</Heading>
               <Text>
                 Any disputes arising from these Terms of Service or your use of ButterGolf shall be
                 resolved through binding arbitration in accordance with the rules of the applicable
@@ -165,7 +235,7 @@ export function TermsOfServiceClient() {
             </Column>
 
             <Column gap="$md">
-              <Heading level={2}>13. Changes to Terms</Heading>
+              <Heading level={2}>14. Changes to Terms</Heading>
               <Text>
                 We may update these Terms of Service from time to time. Continued use of the
                 platform after changes are posted constitutes acceptance of the modified terms. We
@@ -174,7 +244,7 @@ export function TermsOfServiceClient() {
             </Column>
 
             <Column gap="$md">
-              <Heading level={2}>14. Governing Law</Heading>
+              <Heading level={2}>15. Governing Law</Heading>
               <Text>
                 These Terms of Service shall be governed by and construed in accordance with the
                 laws of the jurisdiction in which ButterGolf operates, without regard to conflict of
@@ -183,7 +253,7 @@ export function TermsOfServiceClient() {
             </Column>
 
             <Column gap="$md">
-              <Heading level={2}>15. Contact Information</Heading>
+              <Heading level={2}>16. Contact Information</Heading>
               <Text>If you have questions about these Terms of Service, please contact us at:</Text>
               <Column gap="$xs" paddingLeft="$lg">
                 <Text>Email: legal@buttergolf.com</Text>

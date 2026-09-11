@@ -38,7 +38,14 @@ export interface SellScreenProps {
   onClose?: () => void;
   /** Called on successful submission */
   onSuccess?: (productId: string) => void;
+  /**
+   * Opens a link from the consent line under "List Item" (our terms, the
+   * Stripe Connected Account Agreement). Mobile passes Linking.openURL.
+   */
+  onOpenLink?: (href: string) => void;
 }
+
+const STRIPE_AGREEMENT_URL = "https://stripe.com/connect-account/legal/full";
 
 /** Photos, Details, Listing, Postage, Review. */
 const TOTAL_STEPS = 5;
@@ -83,6 +90,7 @@ export function SellScreen({
   onPickImages,
   onTakePhoto,
   onSubmitListing,
+  onOpenLink,
   onClose,
   onSuccess,
 }: Readonly<SellScreenProps>) {
@@ -341,6 +349,21 @@ export function SellScreen({
             </Text>
           </Button>
         )}
+        {currentStep === TOTAL_STEPS ? (
+          // Publishing records acceptance of these terms (the API only does
+          // so when this line was shown), so it must sit next to the button.
+          <Text size="$2" color="$textTertiary" textAlign="center">
+            By listing you agree to our{" "}
+            <Text size="$2" color="$primary" onPress={() => onOpenLink?.("/terms-of-service")}>
+              Terms of Service
+            </Text>
+            , which include the{" "}
+            <Text size="$2" color="$primary" onPress={() => onOpenLink?.(STRIPE_AGREEMENT_URL)}>
+              Stripe Connected Account Agreement
+            </Text>
+            .
+          </Text>
+        ) : null}
       </Column>
     </Column>
   );

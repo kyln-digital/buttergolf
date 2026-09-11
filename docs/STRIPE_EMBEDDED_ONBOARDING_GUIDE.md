@@ -1,5 +1,7 @@
 # Embedded onboarding
 
+> **ButterGolf note.** This file is Stripe's own reference material for the embedded onboarding component, kept verbatim. It is not a description of how ButterGolf onboards sellers. We collect name, date of birth, address, phone and bank details in our own form and push them via `accounts.update` (see `docs/STRIPE_CONNECT_MODEL.md` and `openwiki/payments.md`); the embedded component appears only as a fallback for the verification requirements Stripe will accept through nothing but its own UI — identity documents and proof of liveness — and is restricted to those with `collectionOptions.requirements.only`.
+
 Provide your connected accounts a localised onboarding form that validates data.
 
 Embedded onboarding is a themeable onboarding UI with limited Stripe branding. You embed the [Account onboarding component](https://docs.stripe.com/connect/supported-embedded-components/account-onboarding.md) in your platform application, and your connected accounts interact with the embedded component without leaving your application.

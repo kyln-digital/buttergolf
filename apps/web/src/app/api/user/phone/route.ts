@@ -11,7 +11,7 @@ const E164_REGEX = /^\+[1-9]\d{1,14}$/;
  * PUT /api/user/phone
  * Save phone number to user profile
  *
- * Request body: { phone: string } (E.164 format from react-phone-number-input)
+ * Request body: { phone: string } (E.164 format)
  * Response: { success: true, phone: string } (E.164 format)
  */
 export async function PUT(req: NextRequest) {
@@ -40,7 +40,7 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    // Phone is already in E.164 format from react-phone-number-input
+    // Already validated as E.164 above
     const e164Phone = normalizedPhone;
 
     // Find user by Clerk ID and update phone

@@ -10,6 +10,7 @@ import { validateUKAddress, type ShippingAddress } from "@/lib/address-validatio
 import { getUserIdFromRequest } from "@/lib/auth";
 import { cloudinary, extractPublicId, isValidCloudinaryUrl } from "@/lib/cloudinary";
 import { mapSlidersToConditionEnum } from "@/lib/product-condition";
+import { ensureConnectAccountInBackground, getTosEvidenceFromRequest } from "@/lib/stripe-connect";
 
 /** Safety cap on how many image rows one request may touch. */
 const MAX_IMAGE_IDS = 20;
@@ -76,6 +77,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     const body = await request.json();
+    // Consent flag for publish: the client confirms it showed the seller-terms
+    // line (which incorporates the Stripe Connected Account Agreement).
+    const acceptsSellerTerms = body?.acceptsSellerTerms === true;
 
     // Validate allowed fields
     const allowedFields = [
@@ -419,6 +423,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           console.error("Failed to delete Cloudinary asset:", { publicId, err });
         });
       }
+    }
+
+    // Same as the create path: going live is when the seller becomes someone
+    // we will owe money to, so the connected account is created here, with
+    // their terms acceptance taken from this request. Fire-and-forget.
+    if (isPublishing) {
+      ensureConnectAccountInBackground({
+        userId: user.id,
+        // Acceptance is recorded only when the consent copy was shown; else it
+        // stays due and the payout details step (which always shows it) collects it.
+        tos: acceptsSellerTerms ? getTosEvidenceFromRequest(request) : undefined,
+      });
     }
 
     return NextResponse.json(updatedProduct);

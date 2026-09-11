@@ -19,7 +19,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { AccountMenuItem } from "@buttergolf/app";
 import { useLinkPress } from "@/hooks/useLinkPress";
-import { PayoutSetupWizard } from "./PayoutSetupWizard";
+import { PayoutSetup } from "@/components/payouts/PayoutSetup";
 
 interface AccountHubClientProps {
   readonly user: {
@@ -43,7 +43,7 @@ interface AccountHubClientProps {
 
 type PayoutBadge = {
   label: string;
-  variant: "success" | "warning" | "info" | "neutral";
+  variant: "success" | "warning" | "error" | "info" | "neutral";
 };
 
 function SectionLabel({ children }: Readonly<{ children: string }>) {
@@ -92,14 +92,13 @@ export function AccountHubClient({
   const isSellerOnboarded =
     user.hasConnectAccount && user.onboardingComplete && user.accountStatus === "active";
 
-  // Determine payout status badge
+  // Badge for the payout account status reported by /api/stripe/connect/status
   const getPayoutBadge = (): PayoutBadge => {
     if (user.accountStatus === "active") return { label: "Active", variant: "success" };
-    if (user.accountStatus === "restricted")
-      return { label: "Action required", variant: "warning" };
-    if (user.hasConnectAccount && user.onboardingComplete)
-      return { label: "Pending", variant: "info" };
-    if (user.hasConnectAccount) return { label: "Incomplete", variant: "warning" };
+    if (user.accountStatus === "restricted") return { label: "Action needed", variant: "warning" };
+    if (user.accountStatus === "rejected") return { label: "Unavailable", variant: "error" };
+    if (user.accountStatus === "pending" || user.hasConnectAccount)
+      return { label: "Finish setup", variant: "info" };
     return { label: "Set up", variant: "neutral" };
   };
   const payoutBadge = getPayoutBadge();
@@ -120,18 +119,11 @@ export function AccountHubClient({
     globalThis.location.reload();
   };
 
-  // Show payout setup wizard
+  // Show the ButterGolf payout setup flow
   if (showPayoutSetup) {
     return (
       <Container size="lg" paddingHorizontal="$md" paddingVertical="$xl">
-        <PayoutSetupWizard
-          initialStatus={{
-            hasAccount: user.hasConnectAccount,
-            onboardingComplete: user.onboardingComplete,
-            accountStatus: user.accountStatus,
-            requirementsCount: 0,
-            phone: user.phone ?? null,
-          }}
+        <PayoutSetup
           onComplete={handlePayoutSetupComplete}
           onExit={() => setShowPayoutSetup(false)}
         />
