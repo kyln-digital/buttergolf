@@ -426,7 +426,8 @@ const lightTheme = {
   textInverse: brandColors.pureWhite,
   // Read by Tamagui's Input/TextArea as the default placeholder colour. Without it
   // placeholders inherit the typed-text colour and look like pre-filled values.
-  placeholderColor: brandColors.gray500,
+  // Gray 700 is ~4.9:1 on white: readable, and still clearly lighter than Ironstone.
+  placeholderColor: brandColors.gray700,
 
   // Surface colors (Pure White cards)
   surface: brandColors.pureWhite,
@@ -540,7 +541,8 @@ const darkTheme = {
   textMuted: brandColors.slateSmokeHover,
   // Keep inverse text white so orange primary buttons remain white-text in all themes.
   textInverse: brandColors.pureWhite,
-  placeholderColor: brandColors.overlayLight60,
+  // 70% white keeps ~4.7:1 on the Slate Smoke field surface.
+  placeholderColor: brandColors.overlayLight70,
 
   // Surface colors - override for dark mode
   // Elevation hierarchy: background (#323232) < surface (#545454) < card (#666666)

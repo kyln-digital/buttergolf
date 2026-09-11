@@ -45,7 +45,6 @@ export const brandColors = {
   // Extended gray scale (for app compatibility)
   gray100: "#F5F5F5", // Very light gray
   gray200: "#E5E5E5", // Light gray
-  gray500: "#8A8A8A", // Placeholder text on light fields (clearly lighter than typed text)
   gray600: "#666666", // Card background in dark mode (lighter than surface for elevation)
   gray700: "#707070", // Medium gray (for neutral badge text)
   gray900: "#1A1A1A", // Very dark gray
@@ -57,6 +56,7 @@ export const brandColors = {
   overlayLight30: "rgba(255, 255, 255, 0.3)",
   overlayLight40: "rgba(255, 255, 255, 0.4)",
   overlayLight60: "rgba(255, 255, 255, 0.6)",
+  overlayLight70: "rgba(255, 255, 255, 0.7)",
 
   // Dark overlays (for light backgrounds like Vanilla Cream)
   overlayDark5: "rgba(0, 0, 0, 0.05)",

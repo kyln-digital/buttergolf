@@ -40,7 +40,7 @@ function DimensionInput({
         {label}
       </Text>
       <Row
-        backgroundColor="$pureWhite"
+        backgroundColor="$surface"
         borderWidth={2}
         borderColor={focused ? "$spicedClementine" : "$cloudMist"}
         borderRadius="$lg"
