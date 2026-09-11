@@ -4,7 +4,7 @@ import React, { useState, useCallback, useRef, useEffect } from "react";
 import { Column, Row, ScrollView, Text, Button, Heading, Spinner, useTheme } from "@buttergolf/ui";
 import { ArrowLeft, ShieldCheck, Smartphone, Mail } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useSignIn } from "@clerk/clerk-expo";
+import { isClerkAPIResponseError, useSignIn } from "@clerk/clerk-expo";
 import { OtpInput, OtpInputRef } from "react-native-otp-entry";
 import { AuthErrorDisplay } from "./components";
 import { mapClerkErrorToMessage } from "./utils";
@@ -183,18 +183,13 @@ export function TwoFactorScreen({ onSuccess, onNavigateBack }: Readonly<TwoFacto
         }
       } catch (err) {
         console.error("[TwoFactor] Error:", err);
-        const errorMessage = err instanceof Error ? err.message : String(err);
+        const clerkError = isClerkAPIResponseError(err) ? err.errors[0] : undefined;
 
-        if (
-          errorMessage.includes("verification_code_invalid") ||
-          errorMessage.includes("incorrect_code")
-        ) {
-          setError(mapClerkErrorToMessage("verification_code_invalid"));
-        } else if (errorMessage.includes("verification_code_expired")) {
-          setError(mapClerkErrorToMessage("verification_code_expired"));
-        } else {
-          setError(errorMessage || "Verification failed. Please try again.");
-        }
+        setError(
+          clerkError
+            ? mapClerkErrorToMessage(clerkError.code, clerkError.longMessage || clerkError.message)
+            : "Verification failed. Please try again."
+        );
 
         // Clear code on error
         otpRef.current?.clear();
