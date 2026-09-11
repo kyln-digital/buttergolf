@@ -37,7 +37,8 @@ Always use semantic tokens in application code for automatic theme switching:
 | `$background`    | #FFFFFF (Pure White)        | #3E3B2C (Burnt Olive) |
 | `$text`          | #323232 (Ironstone)         | #FFFFFF               |
 | `$textSecondary` | #545454 (Slate Smoke)       | #EDEDED               |
-| `$textMuted`     | #EDEDED (Cloud Mist)        | #545454               |
+| `$textTertiary`  | #707070 (Gray 700)          | 70% white             |
+| `$textMuted`     | #707070 (Gray 700)          | 70% white             |
 | `$textInverse`   | #FFFFFF                     | #323232               |
 | `$surface`       | #FFFFFF                     | #323232               |
 | `$border`        | #EDEDED (Cloud Mist)        | #545454               |

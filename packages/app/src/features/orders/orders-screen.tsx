@@ -332,7 +332,7 @@ export function OrdersScreen({
                         width={80}
                         height={80}
                         borderRadius="$md"
-                        backgroundColor="$gray100"
+                        backgroundColor="$backgroundHover"
                         alignItems="center"
                         justifyContent="center"
                       >

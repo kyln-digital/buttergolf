@@ -266,8 +266,8 @@ $overlayDark50: rgba(0, 0, 0, 0.5);
 ```tsx
 $text: $ironstone; // Primary text (#323232 - Ironstone)
 $textSecondary: #4A4A4A; // Secondary text
-$textTertiary: $gray600; // Tertiary text
-$textMuted: $gray500; // Muted/placeholder text
+$textTertiary: $gray700; // Tertiary text (#707070; 70% white in dark)
+$textMuted: $gray700; // Muted/placeholder text (#707070; 70% white in dark)
 $textInverse: $white; // Text on dark backgrounds
 ```
 
