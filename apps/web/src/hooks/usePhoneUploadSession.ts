@@ -383,8 +383,9 @@ export function usePhoneUploadSession({
 
   // Photos still waiting, from this code or a replaced one, must not be
   // orphaned by minting a new code.
-  const canStart =
-    session === null || pendingCount === 0 ? (isExpired ? expiredPollDone : true) : false;
+  // Pending photos veto a new code whether or not a session is currently
+  // held: after a closed poll the session is null but its leftovers remain.
+  const canStart = pendingCount === 0 && (session === null || !isExpired || expiredPollDone);
 
   const stop = useCallback(() => {
     activeSessionIdRef.current = null;
