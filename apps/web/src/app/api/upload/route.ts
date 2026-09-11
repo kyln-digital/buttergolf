@@ -10,6 +10,7 @@ import {
 } from "@/lib/phone-upload-session";
 import {
   completePhoneUpload,
+  PHONE_SESSION_CLOSED_MESSAGE,
   phoneAllowanceUsedMessage,
   releasePhoneUploadSlot,
   reservePhoneUploadSlot,
@@ -197,6 +198,12 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (phoneSession) {
     try {
       const reservation = await reservePhoneUploadSlot(phoneSession);
+      if (reservation.kind === "closed") {
+        return NextResponse.json(
+          { error: PHONE_SESSION_CLOSED_MESSAGE },
+          { status: 410, headers: corsHeaders }
+        );
+      }
       if (reservation.kind === "over-cap") {
         return NextResponse.json(
           { error: phoneAllowanceUsedMessage(phoneSession.maxPhotos) },

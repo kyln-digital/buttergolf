@@ -24,6 +24,8 @@ type Phase =
   | "invalid"
   /** The token was rejected, almost always because its 15 minutes are up. */
   | "expired"
+  /** The desktop has finished with the listing (published, saved or discarded). */
+  | "closed"
   /** The server couldn't be reached. */
   | "unreachable"
   | "ready";
@@ -76,6 +78,10 @@ export function PhoneUploadClient() {
 
         if (response.status === 401) {
           setPhase("expired");
+          return;
+        }
+        if (response.status === 410) {
+          setPhase("closed");
           return;
         }
         if (!response.ok) {
@@ -214,6 +220,13 @@ export function PhoneUploadClient() {
           <Notice
             title="This code has expired"
             body="Codes last 15 minutes. Generate a new one on your computer and scan it again."
+          />
+        )}
+
+        {phase === "closed" && (
+          <Notice
+            title="This listing has been finished on your computer"
+            body="Nothing more can be sent to it. To add photos to another listing, generate a new code from that listing's form."
           />
         )}
 

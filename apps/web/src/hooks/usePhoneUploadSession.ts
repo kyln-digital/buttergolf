@@ -72,6 +72,13 @@ const STORAGE_PREFIX = "buttergolf-phone-upload-session";
  */
 const RESTORE_GRACE_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * How long after expiry the desktop keeps polling regardless of what it has
+ * seen. An upload the phone started just before the token expired can finish
+ * after it, and the desktop must still collect it.
+ */
+const POST_EXPIRY_DRAIN_MS = 60 * 1000;
+
 interface StoredPhoneUploadSession extends PhoneUploadSessionSnapshot {
   /** Photos already placed in the form, so a restore never re-adds one the seller removed. */
   placedIds: string[];
@@ -123,10 +130,31 @@ function writeStoredSession(scope: string, stored: StoredPhoneUploadSession | nu
 }
 
 /**
- * Forgets any stored session for a form record. Call it wherever the form
- * discards that record's draft (publish, save, "start fresh").
+ * Tells the server the desktop has finished with a session, so a phone still
+ * on the page is refused rather than left uploading photos nobody collects.
+ * `keepalive` lets the request outlive a navigation away from the form.
+ */
+function closeSessionOnServer(sessionId: string): void {
+  try {
+    void fetch(`/api/upload/phone-session/${sessionId}`, {
+      method: "DELETE",
+      keepalive: true,
+    }).catch(() => {
+      // Best effort: an unclosed session still expires on its own.
+    });
+  } catch {
+    // fetch itself can throw when called during unload in some browsers.
+  }
+}
+
+/**
+ * Forgets any stored session for a form record and closes it on the server.
+ * Call it wherever the form discards that record's draft (publish, save,
+ * "start fresh").
  */
 export function clearStoredPhoneUploadSession(scope: string): void {
+  const stored = readStoredSession(scope);
+  if (stored) closeSessionOnServer(stored.sessionId);
   writeStoredSession(scope, null);
 }
 
@@ -185,6 +213,7 @@ export function usePhoneUploadSession({
 
   const isExpired = session !== null && now >= session.expiresAt;
   const secondsLeft = session ? Math.max(0, Math.ceil((session.expiresAt - now) / 1000)) : 0;
+  const inDrainWindow = session !== null && now < session.expiresAt + POST_EXPIRY_DRAIN_MS;
 
   // Photos still waiting must not be orphaned by minting a new code: a new
   // session polls a different id, and the old rows would never be offered.
@@ -229,6 +258,10 @@ export function usePhoneUploadSession({
         maxPhotos: created.maxPhotos,
       };
 
+      // The code being replaced is finished with: refuse anything a phone
+      // still on its page tries to send, rather than collecting it nowhere.
+      if (session) closeSessionOnServer(session.sessionId);
+
       placedIdsRef.current = new Set();
       setReceivedCount(0);
       setPendingCount(0);
@@ -241,21 +274,22 @@ export function usePhoneUploadSession({
     } finally {
       setIsStarting(false);
     }
-  }, [pendingCount, remainingSlots, persist]);
+  }, [pendingCount, remainingSlots, persist, session]);
 
-  // Tick once a second for the countdown while a session is live.
+  // Tick once a second for the countdown while a session is live, and on
+  // through the post-expiry drain window so it can end.
   useEffect(() => {
-    if (!session || isExpired) return;
+    if (!session || !inDrainWindow) return;
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
-  }, [session, isExpired]);
+  }, [session, inDrainWindow]);
 
   // Poll while the session is live. The desktop endpoint stays readable after
-  // the token expires (it only needs the Clerk session), so after expiry poll
-  // once more to catch a late arrival, then keep going only while photos are
-  // waiting and there is room to place them.
+  // the token expires (it only needs the Clerk session), so keep polling
+  // through the drain window to collect an upload that was in flight at
+  // expiry, then only while photos are waiting and there is room for them.
   const canDrainPending = pendingCount > 0 && remainingSlots > 0;
-  const shouldPoll = session !== null && (!isExpired || !expiredPollDone || canDrainPending);
+  const shouldPoll = session !== null && (inDrainWindow || !expiredPollDone || canDrainPending);
 
   useEffect(() => {
     if (!session || !shouldPoll) return;
@@ -278,8 +312,8 @@ export function usePhoneUploadSession({
         if (cancelled) return;
 
         if (!response.ok) {
-          // Signed out, or a session that isn't ours: nothing more will arrive.
-          if (response.status === 401 || response.status === 400) stop();
+          // Signed out, not ours, or closed: nothing more will arrive.
+          if ([400, 401, 410].includes(response.status)) stop();
           return;
         }
 
