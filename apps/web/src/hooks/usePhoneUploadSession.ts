@@ -185,6 +185,11 @@ export function usePhoneUploadSession({
   // session changes, so a poll that was in flight for the old session drops
   // its result even if it resolves before React has torn the effect down.
   const activeSessionIdRef = useRef<string | null>(null);
+  // Sessions replaced by `start()` while still inside their post-expiry drain
+  // window. A regenerated code belongs to the same form, so a photo the phone
+  // started sending under the old code still belongs here; these keep being
+  // polled until their window closes, then are closed on the server.
+  const drainingRef = useRef<Array<{ sessionId: string; until: number }>>([]);
   const onPhotosRef = useRef(onPhotos);
   useEffect(() => {
     onPhotosRef.current = onPhotos;
@@ -264,9 +269,21 @@ export function usePhoneUploadSession({
         maxPhotos: created.maxPhotos,
       };
 
-      // The code being replaced is finished with: refuse anything a phone
-      // still on its page tries to send, rather than collecting it nowhere.
-      if (session) closeSessionOnServer(session.sessionId);
+      // The code being replaced is finished with. If an upload could still be
+      // in flight under it (its drain window hasn't closed), keep collecting
+      // from it until then; otherwise close it now so a phone still on its
+      // page is refused rather than uploading photos nobody collects.
+      if (session) {
+        const drainUntil = session.expiresAt + POST_EXPIRY_DRAIN_MS;
+        if (Date.now() < drainUntil) {
+          drainingRef.current = [
+            ...drainingRef.current,
+            { sessionId: session.sessionId, until: drainUntil },
+          ];
+        } else {
+          closeSessionOnServer(session.sessionId);
+        }
+      }
 
       activeSessionIdRef.current = next.sessionId;
       placedIdsRef.current = new Set();
@@ -306,6 +323,55 @@ export function usePhoneUploadSession({
     // and could each fill them.
     let inFlight = false;
 
+    /**
+     * Offers every not-yet-placed photo to the form and records what it took.
+     * Returns how many are still waiting for a slot.
+     */
+    const placeWaiting = (photos: PhoneUploadPhoto[]): number => {
+      // Everything not yet placed, including photos offered before and
+      // turned away for lack of room: a slot may have freed up since.
+      const waiting = photos.filter((photo) => !placedIdsRef.current.has(photo.id));
+      if (waiting.length === 0) return 0;
+
+      const placed = new Set(onPhotosRef.current(waiting.map((photo) => photo.url)));
+      let stillWaiting = 0;
+      let placedAny = false;
+      for (const photo of waiting) {
+        if (placed.has(photo.url)) {
+          placedIdsRef.current.add(photo.id);
+          placedAny = true;
+        } else {
+          stillWaiting += 1;
+        }
+      }
+      if (placedAny) persist(session);
+      return stillWaiting;
+    };
+
+    /** Collects late arrivals from replaced sessions, closing each once its window has passed. */
+    const drainReplaced = async () => {
+      const now = Date.now();
+      for (const entry of drainingRef.current) {
+        if (entry.until <= now) {
+          closeSessionOnServer(entry.sessionId);
+          continue;
+        }
+        try {
+          const response = await fetch(`/api/upload/phone-session/${entry.sessionId}`, {
+            cache: "no-store",
+          });
+          if (cancelled) return;
+          if (!response.ok) continue;
+          const { photos } = (await response.json()) as { photos: PhoneUploadPhoto[] };
+          if (cancelled) return;
+          placeWaiting(photos);
+        } catch {
+          // Transient; tried again on the next tick while the window lasts.
+        }
+      }
+      drainingRef.current = drainingRef.current.filter((entry) => entry.until > now);
+    };
+
     const poll = async () => {
       if (inFlight) return;
       inFlight = true;
@@ -327,30 +393,13 @@ export function usePhoneUploadSession({
         const { photos } = (await response.json()) as { photos: PhoneUploadPhoto[] };
         if (cancelled || activeSessionIdRef.current !== session.sessionId) return;
 
-        // Everything not yet placed, including photos offered before and
-        // turned away for lack of room: a slot may have freed up since.
-        const waiting = photos.filter((photo) => !placedIdsRef.current.has(photo.id));
-
-        if (waiting.length > 0) {
-          const placed = new Set(onPhotosRef.current(waiting.map((photo) => photo.url)));
-          let stillWaiting = 0;
-          let placedAny = false;
-          for (const photo of waiting) {
-            if (placed.has(photo.url)) {
-              placedIdsRef.current.add(photo.id);
-              placedAny = true;
-            } else {
-              stillWaiting += 1;
-            }
-          }
-          if (placedAny) persist(session);
-          setReceivedCount(placedIdsRef.current.size + stillWaiting);
-          setPendingCount(stillWaiting);
-        } else {
-          setPendingCount(0);
-        }
+        const stillWaiting = placeWaiting(photos);
+        setReceivedCount(placedIdsRef.current.size + stillWaiting);
+        setPendingCount(stillWaiting);
 
         if (afterExpiry) setExpiredPollDone(true);
+
+        if (drainingRef.current.length > 0) await drainReplaced();
       } catch {
         // Transient network error; the next tick retries.
       } finally {

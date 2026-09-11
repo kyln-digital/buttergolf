@@ -340,12 +340,25 @@ export async function POST(request: Request): Promise<NextResponse> {
         });
 
         // The desktop will never see this asset, so don't keep paying for it.
-        // Best-effort, as in the listing routes: an orphan is logged, never a
-        // second error for the phone. Awaited so the function isn't frozen first.
-        await cloudinary.uploader.destroy(result.public_id).catch((err) => {
-          console.error("Failed to delete Cloudinary asset:", { publicId: result.public_id, err });
-        });
-        await releaseReservation();
+        // Awaited so the function isn't frozen first. If the destroy itself
+        // fails, the reservation row is deliberately left in place: it carries
+        // the public id, so the daily sweep can destroy the asset later. Only a
+        // confirmed destroy releases it.
+        const destroyed = await cloudinary.uploader
+          .destroy(result.public_id)
+          .then(() => true)
+          .catch((err: unknown) => {
+            console.error("Failed to delete Cloudinary asset:", {
+              publicId: result.public_id,
+              err,
+            });
+            return false;
+          });
+        if (destroyed) {
+          await releaseReservation();
+        } else {
+          reservationId = null;
+        }
 
         // The usual reason the slot can't be filled is that the desktop closed
         // the session while this upload was in flight. Say so, rather than
