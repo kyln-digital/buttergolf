@@ -451,18 +451,17 @@ export function DetailsStep({
           borderBottomWidth={1}
           borderBottomColor="$cloudMist"
         >
-          <TouchableOpacity
-            onPress={closePicker}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              backgroundColor: "#F5F5F5",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <X size={20} color="$text" />
+          <TouchableOpacity onPress={closePicker} accessibilityLabel="Close">
+            <View
+              width={40}
+              height={40}
+              borderRadius="$full"
+              backgroundColor="$backgroundMuted"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <X size={20} color="$text" />
+            </View>
           </TouchableOpacity>
           <Text fontFamily="$heading" size="$7" fontWeight="700" color="$text">
             Select {title}
