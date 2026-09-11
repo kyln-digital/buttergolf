@@ -28,12 +28,13 @@ export interface UsePhoneUploadSessionOptions {
   /** Slots the form has free. Baked into the token as the phone's allowance. */
   remainingSlots: number;
   /**
-   * Identity of the form record this session belongs to. When given, a live
-   * session is kept in sessionStorage under it and restored after a reload of
-   * the same record. Pass the same key the form uses for its own draft and
-   * clear it with {@link clearStoredPhoneUploadSession} wherever the form
-   * clears that draft, so a code minted for one listing can never be restored
-   * into another. Without it the session lives in component state only.
+   * Identity of the form record this session belongs to. When given, the
+   * session and the ids of photos already placed are kept in sessionStorage
+   * under it and restored after a reload of the same record. Pass the same key
+   * the form uses for its own draft and clear it with
+   * {@link clearStoredPhoneUploadSession} wherever the form clears that draft,
+   * so a code minted for one listing can never be restored into another.
+   * Without it the session lives in component state only.
    */
   storageScope?: string;
 }
@@ -48,9 +49,15 @@ export interface UsePhoneUploadSessionReturn {
   receivedCount: number;
   /** Photos the phone has sent that the form had no room for yet. */
   pendingCount: number;
+  /**
+   * Whether `start` may safely mint a new code right now. False while photos
+   * from the current session are still waiting for a slot, or while an
+   * expired session hasn't yet been checked for late arrivals.
+   */
+  canStart: boolean;
   isStarting: boolean;
   error: string | null;
-  /** Mints a fresh session, replacing any existing one. */
+  /** Mints a fresh session, replacing any existing one. Refuses while `canStart` is false. */
   start: () => Promise<void>;
   /** Forgets the session and stops polling. */
   stop: () => void;
@@ -58,15 +65,27 @@ export interface UsePhoneUploadSessionReturn {
 
 const STORAGE_PREFIX = "buttergolf-phone-upload-session";
 
+/**
+ * How long after its token expires a session is still restored. Photos the
+ * phone sent are readable by the desktop for as long as their rows exist,
+ * and the server sweeps rows a day old.
+ */
+const RESTORE_GRACE_MS = 24 * 60 * 60 * 1000;
+
+interface StoredPhoneUploadSession extends PhoneUploadSessionSnapshot {
+  /** Photos already placed in the form, so a restore never re-adds one the seller removed. */
+  placedIds: string[];
+}
+
 function storageKeyFor(scope: string): string {
   return `${STORAGE_PREFIX}:${scope}`;
 }
 
-function readStoredSession(scope: string): PhoneUploadSessionSnapshot | null {
+function readStoredSession(scope: string): StoredPhoneUploadSession | null {
   try {
     const raw = window.sessionStorage.getItem(storageKeyFor(scope));
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<PhoneUploadSessionSnapshot>;
+    const parsed = JSON.parse(raw) as Partial<StoredPhoneUploadSession>;
     if (
       typeof parsed.sessionId !== "string" ||
       typeof parsed.url !== "string" ||
@@ -75,17 +94,26 @@ function readStoredSession(scope: string): PhoneUploadSessionSnapshot | null {
     ) {
       return null;
     }
-    if (parsed.expiresAt <= Date.now()) return null;
-    return parsed as PhoneUploadSessionSnapshot;
+    if (parsed.expiresAt + RESTORE_GRACE_MS <= Date.now()) return null;
+    const placedIds = Array.isArray(parsed.placedIds)
+      ? parsed.placedIds.filter((id): id is string => typeof id === "string")
+      : [];
+    return {
+      sessionId: parsed.sessionId,
+      url: parsed.url,
+      expiresAt: parsed.expiresAt,
+      maxPhotos: parsed.maxPhotos,
+      placedIds,
+    };
   } catch {
     return null;
   }
 }
 
-function writeStoredSession(scope: string, session: PhoneUploadSessionSnapshot | null): void {
+function writeStoredSession(scope: string, stored: StoredPhoneUploadSession | null): void {
   try {
-    if (session) {
-      window.sessionStorage.setItem(storageKeyFor(scope), JSON.stringify(session));
+    if (stored) {
+      window.sessionStorage.setItem(storageKeyFor(scope), JSON.stringify(stored));
     } else {
       window.sessionStorage.removeItem(storageKeyFor(scope));
     }
@@ -116,37 +144,69 @@ export function usePhoneUploadSession({
   const [error, setError] = useState<string | null>(null);
   const [receivedCount, setReceivedCount] = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
+  // True once a poll has run after the token expired, so a photo that landed
+  // between the last live poll and expiry is fetched rather than stranded.
+  const [expiredPollDone, setExpiredPollDone] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
   // Ids of photos the form has taken. Anything the server returns that isn't
-  // in here is offered on every poll until the form accepts it. Not persisted:
-  // after a restore every photo is offered again and the form keeps the ones
-  // it doesn't already hold, which is the only source of truth for "placed".
+  // in here is offered on every poll until the form accepts it. Persisted with
+  // the session so a restore doesn't re-offer a photo the seller had removed.
   const placedIdsRef = useRef<Set<string>>(new Set());
   const onPhotosRef = useRef(onPhotos);
   useEffect(() => {
     onPhotosRef.current = onPhotos;
   }, [onPhotos]);
 
-  // Restore a session left by a reload of the same record.
+  const persist = useCallback(
+    (current: PhoneUploadSessionSnapshot | null) => {
+      if (!storageScope) return;
+      writeStoredSession(
+        storageScope,
+        current ? { ...current, placedIds: Array.from(placedIdsRef.current) } : null
+      );
+    },
+    [storageScope]
+  );
+
+  // Restore a session left by a reload of the same record, expired or not:
+  // an expired one may still have photos waiting to be placed.
   useEffect(() => {
     if (!storageScope) return;
     const stored = readStoredSession(storageScope);
     if (stored) {
-      setSession(stored);
+      const { placedIds, ...snapshot } = stored;
+      placedIdsRef.current = new Set(placedIds);
+      setReceivedCount(placedIds.length);
+      setExpiredPollDone(false);
+      setSession(snapshot);
     }
   }, [storageScope]);
 
   const isExpired = session !== null && now >= session.expiresAt;
   const secondsLeft = session ? Math.max(0, Math.ceil((session.expiresAt - now) / 1000)) : 0;
 
+  // Photos still waiting must not be orphaned by minting a new code: a new
+  // session polls a different id, and the old rows would never be offered.
+  const canStart =
+    session === null || pendingCount === 0 ? (isExpired ? expiredPollDone : true) : false;
+
   const stop = useCallback(() => {
     setSession(null);
     setPendingCount(0);
-    if (storageScope) writeStoredSession(storageScope, null);
-  }, [storageScope]);
+    persist(null);
+  }, [persist]);
 
   const start = useCallback(async () => {
+    if (pendingCount > 0) {
+      setError(
+        pendingCount === 1
+          ? "A photo from your phone is still waiting for a free slot. Remove a photo to add it before generating a new code."
+          : `${pendingCount} photos from your phone are still waiting for a free slot. Remove a photo to add them before generating a new code.`
+      );
+      return;
+    }
+
     setIsStarting(true);
     setError(null);
     try {
@@ -172,15 +232,16 @@ export function usePhoneUploadSession({
       placedIdsRef.current = new Set();
       setReceivedCount(0);
       setPendingCount(0);
+      setExpiredPollDone(false);
       setNow(Date.now());
       setSession(next);
-      if (storageScope) writeStoredSession(storageScope, next);
+      persist(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't create a QR code.");
     } finally {
       setIsStarting(false);
     }
-  }, [remainingSlots, storageScope]);
+  }, [pendingCount, remainingSlots, persist]);
 
   // Tick once a second for the countdown while a session is live.
   useEffect(() => {
@@ -189,20 +250,26 @@ export function usePhoneUploadSession({
     return () => window.clearInterval(id);
   }, [session, isExpired]);
 
-  // Poll while the session is live. Once the code has expired the desktop
-  // endpoint is still readable (it only needs the Clerk session), so keep going
-  // for as long as photos are waiting and there is room to place them: a photo
-  // the phone sent while the grid was full must not be stranded just because
-  // the seller made room after the fifteen minutes were up.
+  // Poll while the session is live. The desktop endpoint stays readable after
+  // the token expires (it only needs the Clerk session), so after expiry poll
+  // once more to catch a late arrival, then keep going only while photos are
+  // waiting and there is room to place them.
   const canDrainPending = pendingCount > 0 && remainingSlots > 0;
-  const shouldPoll = session !== null && (!isExpired || canDrainPending);
+  const shouldPoll = session !== null && (!isExpired || !expiredPollDone || canDrainPending);
 
   useEffect(() => {
     if (!session || !shouldPoll) return;
 
     let cancelled = false;
+    // Never overlap polls: two in flight would both read the same free slots
+    // and could each fill them.
+    let inFlight = false;
 
     const poll = async () => {
+      if (inFlight) return;
+      inFlight = true;
+      const afterExpiry = Date.now() >= session.expiresAt;
+
       try {
         const response = await fetch(`/api/upload/phone-session/${session.sessionId}`, {
           cache: "no-store",
@@ -222,25 +289,31 @@ export function usePhoneUploadSession({
         // Everything not yet placed, including photos offered before and
         // turned away for lack of room: a slot may have freed up since.
         const waiting = photos.filter((photo) => !placedIdsRef.current.has(photo.id));
-        if (waiting.length === 0) {
-          setPendingCount(0);
-          return;
-        }
 
-        const placed = new Set(onPhotosRef.current(waiting.map((photo) => photo.url)));
-        let stillWaiting = 0;
-        for (const photo of waiting) {
-          if (placed.has(photo.url)) {
-            placedIdsRef.current.add(photo.id);
-          } else {
-            stillWaiting += 1;
+        if (waiting.length > 0) {
+          const placed = new Set(onPhotosRef.current(waiting.map((photo) => photo.url)));
+          let stillWaiting = 0;
+          let placedAny = false;
+          for (const photo of waiting) {
+            if (placed.has(photo.url)) {
+              placedIdsRef.current.add(photo.id);
+              placedAny = true;
+            } else {
+              stillWaiting += 1;
+            }
           }
+          if (placedAny) persist(session);
+          setReceivedCount(placedIdsRef.current.size + stillWaiting);
+          setPendingCount(stillWaiting);
+        } else {
+          setPendingCount(0);
         }
 
-        setReceivedCount(placedIdsRef.current.size + stillWaiting);
-        setPendingCount(stillWaiting);
+        if (afterExpiry) setExpiredPollDone(true);
       } catch {
         // Transient network error; the next tick retries.
+      } finally {
+        inFlight = false;
       }
     };
 
@@ -251,7 +324,7 @@ export function usePhoneUploadSession({
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [session, shouldPoll, stop]);
+  }, [session, shouldPoll, stop, persist]);
 
   return {
     session,
@@ -259,6 +332,7 @@ export function usePhoneUploadSession({
     secondsLeft,
     receivedCount,
     pendingCount,
+    canStart,
     isStarting,
     error,
     start,

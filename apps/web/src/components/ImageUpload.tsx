@@ -269,7 +269,11 @@ export function ImageUpload({
 
   const openPhoneModal = useCallback(() => {
     setPhoneModalOpen(true);
-    if (!phoneSessionLive) void phone.start();
+    // Only mint a code when nothing would be lost by replacing the current
+    // session: photos still waiting for a slot, or an expired session that
+    // hasn't been checked for a late arrival, keep the old one in place and
+    // the modal explains why.
+    if (!phoneSessionLive && phone.canStart) void phone.start();
   }, [phone, phoneSessionLive]);
 
   const closePhoneModal = useCallback(() => setPhoneModalOpen(false), []);
@@ -648,6 +652,7 @@ export function ImageUpload({
         secondsLeft={phone.secondsLeft}
         receivedCount={phone.receivedCount}
         pendingCount={phone.pendingCount}
+        canStart={phone.canStart}
         isStarting={phone.isStarting}
         error={phone.error}
         onRegenerate={() => void phone.start()}

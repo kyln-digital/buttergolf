@@ -16,6 +16,8 @@ interface PhoneUploadQrModalProps {
   receivedCount: number;
   /** Photos the phone has sent that the grid had no room for yet. */
   pendingCount: number;
+  /** False while replacing the session would strand photos it still holds. */
+  canStart: boolean;
   isStarting: boolean;
   error: string | null;
   /** Mints a fresh code (used when the current one has expired or failed). */
@@ -42,6 +44,7 @@ export function PhoneUploadQrModal({
   secondsLeft,
   receivedCount,
   pendingCount,
+  canStart,
   isStarting,
   error,
   onRegenerate,
@@ -260,18 +263,22 @@ export function PhoneUploadQrModal({
                     This code has expired
                   </Text>
                   <Text size="$3" color="$textSecondary" textAlign="center" paddingHorizontal="$md">
-                    Codes last 15 minutes. Generate a new one to keep going.
+                    {pendingCount > 0
+                      ? pendingCount === 1
+                        ? "1 photo it sent is still waiting for a free slot. Remove a photo to add it, then generate a new code."
+                        : `${pendingCount} photos it sent are still waiting for a free slot. Remove a photo to add them, then generate a new code.`
+                      : "Codes last 15 minutes. Generate a new one to keep going."}
                   </Text>
                 </>
               ) : (
                 <Text size="$3" color="$textSecondary" textAlign="center" paddingHorizontal="$md">
-                  {error ?? "No code yet."}
+                  No code yet.
                 </Text>
               )}
             </Column>
           )}
 
-          {error && showCode && (
+          {error && (
             <Text size="$3" color="$error" textAlign="center">
               {error}
             </Text>
@@ -299,7 +306,7 @@ export function PhoneUploadQrModal({
           )}
 
           <Row gap="$md" justifyContent="center" flexWrap="wrap">
-            {(isExpired || (!session && !isStarting)) && (
+            {(isExpired || (!session && !isStarting)) && canStart && (
               <Button
                 butterVariant="primary"
                 size="$4"
