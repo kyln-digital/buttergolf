@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
 import { getUserIdFromRequest } from "@/lib/auth";
+import { isSuspended, suspendedResponse } from "@/lib/suspension";
 import { broadcastToConversation } from "@/lib/supabase-realtime";
 import { toNewMessageBroadcast, toOfferUpdateBroadcast } from "@/lib/conversation-broadcast";
 import { sendOfferAcceptedEmail } from "@/lib/email";
@@ -21,6 +22,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+    if (isSuspended(user)) return suspendedResponse();
 
     const { id: conversationId } = await params;
 

@@ -12,6 +12,7 @@ import { SeoJsonLd } from "@/components/seo/SeoJsonLd";
 import { getBaseUrl } from "@/lib/base-url";
 import { resolveCoverUrl, resolveProductImages } from "@/lib/product-images";
 import { recordProductView } from "@/lib/product-views";
+import { PUBLIC_PRODUCT_WHERE } from "@/lib/listings";
 import type { ProductCardData } from "@buttergolf/app";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +38,7 @@ const getProduct = cache(async (id: string): Promise<Product | null> => {
             lastName: true,
             imageUrl: true,
             isDeleted: true,
+            suspendedAt: true,
           },
         },
       },
@@ -46,8 +48,8 @@ const getProduct = cache(async (id: string): Promise<Product | null> => {
       return null;
     }
 
-    // Hide products belonging to deleted sellers
-    if (product.user?.isDeleted) {
+    // Hide products of deleted or suspended sellers, and staff takedowns.
+    if (product.user?.isDeleted || product.user?.suspendedAt || product.hiddenAt) {
       return null;
     }
 
@@ -137,8 +139,7 @@ async function getSimilarProducts(
     const similarProducts = await prisma.product.findMany({
       where: {
         id: { not: id },
-        isSold: false,
-        isDraft: false,
+        ...PUBLIC_PRODUCT_WHERE,
         categoryId,
         price: {
           gte: priceMin,

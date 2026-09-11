@@ -38,7 +38,7 @@ import type { Prisma } from "@buttergolf/db";
 
 - `prisma` - The singleton PrismaClient instance
 - `Prisma` - The Prisma namespace for types
-- Enums: `ProductCondition`, `ClubKind`, `OrderStatus`, `OfferStatus`, `ShipmentStatus`
+- Enums: `ProductCondition`, `ClubKind`, `OrderStatus`, `OfferStatus`, `ShipmentStatus`, `PaymentHoldStatus`, `UserRole`, `OrderIssueReason`, `OrderIssueStatus`, `OrderIssueResolution`
 
 ## Directory Structure
 

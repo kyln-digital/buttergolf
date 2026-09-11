@@ -5,16 +5,13 @@ import { prisma } from "@buttergolf/db";
 import type { ProductCardData } from "@buttergolf/app";
 import { getBaseUrl } from "@/lib/base-url";
 import { resolveCoverUrl } from "@/lib/product-images";
+import { PUBLIC_PRODUCT_WHERE } from "@/lib/listings";
 
 export async function getRecentProducts(limit: number = 12): Promise<ProductCardData[]> {
   try {
     const products = await prisma.product.findMany({
       take: limit,
-      where: {
-        isSold: false, // Only show available products
-        isDraft: false, // Exclude unpublished drafts
-        user: { is: { isDeleted: false } }, // Hide products of deleted sellers
-      },
+      where: PUBLIC_PRODUCT_WHERE,
       orderBy: { createdAt: "desc" },
       include: {
         images: {

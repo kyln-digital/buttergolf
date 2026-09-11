@@ -27,13 +27,31 @@ export function toParamArray(value: string | string[] | undefined): string[] {
   return [];
 }
 
+/**
+ * Seller-side visibility for anything public: deleted sellers are gone, and a
+ * suspended seller's stock is off the shelf until the suspension lifts.
+ */
+export const PUBLIC_SELLER_FILTER: NonNullable<Prisma.ProductWhereInput["user"]> = {
+  is: { isDeleted: false, suspendedAt: null },
+};
+
+/**
+ * Where-fragment for anything a member of the public may see or buy. Every
+ * public product query spreads this so a staff takedown (`hiddenAt`) or a
+ * seller suspension takes effect everywhere at once.
+ */
+export const PUBLIC_PRODUCT_WHERE = {
+  isSold: false,
+  isDraft: false,
+  hiddenAt: null,
+  user: PUBLIC_SELLER_FILTER,
+} satisfies Prisma.ProductWhereInput;
+
 /** Base where clause for anything publicly browsable. */
 export function buildListingWhere(filters: ListingFilterParams): Prisma.ProductWhereInput {
   const where: Prisma.ProductWhereInput = {
-    isSold: false,
-    isDraft: false,
-    // Keep count/query/render parity by excluding deleted/orphaned sellers at query time.
-    user: { is: { isDeleted: false } },
+    // Keep count/query/render parity: one visibility rule, applied at query time.
+    ...PUBLIC_PRODUCT_WHERE,
   };
 
   if (filters.categorySlug) {
@@ -141,10 +159,8 @@ export function toProductCardData(
  */
 export async function getListingFilterOptions(categorySlug?: string) {
   const productScope = {
-    isSold: false,
-    isDraft: false,
-    // Match buildListingWhere — exclude deleted sellers from filter facets.
-    user: { is: { isDeleted: false } },
+    // Match buildListingWhere so the facets never advertise hidden stock.
+    ...PUBLIC_PRODUCT_WHERE,
     ...(categorySlug && { category: { slug: categorySlug } }),
   };
 

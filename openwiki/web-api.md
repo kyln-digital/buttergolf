@@ -27,7 +27,7 @@ Next.js 16 renamed middleware to **`proxy.ts`** — this trips people up constan
 
 1. **CORS** — reflects `Access-Control-Allow-Origin` only for origins in the `ALLOWED_ORIGINS` env allowlist (never `*`)
 2. **Coming-soon mode** — redirects all traffic to `/coming-soon` unless allowlisted or the Clerk userId is in `ADMIN_USER_IDS` (TODO-marked for post-launch deletion)
-3. **Route protection** — `auth.protect()` only for `/sell(.*)`, `/seller(.*)`, `/dashboard(.*)`, `/profile(.*)`. `/api/upload` is deliberately excluded because it self-manages auth (mobile Bearer support)
+3. **Route protection** — `auth.protect()` only for `/sell(.*)`, `/seller(.*)`, `/admin(.*)`, `/dashboard(.*)`, `/profile(.*)`. `/api/upload` is deliberately excluded because it self-manages auth (mobile Bearer support). `/admin` only checks for a session here; the staff role is checked in `app/admin/layout.tsx` and per API route.
 
 ⚠️ The `src/middleware/` **directory** is not middleware at all — it contains `rate-limit.ts`, a helper library imported by route handlers.
 
@@ -42,6 +42,12 @@ Most API routes resolve the caller via `getUserIdFromRequest(request)` (`apps/we
 The mobile-session JWT exists so long-lived Clerk tokens never appear in WebView URLs: the app exchanges a Clerk Bearer token at `POST /api/stripe/connect/mobile-session`, then passes the short-lived JWT to `/mobile-onboarding` via `?token=`.
 
 Routes authenticated with Bearer headers and GET semantics (`/api/favourites`, `/api/products/[id]/similar`, `/api/orders/[id]/tracking`) set `force-dynamic` so Vercel's edge caching doesn't strip the `Authorization` header.
+
+### Staff (admin portal)
+
+Staff access is a database role, `users.role` (`USER` | `SUPPORT` | `ADMIN`), plus a bootstrap: any Clerk ID in `ADMIN_USER_IDS` is `ADMIN` whatever the column says. `apps/web/src/lib/admin-auth.ts` exposes `getAdminForPage()` (server components) and `requireAdmin(request, permission?)` (API routes); the permission table is the pure `can(role, permission)` in `lib/admin-permissions.ts` (unit-tested). SUPPORT can read everything, triage buyer issues and hide listings; everything that moves money, suspends people or changes roles is ADMIN. Every mutating admin route writes an `AdminAction` row via `lib/admin-audit.ts`, inside the same transaction where there is one.
+
+Suspended users (`users.suspendedAt`) can sign in and view orders but every route that lists, publishes, buys, messages or offers returns 403 `ACCOUNT_SUSPENDED` (`lib/suspension.ts`), and their listings drop out of every public query via `PUBLIC_PRODUCT_WHERE` / `PUBLIC_SELLER_FILTER` in `lib/listings.ts` — the same fragment that hides staff takedowns (`products.hiddenAt`).
 
 ## API Route Map
 
@@ -95,6 +101,24 @@ See [Payments & Escrow](payments.md) for the money flow.
 ### Seller, users, misc
 
 `/api/seller/listings` (seller stats), `/api/seller/products/[id]` (PATCH/DELETE own product), `/api/users/seller-status`, `/api/users/push-tokens` (Expo registration), `/api/user/phone`, `/api/addresses` (+ `[id]`, `/default`), `/api/favourites` (+ `[productId]`), `/api/upload` (Cloudinary, self-managed auth + CORS; also accepts the phone QR session token as a Bearer credential and records those uploads in `phone_uploads`), `/api/upload/phone-session` (POST, Clerk: mints the QR token for the sell form; GET, Bearer: session status for the phone page), `/api/upload/phone-session/[sessionId]` (GET, Clerk: photos the phone has sent, polled by the sell form; DELETE, Clerk: close the session so the phone is refused), `/api/images/[id]` (DELETE), `/api/clerk/webhook` (svix user sync), `/api/newsletter`, `/api/waitlist`, `/api/shipping/calculate` (rate-limited), `/api/shipengine/webhook` (HMAC-verified, monotonic status).
+
+### Buyer issues
+
+`POST /api/orders/[id]/issue` (buyer only) — report a problem with an order. Allowed while the payout is still with us (`HELD` or `PENDING_SELLER_ONBOARDING`; rule in `lib/order-issue-state.ts`). Creates the `OrderIssue`, moves `paymentHoldStatus` to `DISPUTED` (every release path already refuses that state), posts a `SYSTEM` message into the order conversation, emails the seller and `ADMIN_NOTIFICATION_EMAIL`.
+
+### Admin (`/api/admin/*`, all behind `requireAdmin`)
+
+- `PATCH /api/admin/users/[id]` — `{ role }` or `{ suspend, reason }`. Nobody can act on themselves; staff can't be suspended.
+- `POST /api/admin/orders/[id]/refund` — full or partial Stripe refund; `reverseTransfer` claws back a paid-out seller first; `cancel` marks the order CANCELLED. Same bookkeeping as the `charge.refunded` webhook (`applyFullRefundToOrder` is shared).
+- `POST /api/admin/orders/[id]/release` — pay the seller now; same claim and `release:<orderId>` idempotency key as confirm-receipt and the cron.
+- `POST /api/admin/orders/[id]/hold` — `{ freeze }`; unfreeze refuses while a buyer issue or Stripe chargeback is open.
+- `PATCH /api/admin/orders/[id]` — `{ shipmentStatus }` override with the ShipEngine webhook's side effects (shippedAt, deliveredAt, auto-release clock).
+- `PATCH /api/admin/issues/[id]` (triage), `POST /api/admin/issues/[id]/resolve` — `{ resolution: REFUNDED | RELEASED | DISMISSED, note }`; money moves first, the issue closes only if that succeeds, both parties are emailed.
+- `PATCH /api/admin/listings/[id]` — `{ hidden, reason }` (SUPPORT+) or `{ title, price, categoryId, brandId }` (ADMIN).
+- `GET|POST /api/admin/reference/{brands|categories|club-models}`, `PATCH|DELETE .../[id]` — lookup-table CRUD; delete refuses anything in use.
+- `GET /api/admin/export/{waitlist|newsletter}` — CSV download, logged.
+
+All of these live in `apps/web/src/lib/admin-*.ts`; the routes are thin.
 
 Cron endpoints (`/api/cron/*`) are listed in [Operations](operations.md).
 

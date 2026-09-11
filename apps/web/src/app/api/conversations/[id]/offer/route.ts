@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
+import { isSuspended, suspendedResponse } from "@/lib/suspension";
 import { getUserIdFromRequest } from "@/lib/auth";
 import { checkRateLimit, rateLimitResponse } from "@/middleware/rate-limit";
 import { broadcastToConversation } from "@/lib/supabase-realtime";
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+    if (isSuspended(user)) return suspendedResponse();
 
     const { id: conversationId } = await params;
     const { amount } = await request.json();
@@ -52,6 +54,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             email: true,
             firstName: true,
             pushTokens: true,
+            suspendedAt: true,
           },
         },
       },
@@ -70,6 +73,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (product.isSold) {
       return NextResponse.json({ error: "Product is already sold" }, { status: 400 });
+    }
+
+    if (product.hiddenAt || product.isDraft || conversation.seller.suspendedAt) {
+      return NextResponse.json({ error: "This listing is no longer available" }, { status: 400 });
     }
 
     // Validate offer amount: >= 50% and < 100% of listed price

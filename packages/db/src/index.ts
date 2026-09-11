@@ -79,4 +79,8 @@ export {
   ClubKind,
   ShipmentStatus,
   OrderStatus,
+  UserRole,
+  OrderIssueReason,
+  OrderIssueStatus,
+  OrderIssueResolution,
 } from "../generated/client";

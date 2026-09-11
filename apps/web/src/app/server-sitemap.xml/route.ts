@@ -1,5 +1,6 @@
 import { getServerSideSitemap } from "next-sitemap";
 import { prisma } from "@buttergolf/db";
+import { PUBLIC_PRODUCT_WHERE } from "@/lib/listings";
 import type { ISitemapField } from "next-sitemap";
 
 // Enable ISR (Incremental Static Regeneration)
@@ -13,9 +14,7 @@ export async function GET() {
     // Fetch all products from the database
     const products = await prisma.product.findMany({
       where: {
-        isSold: false, // Only include available products
-        isDraft: false,
-        user: { is: { isDeleted: false } },
+        ...PUBLIC_PRODUCT_WHERE,
       },
       select: {
         id: true,

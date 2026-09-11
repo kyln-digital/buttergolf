@@ -31,6 +31,7 @@ A product (listing) is created by a seller via the sell flow (`packages/app/src/
 - **Flex/Loft**: Golf-specific attributes on Product
 - **Condition ratings**: Head/grip/shaft condition ratings (1–10 scale)
 - **Draft state**: `isDraft` flag + `requestId` for idempotency (`@@unique([userId, requestId])`)
+- **Staff takedown**: `hiddenAt` + `hiddenReason`, set from the admin portal. Distinct from `isDraft` (seller-controlled); the seller sees a "Hidden by ButterGolf" badge and the listing leaves every public query until staff unhide it
 
 ### Browsing & Search
 
@@ -82,6 +83,7 @@ Key fields on `Order`:
 - `status`: `PAYMENT_CONFIRMED`, `LABEL_GENERATED`, `SHIPPED`, `DELIVERED`, `CANCELLED`, `REFUNDED`
 - Stripe payment references, ShipEngine shipping fields, addresses (from/to)
 - `SellerRating` — buyer rates seller after order (unique per orderId)
+- `OrderIssue` — one per order, raised by the buyer ("Report a problem" on the order page) while the payout is still held. Opening one sets `paymentHoldStatus = DISPUTED`, the same state a Stripe chargeback uses, so confirm-receipt, the auto-release cron and the refund webhook all stop without knowing about issues. Staff resolve it from `/admin` as `REFUNDED` (buyer refunded, order REFUNDED/CANCELLED), `RELEASED` (seller paid) or `DISMISSED` (hold back to HELD). A Stripe "dispute won" event does not unfreeze while an issue is still open.
 
 Order API routes:
 
@@ -141,6 +143,8 @@ Authentication uses **Clerk** (`@clerk/nextjs` for web, `@clerk/clerk-expo` for 
 - Mobile: `apps/mobile/lib/apiClient.ts` — deferred fetch with secure-store token injection
 - Mobile session: `apps/web/src/lib/mobile-session.ts` — JWT-based session for mobile API calls (signed with `MOBILE_SESSION_SECRET`)
 - User soft-delete: `isDeleted` + `deletedAt` fields; API queries must filter `isDeleted: false`
+- Staff roles: `users.role` (`USER` | `SUPPORT` | `ADMIN`) gates `/admin`; `ADMIN_USER_IDS` bootstraps the first admin. See [Web API](web-api.md#staff-admin-portal)
+- Suspension: `suspendedAt` + `suspendedReason`, set by an ADMIN. Suspended users browse and read their orders but can't list, publish, buy, message or offer, and their listings are hidden. Public product queries use `PUBLIC_PRODUCT_WHERE` from `lib/listings.ts` rather than repeating the filter
 
 ## Images
 

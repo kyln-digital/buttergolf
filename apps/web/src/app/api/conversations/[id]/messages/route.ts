@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
+import { isSuspended, suspendedResponse } from "@/lib/suspension";
 import { checkRateLimit, rateLimitResponse } from "@/middleware/rate-limit";
 import { RATE_LIMITS, MESSAGE_LIMITS } from "@/lib/constants";
 import { sendNewMessageEmail } from "@/lib/email";
@@ -173,6 +174,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+
+    if (isSuspended(user)) return suspendedResponse();
 
     // Rate limit: 10 messages per minute
     const rateLimit = await checkRateLimit(user.id, {

@@ -56,6 +56,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       },
       fromAddress: true,
       toAddress: true,
+      issue: true,
     },
   });
 

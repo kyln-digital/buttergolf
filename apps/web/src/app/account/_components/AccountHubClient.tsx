@@ -6,6 +6,7 @@ import { useClerk, useUser } from "@clerk/nextjs";
 import { Column, Row, Text, Heading, Button, Container, ThemeSwitcher } from "@buttergolf/ui";
 import { Avatar } from "tamagui";
 import {
+  ShieldCheck,
   LogOut,
   Palette,
   ShoppingBag,
@@ -39,6 +40,8 @@ interface AccountHubClientProps {
   readonly unreadMessagesCount?: number;
   /** Number of active listings */
   readonly activeListingsCount?: number;
+  /** Staff (SUPPORT/ADMIN): shows the admin-portal entry. */
+  readonly isStaff?: boolean;
 }
 
 type PayoutBadge = {
@@ -63,6 +66,7 @@ export function AccountHubClient({
   pendingOrdersCount = 0,
   unreadMessagesCount = 0,
   activeListingsCount = 0,
+  isStaff = false,
 }: AccountHubClientProps) {
   const router = useRouter();
   const linkPress = useLinkPress();
@@ -312,6 +316,15 @@ export function AccountHubClient({
             href="/help-centre"
             onPress={linkPress("/help-centre")}
           />
+          {isStaff && (
+            <AccountMenuItem
+              icon={<ShieldCheck size={22} color="$text" />}
+              label="Admin portal"
+              description="Users, orders, disputes and listings"
+              href="/admin"
+              onPress={linkPress("/admin")}
+            />
+          )}
         </Column>
 
         {/* Sign out */}

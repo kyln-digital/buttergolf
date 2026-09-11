@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@buttergolf/db";
+import { isSuspended, suspendedResponse } from "@/lib/suspension";
 import {
   LISTING_PRICE_LIMITS,
   getListingPriceBoundsMessage,
@@ -28,6 +29,7 @@ export async function POST(request: Request) {
       where: { clerkId },
       select: {
         id: true,
+        suspendedAt: true,
       },
     });
 
@@ -72,11 +74,14 @@ export async function POST(request: Request) {
         },
         select: {
           id: true,
+          suspendedAt: true,
         },
       });
 
       user = createdUser;
     }
+
+    if (isSuspended(user)) return suspendedResponse();
 
     // No seller onboarding guard — users can list products without
     // completing Stripe Connect setup. Funds are held on the platform

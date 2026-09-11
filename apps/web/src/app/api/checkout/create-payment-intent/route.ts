@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
+import { PUBLIC_SELLER_FILTER } from "@/lib/listings";
+import { isSuspended, suspendedResponse } from "@/lib/suspension";
 import { getShippingOption, type ShippingOptionId } from "@buttergolf/constants";
 import { stripe } from "@/lib/stripe";
 import { calculatePricingBreakdownInPence } from "@/lib/pricing";
@@ -67,12 +69,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    if (isSuspended(buyer)) return suspendedResponse();
+
     // Public purchase path — same visibility as listings: no drafts, no deleted sellers
     const product = await prisma.product.findFirst({
       where: {
         id: productId,
         isDraft: false,
-        user: { is: { isDeleted: false } },
+        hiddenAt: null,
+        user: PUBLIC_SELLER_FILTER,
       },
       include: {
         user: true,
