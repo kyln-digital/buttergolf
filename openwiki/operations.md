@@ -101,7 +101,7 @@ Defined in `vercel.json`; all protected by `CRON_SECRET` bearer token (fail clos
 - **Database**: `DATABASE_URL` (one Neon database for all three environments — see [Database](#database-one-database-previews-included))
 - **ShipEngine**: `SHIPENGINE_API_KEY`, `SHIPENGINE_WEBHOOK_SECRET`
 - **Cloudinary**: cloud name (public) + API key/secret
-- **Resend**: `RESEND_API_KEY`
+- **Resend**: `RESEND_API_KEY`; inbound forwarding (`/api/resend/webhook`, fires on `email.received` for mail to buttergolf.com) needs `RESEND_WEBHOOK_SECRET` (the webhook's signing secret), `RESEND_INBOUND_FORWARD_TO` (destination inbox, never a Resend receiving domain) and optionally `RESEND_INBOUND_FORWARD_FROM` (sender on a verified domain)
 - **Mobile/Expo**: `EXPO_PUBLIC_*` (Clerk + Stripe publishable keys, merchant identifier, API URL)
 - **App-level**: `MOBILE_SESSION_SECRET` (min 32 chars, no fallback), `CRON_SECRET`, `ADMIN_USER_IDS` (coming-soon bypass **and** the admin-portal bootstrap: these Clerk IDs are ADMIN whatever `users.role` says — set the first admin here, promote others from `/admin/users`), `ADMIN_NOTIFICATION_EMAIL` (staff inbox for buyer issues, chargebacks and refund-after-payout alerts; unset = no emails), `ALLOWED_ORIGINS`, `NEXT_PUBLIC_COMING_SOON_ENABLED`, `SITE_URL`
 
