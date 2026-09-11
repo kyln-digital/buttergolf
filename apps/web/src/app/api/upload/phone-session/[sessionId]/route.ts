@@ -11,6 +11,9 @@ import type { PhoneUploadPhoto } from "@/lib/phone-upload";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// Answers per Clerk session; never cacheable.
+export const dynamic = "force-dynamic";
+
 interface RouteContext {
   params: Promise<{ sessionId: string }>;
 }
@@ -84,8 +87,9 @@ export async function DELETE(_request: Request, { params }: RouteContext): Promi
   }
 
   try {
-    await closePhoneUploadSession(sessionId, userId);
-    return NextResponse.json({ closed: true });
+    // False for an id this seller never minted: nothing is written for it.
+    const closed = await closePhoneUploadSession(sessionId, userId);
+    return NextResponse.json({ closed });
   } catch (error) {
     logError("Failed to close phone upload session", error, {
       errorId: UPLOAD_FAILED,

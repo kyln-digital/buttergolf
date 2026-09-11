@@ -448,3 +448,46 @@ export function usePhoneUploadSession({
     stop,
   };
 }
+
+/**
+ * Photos the phone has finished sending that the form doesn't hold yet, for
+ * the form's terminal actions. Publish and save build their payloads from
+ * form state, and a photo can be complete on the server while still waiting
+ * for the next two-second poll; without this it would be missing from the
+ * listing and destroyed by the sweep. Returns at most `room` URLs, skipping
+ * anything already placed (including photos the seller placed and removed).
+ * Never throws: on any failure the caller proceeds with what it has.
+ */
+export async function collectLatePhoneUploads(
+  scope: string,
+  heldUrls: readonly string[],
+  room: number
+): Promise<string[]> {
+  if (room <= 0) return [];
+  const stored = readStoredSession(scope);
+  if (!stored) return [];
+
+  try {
+    const response = await fetch(`/api/upload/phone-session/${stored.sessionId}`, {
+      cache: "no-store",
+    });
+    if (!response.ok) return [];
+    const { photos } = (await response.json()) as { photos: PhoneUploadPhoto[] };
+
+    const held = new Set(heldUrls);
+    const placed = new Set(stored.placedIds);
+    const late = photos
+      .filter((photo) => !placed.has(photo.id) && !held.has(photo.url))
+      .map((photo) => photo.url)
+      .slice(0, room);
+
+    // Record them as placed so a restore of this scope never re-offers them.
+    if (late.length > 0) {
+      const lateIds = photos.filter((photo) => late.includes(photo.url)).map((photo) => photo.id);
+      writeStoredSession(scope, { ...stored, placedIds: [...stored.placedIds, ...lateIds] });
+    }
+    return late;
+  } catch {
+    return [];
+  }
+}

@@ -32,7 +32,13 @@ import {
   Spinner,
 } from "@buttergolf/ui";
 import { ImageUpload } from "@/components/ImageUpload";
-import { clearStoredPhoneUploadSession } from "@/hooks/usePhoneUploadSession";
+import {
+  clearStoredPhoneUploadSession,
+  collectLatePhoneUploads,
+} from "@/hooks/usePhoneUploadSession";
+
+/** Photos a listing can carry; the uploader's cap and the phone handoff's ceiling. */
+const MAX_LISTING_IMAGES = 5;
 import { PhotoTipsCard } from "./PhotoTipsCard";
 import {
   sellRecordReducer,
@@ -354,6 +360,28 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   // uploader's state rather than in storage, is torn down with the draft
   // instead of continuing to feed photos into the fresh listing.
   const [uploaderEpoch, setUploaderEpoch] = useState(0);
+
+  /**
+   * The image list to publish or save: the form's, plus any phone photo that
+   * finished uploading after the uploader's last two-second poll. Without
+   * this, publishing a moment after the phone said "sent" would leave that
+   * photo out of the listing, and the sweep would later destroy it.
+   */
+  const withLatePhonePhotos = useCallback(
+    async (held: string[]): Promise<string[]> => {
+      if (!phoneSessionScope) return held;
+      const late = await collectLatePhoneUploads(
+        phoneSessionScope,
+        held,
+        MAX_LISTING_IMAGES - held.length
+      );
+      if (late.length === 0) return held;
+      const merged = [...held, ...late];
+      setFormData((prev) => ({ ...prev, images: merged }));
+      return merged;
+    },
+    [phoneSessionScope, setFormData]
+  );
   // --- Record identity ---
   // Which row this form writes to, whether the data on screen is actually that
   // row's, and which in-flight work is still relevant. All of it lives in one
@@ -906,6 +934,9 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       return;
     }
 
+    // Pick up any phone photo that landed since the uploader last polled.
+    const images = await withLatePhonePhotos(formData.images);
+
     // The record this submit is for. Queued behind any autosave already
     // running, so by the time it executes an in-flight draft creation has
     // finished and its row id is in the state machine.
@@ -957,7 +988,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                 width: resolvedParcel.width,
                 height: resolvedParcel.height,
                 weight: resolvedParcel.weight,
-                images: formData.images.map((url, index) => ({ url, sortOrder: index })),
+                images: images.map((url, index) => ({ url, sortOrder: index })),
                 // Editing a live listing leaves isDraft alone; publishing a draft
                 // flips it.
                 ...(isEditingListing ? {} : { isDraft: false }),
@@ -970,6 +1001,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
               },
               body: JSON.stringify({
                 ...formData,
+                images,
                 price: parsedPrice,
                 // Don't send brandName (display only)
                 brandName: undefined,
@@ -1071,13 +1103,16 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       return;
     }
 
+    // Pick up any phone photo that landed since the uploader last polled.
+    const images = await withLatePhonePhotos(formData.images);
+
     // Queued like every other write; persistDraft re-checks the record when it
     // actually runs, and abandons if the form has moved on since.
     const capturedGeneration = record.generation;
 
     try {
       const result = await saveQueueRef.current!.enqueue(() => {
-        return persistDraft(formData, capturedGeneration);
+        return persistDraft({ ...formData, images }, capturedGeneration);
       });
 
       if (result === "skipped") {
@@ -1263,7 +1298,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                           onRemoveImage={handleRemoveImage}
                           onReorderImages={handleReorderImages}
                           currentImages={formData.images}
-                          maxImages={5}
+                          maxImages={MAX_LISTING_IMAGES}
                         />
                       </Column>
 

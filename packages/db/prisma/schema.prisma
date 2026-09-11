@@ -164,11 +164,11 @@ model ProductImage {
 /// polls this table for the session id inside it; the phone uploads to
 /// Cloudinary with that token and each upload lands here. Rows are a handoff
 /// buffer, not part of the listing: the desktop copies the URL into its form
-/// state. Two sentinel `url` shapes live alongside real ones: "pending:<id>"
-/// for a slot reserved by an upload in flight (the Cloudinary public id it
-/// will use) and "closed" for a session the desktop has finished with. The
-/// daily sweep-phone-uploads cron removes rows two days old and destroys any
-/// asset that never became a product image.
+/// state. Three sentinel `url` shapes live alongside real ones: "minted" when
+/// a code is issued, "pending:<id>" for a slot reserved by an upload in flight
+/// (the Cloudinary public id it will use) and "closed" for a session the
+/// desktop has finished with. The daily sweep-phone-uploads cron removes rows
+/// two days old and destroys any asset that never became a product image.
 model PhoneUpload {
   id        String   @id @default(cuid())
   /// Random id minted per QR code (the token's `jti`). Not guessable.

@@ -14,19 +14,33 @@ import type { PhoneUploadSession } from "./phone-upload-session";
  * when the upload succeeds and deleted when it fails. Readers only ever see
  * rows with a real URL.
  *
- * Two sentinel `url` shapes share the table so no schema change is needed:
- * `pending:<publicId>` for a reservation in flight and `closed` for a session
- * the desktop has finished with. Neither is ever returned to a reader.
+ * Three sentinel `url` shapes share the table so no schema change is needed:
+ * `minted` written when a code is created, `pending:<publicId>` for a
+ * reservation in flight and `closed` for a session the desktop has finished
+ * with. None is ever returned to a reader.
  */
 
 /** Cloudinary folder every product photo is uploaded into. */
 const CLOUDINARY_FOLDER = "products";
 
 /**
+ * Written when a code is minted. The durable proof that a session id was
+ * issued by us, which is what lets `closePhoneUploadSession` ignore made-up
+ * ids instead of writing a row for each.
+ */
+const MINTED_URL = "minted";
+
+/**
  * Prefix marking a reserved slot whose upload hasn't finished. Carrying the
  * public id means an invocation that dies after Cloudinary succeeded but
  * before the row was filled still leaves the sweep enough to destroy the
  * asset; without it the upload would be billable and untraceable.
+ *
+ * A reservation counts against the allowance until its own request releases
+ * it or the sweep removes it. Age alone would only prove the request ended,
+ * not that no asset exists, so a crashed upload costs its session one slot
+ * for the rest of the code's fifteen minutes rather than risking a second
+ * billable upload on the same slot.
  */
 const PENDING_PREFIX = "pending:";
 
@@ -36,16 +50,6 @@ const PENDING_PREFIX = "pending:";
  * on the page can't keep filling Cloudinary with photos nobody will collect.
  */
 const CLOSED_URL = "closed";
-
-/**
- * A reservation older than this belongs to a request that died mid-upload.
- * The upload route caps its own run time at sixty seconds (`maxDuration`),
- * so a reservation five minutes old cannot still be in flight; ignoring it
- * when counting means a crash can't hold a slot hostage for the rest of the
- * session without ever reclaiming one from a slow but live upload. The row
- * itself is left for the sweep, which knows how to destroy its asset.
- */
-const PENDING_TTL_MS = 5 * 60 * 1000;
 
 /**
  * Rows older than this belong to sessions nobody can be polling any more.
@@ -69,22 +73,31 @@ function isPendingUrl(url: string): boolean {
 }
 
 function isSentinelUrl(url: string): boolean {
-  return url === CLOSED_URL || isPendingUrl(url);
+  return url === CLOSED_URL || url === MINTED_URL || isPendingUrl(url);
 }
 
 /** Cloudinary public id (folder included) behind a row, pending or complete. */
 function publicIdFor(url: string): string | null {
-  if (url === CLOSED_URL) return null;
+  if (url === CLOSED_URL || url === MINTED_URL) return null;
   if (isPendingUrl(url)) return `${CLOUDINARY_FOLDER}/${url.slice(PENDING_PREFIX.length)}`;
   return extractPublicId(url);
+}
+
+/** Records that a code was minted for the session. Called by the mint route. */
+export async function recordPhoneUploadSessionMinted(
+  sessionId: string,
+  clerkId: string
+): Promise<void> {
+  await prisma.phoneUpload.create({ data: { sessionId, clerkId, url: MINTED_URL } });
 }
 
 /**
  * Takes one slot of the session's allowance, atomically, recording the public
  * id the upload will use. Returns `over-cap` when the allowance is used up,
- * counting slots still reserved by in-flight uploads, and `closed` once the
- * desktop has finished with the session. The lock is transaction-scoped,
- * which also keeps it safe behind Neon's connection pooler.
+ * counting slots still reserved by in-flight (or crashed) uploads, and
+ * `closed` once the desktop has finished with the session. The lock is
+ * transaction-scoped, which also keeps it safe behind Neon's connection
+ * pooler.
  */
 export async function reservePhoneUploadSlot(
   session: PhoneUploadSession,
@@ -103,19 +116,9 @@ export async function reservePhoneUploadSlot(
       return { kind: "closed" };
     }
 
-    // Everything but the closed marker and reservations old enough to be dead.
+    // Every reservation and every completed photo; only the markers are free.
     const taken = await tx.phoneUpload.count({
-      where: {
-        sessionId,
-        clerkId,
-        url: { not: CLOSED_URL },
-        NOT: {
-          AND: [
-            { url: { startsWith: PENDING_PREFIX } },
-            { createdAt: { lt: new Date(Date.now() - PENDING_TTL_MS) } },
-          ],
-        },
-      },
+      where: { sessionId, clerkId, url: { notIn: [CLOSED_URL, MINTED_URL] } },
     });
     if (taken >= maxPhotos) {
       return { kind: "over-cap" };
@@ -163,9 +166,10 @@ export async function completePhoneUpload(
 
 /**
  * Gives a reserved slot back after a failed upload. Never throws: the phone is
- * already getting an error, and a slot that leaks here stops counting after
- * the pending TTL anyway. Callers should still await it, since a serverless
- * function may be frozen as soon as its response is sent.
+ * already getting an error. Callers must only release once they know no asset
+ * exists (a confirmed destroy, or a failure before Cloudinary was called), and
+ * should await it, since a serverless function may be frozen as soon as its
+ * response is sent.
  */
 export async function releasePhoneUploadSlot(reservationId: string): Promise<void> {
   try {
@@ -187,7 +191,7 @@ export async function listCompletedPhoneUploads(
     where: {
       sessionId,
       clerkId,
-      url: { not: CLOSED_URL },
+      url: { notIn: [CLOSED_URL, MINTED_URL] },
       NOT: { url: { startsWith: PENDING_PREFIX } },
     },
     orderBy: { createdAt: "asc" },
@@ -209,14 +213,27 @@ export async function isPhoneUploadSessionClosed(
 
 /**
  * Marks a session finished, so a phone left on the page gets a clear refusal
- * instead of uploading photos nobody will collect. Existing rows are left
- * alone: completed ones may still be held by an unsaved form, and a
- * reservation in flight will either fill itself (and be swept later if never
- * collected) or be released by its own request. Idempotent.
+ * instead of uploading photos nobody will collect. A no-op for a session id
+ * we never minted for this seller, so the route can't be used to write rows
+ * for made-up ids. Existing rows are left alone: completed ones may still be
+ * held by an unsaved form, and a reservation in flight will either fill
+ * itself (and be swept later if never collected) or be released by its own
+ * request. Idempotent. Returns whether the session was known.
  */
-export async function closePhoneUploadSession(sessionId: string, clerkId: string): Promise<void> {
-  await prisma.$transaction(async (tx) => {
+export async function closePhoneUploadSession(
+  sessionId: string,
+  clerkId: string
+): Promise<boolean> {
+  return prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${sessionId}::text))`;
+
+    const known = await tx.phoneUpload.findFirst({
+      where: { sessionId, clerkId },
+      select: { url: true },
+    });
+    if (!known) {
+      return false;
+    }
 
     const closed = await tx.phoneUpload.findFirst({
       where: { sessionId, clerkId, url: CLOSED_URL },
@@ -225,6 +242,7 @@ export async function closePhoneUploadSession(sessionId: string, clerkId: string
     if (!closed) {
       await tx.phoneUpload.create({ data: { sessionId, clerkId, url: CLOSED_URL } });
     }
+    return true;
   });
 }
 
@@ -299,7 +317,9 @@ export async function sweepStalePhoneUploads(limit = 50): Promise<SweepPhoneUplo
   );
 
   const toDestroy = Array.from(
-    new Set(stale.map((row) => row.url).filter((url) => url !== CLOSED_URL && !referenced.has(url)))
+    new Set(
+      stale.map((row) => row.url).filter((url) => publicIdFor(url) !== null && !referenced.has(url))
+    )
   );
 
   let destroyed = 0;

@@ -12,8 +12,13 @@ import {
   isPhoneUploadSessionClosed,
   listCompletedPhoneUploads,
   PHONE_SESSION_CLOSED_MESSAGE,
+  recordPhoneUploadSessionMinted,
 } from "@/lib/phone-upload-store";
 import type { PhoneUploadSessionCreated, PhoneUploadSessionStatus } from "@/lib/phone-upload";
+
+// Both handlers answer per credential (Clerk cookie, or the Bearer token in the
+// QR code) at one URL, so nothing here may ever be served from a cache.
+export const dynamic = "force-dynamic";
 
 /**
  * POST /api/upload/phone-session
@@ -49,6 +54,10 @@ export async function POST(request: Request): Promise<NextResponse> {
       userId,
       clampPhoneUploadMax(requestedMax)
     );
+
+    // The durable record that this id was issued, which is what lets the
+    // close route ignore ids nobody minted.
+    await recordPhoneUploadSessionMinted(session.sessionId, userId);
 
     const payload: PhoneUploadSessionCreated = {
       sessionId: session.sessionId,
