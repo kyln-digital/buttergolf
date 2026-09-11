@@ -23,7 +23,6 @@ export function SearchBar({
         backgroundColor="$surface"
         borderColor="$border"
         color="$text"
-        placeholderTextColor="$textMuted"
         focusStyle={{
           borderColor: "$borderFocus",
           borderWidth: 2,

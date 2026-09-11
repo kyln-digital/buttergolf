@@ -55,7 +55,6 @@ function DimensionInput({
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           placeholder={placeholder}
-          placeholderTextColor="$textMuted"
           keyboardType="decimal-pad"
           borderWidth={0}
           backgroundColor="transparent"

@@ -45,6 +45,7 @@ export const brandColors = {
   // Extended gray scale (for app compatibility)
   gray100: "#F5F5F5", // Very light gray
   gray200: "#E5E5E5", // Light gray
+  gray500: "#8A8A8A", // Placeholder text on light fields (clearly lighter than typed text)
   gray600: "#666666", // Card background in dark mode (lighter than surface for elevation)
   gray700: "#707070", // Medium gray (for neutral badge text)
   gray900: "#1A1A1A", // Very dark gray
