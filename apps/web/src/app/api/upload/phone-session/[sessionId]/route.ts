@@ -48,14 +48,17 @@ export async function GET(_request: Request, { params }: RouteContext): Promise<
   }
 
   // Filtering by clerkId is the ownership check: rows only ever carry the id
-  // baked into the token that produced them.
-  if (await isPhoneUploadSessionClosed(sessionId, userId)) {
-    return NextResponse.json({ error: "Session closed" }, { status: 410 });
-  }
+  // baked into the token that produced them. A closed session still lists its
+  // completed photos: the form's final drain runs *after* closing, precisely
+  // so nothing can complete between that read and the write. `closed` tells a
+  // poller it can stop once it has placed what is here.
+  const [photos, closed] = await Promise.all([
+    listCompletedPhoneUploads(sessionId, userId),
+    isPhoneUploadSessionClosed(sessionId, userId),
+  ]);
 
-  const photos: PhoneUploadPhoto[] = await listCompletedPhoneUploads(sessionId, userId);
-
-  return NextResponse.json({ photos }, { headers: { "Cache-Control": "no-store" } });
+  const payload: { photos: PhoneUploadPhoto[]; closed: boolean } = { photos, closed };
+  return NextResponse.json(payload, { headers: { "Cache-Control": "no-store" } });
 }
 
 /**

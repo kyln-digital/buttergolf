@@ -380,7 +380,18 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
   const settlePhonePhotos = useCallback(async (): Promise<string[]> => {
     if (!phoneSessionScope) return latestImagesRef.current;
-    await closePhoneUploadSessionsForScope(phoneSessionScope);
+    // The close must be confirmed, not merely attempted: an error status
+    // would leave the phone able to upload into a session nobody polls. Retry
+    // a few times; if it still won't confirm, carry on (the sweep reclaims
+    // anything that lands later) rather than trapping the seller in the form.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      if (await closePhoneUploadSessionsForScope(phoneSessionScope)) break;
+      if (attempt === 2) {
+        console.warn("[SellForm] Phone session close not confirmed; continuing");
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+      }
+    }
     // Read the form's images only now: the uploader and the poller were still
     // free to add to them while the close was in flight, and a list captured
     // before the await would overwrite whatever they added.

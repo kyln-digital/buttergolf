@@ -217,7 +217,8 @@ export function clearStoredPhoneUploadSession(scope: string): void {
 
 /** Outcome of fetching one session's photo list. */
 type FetchOutcome =
-  | { kind: "ok"; photos: PhoneUploadPhoto[] }
+  /** `closed`: the desktop has finished with it; place these and stop asking. */
+  | { kind: "ok"; photos: PhoneUploadPhoto[]; closed: boolean }
   | { kind: "gone" }
   | { kind: "error" };
 
@@ -225,11 +226,14 @@ async function fetchSessionPhotos(sessionId: string): Promise<FetchOutcome> {
   try {
     const response = await fetch(`/api/upload/phone-session/${sessionId}`, { cache: "no-store" });
     if (!response.ok) {
-      // Signed out, not ours, or closed: nothing more will arrive.
+      // Signed out or not ours: nothing more will arrive.
       return [400, 401, 410].includes(response.status) ? { kind: "gone" } : { kind: "error" };
     }
-    const { photos } = (await response.json()) as { photos: PhoneUploadPhoto[] };
-    return { kind: "ok", photos };
+    const { photos, closed } = (await response.json()) as {
+      photos: PhoneUploadPhoto[];
+      closed?: boolean;
+    };
+    return { kind: "ok", photos, closed: closed === true };
   } catch {
     return { kind: "error" };
   }
@@ -484,11 +488,15 @@ export function usePhoneUploadSession({
         }
 
         const replacedPhotos = new Map<string, PhoneUploadPhoto[]>();
+        // Replaced codes the server has finished with: their photos are still
+        // placed below, then the entry is dropped rather than closed again.
         const goneReplaced = new Set<string>();
         for (const entry of drainingRef.current) {
           const outcome = await fetchSessionPhotos(entry.sessionId);
           if (cancelled || activeSessionIdRef.current !== session.sessionId) return;
-          if (outcome.kind === "gone") goneReplaced.add(entry.sessionId);
+          if (outcome.kind === "gone" || (outcome.kind === "ok" && outcome.closed)) {
+            goneReplaced.add(entry.sessionId);
+          }
           if (outcome.kind === "ok") replacedPhotos.set(entry.sessionId, outcome.photos);
         }
 
@@ -541,6 +549,10 @@ export function usePhoneUploadSession({
         setPendingCount(stillWaiting.length);
 
         if (afterExpiry) setExpiredPollDone(true);
+
+        // The desktop has finished with the active code (published, saved or
+        // discarded elsewhere): its photos are placed, nothing more will come.
+        if (active.kind === "ok" && active.closed) stop();
       } catch {
         // Transient network error; the next tick retries.
       } finally {
@@ -627,12 +639,17 @@ export async function collectLatePhoneUploads(
  * uploads (and failing in-flight completions with a 410 to the phone) when
  * the collection runs; nothing can complete in the gap between the read and
  * the write. Leaves storage in place, since the write may still fail and the
- * form stay open.
+ * form stay open. Resolves true only when the server confirmed every close;
+ * a network failure or an error status is not a close, and the caller should
+ * retry rather than assume the phone has been shut out.
  */
-export async function closePhoneUploadSessionsForScope(scope: string): Promise<void> {
-  await Promise.all(
+export async function closePhoneUploadSessionsForScope(scope: string): Promise<boolean> {
+  const results = await Promise.all(
     knownStateForScope(scope).sessionIds.map((id) =>
-      fetch(`/api/upload/phone-session/${id}`, { method: "DELETE" }).catch(() => undefined)
+      fetch(`/api/upload/phone-session/${id}`, { method: "DELETE" })
+        .then((response) => response.ok)
+        .catch(() => false)
     )
   );
+  return results.every(Boolean);
 }
