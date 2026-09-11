@@ -200,7 +200,7 @@ export default function MobileOnboardingPage() {
   // Initialize on mount - only runs once due to dependency array
   useEffect(() => {
     // Use void to indicate intentional fire-and-forget
-    void initializeOnboarding();  
+    void initializeOnboarding();
   }, [initializeOnboarding]);
 
   const handleStepChange = useCallback((stepChange: StepChange) => {
