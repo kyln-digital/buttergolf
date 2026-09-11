@@ -61,7 +61,7 @@ export interface SellerListingsScreenProps {
 
 type FilterTab = "all" | "active" | "sold" | "draft";
 
-type StatusColorToken = "$success" | "$primary" | "$textMuted" | "$warning";
+type StatusColorToken = "$success" | "$primary" | "$textSecondary" | "$warning";
 type StatusColorLightToken =
   | "$successLight"
   | "$primaryLight"
@@ -74,8 +74,9 @@ const statusConfig: Record<
 > = {
   ACTIVE: { label: "Active", color: "$success", bgColor: "$successLight" },
   SOLD: { label: "Sold", color: "$primary", bgColor: "$primaryLight" },
-  // Theme-aware fill (unlike $gray200), so the muted label stays legible in dark mode.
-  DRAFT: { label: "Draft", color: "$textMuted", bgColor: "$backgroundHover" },
+  // Theme-aware fill (unlike $gray200) so the badge works in dark mode; Slate Smoke text
+  // because the 12px label needs 4.5:1 on the grey fill, which muted text misses.
+  DRAFT: { label: "Draft", color: "$textSecondary", bgColor: "$backgroundHover" },
   INACTIVE: { label: "Inactive", color: "$warning", bgColor: "$warningLight" },
 };
 
