@@ -22,6 +22,9 @@ import { formatOrderId } from "@/lib/utils/format";
  *
  * Body: { reason: OrderIssueReason, description: string }
  */
+/** The hold moved (release or refund) between the eligibility read and the write. */
+class HoldChangedError extends Error {}
+
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const clerkId = await getUserIdFromRequest(request);
@@ -102,13 +105,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         });
 
         // Freeze the payout. Every release path already refuses DISPUTED.
-        await tx.order.updateMany({
+        // Conditional on the hold still being ours: if a release or refund
+        // landed between the eligibility read and here, nothing matches and
+        // the transaction (issue included) is rolled back.
+        const frozen = await tx.order.updateMany({
           where: {
             id: order.id,
             paymentHoldStatus: { in: ["HELD", "PENDING_SELLER_ONBOARDING"] },
           },
           data: { paymentHoldStatus: "DISPUTED" },
         });
+        if (frozen.count === 0) {
+          throw new HoldChangedError();
+        }
 
         if (order.conversation) {
           await tx.message.create({
@@ -124,6 +133,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         return created;
       });
     } catch (error) {
+      if (error instanceof HoldChangedError) {
+        return NextResponse.json(
+          {
+            error:
+              "Payment for this order was just released or refunded, so a problem can no longer be reported here. Contact support@buttergolf.com and we'll help.",
+            reason: "HOLD_CHANGED",
+          },
+          { status: 409 }
+        );
+      }
       // Unique orderId: a concurrent report won the race. (P2002 = unique
       // constraint; checked by code because @buttergolf/db exports Prisma as a type.)
       if (

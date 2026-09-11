@@ -54,6 +54,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             email: true,
             firstName: true,
             pushTokens: true,
+            suspendedAt: true,
           },
         },
       },
@@ -72,6 +73,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (product.isSold) {
       return NextResponse.json({ error: "Product is already sold" }, { status: 400 });
+    }
+
+    if (product.hiddenAt || product.isDraft || conversation.seller.suspendedAt) {
+      return NextResponse.json({ error: "This listing is no longer available" }, { status: 400 });
     }
 
     // Validate offer amount: >= 50% and < 100% of listed price

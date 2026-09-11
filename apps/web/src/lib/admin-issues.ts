@@ -1,12 +1,8 @@
 import { prisma, type OrderIssueResolution } from "@buttergolf/db";
 import { recordAdminAction } from "@/lib/admin-audit";
-import {
-  AdminOrderError,
-  refundOrder,
-  releaseOrderToSeller,
-  setHoldStatus,
-} from "@/lib/admin-orders";
+import { AdminOrderError, refundOrder, releaseOrderToSeller } from "@/lib/admin-orders";
 import { sendOrderIssueResolvedEmail } from "@/lib/email";
+import { stripe } from "@/lib/stripe";
 
 export const ISSUE_RESOLUTIONS: OrderIssueResolution[] = ["REFUNDED", "RELEASED", "DISMISSED"];
 
@@ -25,15 +21,24 @@ export interface ResolveIssueInput {
 export interface ResolveIssueResult {
   issueId: string;
   resolution: OrderIssueResolution;
-  /** Set when DISMISSED could not unfreeze the hold (Stripe chargeback still open). */
+  /** RELEASED, but the seller hasn't finished payout setup: the transfer goes out when they do. */
+  parked: boolean;
+  /** Something staff should know that didn't stop the resolution. */
   warning?: string;
 }
 
 /**
- * Close a buyer-raised issue with a decision. The money moves first (refund
- * or release, via the same helpers the order page uses); only if that
- * succeeds is the issue marked resolved, so a Stripe failure leaves it open
- * for another go. DISMISSED moves no money and hands the hold back to HELD.
+ * Close a buyer-raised issue with a decision.
+ *
+ * Order of operations is what makes this safe to retry:
+ * - REFUNDED / RELEASED: the money moves first (same helpers as the order
+ *   page). Only if that succeeds is the issue marked resolved, so a Stripe
+ *   failure leaves it open for another go.
+ * - DISMISSED: nothing moves. The Stripe chargeback check runs before any
+ *   write; then the issue is resolved and the hold returned to HELD in one
+ *   transaction, so the two can never disagree. If Stripe still has a
+ *   chargeback open the hold stays DISPUTED and the dispute-closed webhook
+ *   unfreezes it later.
  */
 export async function resolveIssue(
   issueId: string,
@@ -48,6 +53,7 @@ export async function resolveIssue(
           buyerId: true,
           sellerId: true,
           paymentHoldStatus: true,
+          stripeChargeId: true,
           product: { select: { title: true } },
           buyer: { select: { email: true, firstName: true } },
           seller: { select: { email: true, firstName: true } },
@@ -61,7 +67,9 @@ export async function resolveIssue(
   }
 
   const reason = `Issue ${issue.id}${input.note ? `: ${input.note}` : ""}`;
+  let parked = false;
   let warning: string | undefined;
+  let unfreeze = false;
 
   switch (input.resolution) {
     case "REFUNDED":
@@ -72,12 +80,33 @@ export async function resolveIssue(
         reason,
       });
       break;
-    case "RELEASED":
-      await releaseOrderToSeller(issue.orderId, { actorId: input.actorId, viaIssue: true, reason });
+    case "RELEASED": {
+      const release = await releaseOrderToSeller(issue.orderId, {
+        actorId: input.actorId,
+        viaIssue: true,
+        reason,
+      });
+      parked = release.parked;
+      if (parked) {
+        warning =
+          "Decision recorded, but the seller hasn't finished payout setup. The transfer goes out automatically once they do.";
+      }
       break;
+    }
     case "DISMISSED":
-      // Nothing to move. The unfreeze below runs after the issue is closed,
-      // because setHoldStatus refuses while an issue is still open.
+      if (issue.order.paymentHoldStatus === "DISPUTED") {
+        // Read Stripe before writing anything: a failure here leaves the
+        // issue open and the whole call retryable.
+        const charge = issue.order.stripeChargeId
+          ? await stripe.charges.retrieve(issue.order.stripeChargeId)
+          : null;
+        if (charge?.disputed) {
+          warning =
+            "Issue closed, but Stripe still has a chargeback open on this payment; the payout unfreezes when that closes.";
+        } else {
+          unfreeze = true;
+        }
+      }
       break;
   }
 
@@ -97,25 +126,27 @@ export async function resolveIssue(
       action: "issue.resolve",
       targetType: "issue",
       targetId: issue.id,
-      metadata: { orderId: issue.orderId, resolution: input.resolution, note: input.note ?? null },
+      metadata: {
+        orderId: issue.orderId,
+        resolution: input.resolution,
+        parked,
+        note: input.note ?? null,
+      },
     });
-  });
-
-  if (input.resolution === "DISMISSED" && issue.order.paymentHoldStatus === "DISPUTED") {
-    try {
-      await setHoldStatus(issue.orderId, {
-        actorId: input.actorId,
-        freeze: false,
-        reason: `Issue ${issue.id} dismissed`,
+    if (unfreeze) {
+      await tx.order.updateMany({
+        where: { id: issue.orderId, paymentHoldStatus: "DISPUTED" },
+        data: { paymentHoldStatus: "HELD" },
       });
-    } catch (error) {
-      if (error instanceof AdminOrderError) {
-        warning = `Issue closed, but the payout stays frozen: ${error.message}`;
-      } else {
-        throw error;
-      }
+      await recordAdminAction(tx, {
+        actorId: input.actorId,
+        action: "order.unfreeze",
+        targetType: "order",
+        targetId: issue.orderId,
+        metadata: { from: "DISPUTED", reason: `Issue ${issue.id} dismissed` },
+      });
     }
-  }
+  });
 
   const emails = [
     sendOrderIssueResolvedEmail({
@@ -125,6 +156,7 @@ export async function resolveIssue(
       orderId: issue.orderId,
       productTitle: issue.order.product.title,
       resolution: input.resolution,
+      parked,
       note: input.note,
     }),
     sendOrderIssueResolvedEmail({
@@ -134,6 +166,7 @@ export async function resolveIssue(
       orderId: issue.orderId,
       productTitle: issue.order.product.title,
       resolution: input.resolution,
+      parked,
       note: input.note,
     }),
   ];
@@ -145,7 +178,7 @@ export async function resolveIssue(
     }
   });
 
-  return { issueId: issue.id, resolution: input.resolution, warning };
+  return { issueId: issue.id, resolution: input.resolution, parked, warning };
 }
 
 export async function triageIssue(

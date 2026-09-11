@@ -194,14 +194,15 @@ export async function refundOrder(
           amount: reversedPence,
           metadata: { orderId: order.id, actorId: input.actorId, reason: input.reason ?? "" },
         },
-        { idempotencyKey: `admin-reversal:${order.id}:${amountPence}` }
+        { idempotencyKey: `admin-reversal:${order.id}:${refundedPence}:${amountPence}` }
       );
     }
   }
 
-  // Keyed on order + amount: a double-click can't refund twice, and a second
-  // deliberate refund of the same amount is deduped by Stripe (it returns the
-  // first). Staff wanting two identical partial refunds must vary the amount.
+  // Keyed on order + what was already refunded + this amount. A double-click
+  // (same starting point, same amount) is deduped by Stripe; a second
+  // deliberate refund of the same amount starts from a different
+  // amount_refunded, so it gets its own key and its own refund.
   const refund = await stripe.refunds.create(
     {
       payment_intent: order.stripePaymentId,
@@ -213,7 +214,7 @@ export async function refundOrder(
         source: "admin",
       },
     },
-    { idempotencyKey: `admin-refund:${order.id}:${amountPence}` }
+    { idempotencyKey: `admin-refund:${order.id}:${refundedPence}:${amountPence}` }
   );
 
   const outcome = full

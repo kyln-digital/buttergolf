@@ -308,6 +308,7 @@ function ModelRowEditor({ model, canManage }: { model: ModelRow; canManage: bool
         label="Delete"
         tone="error"
         variant="ghost"
+        disabled={model.usageCount > 0}
         confirm={`Delete "${model.brand.name} ${model.name}"? Listings keep their free-text model.`}
         onRun={() => remove(model.id)}
       />

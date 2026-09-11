@@ -1532,9 +1532,11 @@ export async function sendOrderIssueResolvedEmail(params: {
   orderId: string;
   productTitle: string;
   resolution: "REFUNDED" | "RELEASED" | "DISMISSED";
+  /** RELEASED but the seller hasn't finished payout setup: the transfer waits for that. */
+  parked?: boolean;
   note?: string | null;
 }): Promise<EmailResult> {
-  const { orderId, resolution, role } = params;
+  const { orderId, resolution, role, parked } = params;
 
   const outcome: Record<typeof resolution, { buyer: string; seller: string }> = {
     REFUNDED: {
@@ -1544,9 +1546,12 @@ export async function sendOrderIssueResolvedEmail(params: {
         "We've refunded the buyer for this order. No payout will be made for it. If you believe this is wrong, reply to this email.",
     },
     RELEASED: {
-      buyer:
-        "After reviewing the case we've released the payment to the seller. If you have new information, reply to this email.",
-      seller: "After reviewing the case we've released your payout. It's on its way to your bank.",
+      buyer: parked
+        ? "After reviewing the case we've decided in the seller's favour. The payment will be released to them once they complete their payout setup. If you have new information, reply to this email."
+        : "After reviewing the case we've released the payment to the seller. If you have new information, reply to this email.",
+      seller: parked
+        ? "After reviewing the case we've decided in your favour. Your payout will be released as soon as you complete payout setup in your seller settings."
+        : "After reviewing the case we've released your payout. It's on its way to your bank.",
     },
     DISMISSED: {
       buyer:

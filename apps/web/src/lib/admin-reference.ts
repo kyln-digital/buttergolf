@@ -277,6 +277,12 @@ export async function deleteReference(kind: ReferenceKind, id: string, actorId: 
   } else {
     const model = await prisma.clubModel.findUnique({ where: { id }, include: { brand: true } });
     if (!model) throw new AdminOrderError("Club model not found", 404);
+    if (model.usageCount > 0) {
+      throw new AdminOrderError(
+        `"${model.brand.name} ${model.name}" is used by ${model.usageCount} listing${model.usageCount === 1 ? "" : "s"}`,
+        409
+      );
+    }
     await prisma.clubModel.delete({ where: { id } });
     summary = { name: model.name, brand: model.brand.name, kind: model.kind };
   }

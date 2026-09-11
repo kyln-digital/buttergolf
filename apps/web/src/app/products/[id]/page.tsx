@@ -12,6 +12,7 @@ import { SeoJsonLd } from "@/components/seo/SeoJsonLd";
 import { getBaseUrl } from "@/lib/base-url";
 import { resolveCoverUrl, resolveProductImages } from "@/lib/product-images";
 import { recordProductView } from "@/lib/product-views";
+import { PUBLIC_PRODUCT_WHERE } from "@/lib/listings";
 import type { ProductCardData } from "@buttergolf/app";
 
 export const dynamic = "force-dynamic";
@@ -138,8 +139,7 @@ async function getSimilarProducts(
     const similarProducts = await prisma.product.findMany({
       where: {
         id: { not: id },
-        isSold: false,
-        isDraft: false,
+        ...PUBLIC_PRODUCT_WHERE,
         categoryId,
         price: {
           gte: priceMin,

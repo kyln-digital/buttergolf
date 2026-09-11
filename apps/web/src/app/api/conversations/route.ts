@@ -270,10 +270,25 @@ export async function POST(req: Request) {
 
     const product = await prisma.product.findUnique({
       where: { id: productId },
-      select: { id: true, userId: true, isSold: true },
+      select: {
+        id: true,
+        userId: true,
+        isSold: true,
+        isDraft: true,
+        hiddenAt: true,
+        user: { select: { isDeleted: true, suspendedAt: true } },
+      },
     });
 
-    if (!product) {
+    // Same visibility as the listing pages: a taken-down or draft listing,
+    // or one whose seller is gone or suspended, can't be messaged about.
+    if (
+      !product ||
+      product.isDraft ||
+      product.hiddenAt ||
+      product.user.isDeleted ||
+      product.user.suspendedAt
+    ) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
