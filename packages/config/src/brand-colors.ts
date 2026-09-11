@@ -56,6 +56,7 @@ export const brandColors = {
   overlayLight30: "rgba(255, 255, 255, 0.3)",
   overlayLight40: "rgba(255, 255, 255, 0.4)",
   overlayLight60: "rgba(255, 255, 255, 0.6)",
+  overlayLight70: "rgba(255, 255, 255, 0.7)",
 
   // Dark overlays (for light backgrounds like Vanilla Cream)
   overlayDark5: "rgba(0, 0, 0, 0.05)",

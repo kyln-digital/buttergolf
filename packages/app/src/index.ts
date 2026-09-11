@@ -4,7 +4,8 @@ export * from "./features/products";
 export * from "./features/categories";
 export * from "./features/favourites";
 export * from "./features/sell";
-export * from "./features/auth";
+// Note: auth screens are mobile-only (they use @clerk/clerk-expo) and live in
+// apps/mobile/features/auth. Web uses Clerk's prebuilt <SignIn/>/<SignUp/>.
 export * from "./features/account";
 export * from "./features/payouts";
 export * from "./features/messages";
