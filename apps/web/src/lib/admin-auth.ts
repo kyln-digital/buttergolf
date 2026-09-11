@@ -1,7 +1,7 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
-import { getUserIdFromRequest } from "@/lib/auth";
+import { getClerkUserFromRequest, getUserIdFromRequest } from "@/lib/auth";
 import {
   can,
   effectiveRole,
@@ -16,6 +16,12 @@ import {
  * The role is the `users.role` column, except that Clerk IDs in
  * ADMIN_USER_IDS are always ADMIN (bootstrap). Deleted users are never staff,
  * whatever the column says.
+ *
+ * The row is found by Clerk ID first. Production and preview deployments use
+ * different Clerk instances but one database, so the same person carries a
+ * different Clerk ID on a preview than the one stored on their row; when the
+ * ID misses, the row is matched by the signed-in account's verified email
+ * instead. That fallback only ever yields what the `role` column grants.
  */
 export interface AdminUser {
   id: string;
@@ -36,10 +42,20 @@ const ADMIN_SELECT = {
   isDeleted: true,
 } as const;
 
-async function resolveAdmin(clerkId: string | null): Promise<AdminUser | null> {
+async function resolveAdmin(
+  clerkId: string | null,
+  getEmail: () => Promise<string | null>
+): Promise<AdminUser | null> {
   if (!clerkId) return null;
 
-  const user = await prisma.user.findUnique({ where: { clerkId }, select: ADMIN_SELECT });
+  let user = await prisma.user.findUnique({ where: { clerkId }, select: ADMIN_SELECT });
+
+  if (!user) {
+    const email = await getEmail();
+    if (email) {
+      user = await prisma.user.findUnique({ where: { email }, select: ADMIN_SELECT });
+    }
+  }
   if (!user || user.isDeleted) return null;
 
   const role = effectiveRole(user.role, clerkId, parseAdminUserIds(process.env.ADMIN_USER_IDS));
@@ -55,15 +71,21 @@ async function resolveAdmin(clerkId: string | null): Promise<AdminUser | null> {
   };
 }
 
+async function emailFromSession(): Promise<string | null> {
+  const user = await currentUser();
+  return user?.emailAddresses[0]?.emailAddress ?? null;
+}
+
 /** For server components under /admin. Null means "not staff". */
 export async function getAdminForPage(): Promise<AdminUser | null> {
   const { userId } = await auth();
-  return resolveAdmin(userId);
+  return resolveAdmin(userId, emailFromSession);
 }
 
 /** For API routes. Accepts cookies, Clerk Bearer tokens and mobile session tokens. */
 export async function getAdminFromRequest(request: Request): Promise<AdminUser | null> {
-  return resolveAdmin(await getUserIdFromRequest(request));
+  const clerkId = await getUserIdFromRequest(request);
+  return resolveAdmin(clerkId, async () => (await getClerkUserFromRequest(request))?.email ?? null);
 }
 
 export type AdminGuard =
@@ -89,7 +111,10 @@ export async function requireAdmin(
     return { response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
 
-  const admin = await resolveAdmin(clerkId);
+  const admin = await resolveAdmin(
+    clerkId,
+    async () => (await getClerkUserFromRequest(request))?.email ?? null
+  );
   if (!admin) {
     return { response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   }
