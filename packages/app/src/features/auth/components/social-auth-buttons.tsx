@@ -4,7 +4,7 @@ import React, { useCallback, useState } from "react";
 import Svg, { Path } from "react-native-svg";
 import { brandColors } from "@buttergolf/config";
 import { Button, Column, Row, Spinner, Text, View, useTheme } from "@buttergolf/ui";
-import { useSSO } from "@clerk/clerk-expo";
+import { isClerkAPIResponseError, useSSO } from "@clerk/clerk-expo";
 
 type SocialStrategy = "oauth_apple" | "oauth_google";
 
@@ -14,6 +14,17 @@ const PROVIDERS: ReadonlyArray<{ strategy: SocialStrategy; label: string }> = [
 ];
 
 const LOGO_SIZE = 20;
+
+/** Both sign-in and sign-up show this, so the fallback stays neutral. */
+function getSsoErrorMessage(err: unknown): string {
+  if (isClerkAPIResponseError(err)) {
+    const first = err.errors[0];
+    const message = first?.longMessage || first?.message;
+    if (message) return message;
+  }
+  if (err instanceof Error && err.message) return err.message;
+  return "Something went wrong. Please try again.";
+}
 
 /** Apple's logo in a single colour, as its guidelines require it to match the label. */
 function AppleLogo({ color }: Readonly<{ color: string }>) {
@@ -135,8 +146,7 @@ export function SocialAuthButtons({
         // Anything else means the user closed the browser sheet: nothing to report.
       } catch (err) {
         console.error("[SocialAuth] SSO failed:", err);
-        const message = err instanceof Error ? err.message : String(err);
-        onError?.(message || "Sign-in failed. Please try again.");
+        onError?.(getSsoErrorMessage(err));
       } finally {
         setPending(null);
       }
