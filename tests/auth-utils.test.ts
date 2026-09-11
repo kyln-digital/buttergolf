@@ -133,8 +133,23 @@ describe("mapClerkErrorToMessage", () => {
   it("maps the codes the Clerk API returns to friendly messages", () => {
     expect(mapClerkErrorToMessage("form_identifier_not_found")).toBe("Email address not found");
     expect(mapClerkErrorToMessage("form_password_incorrect")).toBe("Incorrect password");
+    expect(mapClerkErrorToMessage("form_password_or_identifier_incorrect")).toBe(
+      "Incorrect email or password"
+    );
     expect(mapClerkErrorToMessage("form_identifier_exists")).toBe(
       "This email is already registered"
+    );
+    expect(mapClerkErrorToMessage("form_password_not_strong_enough")).toBe(
+      "Password is not strong enough. Use uppercase, lowercase, numbers and special characters."
+    );
+    expect(mapClerkErrorToMessage("form_password_length_too_short")).toBe(
+      "Password must be at least 8 characters"
+    );
+    expect(mapClerkErrorToMessage("verification_failed")).toBe(
+      "Too many incorrect attempts. Please request a new code."
+    );
+    expect(mapClerkErrorToMessage("too_many_requests")).toBe(
+      "Too many attempts. Please wait a moment and try again."
     );
     expect(mapClerkErrorToMessage("form_code_incorrect")).toBe("Invalid verification code");
     expect(mapClerkErrorToMessage("verification_expired")).toBe(
