@@ -1473,7 +1473,6 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                           backgroundRepeat: "no-repeat",
                           backgroundSize: "20px",
                           paddingRight: "48px",
-                          transition: "border-color 0.2s",
                         }}
                         onFocus={(e) => {
                           e.currentTarget.style.borderColor = "#F45314";
@@ -1753,7 +1752,6 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                           fontFamily: "inherit",
                           resize: "none",
                           outline: "none",
-                          transition: "border-color 0.2s",
                         }}
                         onFocus={(e) => {
                           e.target.style.borderColor = "#F45314";
@@ -1791,7 +1789,6 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                             backgroundRepeat: "no-repeat",
                             backgroundSize: "20px",
                             paddingRight: "48px",
-                            transition: "border-color 0.2s",
                           }}
                           onFocus={(e) => {
                             e.currentTarget.style.borderColor = "#F45314";
@@ -1833,7 +1830,6 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                             backgroundRepeat: "no-repeat",
                             backgroundSize: "20px",
                             paddingRight: "48px",
-                            transition: "border-color 0.2s",
                           }}
                           onFocus={(e) => {
                             e.currentTarget.style.borderColor = "#F45314";

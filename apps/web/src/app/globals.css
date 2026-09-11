@@ -98,14 +98,22 @@ a.product-card-link {
 /* Smooth transitions for interactive elements only */
 body,
 button,
-input,
-select,
-textarea,
 a {
   transition:
     background-color 200ms ease,
     color 200ms ease,
     border-color 200ms ease;
+}
+
+/* Form fields deliberately do not fade border-color. Their focus style also
+   changes border-width, which is not transitioned, so a colour fade left the
+   field with a thick near-black border for ~200ms before it turned orange. */
+input,
+select,
+textarea {
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
 }
 
 @keyframes offerPopoverEnter {
