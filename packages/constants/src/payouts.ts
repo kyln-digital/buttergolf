@@ -208,8 +208,13 @@ const DIGITS_ONLY = /^\d+$/;
 const E164 = /^\+[1-9]\d{6,14}$/;
 const UK_POSTCODE = /^[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}$/;
 
-/** "12-34-56", "12 34 56" or "123456" → "123456"; anything else → null. */
+/**
+ * "12-34-56", "12 34 56" or "123456" → "123456"; anything else → null.
+ * Only digits, spaces and dashes are allowed before stripping — "12a34b56"
+ * is a typo, not a sort code with decoration.
+ */
 export function normaliseSortCode(input: string): string | null {
+  if (!/^[\d\s-]+$/.test(input.trim())) return null;
   const digits = input.replace(/\D/g, "");
   return digits.length === 6 ? digits : null;
 }

@@ -121,33 +121,36 @@ export default function MobileOnboardingPage() {
       // no business seeing Stripe's form and we hand them straight back.
       // Legacy mode skips this — the seller may have no account yet and needs
       // the full flow.
+      // This fails closed: without a known list of verification fields we
+      // would mount Stripe's unrestricted form and start re-collecting
+      // details the native flow owns, so a failed status read is an error
+      // with a retry, never a fallback to the full flow.
       if (verificationOnly) {
+        let fields: string[];
         try {
           const statusResponse = await fetch(`${baseUrl}/api/stripe/connect/status`, {
             headers: { Authorization: `Bearer ${token}` },
           });
-
-          if (statusResponse.ok) {
-            const status = (await statusResponse.json()) as Pick<
-              PayoutStatus,
-              "verificationFields"
-            >;
-            const fields = Array.isArray(status?.verificationFields)
-              ? status.verificationFields
-              : [];
-
-            if (fields.length === 0) {
-              returnToApp("complete");
-              return;
-            }
-
-            setVerificationFields(fields);
+          if (!statusResponse.ok) {
+            throw new Error(`Status request failed (${statusResponse.status})`);
           }
+          const status = (await statusResponse.json()) as Pick<PayoutStatus, "verificationFields">;
+          fields = Array.isArray(status?.verificationFields) ? status.verificationFields : [];
         } catch (statusError) {
-          // Reading the status is an optimisation, not a precondition: if it
-          // fails we still load the component, just against currently_due.
-          console.warn("[MobileOnboarding] Could not read payout status:", statusError);
+          console.error("[MobileOnboarding] Could not read payout status:", statusError);
+          const errorMsg = "We couldn't check what's still needed. Please try again.";
+          setError(errorMsg);
+          setLoading(false);
+          postMessageToRN({ type: "error", message: errorMsg });
+          return;
         }
+
+        if (fields.length === 0) {
+          returnToApp("complete");
+          return;
+        }
+
+        setVerificationFields(fields);
       }
 
       const instance = loadConnectAndInitialize({
@@ -197,7 +200,7 @@ export default function MobileOnboardingPage() {
   // Initialize on mount - only runs once due to dependency array
   useEffect(() => {
     // Use void to indicate intentional fire-and-forget
-    void initializeOnboarding(); // eslint-disable-line react-hooks/set-state-in-effect -- Async initialization
+    void initializeOnboarding();  
   }, [initializeOnboarding]);
 
   const handleStepChange = useCallback((stepChange: StepChange) => {

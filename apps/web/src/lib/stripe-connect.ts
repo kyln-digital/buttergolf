@@ -189,6 +189,20 @@ export async function retrieveConnectAccount(
 // Account creation
 // ---------------------------------------------------------------------------
 
+/**
+ * The business profile every seller account carries. Sellers are private
+ * individuals with no site of their own, so the URL is the marketplace itself
+ * (there is no public per-seller page to point at). Used at creation and
+ * re-sent by the details route, so the two can never drift.
+ */
+export function sellerBusinessProfile(): Stripe.AccountCreateParams.BusinessProfile {
+  return {
+    mcc: "5941", // Sporting goods
+    url: getBaseUrl(),
+    product_description: "Second-hand golf equipment sold on the ButterGolf marketplace",
+  };
+}
+
 export interface EnsureConnectAccountOptions {
   /** Our User.id (not the Clerk ID). */
   userId: string;
@@ -259,11 +273,7 @@ export async function ensureConnectAccount({
           }
         : {}),
     },
-    business_profile: {
-      mcc: "5941", // Sporting goods
-      url: `${getBaseUrl()}/seller/${user.id}`,
-      product_description: "Second-hand golf equipment sold on the ButterGolf marketplace",
-    },
+    business_profile: sellerBusinessProfile(),
     settings: {
       payouts: {
         schedule: { interval: "daily" },

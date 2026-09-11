@@ -389,11 +389,49 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Reconciliation alert: orders claimed RELEASED but with no transfer recorded
-    // indicate a crash between claim and transfer - they need manual attention.
-    const orphanedReleases = await prisma.order.count({
+    // Reconciliation: orders claimed RELEASED with no transfer recorded. Two
+    // causes: (a) the transfer went through but the follow-up DB write failed,
+    // (b) a crash between claim and transfer. Every release path tags its
+    // transfer with `transfer_group: order.id`, so (a) is repairable here by
+    // looking the transfer up; (b) is left alone and alerted, since a transfer
+    // may still be in flight from a concurrent process.
+    const orphanCandidates = await prisma.order.findMany({
       where: { paymentHoldStatus: "RELEASED", stripeTransferId: null },
+      select: { id: true },
+      take: 50,
     });
+
+    let repairedReleases = 0;
+    for (const orphan of orphanCandidates) {
+      try {
+        const transfers = await stripe.transfers.list({ transfer_group: orphan.id, limit: 1 });
+        const transfer = transfers.data[0];
+        if (!transfer) continue;
+
+        const repaired = await prisma.order.updateMany({
+          where: { id: orphan.id, stripeTransferId: null },
+          data: {
+            stripeTransferId: transfer.id,
+            paymentReleasedAt: new Date(transfer.created * 1000),
+            stripePayoutStatus: "completed",
+          },
+        });
+        if (repaired.count > 0) {
+          repairedReleases += 1;
+          console.warn("RECONCILIATION: repaired RELEASED order from its transfer:", {
+            orderId: orphan.id,
+            transferId: transfer.id,
+          });
+        }
+      } catch (repairError) {
+        console.error("RECONCILIATION: failed to look up transfer for order:", {
+          orderId: orphan.id,
+          error: repairError instanceof Error ? repairError.message : "Unknown error",
+        });
+      }
+    }
+
+    const orphanedReleases = orphanCandidates.length - repairedReleases;
     if (orphanedReleases > 0) {
       console.error("RECONCILIATION: orders marked RELEASED with no transfer:", {
         count: orphanedReleases,
@@ -409,6 +447,7 @@ export async function GET(request: NextRequest) {
       success: successCount,
       failed: failedCount,
       orphanedReleases,
+      repairedReleases,
     });
 
     return NextResponse.json({
@@ -418,6 +457,7 @@ export async function GET(request: NextRequest) {
       successCount,
       failedCount,
       orphanedReleases,
+      repairedReleases,
       results,
     });
   } catch (error) {

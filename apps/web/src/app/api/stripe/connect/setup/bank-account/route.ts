@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { ensureDbUserFromRequest } from "@/lib/db-user";
+import { readJsonObject } from "@/lib/json-body";
 import {
   describeStripeInputError,
   ensureConnectAccount,
@@ -29,8 +30,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = (await request.json()) as { token?: unknown };
-    const token = typeof body.token === "string" ? body.token.trim() : "";
+    const body = await readJsonObject(request);
+    const token = typeof body?.token === "string" ? body.token.trim() : "";
     if (!token.startsWith("btok_")) {
       return NextResponse.json({ error: "Enter your bank details again" }, { status: 400 });
     }

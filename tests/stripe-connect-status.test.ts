@@ -139,6 +139,37 @@ describe("deriveConnectStatus", () => {
     expect(summary.isComplete).toBe(false);
   });
 
+  it("never treats an account with past-due requirements as complete, even with payouts enabled", () => {
+    const summary = deriveConnectStatus(
+      account({
+        id: "acct_pastdue",
+        payouts_enabled: true,
+        capabilities: { transfers: "active" },
+        requirements: requirements({
+          currently_due: [],
+          past_due: ["individual.verification.document"],
+        }),
+        external_accounts: { object: "list", data: [bankAccount()], has_more: false, url: "" },
+      })
+    );
+    expect(summary.isComplete).toBe(false);
+    expect(summary.status).toBe("restricted");
+  });
+
+  it("never treats a rejected account as complete, whatever its capability flags say", () => {
+    const summary = deriveConnectStatus(
+      account({
+        id: "acct_rejected",
+        payouts_enabled: true,
+        capabilities: { transfers: "active" },
+        requirements: requirements({ disabled_reason: "rejected.fraud" }),
+        external_accounts: { object: "list", data: [bankAccount()], has_more: false, url: "" },
+      })
+    );
+    expect(summary.isComplete).toBe(false);
+    expect(summary.status).toBe("rejected");
+  });
+
   it("is restricted once a Stripe deadline has passed", () => {
     const summary = deriveConnectStatus(
       account({

@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
 import { validatePayoutDetails, type PayoutDetailsInput } from "@buttergolf/constants";
 import { stripe } from "@/lib/stripe";
-import { getBaseUrl } from "@/lib/base-url";
+import { readJsonObject } from "@/lib/json-body";
 import { ensureDbUserFromRequest } from "@/lib/db-user";
 import {
   describeStripeInputError,
   ensureConnectAccount,
   getConnectStatusForUser,
   getTosEvidenceFromRequest,
+  sellerBusinessProfile,
 } from "@/lib/stripe-connect";
 
 /**
@@ -30,8 +31,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = (await request.json()) as PayoutDetailsInput;
-    const validation = validatePayoutDetails(body);
+    const body = await readJsonObject(request);
+    if (!body) {
+      return NextResponse.json({ error: "Check the highlighted fields" }, { status: 400 });
+    }
+    const validation = validatePayoutDetails(body as unknown as PayoutDetailsInput);
     if (!validation.ok || !validation.value) {
       return NextResponse.json(
         { error: "Check the highlighted fields", errors: validation.errors },
@@ -74,11 +78,7 @@ export async function POST(request: Request) {
         // Every business_profile field classifyPayoutRequirement routes to this
         // step must be set here, or a seller could loop on a form that can't
         // satisfy what Stripe is asking for.
-        business_profile: {
-          url: `${getBaseUrl()}/seller/${user.id}`,
-          mcc: "5941", // Sporting goods
-          product_description: "Second-hand golf equipment sold on the ButterGolf marketplace",
-        },
+        business_profile: sellerBusinessProfile(),
         // Stripe expects a fresh acceptance whenever the platform collects
         // updated information on the account holder's behalf.
         ...(tos.ip

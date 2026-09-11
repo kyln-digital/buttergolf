@@ -52,6 +52,11 @@ describe("normaliseUkPhone", () => {
 });
 
 describe("normaliseSortCode / formatSortCode", () => {
+  it("rejects letters mixed into the digits instead of silently dropping them", () => {
+    expect(normaliseSortCode("12a34b56")).toBeNull();
+    expect(normaliseSortCode("12-34-5x")).toBeNull();
+  });
+
   it("strips separators down to six digits", () => {
     expect(normaliseSortCode("12-34-56")).toBe("123456");
     expect(normaliseSortCode("12 34 56")).toBe("123456");

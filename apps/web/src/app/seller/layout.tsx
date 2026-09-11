@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { Column, Row } from "@buttergolf/ui";
 import { SellerDashboardNav } from "./_components/SellerDashboardNav";
 import { PayoutRequirementsBanner } from "./_components/PayoutRequirementsBanner";
-import { usePayoutStatus } from "@/hooks/usePayoutStatus";
+import { PayoutStatusProvider, usePayoutStatus } from "@/hooks/usePayoutStatus";
 
 /**
  * Seller Dashboard Layout
@@ -18,6 +18,18 @@ import { usePayoutStatus } from "@/hooks/usePayoutStatus";
  * that page already shows the full picture.
  */
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <PayoutStatusProvider>
+      <SellerLayoutFrame>{children}</SellerLayoutFrame>
+    </PayoutStatusProvider>
+  );
+}
+
+/**
+ * Reads the shared status the provider above fetched once, so the banner and
+ * the page underneath never trigger a second Stripe account read.
+ */
+function SellerLayoutFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { status } = usePayoutStatus();
 

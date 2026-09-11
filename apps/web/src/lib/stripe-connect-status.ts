@@ -98,10 +98,20 @@ export function deriveConnectStatus(account: Stripe.Account): ConnectStatusSumma
   const transfersActive = account.capabilities?.transfers === "active";
   const bankAccount = firstBankAccount(account);
 
-  const isComplete = payoutsEnabled && transfersActive && currentlyDue.length === 0;
+  const isRejected = disabledReason?.includes("rejected") ?? false;
+
+  // Nothing outstanding at all: Stripe normally mirrors past_due into
+  // currently_due, but the transfer gate must not depend on that, and a
+  // rejected account is never payable whatever its capability flags say.
+  const isComplete =
+    payoutsEnabled &&
+    transfersActive &&
+    currentlyDue.length === 0 &&
+    pastDue.length === 0 &&
+    !isRejected;
 
   let status: PayoutAccountStatus = "pending";
-  if (disabledReason?.includes("rejected")) status = "rejected";
+  if (isRejected) status = "rejected";
   else if (isComplete) status = "active";
   else if (pastDue.length > 0) status = "restricted";
 
