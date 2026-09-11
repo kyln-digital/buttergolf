@@ -11,7 +11,7 @@ import {
   Spinner,
 } from "@buttergolf/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useSignIn } from "@clerk/clerk-expo";
+import { isClerkAPIResponseError, useSignIn } from "@clerk/clerk-expo";
 import { AuthFormInput, AuthErrorDisplay } from "./components";
 import { validateEmail, mapClerkErrorToMessage } from "./utils";
 
@@ -64,25 +64,23 @@ export function ForgotPasswordScreen({
     setIsSubmitting(true);
 
     try {
-      // Initiate sign-in with email for password reset
-      // This automatically prepares the password reset code verification
+      // Creating the sign-in with this strategy is what makes Clerk email the reset code
       await signIn.create({
+        strategy: "reset_password_email_code",
         identifier: email,
-        // The password reset will be handled via firstFactorVerification
       });
 
       // Call success to navigate to reset password screen
       onSuccess?.(email);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error("[ForgotPassword] Error:", err);
+      const clerkError = isClerkAPIResponseError(err) ? err.errors[0] : undefined;
 
-      if (errorMessage.includes("identifier_not_found")) {
-        setError(mapClerkErrorToMessage("identifier_not_found"));
-      } else {
-        setError(
-          errorMessage || "Failed to process request. Please check your email and try again."
-        );
-      }
+      setError(
+        clerkError
+          ? mapClerkErrorToMessage(clerkError.code, clerkError.longMessage || clerkError.message)
+          : "Failed to process request. Please check your email and try again."
+      );
     } finally {
       setIsSubmitting(false);
     }

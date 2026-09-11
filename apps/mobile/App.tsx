@@ -2585,6 +2585,7 @@ function OnboardingFlow() {
             <ResetPasswordScreen
               email={resetPasswordEmail}
               onSuccess={() => setFlowState("signIn")}
+              onNavigateToTwoFactor={() => setFlowState("twoFactor")}
               onNavigateBack={() => setFlowState("forgotPassword")}
             />
           )}
