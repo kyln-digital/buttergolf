@@ -923,7 +923,7 @@ export async function sendPaymentReleasedEmail(params: {
   orderId: string;
   productTitle: string;
   payoutAmount: number;
-  releaseReason: "buyer_confirmed" | "auto_released";
+  releaseReason: "buyer_confirmed" | "auto_released" | "admin_released";
 }): Promise<EmailResult> {
   const { sellerEmail, orderId, payoutAmount, releaseReason } = params;
   const sellerName = escapeHtml(params.sellerName);
@@ -932,7 +932,9 @@ export async function sendPaymentReleasedEmail(params: {
   const reasonText =
     releaseReason === "buyer_confirmed"
       ? "The buyer confirmed they received their item."
-      : "The payment was automatically released after 14 days.";
+      : releaseReason === "admin_released"
+        ? "Our support team released the payment after reviewing the order."
+        : "The payment was automatically released after 14 days.";
 
   try {
     const { data, error } = await getResendClient().emails.send({
@@ -1401,4 +1403,216 @@ export async function sendOfferRejectedEmail(params: {
     console.error("Email send error:", err);
     return { success: false, error: err instanceof Error ? err.message : "Unknown error" };
   }
+}
+
+// ─── Admin portal & order issues ─────────────────────────────────────────────
+
+/**
+ * Shared shell for the admin-era emails below. Same look as the templates
+ * above, without repeating 40 lines of CSS per message.
+ */
+function renderEmailShell(params: {
+  title: string;
+  headerColor: string;
+  bodyHtml: string;
+  cta?: { label: string; href: string };
+  footer?: string;
+}): string {
+  const { title, headerColor, bodyHtml, cta, footer } = params;
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #323232; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: ${headerColor}; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .header h1 { color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; margin: 0; font-size: 24px; }
+        .content { background: #FFFAD2; padding: 30px; border-radius: 0 0 8px 8px; }
+        .info-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .quote { background: white; padding: 16px 20px; border-left: 4px solid #3E3B2C; border-radius: 8px; margin: 20px 0; white-space: pre-wrap; }
+        .button { display: inline-block; background: #F45314; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 24px; font-weight: 600; }
+        .footer { text-align: center; padding: 20px; color: #545454; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header"><h1>${escapeHtml(title)}</h1></div>
+        <div class="content">
+          ${bodyHtml}
+          ${cta ? `<p style="text-align: center; margin-top: 30px;"><a href="${cta.href}" class="button">${escapeHtml(cta.label)}</a></p>` : ""}
+        </div>
+        <div class="footer"><p>${escapeHtml(footer ?? "ButterGolf")}</p></div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+function shortOrderId(orderId: string): string {
+  return orderId.slice(0, 8).toUpperCase();
+}
+
+/**
+ * Alert the staff inbox (ADMIN_NOTIFICATION_EMAIL). Silently a no-op when the
+ * variable is unset so nothing that calls this can fail for want of an inbox.
+ */
+export async function sendStaffAlertEmail(params: {
+  subject: string;
+  /** Plain-text facts, one per line. Escaped here. */
+  lines: string[];
+  /** Admin-portal path to open, e.g. "/admin/orders/abc". */
+  path?: string;
+}): Promise<EmailResult> {
+  const to = process.env.ADMIN_NOTIFICATION_EMAIL?.trim();
+  if (!to) {
+    console.info("[Email] ADMIN_NOTIFICATION_EMAIL not set; skipping staff alert:", params.subject);
+    return { success: false, error: "ADMIN_NOTIFICATION_EMAIL not configured" };
+  }
+
+  const html = renderEmailShell({
+    title: params.subject,
+    headerColor: "#3E3B2C",
+    bodyHtml: `<div class="info-box">${params.lines
+      .map((line) => `<p style="margin: 4px 0;">${escapeHtml(line)}</p>`)
+      .join("")}</div>`,
+    cta: params.path ? { label: "Open in admin", href: `${BASE_URL}${params.path}` } : undefined,
+    footer: "ButterGolf staff alert",
+  });
+
+  return sendEmail({ to, subject: `[ButterGolf admin] ${params.subject}`, html });
+}
+
+/**
+ * Tell the seller a buyer has raised a problem and their payout is on hold
+ * until it is resolved.
+ */
+export async function sendOrderIssueOpenedEmail(params: {
+  sellerEmail: string;
+  sellerName: string;
+  buyerName: string;
+  orderId: string;
+  productTitle: string;
+  reasonLabel: string;
+  description: string;
+}): Promise<EmailResult> {
+  const { sellerEmail, orderId } = params;
+  const html = renderEmailShell({
+    title: "A buyer has reported a problem",
+    headerColor: "#F45314",
+    bodyHtml: `
+      <p>Hi ${escapeHtml(params.sellerName)},</p>
+      <p>${escapeHtml(params.buyerName)} has reported a problem with their order for <strong>${escapeHtml(params.productTitle)}</strong>. Your payout for this order is on hold while we look into it.</p>
+      <div class="info-box">
+        <p><strong>Order ID:</strong> ${shortOrderId(orderId)}</p>
+        <p><strong>Reason:</strong> ${escapeHtml(params.reasonLabel)}</p>
+      </div>
+      <div class="quote">${escapeHtml(params.description)}</div>
+      <p>You can reply to the buyer in your order conversation. Our team will review the case and let you both know the outcome.</p>
+    `,
+    cta: { label: "View order", href: `${BASE_URL}/orders/${orderId}` },
+    footer: "Most problems are sorted out quickly between buyer and seller.",
+  });
+
+  return sendEmail({
+    to: sellerEmail,
+    subject: `Problem reported on order ${shortOrderId(orderId)}`,
+    html,
+  });
+}
+
+/**
+ * Outcome of a reported problem, sent to buyer and seller separately with
+ * wording for their side of it.
+ */
+export async function sendOrderIssueResolvedEmail(params: {
+  to: string;
+  name: string;
+  role: "buyer" | "seller";
+  orderId: string;
+  productTitle: string;
+  resolution: "REFUNDED" | "RELEASED" | "DISMISSED";
+  note?: string | null;
+}): Promise<EmailResult> {
+  const { orderId, resolution, role } = params;
+
+  const outcome: Record<typeof resolution, { buyer: string; seller: string }> = {
+    REFUNDED: {
+      buyer:
+        "We've refunded your payment. It will show on your original payment method within 5-10 working days.",
+      seller:
+        "We've refunded the buyer for this order. No payout will be made for it. If you believe this is wrong, reply to this email.",
+    },
+    RELEASED: {
+      buyer:
+        "After reviewing the case we've released the payment to the seller. If you have new information, reply to this email.",
+      seller: "After reviewing the case we've released your payout. It's on its way to your bank.",
+    },
+    DISMISSED: {
+      buyer:
+        "After reviewing the case we've closed this report without taking action. The order continues as normal.",
+      seller:
+        "After reviewing the case we've closed this report. Your payout is no longer on hold.",
+    },
+  };
+
+  const html = renderEmailShell({
+    title: "Update on your reported problem",
+    headerColor: resolution === "REFUNDED" ? "#02aaa4" : "#3E3B2C",
+    bodyHtml: `
+      <p>Hi ${escapeHtml(params.name)},</p>
+      <p>${escapeHtml(outcome[resolution][role])}</p>
+      <div class="info-box">
+        <p><strong>Item:</strong> ${escapeHtml(params.productTitle)}</p>
+        <p><strong>Order ID:</strong> ${shortOrderId(orderId)}</p>
+      </div>
+      ${params.note ? `<p><strong>Note from our team:</strong></p><div class="quote">${escapeHtml(params.note)}</div>` : ""}
+    `,
+    cta: { label: "View order", href: `${BASE_URL}/orders/${orderId}` },
+  });
+
+  return sendEmail({
+    to: params.to,
+    subject: `Order ${shortOrderId(orderId)}: your reported problem has been resolved`,
+    html,
+  });
+}
+
+/**
+ * Suspension or reinstatement notice.
+ */
+export async function sendAccountSuspensionEmail(params: {
+  email: string;
+  name: string;
+  suspended: boolean;
+  reason?: string | null;
+}): Promise<EmailResult> {
+  const html = params.suspended
+    ? renderEmailShell({
+        title: "Your ButterGolf account has been suspended",
+        headerColor: "#3E3B2C",
+        bodyHtml: `
+          <p>Hi ${escapeHtml(params.name)},</p>
+          <p>We've suspended your account. You can still sign in and view your orders, but you can't list, buy, message or make offers while the suspension is in place. Your listings are hidden.</p>
+          ${params.reason ? `<div class="quote">${escapeHtml(params.reason)}</div>` : ""}
+          <p>If you think this is a mistake, reply to this email or contact support@buttergolf.com.</p>
+        `,
+      })
+    : renderEmailShell({
+        title: "Your ButterGolf account is active again",
+        headerColor: "#02aaa4",
+        bodyHtml: `
+          <p>Hi ${escapeHtml(params.name)},</p>
+          <p>The suspension on your account has been lifted. Your listings are visible again and you can buy, sell and message as normal.</p>
+        `,
+        cta: { label: "Go to ButterGolf", href: BASE_URL },
+      });
+
+  return sendEmail({
+    to: params.email,
+    subject: params.suspended
+      ? "Your ButterGolf account has been suspended"
+      : "Your ButterGolf account is active again",
+    html,
+  });
 }

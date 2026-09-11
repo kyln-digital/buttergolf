@@ -1,10 +1,11 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-// TODO: Remove this entire coming-soon block after launch - set NEXT_PUBLIC_COMING_SOON_ENABLED=false
-// and delete ADMIN_USER_IDS, isComingSoonAllowedRoute, and the coming-soon redirect logic below.
+// TODO: Remove the coming-soon redirect after launch - set NEXT_PUBLIC_COMING_SOON_ENABLED=false
+// and delete isComingSoonAllowedRoute and the redirect logic below. Keep ADMIN_USER_IDS:
+// it is also the admin-portal bootstrap (see lib/admin-permissions.ts).
 
-// Admin user IDs that bypass the coming-soon redirect.
+// Admin user IDs that bypass the coming-soon redirect and are ADMIN in /admin.
 // Comma-separated Clerk user IDs, e.g. ADMIN_USER_IDS="user_abc,user_def"
 const ADMIN_USER_IDS = (process.env.ADMIN_USER_IDS ?? "")
   .split(",")
@@ -16,6 +17,7 @@ const ADMIN_USER_IDS = (process.env.ADMIN_USER_IDS ?? "")
 const isProtectedRoute = createRouteMatcher([
   "/sell(.*)",
   "/seller(.*)", // Seller dashboard with Stripe Connect components
+  "/admin(.*)", // Staff portal - signed in here, role checked in app/admin/layout.tsx
   "/dashboard(.*)",
   "/profile(.*)",
 ]);

@@ -2,6 +2,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { prisma } from "@buttergolf/db";
 import { AccountHubClient } from "./_components/AccountHubClient";
+import { getAdminForPage } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,7 @@ export default async function AccountPage() {
   }
 
   // Fetch counts in parallel using the user's DB id
-  const [clerkUserData, pendingOrdersCount, unreadMessagesCount, activeListingsCount] =
+  const [clerkUserData, pendingOrdersCount, unreadMessagesCount, activeListingsCount, admin] =
     await Promise.all([
       // Get Clerk user for profile image
       currentUser(),
@@ -70,6 +71,8 @@ export default async function AccountPage() {
           isDraft: false,
         },
       }),
+      // Staff get an "Admin portal" entry under Support
+      getAdminForPage(),
     ]);
 
   return (
@@ -88,6 +91,7 @@ export default async function AccountPage() {
       pendingOrdersCount={pendingOrdersCount}
       unreadMessagesCount={unreadMessagesCount}
       activeListingsCount={activeListingsCount}
+      isStaff={admin !== null}
     />
   );
 }

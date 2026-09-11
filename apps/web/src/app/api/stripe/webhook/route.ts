@@ -3,7 +3,9 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { prisma } from "@buttergolf/db";
 import { stripe } from "@/lib/stripe";
+import { applyFullRefundToOrder } from "@/lib/admin-orders";
 import {
+  sendStaffAlertEmail,
   sendOrderConfirmationEmail,
   sendNewSaleEmail,
   sendEmail,
@@ -868,55 +870,44 @@ async function handleRefund(charge: Stripe.Charge) {
     return;
   }
 
-  // Update order status (REFUNDED for full refund, keep current for partial)
-  if (charge.refunded) {
-    await prisma.order.update({
-      where: { id: order.id },
-      data: { status: "REFUNDED" },
-    });
-
-    // Take the order out of the escrow release path so neither confirm-receipt
-    // nor the auto-release cron can transfer funds to the seller after the
-    // buyer has been refunded. Only un-released holds can transition.
-    const holdUpdate = await prisma.order.updateMany({
-      where: {
-        id: order.id,
-        paymentHoldStatus: { in: ["HELD", "PENDING_SELLER_ONBOARDING", "DISPUTED"] },
-      },
-      data: { paymentHoldStatus: "REFUNDED" },
-    });
-
-    if (holdUpdate.count === 0 && order.stripeTransferId) {
-      // Refund landed after the seller was already paid out - the transfer
-      // must be reversed manually (or via stripe.transfers.createReversal).
-      console.error("REFUND AFTER PAYOUT - manual transfer reversal required:", {
-        orderId: order.id,
-        transferId: order.stripeTransferId,
-        chargeId: charge.id,
-      });
-    }
-  } else {
+  if (!charge.refunded) {
     // Partial refund - log but don't change status (could add PARTIALLY_REFUNDED to enum later)
     console.info("Partial refund processed for order:", order.id);
+    return;
   }
 
-  // If fully refunded, restore product availability - but only if the item
-  // never shipped. After dispatch the physical item is gone and must not
-  // become purchasable again.
-  if (charge.refunded) {
-    const relistableStatuses = ["PENDING", "CANCELLED", "RETURNED"];
-    if (relistableStatuses.includes(order.shipmentStatus)) {
-      await prisma.product.update({
-        where: { id: order.productId },
-        data: { isSold: false },
-      });
-      console.info("Product restored to available:", order.productId);
-    } else {
-      console.info("Product not relisted after refund (already shipped):", {
-        productId: order.productId,
-        shipmentStatus: order.shipmentStatus,
-      });
-    }
+  // Same bookkeeping as a staff refund (lib/admin-orders.ts): order status,
+  // hold taken out of the release path, product relisted only if unshipped.
+  // Whichever of the two runs first, the second is a no-op.
+  const outcome = await applyFullRefundToOrder(order.id);
+
+  if (outcome.productRelisted) {
+    console.info("Product restored to available:", order.productId);
+  } else {
+    console.info("Product not relisted after refund (already shipped):", {
+      productId: order.productId,
+      shipmentStatus: order.shipmentStatus,
+    });
+  }
+
+  if (outcome.refundAfterPayout) {
+    // Refund landed after the seller was already paid out - staff must
+    // reverse the transfer (admin portal: refund with "reverse payout").
+    console.error("REFUND AFTER PAYOUT - manual transfer reversal required:", {
+      orderId: order.id,
+      transferId: order.stripeTransferId,
+      chargeId: charge.id,
+    });
+    await sendStaffAlertEmail({
+      subject: `Refund after payout on order ${order.id.slice(0, 8).toUpperCase()}`,
+      lines: [
+        `Order: ${order.id}`,
+        `Item: ${order.product.title}`,
+        `Refunded: £${((charge.amount_refunded || 0) / 100).toFixed(2)}`,
+        `Transfer to reverse: ${order.stripeTransferId}`,
+      ],
+      path: `/admin/orders/${order.id}`,
+    }).catch((alertError) => console.error("Failed to send refund alert:", alertError));
   }
 
   // TODO: Send refund confirmation email to buyer
@@ -983,7 +974,21 @@ async function handleDisputeCreated(dispute: Stripe.Dispute) {
     });
   }
 
-  // TODO: Notify platform admin
+  await sendStaffAlertEmail({
+    subject: `Stripe chargeback on order ${order.id.slice(0, 8).toUpperCase()}`,
+    lines: [
+      `Order: ${order.id}`,
+      `Dispute: ${dispute.id} (${dispute.reason}, ${dispute.status})`,
+      `Amount: £${(dispute.amount / 100).toFixed(2)}`,
+      holdUpdate.count > 0
+        ? "Escrow frozen."
+        : order.stripeTransferId
+          ? "Seller already paid out - manual review required."
+          : `Hold status: ${order.paymentHoldStatus}`,
+    ],
+    path: `/admin/orders/${order.id}`,
+  }).catch((alertError) => console.error("Failed to send dispute alert:", alertError));
+
   // TODO: Send dispute notification to seller
 }
 
@@ -1004,11 +1009,21 @@ async function handleDisputeClosed(dispute: Stripe.Dispute) {
   if (!order) return;
 
   if (dispute.status === "won" || dispute.status === "warning_closed") {
-    await prisma.order.updateMany({
-      where: { id: order.id, paymentHoldStatus: "DISPUTED" },
-      data: { paymentHoldStatus: "HELD" },
+    // A buyer-raised issue also parks the order in DISPUTED. While one is
+    // still open, staff resolve it and the unfreeze happens there.
+    const openIssue = await prisma.orderIssue.findFirst({
+      where: { orderId: order.id, status: { not: "RESOLVED" } },
+      select: { id: true },
     });
-    console.info("Dispute won - escrow unfrozen for order:", order.id);
+    if (openIssue) {
+      console.info("Dispute won but a buyer issue is still open - escrow stays frozen:", order.id);
+    } else {
+      await prisma.order.updateMany({
+        where: { id: order.id, paymentHoldStatus: "DISPUTED" },
+        data: { paymentHoldStatus: "HELD" },
+      });
+      console.info("Dispute won - escrow unfrozen for order:", order.id);
+    }
   } else if (dispute.status === "lost") {
     await prisma.order.updateMany({
       where: { id: order.id, paymentHoldStatus: "DISPUTED" },

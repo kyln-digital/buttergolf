@@ -103,7 +103,7 @@ Defined in `vercel.json`; all protected by `CRON_SECRET` bearer token (fail clos
 - **Cloudinary**: cloud name (public) + API key/secret
 - **Resend**: `RESEND_API_KEY`
 - **Mobile/Expo**: `EXPO_PUBLIC_*` (Clerk + Stripe publishable keys, merchant identifier, API URL)
-- **App-level**: `MOBILE_SESSION_SECRET` (min 32 chars, no fallback), `CRON_SECRET`, `ADMIN_USER_IDS`, `ALLOWED_ORIGINS`, `NEXT_PUBLIC_COMING_SOON_ENABLED`, `SITE_URL`
+- **App-level**: `MOBILE_SESSION_SECRET` (min 32 chars, no fallback), `CRON_SECRET`, `ADMIN_USER_IDS` (coming-soon bypass **and** the admin-portal bootstrap: these Clerk IDs are ADMIN whatever `users.role` says — set the first admin here, promote others from `/admin/users`), `ADMIN_NOTIFICATION_EMAIL` (staff inbox for buyer issues, chargebacks and refund-after-payout alerts; unset = no emails), `ALLOWED_ORIGINS`, `NEXT_PUBLIC_COMING_SOON_ENABLED`, `SITE_URL`
 
 Note: `SENTRY_AUTH_TOKEN` and `SUPABASE_SERVICE_ROLE_KEY` appear in `turbo.json`'s build env but not `.env.example` — Sentry and Supabase are wired through their own setup flows.
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, Prisma } from "@buttergolf/db";
+import { PUBLIC_PRODUCT_WHERE } from "@/lib/listings";
 import type { ProductCardData } from "@buttergolf/app";
 import { resolveCoverUrl } from "@/lib/product-images";
 
@@ -23,9 +24,7 @@ export async function GET(request: NextRequest) {
 
     // Build where clause
     const whereClause: Prisma.ProductWhereInput = {
-      isSold: false,
-      isDraft: false,
-      user: { is: { isDeleted: false } },
+      ...PUBLIC_PRODUCT_WHERE,
       OR: [
         { title: { contains: searchTerm, mode: "insensitive" } },
         { description: { contains: searchTerm, mode: "insensitive" } },

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
+import { PUBLIC_SELLER_FILTER } from "@/lib/listings";
 import { getUserIdFromRequest } from "@/lib/auth";
 import { resolveImageUrl } from "@/lib/product-images";
 import { recordProductView } from "@/lib/product-views";
@@ -29,11 +30,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
               // Public published listings stay draft/deleted-seller blocked;
               // owner may still load own drafts for SellFormClient resume.
               OR: [
-                { isDraft: false, user: { is: { isDeleted: false } } },
+                { isDraft: false, hiddenAt: null, user: PUBLIC_SELLER_FILTER },
                 { isDraft: true, userId: viewerUserId },
               ],
             }
-          : { isDraft: false, user: { is: { isDeleted: false } } }),
+          : { isDraft: false, hiddenAt: null, user: PUBLIC_SELLER_FILTER }),
       },
       include: {
         images: {

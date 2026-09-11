@@ -22,7 +22,16 @@ describe("create-payment-intent public visibility", () => {
     expect(source).toMatch(/isDraft:\s*false/);
   });
 
-  it("requires user.isDeleted: false on the product where clause", () => {
-    expect(source).toMatch(/user:\s*\{\s*is:\s*\{\s*isDeleted:\s*false\s*\}\s*\}/);
+  it("uses the shared public seller filter and excludes staff takedowns", () => {
+    // The deleted-seller rule moved into PUBLIC_SELLER_FILTER (lib/listings.ts)
+    // when suspension and hidden listings were added, so every public query
+    // shares one definition. Guard both the use and the definition.
+    expect(source).toMatch(/user:\s*PUBLIC_SELLER_FILTER/);
+    expect(source).toMatch(/hiddenAt:\s*null/);
+
+    const listings = readFileSync(resolve(__dirname, "../apps/web/src/lib/listings.ts"), "utf8");
+    expect(listings).toMatch(
+      /PUBLIC_SELLER_FILTER[^=]*=\s*\{\s*is:\s*\{\s*isDeleted:\s*false,\s*suspendedAt:\s*null\s*\}/
+    );
   });
 });

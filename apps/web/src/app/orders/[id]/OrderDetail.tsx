@@ -19,6 +19,7 @@ import {
   View,
 } from "@buttergolf/ui";
 import { buildTrackingUrl } from "@/lib/utils/format";
+import { OrderIssuePanel, type OrderIssueSummary } from "./OrderIssuePanel";
 import {
   Package,
   Truck,
@@ -131,6 +132,7 @@ interface Order {
     country: string;
     phone: string | null;
   };
+  issue: OrderIssueSummary | null;
 }
 
 interface OrderDetailProps {
@@ -1038,6 +1040,26 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                 )}
               </Column>
             )}
+
+            {/* Buyer-raised problem: report form, or the state of an existing report */}
+            <OrderIssuePanel
+              orderId={order.id}
+              userRole={order.userRole}
+              status={order.status}
+              paymentHoldStatus={order.paymentHoldStatus}
+              issue={order.issue}
+              onIssueCreated={(issue) =>
+                setOrder((prev) => ({
+                  ...prev,
+                  issue,
+                  paymentHoldStatus:
+                    prev.paymentHoldStatus === "HELD" ||
+                    prev.paymentHoldStatus === "PENDING_SELLER_ONBOARDING"
+                      ? "DISPUTED"
+                      : prev.paymentHoldStatus,
+                }))
+              }
+            />
           </Column>
         </Card>
 

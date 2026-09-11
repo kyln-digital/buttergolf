@@ -37,6 +37,7 @@ const getProduct = cache(async (id: string): Promise<Product | null> => {
             lastName: true,
             imageUrl: true,
             isDeleted: true,
+            suspendedAt: true,
           },
         },
       },
@@ -46,8 +47,8 @@ const getProduct = cache(async (id: string): Promise<Product | null> => {
       return null;
     }
 
-    // Hide products belonging to deleted sellers
-    if (product.user?.isDeleted) {
+    // Hide products of deleted or suspended sellers, and staff takedowns.
+    if (product.user?.isDeleted || product.user?.suspendedAt || product.hiddenAt) {
       return null;
     }
 

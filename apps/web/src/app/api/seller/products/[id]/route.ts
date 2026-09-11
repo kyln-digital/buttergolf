@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, ProductCondition } from "@buttergolf/db";
+import { isSuspended, suspendedResponse } from "@/lib/suspension";
 import {
   LISTING_PRICE_LIMITS,
   getListingPriceBoundsMessage,
@@ -59,6 +60,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+
+    if (isSuspended(user)) return suspendedResponse();
 
     // Verify product exists and belongs to user
     const existingProduct = await prisma.product.findUnique({

@@ -10,42 +10,60 @@ datasource db {
 }
 
 model User {
-  id                         String         @id @default(cuid())
-  clerkId                    String         @unique
-  email                      String         @unique
+  id                         String             @id @default(cuid())
+  clerkId                    String             @unique
+  email                      String             @unique
   firstName                  String
   lastName                   String
   imageUrl                   String?
-  phone                      String?        // UK mobile number for seller onboarding pre-fill
-  createdAt                  DateTime       @default(now())
-  updatedAt                  DateTime       @updatedAt
+  phone                      String? // UK mobile number for seller onboarding pre-fill
+  createdAt                  DateTime           @default(now())
+  updatedAt                  DateTime           @updatedAt
   stripeAccountStatus        String?
-  stripeConnectId            String?        @unique
-  stripeOnboardingComplete   Boolean        @default(false)
-  averageRating              Float?         @default(0)
-  ratingCount                Int            @default(0)
+  stripeConnectId            String?            @unique
+  stripeOnboardingComplete   Boolean            @default(false)
+  averageRating              Float?             @default(0)
+  ratingCount                Int                @default(0)
   deletedAt                  DateTime?
-  isDeleted                  Boolean        @default(false)
-  stripeAccountType          String?        @default("express")
+  isDeleted                  Boolean            @default(false)
+  stripeAccountType          String?            @default("express")
   stripeRequirementsDeadline DateTime?
   stripeRequirementsDue      Json?
+  // Staff access. Clerk IDs listed in ADMIN_USER_IDS are treated as ADMIN
+  // regardless of this column (bootstrap), everyone else is what's stored here.
+  role                       UserRole           @default(USER)
+  // Suspension: set by staff. A suspended user can browse but cannot list,
+  // buy, message or make offers, and their listings are hidden publicly.
+  suspendedAt                DateTime?
+  suspendedReason            String?
   addresses                  Address[]
+  adminActions               AdminAction[]      @relation("AdminActor")
+  issuesReported             OrderIssue[]       @relation("IssueReporter")
+  issuesResolved             OrderIssue[]       @relation("IssueResolver")
   favourites                 Favourite[]
   messages                   Message[]
-  pushTokens                 String[]       @default([])
-  buyerOffers                Offer[]        @relation("BuyerOffers")
-  sellerOffers               Offer[]        @relation("SellerOffers")
-  ordersPurchased            Order[]        @relation("BuyerOrders")
-  ordersSold                 Order[]        @relation("SellerOrders")
+  pushTokens                 String[]           @default([])
+  buyerOffers                Offer[]            @relation("BuyerOffers")
+  sellerOffers               Offer[]            @relation("SellerOffers")
+  ordersPurchased            Order[]            @relation("BuyerOrders")
+  ordersSold                 Order[]            @relation("SellerOrders")
   products                   Product[]
-  ratingsGiven               SellerRating[] @relation("RatingsGiven")
-  ratingsReceived            SellerRating[] @relation("SellerRatings")
+  ratingsGiven               SellerRating[]     @relation("RatingsGiven")
+  ratingsReceived            SellerRating[]     @relation("SellerRatings")
   promotions                 ProductPromotion[]
-  buyerConversations         Conversation[] @relation("BuyerConversations")
-  sellerConversations        Conversation[] @relation("SellerConversations")
+  buyerConversations         Conversation[]     @relation("BuyerConversations")
+  sellerConversations        Conversation[]     @relation("SellerConversations")
 
   @@index([isDeleted])
+  @@index([role])
+  @@index([suspendedAt])
   @@map("users")
+}
+
+enum UserRole {
+  USER
+  SUPPORT // Read everything, triage issues, hide listings
+  ADMIN // Everything, including refunds, releases, suspension, roles
 }
 
 model Category {
@@ -95,44 +113,48 @@ model ClubModel {
 }
 
 model Product {
-  id          String           @id @default(cuid())
-  title       String
-  description String
-  price       Float
-  condition   ProductCondition
-  model       String?
-  userId      String
-  categoryId  String
-  isSold      Boolean          @default(false)
-  isDraft     Boolean          @default(false)
-  views       Int              @default(0)
-  length      Float?
-  width       Float?
-  height      Float?
-  weight      Float?
+  id                String             @id @default(cuid())
+  title             String
+  description       String
+  price             Float
+  condition         ProductCondition
+  model             String?
+  userId            String
+  categoryId        String
+  isSold            Boolean            @default(false)
+  isDraft           Boolean            @default(false)
+  views             Int                @default(0)
+  length            Float?
+  width             Float?
+  height            Float?
+  weight            Float?
   // Which parcel preset the seller picked. length/width/height/weight above are
   // the resolved values (preset defaults, or the seller's overrides).
-  parcelPresetId String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  brandId     String?
-  flex                 String?
-  loft                 String?
-  requestId            String?  // Idempotency key to prevent duplicate submissions
-  woodsSubcategory     String?  // Driver, Fairway Wood, Hybrid
-  headCoverIncluded    Boolean? @default(false)
-  gripCondition        Int?     @default(7)
-  headCondition        Int?     @default(7)
-  shaftCondition       Int?     @default(7)
-  favourites     Favourite[]
-  offers         Offer[]
-  orders         Order[]
-  images         ProductImage[]
-  promotions     ProductPromotion[]
-  conversations  Conversation[]
-  brand          Brand?           @relation(fields: [brandId], references: [id])
-  category    Category         @relation(fields: [categoryId], references: [id])
-  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parcelPresetId    String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  brandId           String?
+  flex              String?
+  loft              String?
+  requestId         String? // Idempotency key to prevent duplicate submissions
+  woodsSubcategory  String? // Driver, Fairway Wood, Hybrid
+  headCoverIncluded Boolean?           @default(false)
+  gripCondition     Int?               @default(7)
+  headCondition     Int?               @default(7)
+  shaftCondition    Int?               @default(7)
+  // Staff takedown. Distinct from isDraft (seller-controlled) and isSold:
+  // a hidden listing stays hidden until staff unhide it.
+  hiddenAt          DateTime?
+  hiddenReason      String?
+  favourites        Favourite[]
+  offers            Offer[]
+  orders            Order[]
+  images            ProductImage[]
+  promotions        ProductPromotion[]
+  conversations     Conversation[]
+  brand             Brand?             @relation(fields: [brandId], references: [id])
+  category          Category           @relation(fields: [categoryId], references: [id])
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, requestId])
   @@index([categoryId])
@@ -141,6 +163,7 @@ model Product {
   @@index([isSold])
   @@index([views])
   @@index([categoryId, isSold])
+  @@index([hiddenAt])
   @@map("products")
 }
 
@@ -224,9 +247,9 @@ model Address {
 }
 
 model Order {
-  id                   String         @id @default(cuid())
-  stripePaymentId      String?        @unique
-  stripeCheckoutId     String?        @unique
+  id                   String            @id @default(cuid())
+  stripePaymentId      String?           @unique
+  stripeCheckoutId     String?           @unique
   amountTotal          Float
   shippingCost         Float
   sellerId             String
@@ -253,10 +276,10 @@ model Order {
   // for anything outside a small hardcoded map.
   carrierCode          String?
   service              String?
-  shipmentStatus       ShipmentStatus @default(PENDING)
+  shipmentStatus       ShipmentStatus    @default(PENDING)
   estimatedDelivery    DateTime?
   actualDelivery       DateTime?
-  status               OrderStatus    @default(PAYMENT_CONFIRMED)
+  status               OrderStatus       @default(PAYMENT_CONFIRMED)
   labelGeneratedAt     DateTime?
   // Why the last label attempt failed, and when. Label purchase is
   // fire-and-forget after payment, so without this a failure is invisible to
@@ -265,13 +288,13 @@ model Order {
   labelAttemptedAt     DateTime?
   shippedAt            DateTime?
   deliveredAt          DateTime?
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
   stripePayoutDate     DateTime?
   stripePayoutStatus   String?
   stripePlatformFee    Float?
   stripeSellerPayout   Float?
-  stripeTransferId     String?        @unique
+  stripeTransferId     String?           @unique
   // Vinted-style payment hold (escrow) fields
   paymentHoldStatus    PaymentHoldStatus @default(HELD)
   paymentHeldAt        DateTime?
@@ -280,14 +303,15 @@ model Order {
   buyerConfirmedAt     DateTime?
   // Buyer protection fee tracking
   buyerProtectionFee   Float?
-  stripeChargeId       String?        @unique
-  buyer                User           @relation("BuyerOrders", fields: [buyerId], references: [id])
-  fromAddress          Address        @relation("FromAddress", fields: [fromAddressId], references: [id])
-  product              Product        @relation(fields: [productId], references: [id])
-  seller               User           @relation("SellerOrders", fields: [sellerId], references: [id])
-  toAddress            Address        @relation("ToAddress", fields: [toAddressId], references: [id])
+  stripeChargeId       String?           @unique
+  buyer                User              @relation("BuyerOrders", fields: [buyerId], references: [id])
+  fromAddress          Address           @relation("FromAddress", fields: [fromAddressId], references: [id])
+  product              Product           @relation(fields: [productId], references: [id])
+  seller               User              @relation("SellerOrders", fields: [sellerId], references: [id])
+  toAddress            Address           @relation("ToAddress", fields: [toAddressId], references: [id])
   sellerRating         SellerRating?
   conversation         Conversation?
+  issue                OrderIssue?
 
   @@index([sellerId])
   @@index([buyerId])
@@ -302,16 +326,16 @@ model Order {
 }
 
 model Message {
-  id             String      @id @default(cuid())
+  id             String       @id @default(cuid())
   conversationId String
   senderId       String
   content        String
-  type           MessageType @default(TEXT)
-  offerAmount    Float?      // Stores amount for OFFER/COUNTER_OFFER messages
-  offerId        String?     // Links to the Offer for offer-type messages
-  isRead         Boolean     @default(false)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  type           MessageType  @default(TEXT)
+  offerAmount    Float? // Stores amount for OFFER/COUNTER_OFFER messages
+  offerId        String? // Links to the Offer for offer-type messages
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   offer          Offer?       @relation(fields: [offerId], references: [id], onDelete: SetNull)
   sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
@@ -502,10 +526,10 @@ model Conversation {
   /// at runtime (Prisma always supplies the value) for no benefit.
   updatedAt DateTime @default(now()) @updatedAt
 
-  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  buyer    User     @relation("BuyerConversations", fields: [buyerId], references: [id], onDelete: Cascade)
-  seller   User     @relation("SellerConversations", fields: [sellerId], references: [id], onDelete: Cascade)
-  order    Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  product  Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyer    User      @relation("BuyerConversations", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller   User      @relation("SellerConversations", fields: [sellerId], references: [id], onDelete: Cascade)
+  order    Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
   messages Message[]
   offers   Offer[]
 
@@ -518,11 +542,11 @@ model Conversation {
 }
 
 enum PaymentHoldStatus {
-  HELD                      // Payment captured, awaiting delivery confirmation
+  HELD // Payment captured, awaiting delivery confirmation
   PENDING_SELLER_ONBOARDING // Delivery confirmed, but seller not yet onboarded - awaiting setup
-  RELEASED                  // Transferred to seller's Stripe Connect account
-  DISPUTED                  // Under dispute investigation
-  REFUNDED                  // Refunded to buyer
+  RELEASED // Transferred to seller's Stripe Connect account
+  DISPUTED // Under dispute investigation
+  REFUNDED // Refunded to buyer
 }
 
 enum PromotionType {
@@ -535,4 +559,68 @@ enum PromotionStatus {
   ACTIVE
   EXPIRED
   CANCELLED
+}
+
+// ─── Admin portal ────────────────────────────────────────────────────────────
+
+enum OrderIssueReason {
+  NOT_RECEIVED
+  NOT_AS_DESCRIBED
+  DAMAGED
+  WRONG_ITEM
+  OTHER
+}
+
+enum OrderIssueStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+}
+
+enum OrderIssueResolution {
+  REFUNDED // Buyer refunded (order REFUNDED or CANCELLED)
+  RELEASED // Funds released to the seller
+  DISMISSED // No money moved; hold returned to HELD
+}
+
+/// A problem the buyer raised about an order. Opening one freezes the payout
+/// hold (paymentHoldStatus DISPUTED) until staff resolve it. One per order.
+model OrderIssue {
+  id             String                @id @default(cuid())
+  orderId        String                @unique
+  reporterId     String
+  reason         OrderIssueReason
+  description    String
+  status         OrderIssueStatus      @default(OPEN)
+  resolution     OrderIssueResolution?
+  resolutionNote String?
+  resolvedById   String?
+  resolvedAt     DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  order          Order                 @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  reporter       User                  @relation("IssueReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  resolvedBy     User?                 @relation("IssueResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([reporterId])
+  @@index([resolvedById])
+  @@map("order_issues")
+}
+
+/// Append-only record of every mutation made through the admin portal.
+model AdminAction {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String // e.g. "user.suspend", "order.refund"
+  targetType String // "user" | "order" | "product" | "issue" | "brand" | ...
+  targetId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  actor      User     @relation("AdminActor", fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([targetType, targetId])
+  @@index([actorId, createdAt])
+  @@index([createdAt])
+  @@map("admin_actions")
 }

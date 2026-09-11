@@ -27,6 +27,9 @@ export interface SellerProduct {
   imageUrl: string;
   isSold: boolean;
   isDraft: boolean;
+  /** Set when staff took the listing down; the reason is shown to the seller. */
+  hiddenAt?: string | null;
+  hiddenReason?: string | null;
   views: number;
   favourites: number;
   createdAt: string;
@@ -152,6 +155,24 @@ export function SellerProductCard({ product, onDelete, onMarkSold }: SellerProdu
             >
               <Badge variant="info" size="md">
                 DRAFT
+              </Badge>
+            </div>
+          )}
+          {product.hiddenAt && (
+            <div
+              style={{
+                position: "absolute",
+                left: 12,
+                bottom: 12,
+              }}
+              title={
+                product.hiddenReason
+                  ? `Hidden by ButterGolf: ${product.hiddenReason}`
+                  : "Hidden by ButterGolf"
+              }
+            >
+              <Badge variant="error" size="md">
+                HIDDEN BY BUTTERGOLF
               </Badge>
             </div>
           )}

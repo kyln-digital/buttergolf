@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
+import { isSuspended, suspendedResponse } from "@/lib/suspension";
 import { getClerkUserFromRequest } from "@/lib/auth";
 
 async function resolveConversationUser(request: Request) {
@@ -253,6 +254,12 @@ export async function POST(req: Request) {
     }
 
     const user = resolvedUser.user;
+
+    const suspension = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { suspendedAt: true },
+    });
+    if (isSuspended(suspension)) return suspendedResponse();
 
     const body = await req.json();
     const { productId } = body;

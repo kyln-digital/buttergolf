@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@buttergolf/db";
+import { PUBLIC_PRODUCT_WHERE } from "@/lib/listings";
 import type { ProductCardData } from "@buttergolf/app";
 import { resolveCoverUrl } from "@/lib/product-images";
 
@@ -35,9 +36,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const similarProducts = await prisma.product.findMany({
       where: {
         id: { not: id },
-        isSold: false,
-        isDraft: false,
-        user: { is: { isDeleted: false } },
+        ...PUBLIC_PRODUCT_WHERE,
         categoryId: product.categoryId,
         price: {
           gte: priceMin,
