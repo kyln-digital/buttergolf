@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { Text, Row, Column, Image, Spinner } from "@buttergolf/ui";
+import { Text, Row, Column, Image, Spinner, Button } from "@buttergolf/ui";
+import { Smartphone } from "@tamagui/lucide-icons";
 import {
   DndContext,
   closestCenter,
@@ -20,7 +21,9 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useImageUpload } from "../hooks/useImageUpload";
+import { usePhoneUploadSession } from "../hooks/usePhoneUploadSession";
 import { ImageCropModal } from "./ImageCropModal";
+import { PhoneUploadQrModal } from "./PhoneUploadQrModal";
 import {
   isHeicFile,
   normaliseImageFile,
@@ -33,12 +36,26 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
 }
 
+/** "4:05" style countdown for the phone-session status line. */
+function formatCountdown(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
 export interface ImageUploadProps {
   onUploadComplete: (url: string) => void;
   onRemoveImage?: (index: number) => void;
   onReorderImages?: (urls: string[]) => void;
   maxImages?: number;
   currentImages?: string[];
+  /**
+   * Identity of the record these photos belong to. Lets a live phone session
+   * survive a reload of the same record without ever being restored into a
+   * different one. The owner must clear it (see `clearStoredPhoneUploadSession`)
+   * wherever it discards the record's draft.
+   */
+  phoneSessionScope?: string;
 }
 
 /** A single sortable image thumbnail with delete + set-as-cover controls */
@@ -181,6 +198,7 @@ export function ImageUpload({
   onReorderImages,
   maxImages = 5,
   currentImages = [],
+  phoneSessionScope,
 }: Readonly<ImageUploadProps>) {
   const { upload, uploading, error, progress } = useImageUpload();
   const [dragActive, setDragActive] = useState(false);
@@ -188,7 +206,80 @@ export function ImageUpload({
   const [fileToCrop, setFileToCrop] = useState<File | null>(null);
   const [converting, setConverting] = useState(false);
   const [convertError, setConvertError] = useState<string | null>(null);
+  const [phoneModalOpen, setPhoneModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Read inside the phone-photo callback, which fires from a poll timer and
+  // would otherwise see the images as they were when the session started.
+  const currentImagesRef = useRef(currentImages);
+  currentImagesRef.current = currentImages;
+
+  // A desktop photo mid-conversion, mid-crop or mid-upload has a slot spoken
+  // for that `currentImages` doesn't show yet. Read by the phone callback so a
+  // poll can't hand that last slot to the phone and leave the grid one over.
+  const desktopBusyRef = useRef(false);
+  desktopBusyRef.current = converting || cropModalOpen || uploading;
+
+  /**
+   * Places phone photos into free slots and reports which of the offered URLs
+   * the form now holds. Whatever doesn't fit is left for the hook to offer
+   * again once a slot frees up, rather than being quietly dropped: the phone
+   * has already told the seller those photos were sent.
+   */
+  const handlePhonePhotos = useCallback(
+    (urls: string[]): string[] => {
+      const held = currentImagesRef.current;
+      const already = new Set(held);
+      const reservedForDesktop = desktopBusyRef.current ? 1 : 0;
+      const room = Math.max(0, maxImages - held.length - reservedForDesktop);
+
+      const alreadyHeld = urls.filter((url) => already.has(url));
+      const placedNow = urls.filter((url) => !already.has(url)).slice(0, room);
+      for (const url of placedNow) onUploadComplete(url);
+      // The parent's state update lands on the next render; anyone reading
+      // the ref before then must already see these slots as taken.
+      currentImagesRef.current = [...held, ...placedNow];
+
+      return [...alreadyHeld, ...placedNow];
+    },
+    [maxImages, onUploadComplete]
+  );
+
+  const phone = usePhoneUploadSession({
+    onPhotos: handlePhonePhotos,
+    remainingSlots: maxImages - currentImages.length,
+    storageScope: phoneSessionScope,
+  });
+  const phoneSessionLive = phone.session !== null && !phone.isExpired;
+  const hasRoom = currentImages.length < maxImages;
+
+  const phonePending = phone.pendingCount > 0;
+  // Photos waiting for a slot stay visible after the code expires: the hook
+  // keeps offering them, so the seller must be able to see there's something
+  // to make room for.
+  const showPhoneStatus = phoneSessionLive || phonePending;
+
+  const phoneStatusText = phonePending
+    ? `${phone.pendingCount} from your phone waiting for a free slot · remove a photo to add ${
+        phone.pendingCount === 1 ? "it" : "them"
+      }`
+    : phone.receivedCount > 0
+      ? `${phone.receivedCount} received from your phone`
+      : "Waiting for your phone";
+  const phoneStatusSuffix = phoneSessionLive
+    ? ` · ${formatCountdown(phone.secondsLeft)} left`
+    : " · code expired";
+
+  const openPhoneModal = useCallback(() => {
+    setPhoneModalOpen(true);
+    // Only mint a code when nothing would be lost by replacing the current
+    // session: photos still waiting for a slot, or an expired session that
+    // hasn't been checked for a late arrival, keep the old one in place and
+    // the modal explains why.
+    if (!phoneSessionLive && phone.canStart) void phone.start();
+  }, [phone, phoneSessionLive]);
+
+  const closePhoneModal = useCallback(() => setPhoneModalOpen(false), []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -441,6 +532,35 @@ export function ImageUpload({
           )}
         </Column>
 
+        {/* Phone handoff: sits outside the drop zone so a press can't also open the file picker.
+            Stays visible while a session is live even when the grid is full, so photos waiting
+            for a slot are never invisible. */}
+        {(hasRoom || showPhoneStatus) && (
+          <Row gap="$sm" alignItems="center" justifyContent="center" flexWrap="wrap">
+            <Button butterVariant="ghost" size="$3" icon={Smartphone} onPress={openPhoneModal}>
+              {phoneSessionLive ? "Show phone code" : "Add photos from your phone"}
+            </Button>
+            {showPhoneStatus && (
+              <Text
+                // Polling updates this; announce arrivals to screen readers too.
+                role="status"
+                aria-live="polite"
+                size="$2"
+                color={
+                  phonePending
+                    ? "$warning"
+                    : phone.receivedCount > 0
+                      ? "$success"
+                      : "$textSecondary"
+                }
+              >
+                {phoneStatusText}
+                {phoneStatusSuffix}
+              </Text>
+            )}
+          </Row>
+        )}
+
         {(error || convertError) && (
           <Text size="$3" color="$error" textAlign="center">
             {error || convertError}
@@ -529,6 +649,20 @@ export function ImageUpload({
           }}
         />
       )}
+
+      <PhoneUploadQrModal
+        open={phoneModalOpen}
+        onClose={closePhoneModal}
+        session={phone.session}
+        isExpired={phone.isExpired}
+        secondsLeft={phone.secondsLeft}
+        receivedCount={phone.receivedCount}
+        pendingCount={phone.pendingCount}
+        canStart={phone.canStart}
+        isStarting={phone.isStarting}
+        error={phone.error}
+        onRegenerate={() => void phone.start()}
+      />
     </>
   );
 }

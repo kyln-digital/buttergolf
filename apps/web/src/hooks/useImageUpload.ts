@@ -13,6 +13,21 @@ export interface UploadResult {
   contentType: string;
 }
 
+/**
+ * Thrown when the upload route answers with an error. Carries the HTTP status
+ * so callers can react to specific outcomes (the phone page turns a 410 into
+ * its "finished on your computer" state) instead of matching message text.
+ */
+export class UploadError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number
+  ) {
+    super(message);
+    this.name = "UploadError";
+  }
+}
+
 export interface UseImageUploadReturn {
   upload: (file: File, isFirstImage?: boolean) => Promise<UploadResult>;
   uploading: boolean;
@@ -20,7 +35,16 @@ export interface UseImageUploadReturn {
   progress: number;
 }
 
-export function useImageUpload(): UseImageUploadReturn {
+export interface UseImageUploadOptions {
+  /**
+   * Sent as a Bearer credential instead of relying on the Clerk cookie. Used
+   * by the phone upload page, whose visitor scanned a QR code and is not
+   * signed in on that device.
+   */
+  authToken?: string | null;
+}
+
+export function useImageUpload({ authToken }: UseImageUploadOptions = {}): UseImageUploadReturn {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
@@ -66,14 +90,17 @@ export function useImageUpload(): UseImageUploadReturn {
 
       setProgress(30);
 
+      const headers: Record<string, string> = { "Content-Type": file.type };
+      if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+      }
+
       // Upload to API route with isFirstImage flag for background removal
       const response = await fetch(
         `/api/upload?filename=${encodeURIComponent(filename)}&isFirstImage=${isFirstImage}`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": file.type,
-          },
+          headers,
           body: file,
         }
       );
@@ -82,7 +109,7 @@ export function useImageUpload(): UseImageUploadReturn {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Upload failed");
+        throw new UploadError(errorData.error || "Upload failed", response.status);
       }
 
       const result: UploadResult = await response.json();

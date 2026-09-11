@@ -22,6 +22,7 @@
     "@tamagui/toast": "catalog:",
     "react": "catalog:",
     "react-native": "catalog:",
+    "react-native-safe-area-context": "catalog:",
     "solito": "catalog:",
     "tamagui": "catalog:"
   },

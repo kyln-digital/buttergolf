@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useReducer, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import { v4 as uuidv4 } from "uuid";
 import {
   LISTING_PRICE_LIMITS,
@@ -31,6 +32,20 @@ import {
   Spinner,
 } from "@buttergolf/ui";
 import { ImageUpload } from "@/components/ImageUpload";
+import { flushSync } from "react-dom";
+import {
+  clearStoredPhoneUploadSession,
+  closePhoneUploadSessionsForScope,
+  collectLatePhoneUploads,
+  markLatePhoneUploadsPlaced,
+} from "@/hooks/usePhoneUploadSession";
+
+/** Shown when the phone photo session can't be closed before publishing or saving. */
+const PHONE_SETTLE_FAILED_MESSAGE =
+  "Couldn't finish the phone photo session. Check your connection and try again.";
+
+/** Photos a listing can carry; the uploader's cap and the phone handoff's ceiling. */
+const MAX_LISTING_IMAGES = 5;
 import { PhotoTipsCard } from "./PhotoTipsCard";
 import {
   sellRecordReducer,
@@ -309,6 +324,14 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
   // recovery banner offers to restore.
   const storageKey = sellStorageKey({ draftId, editProductId });
 
+  // The phone-photo session is scoped to the seller as well as the record.
+  // sessionStorage outlives a Clerk sign-out, and a new listing's key is only
+  // per tab, so without the user id a second account signing in on the same
+  // tab could restore the first account's still-valid QR code. Undefined
+  // until Clerk has loaded, which simply defers restoring the session.
+  const { userId: clerkUserId } = useAuth();
+  const phoneSessionScope = clerkUserId ? `${clerkUserId}:${storageKey}` : undefined;
+
   const [formData, setFormData, { isHydrated, clear: clearLocalDraft }] =
     useLocalStorageState<FormData>(storageKey, EMPTY_FORM_DATA, {
       debounceMs: 1000,
@@ -341,6 +364,72 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
   // Track whether the user has dismissed the recovery prompt
   const [recoveryDismissed, setRecoveryDismissed] = useState(false);
+  // Bumped when the seller discards the draft in place ("start fresh"). The
+  // uploader is keyed on it so a live phone session, which lives in the
+  // uploader's state rather than in storage, is torn down with the draft
+  // instead of continuing to feed photos into the fresh listing.
+  const [uploaderEpoch, setUploaderEpoch] = useState(0);
+
+  /**
+   * The image list to publish or save: the form's, plus any phone photo that
+   * finished uploading after the uploader's last two-second poll. Without
+   * this, publishing a moment after the phone said "sent" would leave that
+   * photo out of the listing, and the sweep would later destroy it.
+   *
+   * Closes the phone sessions first and waits for the server to confirm, so
+   * nothing can complete between this read and the write that follows: a
+   * phone still uploading gets a 410 and its "finished on your computer"
+   * notice instead of a "sent" for a photo the listing will never hold.
+   * Called only once the seller has committed to publishing or saving, since
+   * afterwards the phone needs a fresh code.
+   */
+  const latestImagesRef = useRef(formData.images);
+  latestImagesRef.current = formData.images;
+
+  const settlePhonePhotos = useCallback(async (): Promise<string[] | null> => {
+    if (!phoneSessionScope) return latestImagesRef.current;
+
+    // The close must be confirmed, not merely attempted: an error status
+    // would leave the phone able to upload into a session nobody polls, and
+    // the photo it sent would be missing from the saved listing. Retry a few
+    // times; if it still won't confirm, the settle has failed and the caller
+    // must not write.
+    let closed = false;
+    for (let attempt = 0; attempt < 3 && !closed; attempt += 1) {
+      if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+      closed = await closePhoneUploadSessionsForScope(phoneSessionScope);
+    }
+    if (!closed) return null;
+
+    // Read the form's images only now: the uploader and the poller were still
+    // free to add to them while the close was in flight.
+    const held = latestImagesRef.current;
+    const late = await collectLatePhoneUploads(
+      phoneSessionScope,
+      held,
+      MAX_LISTING_IMAGES - held.length
+    );
+
+    // Merge against the form state as it is at this instant, synchronously,
+    // and record as placed only what actually fitted: a poll response that
+    // landed during the collection may have taken a slot, and a photo it
+    // squeezed out must be offered again rather than remembered as placed.
+    let merged: string[] = latestImagesRef.current;
+    let kept: string[] = [];
+    flushSync(() => {
+      setFormData((prev) => {
+        const base = prev.images;
+        const additions = late.filter((photo) => !base.includes(photo.url));
+        const next = [...base, ...additions.map((photo) => photo.url)].slice(0, MAX_LISTING_IMAGES);
+        kept = late.filter((photo) => next.includes(photo.url)).map((photo) => photo.id);
+        merged = next;
+        return next === base ? prev : { ...prev, images: next };
+      });
+    });
+    latestImagesRef.current = merged;
+    markLatePhoneUploadsPlaced(phoneSessionScope, kept);
+    return merged;
+  }, [phoneSessionScope, setFormData]);
   // --- Record identity ---
   // Which row this form writes to, whether the data on screen is actually that
   // row's, and which in-flight work is still relevant. All of it lives in one
@@ -860,13 +949,6 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
       return;
     }
 
-    if (formData.images.length === 0) {
-      setError("Please upload at least one image");
-      setLoading(false);
-      isSubmittingRef.current = false;
-      return;
-    }
-
     const parsedPrice = Number.parseFloat(formData.price);
     if (
       Number.isNaN(parsedPrice) ||
@@ -888,6 +970,25 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
     if (parcelErrors.length > 0) {
       setError(parcelErrors[0].message);
+      setLoading(false);
+      isSubmittingRef.current = false;
+      return;
+    }
+
+    // Settle the phone handoff last, once everything else is valid: it closes
+    // the seller's code, which a still-open form after a validation error
+    // would then need reissued. Judged after settling because the first photo
+    // may have finished on the server since the uploader last polled.
+    const images = await settlePhonePhotos();
+    if (images === null) {
+      setError(PHONE_SETTLE_FAILED_MESSAGE);
+      setLoading(false);
+      isSubmittingRef.current = false;
+      return;
+    }
+
+    if (images.length === 0) {
+      setError("Please upload at least one image");
       setLoading(false);
       isSubmittingRef.current = false;
       return;
@@ -944,7 +1045,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                 width: resolvedParcel.width,
                 height: resolvedParcel.height,
                 weight: resolvedParcel.weight,
-                images: formData.images.map((url, index) => ({ url, sortOrder: index })),
+                images: images.map((url, index) => ({ url, sortOrder: index })),
                 // Editing a live listing leaves isDraft alone; publishing a draft
                 // flips it. The consent line under the publish button is what
                 // acceptsSellerTerms attests to.
@@ -958,6 +1059,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
               },
               body: JSON.stringify({
                 ...formData,
+                images,
                 price: parsedPrice,
                 // The consent line under the publish button is what this attests to.
                 acceptsSellerTerms: true,
@@ -1009,6 +1111,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
       const product = (response.data ?? {}) as { title?: string };
       clearLocalDraft();
+      if (phoneSessionScope) clearStoredPhoneUploadSession(phoneSessionScope);
 
       if (isEditingListing) {
         router.push("/seller/listings?updated=1");
@@ -1053,8 +1156,31 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
     setLoading(true);
     setError(null);
 
-    if (!hasMeaningfulDraftContent(formData)) {
+    // Decide whether there is anything to save *before* settling, since
+    // settling closes the seller's code: a photo that finished on the server
+    // since the uploader last polled is meaningful content too, so peek at
+    // those without closing.
+    const hasLatePhonePhoto =
+      !hasMeaningfulDraftContent(formData) &&
+      phoneSessionScope !== undefined &&
+      (
+        await collectLatePhoneUploads(
+          phoneSessionScope,
+          formData.images,
+          MAX_LISTING_IMAGES - formData.images.length
+        )
+      ).length > 0;
+
+    if (!hasMeaningfulDraftContent(formData) && !hasLatePhonePhoto) {
       setError("Add at least one detail before saving a draft.");
+      setLoading(false);
+      isSubmittingRef.current = false;
+      return;
+    }
+
+    const images = await settlePhonePhotos();
+    if (images === null) {
+      setError(PHONE_SETTLE_FAILED_MESSAGE);
       setLoading(false);
       isSubmittingRef.current = false;
       return;
@@ -1066,7 +1192,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
     try {
       const result = await saveQueueRef.current!.enqueue(() => {
-        return persistDraft(formData, capturedGeneration);
+        return persistDraft({ ...formData, images }, capturedGeneration);
       });
 
       if (result === "skipped") {
@@ -1092,6 +1218,7 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
 
       // Navigate to seller listings page after saving draft
       clearLocalDraft();
+      if (phoneSessionScope) clearStoredPhoneUploadSession(phoneSessionScope);
       router.push("/seller/listings");
       // Note: Don't reset isSubmittingRef here - we're navigating away
     } catch (err) {
@@ -1195,6 +1322,8 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                     size="$3"
                     onPress={() => {
                       clearLocalDraft();
+                      if (phoneSessionScope) clearStoredPhoneUploadSession(phoneSessionScope);
+                      setUploaderEpoch((epoch) => epoch + 1);
                       setFormData(EMPTY_FORM_DATA);
                       setRecoveryDismissed(true);
                     }}
@@ -1238,11 +1367,18 @@ export function SellFormClient({ draftId, editProductId }: SellFormClientProps) 
                       {/* Left: Image Upload (2/3 width on desktop) */}
                       <Column flex={2} minWidth={300} width="100%">
                         <ImageUpload
+                          // Remount on a record switch or an in-place discard so a
+                          // phone-photo session started for one listing can't feed
+                          // the next.
+                          key={`images-${record.generation}-${uploaderEpoch}`}
+                          // Scopes the session's reload restore to this record's
+                          // draft key; cleared alongside clearLocalDraft above.
+                          phoneSessionScope={phoneSessionScope}
                           onUploadComplete={handleImageUpload}
                           onRemoveImage={handleRemoveImage}
                           onReorderImages={handleReorderImages}
                           currentImages={formData.images}
-                          maxImages={5}
+                          maxImages={MAX_LISTING_IMAGES}
                         />
                       </Column>
 

@@ -24,6 +24,7 @@ import { ErrorBoundary } from "../components/ErrorBoundary";
 const EXCLUDED_CHROME_ROUTES = [
   "/coming-soon",
   "/mobile-onboarding",
+  "/upload-from-phone",
   "/sign-in",
   "/sign-in/*",
   "/sign-up",

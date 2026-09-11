@@ -94,7 +94,7 @@ See [Payments & Escrow](payments.md) for the money flow.
 
 ### Seller, users, misc
 
-`/api/seller/listings` (seller stats), `/api/seller/products/[id]` (PATCH/DELETE own product), `/api/users/seller-status`, `/api/users/push-tokens` (Expo registration), `/api/user/phone`, `/api/addresses` (+ `[id]`, `/default`), `/api/favourites` (+ `[productId]`), `/api/upload` (Cloudinary, self-managed auth + CORS), `/api/images/[id]` (DELETE), `/api/clerk/webhook` (svix user sync), `/api/newsletter`, `/api/waitlist`, `/api/shipping/calculate` (rate-limited), `/api/shipengine/webhook` (HMAC-verified, monotonic status).
+`/api/seller/listings` (seller stats), `/api/seller/products/[id]` (PATCH/DELETE own product), `/api/users/seller-status`, `/api/users/push-tokens` (Expo registration), `/api/user/phone`, `/api/addresses` (+ `[id]`, `/default`), `/api/favourites` (+ `[productId]`), `/api/upload` (Cloudinary, self-managed auth + CORS; also accepts the phone QR session token as a Bearer credential and records those uploads in `phone_uploads`), `/api/upload/phone-session` (POST, Clerk: mints the QR token for the sell form; GET, Bearer: session status for the phone page), `/api/upload/phone-session/[sessionId]` (GET, Clerk: photos the phone has sent, polled by the sell form; DELETE, Clerk: close the session so the phone is refused), `/api/images/[id]` (DELETE), `/api/clerk/webhook` (svix user sync), `/api/newsletter`, `/api/waitlist`, `/api/shipping/calculate` (rate-limited), `/api/shipengine/webhook` (HMAC-verified, monotonic status).
 
 Cron endpoints (`/api/cron/*`) are listed in [Operations](operations.md).
 

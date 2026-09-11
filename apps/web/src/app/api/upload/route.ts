@@ -4,6 +4,22 @@ import { getUserIdFromRequest } from "@/lib/auth";
 import { checkRateLimit, rateLimitResponse } from "@/middleware/rate-limit";
 import { cloudinary } from "@/lib/cloudinary";
 import {
+  readBearerToken,
+  verifyPhoneUploadSessionToken,
+  type PhoneUploadSession,
+} from "@/lib/phone-upload-session";
+import {
+  completePhoneUpload,
+  getPhoneUploadReservationState,
+  isPhoneUploadSessionClosed,
+  PHONE_SESSION_CLOSED_MESSAGE,
+  phoneAllowanceUsedMessage,
+  releasePhoneUploadSlot,
+  reservePhoneUploadSlot,
+  type CompletePhoneUploadOutcome,
+} from "@/lib/phone-upload-store";
+import { BodyTooLargeError, readBodyWithLimit } from "@/lib/read-body-with-limit";
+import {
   isAllowedUploadType,
   MAX_UPLOAD_FILE_SIZE_BYTES,
   MAX_UPLOAD_FILE_SIZE_LABEL,
@@ -50,9 +66,19 @@ function getCorsHeaders(request: Request): Record<string, string> {
   return headers;
 }
 
+// A 10MB body plus one Cloudinary call finishes well inside this. It also
+// bounds how long a phone-session reservation can be genuinely in flight: any
+// reservation older than this whose request never released it belongs to a
+// crashed invocation, and the sweep reclaims its asset.
+export const maxDuration = 60;
+
 export async function POST(request: Request): Promise<NextResponse> {
   const corsHeaders = getCorsHeaders(request);
   let userId: string | null = null;
+  // Set when the caller is a phone that scanned the sell form's QR code. Its
+  // token is a narrow capability minted by /api/upload/phone-session, and each
+  // upload it makes is recorded so the desktop can pick it up.
+  let phoneSession: PhoneUploadSession | null = null;
 
   // Check if Cloudinary is configured
   if (
@@ -85,8 +111,14 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   try {
-    // Authenticate user (supports both web cookies and mobile Bearer token)
-    userId = await getUserIdFromRequest(request);
+    // A QR-code session token is checked first: it is not a Clerk token, so
+    // handing it to auth() would only produce a noisy "unauthenticated". Any
+    // other Bearer (Clerk session, mobile session) falls through as before.
+    const bearer = readBearerToken(request);
+    phoneSession = bearer ? await verifyPhoneUploadSessionToken(bearer) : null;
+
+    // Authenticate user (supports web cookies, mobile Bearer token, phone QR token)
+    userId = phoneSession ? phoneSession.clerkId : await getUserIdFromRequest(request);
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
@@ -157,26 +189,83 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
   }
 
+  // A phone session's allowance is taken *before* the body is read or
+  // Cloudinary is called, so a leaked code can never drive more uploads than
+  // it was signed for: concurrent requests queue on the reservation instead of
+  // all slipping past a count. The slot is released on every failure below and
+  // filled in once the asset exists.
+  // Awaited on every failure path: a serverless invocation can be frozen the
+  // moment the response goes out, so cleanup that isn't awaited may never run.
+  let reservationId: string | null = null;
+  const releaseReservation = async () => {
+    if (reservationId) {
+      const id = reservationId;
+      reservationId = null;
+      await releasePhoneUploadSlot(id);
+    }
+  };
+
+  // The public id is generated here, never taken from the request. The
+  // `filename` query is only ever used for logging: letting a caller choose
+  // the id would let anyone with an upload credential (a leaked QR token
+  // included) overwrite an existing `products/…` asset by naming it. It is
+  // chosen before the reservation so the reservation can record it: if this
+  // invocation dies after Cloudinary succeeds, the sweep still knows what to
+  // destroy.
+  const publicId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+
+  if (phoneSession) {
+    try {
+      const reservation = await reservePhoneUploadSlot(phoneSession, publicId);
+      if (reservation.kind === "closed") {
+        return NextResponse.json(
+          { error: PHONE_SESSION_CLOSED_MESSAGE },
+          { status: 410, headers: corsHeaders }
+        );
+      }
+      if (reservation.kind === "over-cap") {
+        return NextResponse.json(
+          { error: phoneAllowanceUsedMessage(phoneSession.maxPhotos) },
+          { status: 409, headers: corsHeaders }
+        );
+      }
+      reservationId = reservation.id;
+    } catch (reserveError) {
+      logError("Failed to reserve phone upload slot", reserveError, {
+        errorId: UPLOAD_FAILED,
+        userId,
+        filename,
+        phoneSessionId: phoneSession.sessionId,
+      });
+
+      return NextResponse.json(
+        { error: "Couldn't reach your computer's session. Please try again." },
+        { status: 500, headers: corsHeaders }
+      );
+    }
+  }
+
   try {
     // Convert request body to base64 for Cloudinary upload
-    let arrayBuffer: ArrayBuffer;
     let buffer: Buffer;
     let base64Image: string;
 
     try {
-      arrayBuffer = await request.arrayBuffer();
-      buffer = Buffer.from(arrayBuffer);
-
-      // Content-Length can be absent or wrong, so the real size decides.
-      if (buffer.length > MAX_UPLOAD_FILE_SIZE_BYTES) {
+      // Content-Length can be absent or wrong, so the real size decides — and
+      // it is enforced as the stream arrives, not after it has all been held
+      // in memory, so a forged header can't make the function buffer more
+      // than the limit.
+      buffer = await readBodyWithLimit(request, MAX_UPLOAD_FILE_SIZE_BYTES);
+      base64Image = `data:${contentType};base64,${buffer.toString("base64")}`;
+    } catch (conversionError) {
+      if (conversionError instanceof BodyTooLargeError) {
+        await releaseReservation();
         return NextResponse.json(
           { error: `File size must be less than ${MAX_UPLOAD_FILE_SIZE_LABEL}` },
           { status: 413, headers: corsHeaders }
         );
       }
 
-      base64Image = `data:${contentType};base64,${buffer.toString("base64")}`;
-    } catch (conversionError) {
       logError("Failed to convert request body to base64", conversionError, {
         errorId: UPLOAD_CONVERSION_FAILED,
         userId,
@@ -184,6 +273,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         contentType,
       });
 
+      await releaseReservation();
       return NextResponse.json(
         {
           error: "Failed to process image",
@@ -206,7 +296,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     // Build upload options
     const uploadOptions: UploadApiOptions = {
       folder: "products",
-      public_id: filename.replace(/\.[^/.]+$/, ""), // Remove file extension
+      public_id: publicId,
+      overwrite: false,
       resource_type: "image",
     };
 
@@ -235,7 +326,102 @@ export async function POST(request: Request): Promise<NextResponse> {
       dimensions: `${result.width}x${result.height}`,
       format: result.format,
       bytes: result.bytes,
+      phoneSessionId: phoneSession?.sessionId,
     });
+
+    // Hand the photo to the desktop by filling the slot reserved above.
+    if (phoneSession && reservationId) {
+      try {
+        let outcome: CompletePhoneUploadOutcome;
+        try {
+          outcome = await completePhoneUpload(phoneSession, reservationId, result.secure_url);
+        } catch (completeError) {
+          // A transaction can commit and still surface an error (a dropped
+          // connection after COMMIT, say). Re-read the row under the session
+          // lock before assuming the slot is empty: destroying the asset of a
+          // row that did fill would leave the listing with a dead URL.
+          const state = await getPhoneUploadReservationState(phoneSession, reservationId).catch(
+            () => "unknown" as const
+          );
+          if (state === "unknown") {
+            // Indeterminate: the fill may have committed and the desktop may
+            // already hold the URL. Destroying would risk a dead image, and
+            // releasing would drop the sweep's only pointer, so keep the
+            // reservation exactly as it is and let the seller check.
+            logError("Phone upload completion indeterminate", completeError, {
+              errorId: UPLOAD_FAILED,
+              userId,
+              filename,
+              phoneSessionId: phoneSession.sessionId,
+              reservationId,
+            });
+            reservationId = null;
+            return NextResponse.json(
+              {
+                error:
+                  "Couldn't confirm your photo reached your computer. Check there before sending it again.",
+              },
+              { status: 500, headers: corsHeaders }
+            );
+          }
+          if (state !== "filled") throw completeError;
+          outcome = "completed";
+        }
+        if (outcome === "closed") {
+          throw new Error("Session closed while the upload was in flight");
+        }
+        reservationId = null;
+      } catch (completeError) {
+        logError("Failed to record phone upload", completeError, {
+          errorId: UPLOAD_FAILED,
+          userId,
+          filename,
+          phoneSessionId: phoneSession.sessionId,
+        });
+
+        // The desktop will never see this asset, so don't keep paying for it.
+        // Awaited so the function isn't frozen first. If the destroy itself
+        // fails, the reservation row is deliberately left in place: it carries
+        // the public id, so the daily sweep can destroy the asset later. Only a
+        // confirmed destroy releases it.
+        const destroyed = await cloudinary.uploader
+          .destroy(result.public_id)
+          .then(() => true)
+          .catch((err: unknown) => {
+            console.error("Failed to delete Cloudinary asset:", {
+              publicId: result.public_id,
+              err,
+            });
+            return false;
+          });
+        if (destroyed) {
+          await releaseReservation();
+        } else {
+          reservationId = null;
+        }
+
+        // The usual reason the slot can't be filled is that the desktop closed
+        // the session while this upload was in flight. Say so, rather than
+        // inviting a retry that will only be refused.
+        const closedMeanwhile = await isPhoneUploadSessionClosed(
+          phoneSession.sessionId,
+          phoneSession.clerkId
+        ).catch(() => false);
+        if (closedMeanwhile) {
+          return NextResponse.json(
+            { error: PHONE_SESSION_CLOSED_MESSAGE },
+            { status: 410, headers: corsHeaders }
+          );
+        }
+
+        return NextResponse.json(
+          {
+            error: "Your photo uploaded but couldn't be sent to your computer. Please try again.",
+          },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
 
     return NextResponse.json(
       {
@@ -248,6 +434,23 @@ export async function POST(request: Request): Promise<NextResponse> {
       { headers: corsHeaders }
     );
   } catch (error) {
+    // Nothing reached the desktop, so the phone keeps its slot for a retry.
+    // A failed upload call is not proof that no asset exists: a timeout can
+    // land after Cloudinary accepted it. destroy() is idempotent ("not found"
+    // is a success), so destroy first and release only once that succeeded;
+    // otherwise the reservation stays as the sweep's pointer to the asset.
+    if (reservationId) {
+      const destroyed = await cloudinary.uploader
+        .destroy(`products/${publicId}`)
+        .then(() => true)
+        .catch(() => false);
+      if (destroyed) {
+        await releaseReservation();
+      } else {
+        reservationId = null;
+      }
+    }
+
     const errorMessage = error instanceof Error ? error.message : "Upload failed";
 
     // If background removal fails, provide helpful error
