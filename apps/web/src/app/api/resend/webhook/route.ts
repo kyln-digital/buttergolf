@@ -18,15 +18,34 @@ import { Resend } from "resend";
 
 const DEFAULT_FORWARD_FROM = "ButterGolf Inbox <notifications@notifications.buttergolf.com>";
 
-// Domains Resend receives for. Forwarding back into one of these would loop.
+// Domains Resend receives for. Forwarding back into one of these (or a
+// subdomain of one) would loop.
 const RECEIVING_DOMAINS = ["buttergolf.com", "notifications.buttergolf.com"];
 
+/**
+ * Accepts `local@domain` or `Name <local@domain>` and returns the bare,
+ * lower-cased mailbox, or null unless the value is exactly one plausible
+ * address. The domain check below must see the real domain, not `domain>`.
+ */
+function parseMailbox(value: string): string | null {
+  const trimmed = value.trim();
+  const angle = /^[^<>]*<([^<>]+)>$/.exec(trimmed);
+  const address = (angle ? angle[1] : trimmed).trim().toLowerCase();
+  if (!/^[^\s@,<>]+@[^\s@,<>]+\.[^\s@,<>]+$/.test(address)) return null;
+  return address;
+}
+
+function isReceivingDomain(domain: string): boolean {
+  return RECEIVING_DOMAINS.some((d) => domain === d || domain.endsWith(`.${d}`));
+}
+
 function forwardTarget(): string | null {
-  const to = process.env.RESEND_INBOUND_FORWARD_TO?.trim();
-  if (!to) return null;
-  const domain = to.split("@")[1]?.toLowerCase();
-  if (!domain || RECEIVING_DOMAINS.includes(domain)) return null;
-  return to;
+  const raw = process.env.RESEND_INBOUND_FORWARD_TO;
+  if (!raw) return null;
+  const address = parseMailbox(raw);
+  if (!address) return null;
+  const domain = address.slice(address.lastIndexOf("@") + 1);
+  return isReceivingDomain(domain) ? null : address;
 }
 
 export async function POST(req: Request) {
@@ -39,7 +58,9 @@ export async function POST(req: Request) {
   const forwardTo = forwardTarget();
   if (!forwardTo) {
     return NextResponse.json(
-      { error: "RESEND_INBOUND_FORWARD_TO is unset or points at a receiving domain" },
+      {
+        error: "RESEND_INBOUND_FORWARD_TO is unset, not a single mailbox, or on a receiving domain",
+      },
       { status: 500 }
     );
   }
