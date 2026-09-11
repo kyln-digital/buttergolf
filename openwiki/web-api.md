@@ -47,6 +47,8 @@ Routes authenticated with Bearer headers and GET semantics (`/api/favourites`, `
 
 Staff access is a database role, `users.role` (`USER` | `SUPPORT` | `ADMIN`), plus a bootstrap: any Clerk ID in `ADMIN_USER_IDS` is `ADMIN` whatever the column says. `apps/web/src/lib/admin-auth.ts` exposes `getAdminForPage()` (server components) and `requireAdmin(request, permission?)` (API routes); the permission table is the pure `can(role, permission)` in `lib/admin-permissions.ts` (unit-tested). SUPPORT can read everything, triage buyer issues and hide listings; everything that moves money, suspends people or changes roles is ADMIN. Every mutating admin route writes an `AdminAction` row via `lib/admin-audit.ts`, inside the same transaction where there is one.
 
+The staff row is found by Clerk ID first. Production and previews use different Clerk instances against the one database, so the same person has a different Clerk ID on a preview; when the ID misses, `resolveAdmin` falls back to the signed-in account's verified email. Note a person can also end up with **two** rows (one per Clerk instance, the preview one with a `temp-<clerkId>@buttergolf.app` email created by the sign-up fallback) — grant the role on both if they need the portal on previews.
+
 Suspended users (`users.suspendedAt`) can sign in and view orders but every route that lists, publishes, buys, messages or offers returns 403 `ACCOUNT_SUSPENDED` (`lib/suspension.ts`), and their listings drop out of every public query via `PUBLIC_PRODUCT_WHERE` / `PUBLIC_SELLER_FILTER` in `lib/listings.ts` — the same fragment that hides staff takedowns (`products.hiddenAt`).
 
 ## API Route Map
