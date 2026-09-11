@@ -227,11 +227,11 @@ const customTokens = createTokens({
     backgroundStrong: brandColors.lemonHaze,
     backgroundTransparent: "rgba(255, 255, 255, 0)",
 
-    // Text colors (Ironstone primary, Slate Smoke secondary)
+    // Text colors (Ironstone primary, Slate Smoke secondary, Gray 700 muted)
     text: brandColors.ironstone,
     textSecondary: brandColors.slateSmoke,
-    textTertiary: brandColors.cloudMist,
-    textMuted: brandColors.cloudMist,
+    textTertiary: brandColors.gray700,
+    textMuted: brandColors.gray700,
     textInverse: brandColors.pureWhite,
     helperText: brandColors.ironstone,
 
@@ -421,8 +421,10 @@ const lightTheme = {
   // Text semantic colors
   text: brandColors.ironstone,
   textSecondary: brandColors.slateSmoke,
-  textTertiary: brandColors.cloudMist,
-  textMuted: brandColors.cloudMist,
+  // Muted/tertiary text is mostly small captions, so it keeps 4.5:1 on white
+  // (Gray 700 is ~4.9:1) while staying visibly lighter than Slate Smoke.
+  textTertiary: brandColors.gray700,
+  textMuted: brandColors.gray700,
   textInverse: brandColors.pureWhite,
 
   // Surface colors (Pure White cards)
@@ -533,8 +535,10 @@ const darkTheme = {
   // Text semantic colors - override for dark mode
   text: brandColors.pureWhite,
   textSecondary: brandColors.cloudMist,
-  textTertiary: brandColors.slateSmoke,
-  textMuted: brandColors.slateSmokeHover,
+  // 60% white rather than a solid grey, so muted text stays readable on every dark
+  // surface (~5.7:1 on the page, ~4:1 on Slate Smoke surfaces).
+  textTertiary: brandColors.overlayLight60,
+  textMuted: brandColors.overlayLight60,
   // Keep inverse text white so orange primary buttons remain white-text in all themes.
   textInverse: brandColors.pureWhite,
 

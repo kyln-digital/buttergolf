@@ -373,7 +373,7 @@ export function SellerDashboardScreen({
 
         {/* Performance Summary (optional future expansion) */}
         <Column
-          backgroundColor="$gray100"
+          backgroundColor="$backgroundHover"
           borderRadius="$lg"
           padding="$4"
           alignItems="center"

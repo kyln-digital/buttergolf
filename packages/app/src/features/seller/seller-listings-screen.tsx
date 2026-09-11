@@ -62,7 +62,11 @@ export interface SellerListingsScreenProps {
 type FilterTab = "all" | "active" | "sold" | "draft";
 
 type StatusColorToken = "$success" | "$primary" | "$textMuted" | "$warning";
-type StatusColorLightToken = "$successLight" | "$primaryLight" | "$gray200" | "$warningLight";
+type StatusColorLightToken =
+  | "$successLight"
+  | "$primaryLight"
+  | "$backgroundHover"
+  | "$warningLight";
 
 const statusConfig: Record<
   ListingStatus,
@@ -70,7 +74,8 @@ const statusConfig: Record<
 > = {
   ACTIVE: { label: "Active", color: "$success", bgColor: "$successLight" },
   SOLD: { label: "Sold", color: "$primary", bgColor: "$primaryLight" },
-  DRAFT: { label: "Draft", color: "$textMuted", bgColor: "$gray200" },
+  // Theme-aware fill (unlike $gray200), so the muted label stays legible in dark mode.
+  DRAFT: { label: "Draft", color: "$textMuted", bgColor: "$backgroundHover" },
   INACTIVE: { label: "Inactive", color: "$warning", bgColor: "$warningLight" },
 };
 

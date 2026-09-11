@@ -46,7 +46,7 @@ export const brandColors = {
   gray100: "#F5F5F5", // Very light gray
   gray200: "#E5E5E5", // Light gray
   gray600: "#666666", // Card background in dark mode (lighter than surface for elevation)
-  gray700: "#707070", // Medium gray (for neutral badge text)
+  gray700: "#707070", // Medium gray (muted/tertiary text on light themes, neutral badge text)
   gray900: "#1A1A1A", // Very dark gray
 
   // Opacity Overlays - for elements on colored backgrounds
